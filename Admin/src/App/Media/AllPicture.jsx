@@ -26,16 +26,17 @@ import {
 import { MdOutlinePhotoLibrary } from 'react-icons/md';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CATEGORY_LABELS = {
-    All: { label: 'ទាំងអស់ (All)', color: 'bg-slate-700 text-white' },
-    Cloudinary: { label: '☁️ Cloudinary', color: 'bg-sky-600 text-white' },
-    Contract: { label: 'កិច្ចសន្យា', color: 'bg-blue-600 text-white' },
-    CashTransaction: { label: 'Cash In/Out/Penalty', color: 'bg-amber-600 text-white' },
-    Salary: { label: 'ប្រាក់ខែ', color: 'bg-emerald-600 text-white' },
-    FollowUp: { label: 'Follow Up', color: 'bg-purple-600 text-white' },
-    SupportHelp: { label: 'Help & Support', color: 'bg-cyan-600 text-white' },
-    SupportComment: { label: 'Comment', color: 'bg-rose-600 text-white' },
+    All: { labelKey: 'all', color: 'bg-slate-700 text-white' },
+    Cloudinary: { labelKey: 'imageCloudCategory', color: 'bg-sky-600 text-white' },
+    Contract: { labelKey: 'contract', color: 'bg-blue-600 text-white' },
+    CashTransaction: { labelKey: 'cashTransactionCategory', color: 'bg-amber-600 text-white' },
+    Salary: { labelKey: 'salary', color: 'bg-emerald-600 text-white' },
+    FollowUp: { labelKey: 'followUp', color: 'bg-purple-600 text-white' },
+    SupportHelp: { labelKey: 'helpSupport', color: 'bg-cyan-600 text-white' },
+    SupportComment: { labelKey: 'comments', color: 'bg-rose-600 text-white' },
 };
 
 const CATEGORY_PAGE_MAP = {
@@ -55,6 +56,7 @@ const formatDate = (date) => {
 
 const AllPicture = () => {
     const { smartFetch, hasPermission } = useAuth();
+    const { t } = useLanguage();
     const canDelete = hasPermission('/all-picture', 'delete');
     const scrollContainerRef = useRef(null);
     const previewContainerRef = useRef(null);
@@ -99,11 +101,11 @@ const AllPicture = () => {
             setPages(data.pages || 1);
             setCurrentPage(pg);
         } catch (err) {
-            setError(err.message || 'Unable to load images from database.');
+            setError(err.message || t('imageLoadFailed'));
         } finally {
             setLoading(false);
         }
-    }, [smartFetch, category]);
+    }, [smartFetch, category, t]);
 
     useEffect(() => {
         fetchImages(1, category);
@@ -122,7 +124,7 @@ const AllPicture = () => {
     // Delete a Cloudinary image by public_id
     const deleteCloudinaryImage = async (img) => {
         if (!img.publicId) return;
-        const confirmed = window.confirm(`លុបរូបភាព Cloudinary "${img.entityName}"? មិនអាចសង្គ្រោះបាន!`);
+        const confirmed = window.confirm(t('imageDeleteConfirm').replace('{name}', img.entityName || ''));
         if (!confirmed) return;
         try {
             const res = await smartFetch('/media/assets/delete', {
@@ -134,12 +136,12 @@ const AllPicture = () => {
             if (res.ok && data.success) {
                 setImages(prev => prev.filter(i => i !== img));
                 setActiveImage(null);
-                setMessage('បានលុបរូបភាព Cloudinary ជោគជ័យ!');
+                setMessage(t('imageDeleted'));
             } else {
-                setError(data.error || 'មិនអាចលុបបាន');
+                setError(data.error || t('imageDeleteFailed'));
             }
         } catch (e) {
-            setError('Delete failed: ' + e.message);
+            setError(`${t('imageDeleteFailed')}: ${e.message}`);
         }
     };
 
@@ -164,10 +166,10 @@ const AllPicture = () => {
             if (navigator.clipboard?.writeText) {
                 await navigator.clipboard.writeText(`[Base64 Image - ${img.category} / ${img.entityName}]`);
             }
-            setMessage('បានចម្លង Base64 identifier ជោគជ័យ');
+            setMessage(t('imageCopied'));
             setTimeout(() => setCopiedId(null), 2000);
         } catch (e) {
-            setError('Could not copy.');
+            setError(t('imageCopyFailed'));
         }
     };
 
@@ -180,9 +182,9 @@ const AllPicture = () => {
             document.body.appendChild(link);
             link.click();
             link.remove();
-            setMessage('បានទាញយករូបភាពជោគជ័យ!');
+            setMessage(t('imageDownloaded'));
         } catch (e) {
-            setError('Could not download image.');
+            setError(t('imageDownloadFailed'));
         }
     };
 
@@ -224,10 +226,10 @@ const AllPicture = () => {
                 a.click();
                 a.remove();
                 URL.revokeObjectURL(url);
-                setMessage('បានទាញយករូបភាពដែលបានកែជោគជ័យ!');
+                setMessage(t('imageEditedDownloaded'));
             }, 'image/jpeg', 0.95);
         } catch (err) {
-            setError(`Could not download edited image: ${err.message}`);
+            setError(`${t('imageEditedDownloadFailed')}: ${err.message}`);
         }
     };
 
@@ -255,9 +257,9 @@ const AllPicture = () => {
             setActiveImage(prev => ({ ...prev, src: newSrc }));
             setImages(prev => prev.map(i => i === activeImage ? { ...i, src: newSrc } : i));
             setRotation(0); setFlipH(false); setFlipV(false); setIsCropping(false);
-            setMessage('រូបភាពបានកែប្រែក្នុងទំព័រ (Save to DB តម្រូវឱ្យកែក្នុង Record ដើម)');
+            setMessage(t('imageSavedLocally'));
         } catch (err) {
-            setError('Could not save edited version.');
+            setError(t('imageSaveFailed'));
         } finally {
             setSavingNewVersion(false);
         }
@@ -297,8 +299,8 @@ const AllPicture = () => {
     };
 
     const storageLabel = (img) => img.storageType === 'cloudinary'
-        ? <span className="text-[9px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">☁️ Cloud</span>
-        : <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">🗄️ Base64</span>;
+        ? <span className="text-[9px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">☁️ {t('imageCloudCategory')}</span>
+        : <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">🗄️ {t('base64Storage')}</span>;
 
     return (
         <div ref={scrollContainerRef} className="h-full min-h-0 overflow-y-auto bg-slate-50 p-3 text-slate-800 sm:p-5">
@@ -308,10 +310,10 @@ const AllPicture = () => {
                     <div className="flex items-center gap-3">
                         <span className="rounded-lg bg-emerald-50 p-3 text-emerald-600"><MdOutlinePhotoLibrary size={24} /></span>
                         <div>
-                            <h1 className="text-xl font-bold text-slate-800">All Picture</h1>
+                            <h1 className="text-xl font-bold text-slate-800">{t('allPicture')}</h1>
                             <p className="text-sm text-slate-500">
                         {images.some(i => i.storageType === 'cloudinary') ? '☁️ Cloudinary + ' : ''}
-                        🗄️ MongoDB Base64 · {total} រូប
+                        🗄️ {t('imageMongoBase64')} · {total} {t('images')}
                     </p>
                         </div>
                     </div>
@@ -321,7 +323,7 @@ const AllPicture = () => {
                             <input
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                placeholder="ស្វែងរករូបភាព..."
+                                placeholder={t('imageSearchPlaceholder')}
                                 className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500"
                             />
                         </label>
@@ -331,14 +333,14 @@ const AllPicture = () => {
                             disabled={loading}
                             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-50"
                         >
-                            <FaSyncAlt className={loading ? 'animate-spin' : ''} /> Refresh
+                            <FaSyncAlt className={loading ? 'animate-spin' : ''} /> {t('refresh')}
                         </button>
                     </div>
                 </header>
 
                 {/* CATEGORY FILTER TABS */}
                 <div className="flex flex-wrap gap-2">
-                    {Object.entries(CATEGORY_LABELS).map(([key, { label, color }]) => (
+                    {Object.entries(CATEGORY_LABELS).map(([key, { labelKey, color }]) => (
                         <button
                             key={key}
                             type="button"
@@ -347,7 +349,7 @@ const AllPicture = () => {
                                 category === key ? color : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100'
                             }`}
                         >
-                            {label}
+                            {t(labelKey)}
                         </button>
                     ))}
                 </div>
@@ -364,16 +366,16 @@ const AllPicture = () => {
                 {loading ? (
                     <div className="rounded-xl border border-slate-200 bg-white py-20 text-center text-slate-500">
                         <FaSyncAlt className="mx-auto mb-3 animate-spin text-2xl text-emerald-600" />
-                        <p className="text-sm">កំពុងទាញយករូបភាព Base64 ពី MongoDB...</p>
+                        <p className="text-sm">{t('loadingBase64Images')}</p>
                     </div>
                 ) : visibleImages.length === 0 ? (
                     <div className="rounded-xl border border-slate-200 bg-white py-20 text-center text-slate-500">
                         <MdOutlinePhotoLibrary className="mx-auto mb-3 text-4xl text-slate-300" />
                         <p className="text-sm font-medium">
-                            {error ? 'រូបភាពមិនអាចទាញបាន។' : search ? 'រកមិនឃើញរូបភាពដែលត្រូវនឹងការស្វែងរក។' : 'មិនទាន់មានរូបភាព Base64 ក្នុង MongoDB នៅឡើយ។'}
+                            {error ? t('imageLoadFailed') : search ? t('imageNoSearchResults') : t('imageNoRecords')}
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
-                            រូបភាពនឹងបង្ហាញនៅទីនេះ នៅពេលដែល Staff Upload រូបភាពតាម Contract, Salary, Follow Up ជាដើម។
+                            {t('imageUploadHint')}
                         </p>
                     </div>
                 ) : (
@@ -393,17 +395,17 @@ const AllPicture = () => {
                                         />
                                         {/* Category badge */}
                                         <span className={`absolute left-1.5 top-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold shadow ${catColor(img.category, img.storageType)}`}>
-                                            {img.storageType === 'cloudinary' ? '☁️' : '🗄️'} {img.category}
+                                            {img.storageType === 'cloudinary' ? '☁️' : '🗄️'} {CATEGORY_LABELS[img.category] ? t(CATEGORY_LABELS[img.category].labelKey) : img.category}
                                         </span>
                                         {/* Zoom hint */}
                                         <button
                                             type="button"
                                             onClick={() => openPreview(img)}
-                                            title="ពង្រីកមើល (Zoom & View)"
+                                            title={t('imageZoomView')}
                                             className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/85 hover:bg-emerald-600 text-white text-[10px] font-semibold shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                                         >
                                             <FaSearchPlus size={10} />
-                                            <span>រូបភាព</span>
+                                            <span>{t('imageZoomView')}</span>
                                         </button>
                                     </div>
                                     <div className="space-y-1 p-2.5">
@@ -411,11 +413,11 @@ const AllPicture = () => {
                                         <p className="text-[10px] text-slate-400 truncate">{img.field}</p>
                                         <div className="flex items-center gap-1.5 pt-0.5">
                                             {storageLabel(img)}
-                                            <button type="button" onClick={() => copyImgData(img)} title="Copy info" className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-700">
+                                            <button type="button" onClick={() => copyImgData(img)} title={t('copyInfo')} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-700">
                                                 {copiedId === (img.entityId || img.category) ? <FaCheck className="text-emerald-600" /> : <FaRegCopy />}
                                             </button>
-                                            <button type="button" onClick={() => downloadImage(img)} title="Download" className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-700"><FaDownload /></button>
-                                            <button type="button" onClick={() => openPreview(img)} title="View details" className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-700"><FaInfoCircle /></button>
+                                            <button type="button" onClick={() => downloadImage(img)} title={t('download')} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-700"><FaDownload /></button>
+                                            <button type="button" onClick={() => openPreview(img)} title={t('viewDetails')} className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-emerald-700"><FaInfoCircle /></button>
                                         </div>
                                     </div>
                                 </article>
@@ -432,7 +434,7 @@ const AllPicture = () => {
                             disabled={currentPage <= 1}
                             onClick={() => fetchImages(currentPage - 1, category)}
                             className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-100 disabled:opacity-40"
-                        >← មុន</button>
+                        >← {t('previousPage')}</button>
                         {Array.from({ length: Math.min(pages, 8) }, (_, i) => i + 1).map(p => (
                             <button
                                 key={p}
@@ -443,13 +445,13 @@ const AllPicture = () => {
                                 }`}
                             >{p}</button>
                         ))}
-                        {pages > 8 && <span className="text-slate-400 text-sm">... {pages} ទំព័រ</span>}
+                        {pages > 8 && <span className="text-slate-400 text-sm">... {pages} {t('imagePages')}</span>}
                         <button
                             type="button"
                             disabled={currentPage >= pages}
                             onClick={() => fetchImages(currentPage + 1, category)}
                             className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-100 disabled:opacity-40"
-                        >បន្ទាប់ →</button>
+                        >{t('nextPage')} →</button>
                     </div>
                 )}
             </div>
@@ -463,7 +465,7 @@ const AllPicture = () => {
                     <section
                         role="dialog"
                         aria-modal="true"
-                        aria-label="Image preview and details"
+                        aria-label={t('imagePreviewDetails')}
                         className="flex max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl lg:flex-row"
                         onClick={e => e.stopPropagation()}
                     >
@@ -472,7 +474,7 @@ const AllPicture = () => {
                             {/* TOP TOOLBAR */}
                             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-2 text-white">
                                 <span className="min-w-0 max-w-[200px] truncate text-xs sm:max-w-xs">
-                                    {activeImage.category} · {activeImage.entityName}
+                                    {CATEGORY_LABELS[activeImage.category] ? t(CATEGORY_LABELS[activeImage.category].labelKey) : activeImage.category} · {activeImage.entityName}
                                 </span>
                                 <div className="flex flex-wrap items-center gap-1.5">
                                     {/* Zoom Bar (របាពង្រីកបង្រួម) */}
@@ -480,7 +482,7 @@ const AllPicture = () => {
                                         <button
                                             type="button"
                                             onClick={() => setZoom(v => Math.max(0.25, +(v - 0.25).toFixed(2)))}
-                                            title="បង្រួមតូច"
+                                            title={t('imageZoomOut')}
                                             className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
                                         ><FaSearchMinus className="text-xs" /></button>
                                         <input
@@ -493,7 +495,7 @@ const AllPicture = () => {
                                         <button
                                             type="button"
                                             onClick={() => setZoom(v => Math.min(4.0, +(v + 0.25).toFixed(2)))}
-                                            title="ពង្រីកធំ"
+                                            title={t('imageZoomIn')}
                                             className="rounded p-1 hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
                                         ><FaSearchPlus className="text-xs" /></button>
                                         <span className="min-w-9 text-center font-mono text-xs font-bold text-emerald-400 select-none">
@@ -535,10 +537,10 @@ const AllPicture = () => {
                                     <button type="button"
                                         onClick={() => { setIsCropping(c => !c); }}
                                         className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${isCropping ? 'bg-emerald-600 text-white' : 'bg-white/15 text-white hover:bg-white/25'}`}>
-                                        <FaCropAlt /> {isCropping ? 'កំពុងកាត់រូប' : 'កាត់រូប (Crop)'}
+                                        <FaCropAlt /> {isCropping ? t('imageCropping') : t('imageCrop')}
                                     </button>
 
-                                    <button type="button" onClick={() => setActiveImage(null)} aria-label="Close preview"
+                                    <button type="button" onClick={() => setActiveImage(null)} aria-label={t('close')}
                                         className="ml-1 rounded p-1.5 hover:bg-white/10"><FaTimes /></button>
                                 </div>
                             </div>
@@ -547,9 +549,9 @@ const AllPicture = () => {
                             {isCropping && (
                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-slate-900 px-3 py-2 text-xs text-slate-200">
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                        <span className="font-semibold text-emerald-400">សមាមាត្រ:</span>
+                                        <span className="font-semibold text-emerald-400">{t('imageAspectRatio')}:</span>
                                         {[
-                                            { key: 'free', label: 'Free' },
+                                            { key: 'free', label: t('imageFree') },
                                             { key: '1:1', label: '1:1' },
                                             { key: '4:3', label: '4:3' },
                                             { key: '16:9', label: '16:9' },
@@ -563,7 +565,7 @@ const AllPicture = () => {
                                     </div>
                                     <div className="flex flex-wrap items-center gap-3">
                                         <label className="flex items-center gap-1">
-                                            <span>ទំហំ:</span>
+                                            <span>{t('imageSize')}:</span>
                                             <input type="range" min="20" max="100" value={cropBox.width}
                                                 onChange={e => {
                                                     const val = +e.target.value;
@@ -572,9 +574,9 @@ const AllPicture = () => {
                                                 className="h-1.5 w-20 cursor-pointer accent-emerald-500" />
                                         </label>
                                         <button type="button" onClick={() => { setCropBox({ x: 10, y: 10, width: 80, height: 80 }); setCropAspect('free'); }}
-                                            className="rounded bg-white/10 px-2 py-1 hover:bg-white/20">Reset</button>
+                                            className="rounded bg-white/10 px-2 py-1 hover:bg-white/20">{t('reset')}</button>
                                         <button type="button" onClick={() => setIsCropping(false)}
-                                            className="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600">Cancel</button>
+                                            className="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600">{t('cancel')}</button>
                                     </div>
                                 </div>
                             )}
@@ -638,10 +640,10 @@ const AllPicture = () => {
                                 <div className="flex items-center gap-2">
                                     {(rotation !== 0 || flipH || flipV || isCropping) ? (
                                         <span className="flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-amber-300 font-medium">
-                                            ● បានកែ: {rotation !== 0 ? `${rotation}° ` : ''}{flipH ? 'FlipH ' : ''}{flipV ? 'FlipV ' : ''}{isCropping ? 'Crop' : ''}
+                                            ● {t('imageEdited')}: {rotation !== 0 ? `${rotation}° ` : ''}{flipH ? `${t('imageFlipHorizontal')} ` : ''}{flipV ? `${t('imageFlipVertical')} ` : ''}{isCropping ? t('imageCrop') : ''}
                                         </span>
                                     ) : (
-                                        <span className="text-slate-400">ទម្រង់ដើម (Original)</span>
+                                        <span className="text-slate-400">{t('imageOriginal')}</span>
                                     )}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -649,16 +651,16 @@ const AllPicture = () => {
                                         <button type="button"
                                             onClick={() => { setRotation(0); setFlipH(false); setFlipV(false); setIsCropping(false); setCropAspect('free'); setCropBox({ x: 10, y: 10, width: 80, height: 80 }); }}
                                             className="rounded border border-slate-600 px-2.5 py-1.5 hover:bg-white/10">
-                                            Reset
+                                            {t('reset')}
                                         </button>
                                     )}
                                     <button type="button" onClick={handleDownloadEdited}
                                         className="inline-flex items-center gap-1.5 rounded bg-slate-700 px-3 py-1.5 font-medium hover:bg-slate-600">
-                                        <FaDownload /> ទាញយក
+                                        <FaDownload /> {t('download')}
                                     </button>
                                     <button type="button" onClick={handleSaveNewVersion} disabled={savingNewVersion}
                                         className="inline-flex items-center gap-1.5 rounded bg-emerald-600 px-3.5 py-1.5 font-semibold text-white shadow hover:bg-emerald-700 disabled:opacity-50">
-                                        {savingNewVersion ? <><FaSyncAlt className="animate-spin" /> រក្សា...</> : <><FaSave /> រក្សាទុក</>}
+                                        {savingNewVersion ? <><FaSyncAlt className="animate-spin" /> {t('saving')}</> : <><FaSave /> {t('save')}</>}
                                     </button>
                                 </div>
                             </div>
@@ -667,33 +669,33 @@ const AllPicture = () => {
                         {/* RIGHT ASIDE: METADATA */}
                         <aside className="max-h-[48vh] w-full shrink-0 overflow-y-auto border-t border-slate-200 p-4 lg:max-h-[90vh] lg:w-[340px] lg:border-l lg:border-t-0 space-y-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-base font-bold text-slate-800">ព័ត៌មានរូបភាព</h2>
-                                <button type="button" onClick={() => setActiveImage(null)} className="rounded p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><FaTimes /></button>
+                                <h2 className="text-base font-bold text-slate-800">{t('imageInformation')}</h2>
+                                <button type="button" onClick={() => setActiveImage(null)} aria-label={t('close')} className="rounded p-2 text-slate-500 hover:bg-slate-100 lg:hidden"><FaTimes /></button>
                             </div>
 
                             {/* Location / Usage Card */}
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 space-y-3">
                                 <div className="flex items-center gap-2 font-bold text-xs text-emerald-800 uppercase tracking-wide border-b border-emerald-200/80 pb-2">
                                     <FaMapMarkerAlt className="text-emerald-600 text-sm" />
-                                    <span>ទីតាំង & ព័ត៌មានប្រើប្រាស់</span>
+                                    <span>{t('imageLocationUsage')}</span>
                                 </div>
                                 <div className="space-y-2.5 text-xs">
                                     {/* Category */}
                                     <div>
-                                        <span className="font-semibold text-slate-500 text-[11px] block">ប្រភេទ / Category:</span>
+                                        <span className="font-semibold text-slate-500 text-[11px] block">{t('imageCategory')}:</span>
                                         <span className={`mt-1 inline-block px-2 py-0.5 rounded text-[11px] font-bold ${catColor(activeImage.category)}`}>
-                                            {CATEGORY_LABELS[activeImage.category]?.label || activeImage.category}
+                                            {CATEGORY_LABELS[activeImage.category] ? t(CATEGORY_LABELS[activeImage.category].labelKey) : activeImage.category}
                                         </span>
                                     </div>
                                     {/* Entity */}
                                     <div>
-                                        <span className="font-semibold text-slate-500 text-[11px] block">ភ្ជាប់ទៅ / Entity:</span>
+                                        <span className="font-semibold text-slate-500 text-[11px] block">{t('imageEntity')}:</span>
                                         <p className="font-semibold text-slate-800 mt-0.5">{activeImage.entityName || '—'}</p>
                                     </div>
                                     {/* Field */}
                                     {activeImage.field && (
                                         <div>
-                                            <span className="font-semibold text-slate-500 text-[11px] block">មុខងារ / Field:</span>
+                                            <span className="font-semibold text-slate-500 text-[11px] block">{t('imageField')}:</span>
                                             <p className="text-slate-700 mt-0.5">{activeImage.field}</p>
                                         </div>
                                     )}
@@ -704,22 +706,22 @@ const AllPicture = () => {
                                             className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-semibold underline text-[11px]"
                                         >
                                             <FaExternalLinkAlt className="text-[10px]" />
-                                            បើកទំព័រ {activeImage.category}
+                                            {t('imageOpenPage').replace('{page}', CATEGORY_LABELS[activeImage.category] ? t(CATEGORY_LABELS[activeImage.category].labelKey) : activeImage.category)}
                                         </Link>
                                     )}
                                     {/* When */}
                                     <div className="pt-2 border-t border-emerald-100">
                                         <span className="font-semibold text-slate-500 text-[11px] flex items-center gap-1">
-                                            <FaCalendarAlt className="text-[10px] text-slate-400" /> ពេលណា:
+                                            <FaCalendarAlt className="text-[10px] text-slate-400" /> {t('imageWhen')}:
                                         </span>
                                         <p className="text-slate-800 mt-0.5 font-medium">{formatDate(activeImage.usedAt)}</p>
                                     </div>
                                     {/* Who */}
                                     <div className="pt-2 border-t border-emerald-100">
                                         <span className="font-semibold text-slate-500 text-[11px] flex items-center gap-1">
-                                            <FaUser className="text-[10px] text-slate-400" /> អ្នកណា:
+                                            <FaUser className="text-[10px] text-slate-400" /> {t('imageWho')}:
                                         </span>
-                                        <p className="text-slate-800 mt-0.5 font-medium">{activeImage.usedBy || 'Staff'}</p>
+                                        <p className="text-slate-800 mt-0.5 font-medium">{activeImage.usedBy || t('staff')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -727,26 +729,26 @@ const AllPicture = () => {
                             {/* Storage Type & Info */}
                             <div className="space-y-2 text-xs">
                                 <div className="border-b border-slate-100 pb-2">
-                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Storage Type</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('imageStorageType')}</p>
                                     {activeImage.storageType === 'cloudinary'
-                                        ? <p className="font-medium text-sky-700">☁️ Cloudinary CDN</p>
-                                        : <p className="font-medium text-emerald-700">🗄️ MongoDB Base64</p>
+                                        ? <p className="font-medium text-sky-700">☁️ {t('imageCloudinaryCdn')}</p>
+                                        : <p className="font-medium text-emerald-700">🗄️ {t('imageMongoBase64')}</p>
                                     }
                                 </div>
                                 {activeImage.storageType === 'base64' && (
                                     <div className="border-b border-slate-100 pb-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">ទំហំ (Approximate)</p>
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('imageApproximateSize')}</p>
                                         <p className="break-all font-medium text-slate-700">{Math.round(activeImage.src.length * 0.75 / 1024)} KB</p>
                                     </div>
                                 )}
                                 {activeImage.storageType === 'cloudinary' && activeImage.format && (
                                     <div className="border-b border-slate-100 pb-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Dimensions & Size</p>
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('imageDimensionsAndSize')}</p>
                                         <p className="font-medium text-slate-700">{activeImage.width}×{activeImage.height} · {activeImage.bytes ? Math.round(activeImage.bytes / 1024) + ' KB' : '—'}</p>
                                     </div>
                                 )}
                                 <div className="border-b border-slate-100 pb-2">
-                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Format</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('imageFormat')}</p>
                                     <p className="font-medium text-slate-700">
                                         {activeImage.storageType === 'cloudinary'
                                             ? (activeImage.format || '—')
@@ -760,11 +762,11 @@ const AllPicture = () => {
                             <div className="pt-2 grid grid-cols-2 gap-2">
                                 <button type="button" onClick={() => copyImgData(activeImage)}
                                     className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50">
-                                    <FaRegCopy /> Copy Info
+                                    <FaRegCopy /> {t('copyInfo')}
                                 </button>
                                 <button type="button" onClick={() => downloadImage(activeImage)}
                                     className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-50">
-                                    <FaDownload /> Download
+                                    <FaDownload /> {t('download')}
                                 </button>
                                 {canDelete && activeImage.storageType === 'cloudinary' && (
                                     <button
@@ -772,7 +774,7 @@ const AllPicture = () => {
                                         onClick={() => deleteCloudinaryImage(activeImage)}
                                         className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
                                     >
-                                        <FaTrashAlt /> លុបចេញពី Cloudinary
+                                        <FaTrashAlt /> {t('imageDeleteFromCloudinary')}
                                     </button>
                                 )}
                             </div>

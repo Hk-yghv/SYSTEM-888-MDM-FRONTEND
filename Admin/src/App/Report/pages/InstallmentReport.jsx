@@ -110,53 +110,53 @@ const InstallmentReport = () => {
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Transactions', accessor: 'totalTransactions' },
-                { header: 'Total Collected ($)', cell: (r) => `$${(r.totalCollected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Unique Customers', accessor: 'uniqueCustomersCount' },
-                { header: 'Avg Payment ($)', cell: (r) => `$${(r.totalTransactions || 0) > 0 ? ((r.totalCollected || 0) / r.totalTransactions).toFixed(2) : '0.00'}` }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalTransactions'), accessor: 'totalTransactions' },
+                { header: t('totalCollected'), cell: (r) => `$${(r.totalCollected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: t('uniqueCustomers'), accessor: 'uniqueCustomersCount' },
+                { header: t('averagePayment'), cell: (r) => `$${(r.totalTransactions || 0) > 0 ? ((r.totalCollected || 0) / r.totalTransactions).toFixed(2) : '0.00'}` }
             ];
             const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToExcel('Installment Payments — Summary Table', summaryColumns, excelData, user?.brand || '');
+            return exportToExcel(t('installmentPaymentsSummaryTable'), summaryColumns, excelData, user?.brand || '');
         }
 
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer', accessor: 'customerName' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Brand', accessor: 'brand' },
-            { header: 'Paid Amount ($)', cell: (r) => `$${r.amount || 0}` },
-            { header: 'Paid Date', accessor: 'paidDate' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('customerName'), accessor: 'customerName' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('brand'), accessor: 'brand' },
+            { header: t('paidAmountLabel'), cell: (r) => `$${r.amount || 0}` },
+            { header: t('paidDate'), accessor: 'paidDate' }
         ];
-        exportToExcel('Installment Payment Report', columns, allData, user?.brand || '');
+        exportToExcel(t('installmentPaymentReport'), columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async (orientation = 'portrait') => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Transactions', accessor: 'totalTransactions' },
-                { header: 'Total Collected ($)', cell: (r) => `$${(r.totalCollected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Unique Customers', accessor: 'uniqueCustomersCount' },
-                { header: 'Avg Payment ($)', cell: (r) => `$${(r.totalTransactions || 0) > 0 ? ((r.totalCollected || 0) / r.totalTransactions).toFixed(2) : '0.00'}` }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalTransactions'), accessor: 'totalTransactions' },
+                { header: t('totalCollected'), cell: (r) => `$${(r.totalCollected || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: t('uniqueCustomers'), accessor: 'uniqueCustomersCount' },
+                { header: t('averagePayment'), cell: (r) => `$${(r.totalTransactions || 0) > 0 ? ((r.totalCollected || 0) / r.totalTransactions).toFixed(2) : '0.00'}` }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToPDF('Installment Payments — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
+            return exportToPDF(t('installmentPaymentsSummaryTable'), summaryColumns, pdfData, user?.brand || '', pdfOrientation);
         }
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer', accessor: 'customerName' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Paid Amount ($)', cell: (r) => `$${r.amount || 0}` },
-            { header: 'Paid Date', accessor: 'paidDate' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('customerName'), accessor: 'customerName' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('paidAmountLabel'), cell: (r) => `$${r.amount || 0}` },
+            { header: t('paidDate'), accessor: 'paidDate' }
         ];
-        exportToPDF('Installment Payment Report', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF(t('installmentPaymentReport'), columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Calculate brand-level summary from full payment data
@@ -279,7 +279,7 @@ const InstallmentReport = () => {
                                 <FaWallet />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Transactions</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalTransactions')}</p>
                                 <h3 className="text-lg font-black text-slate-900 mt-0.5">{kpi.totalTransactions.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -289,7 +289,7 @@ const InstallmentReport = () => {
                                 <FaDollarSign />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Revenue Collected ($)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalRevenueCollected')}</p>
                                 <h3 className="text-lg font-black text-blue-700 mt-0.5">${kpi.totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -299,7 +299,7 @@ const InstallmentReport = () => {
                                 <FaMoneyBillWave />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Avg Payment per Tx ($)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('averagePaymentPerTransaction')}</p>
                                 <h3 className="text-lg font-black text-indigo-700 mt-0.5">${kpi.avgPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -309,7 +309,7 @@ const InstallmentReport = () => {
                                 <FaUsers />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Unique Paying Customers</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('uniquePayingCustomers')}</p>
                                 <h3 className="text-lg font-black text-amber-700 mt-0.5">{kpi.uniqueCustomers.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -318,11 +318,11 @@ const InstallmentReport = () => {
                     {/* Line Chart Component */}
                     <LineChart
                         title={t('installmentTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួនលើកការតម្រង និងតម្លៃសរុបប្រចាំថ្ងៃ/ខែ"
+                        subtitle={t('installmentReportTrendDescription')}
                         data={chartTrendData}
                         series={[
-                            { key: 'txCount', label: 'ចំនួនលើកការតម្រង', color: '#6366f1', isCurrency: false },
-                            { key: 'totalAmount', label: 'តម្លៃសរុប ($)', color: '#10b981', isCurrency: true }
+                            { key: 'txCount', label: t('transactionCount'), color: '#6366f1', isCurrency: false },
+                            { key: 'totalAmount', label: t('totalAmount'), color: '#10b981', isCurrency: true }
                         ]}
                     />
 
@@ -352,7 +352,7 @@ const InstallmentReport = () => {
                         <div className="p-5 bg-white rounded-[5px] border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between">
                             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                                 <MdOutlineBarChart className="text-blue-600 text-lg" />
-                                <span>Revenue Collection Progress per Brand</span>
+                                <span>{t('revenueCollectionProgressPerBrand')}</span>
                             </h3>
                             <div className="space-y-3 overflow-y-auto max-h-52">
                                 {summaryBreakdown.rows.map(r => {
@@ -404,20 +404,20 @@ const InstallmentReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-1 text-center'>No</th>
-                                <th className='px-4 py-1'>Customer</th>
-                                <th className='px-4 py-1'>Model</th>
-                                <th className='px-4 py-1'>Serial Number</th>
-                                <th className='px-4 py-1 text-center'>Paid Amount</th>
-                                <th className='px-4 py-1'>Method</th>
-                                <th className='px-4 py-1'>Paid Date</th>
+                                <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                <th className='px-4 py-1'>{t('customerLabel')}</th>
+                                <th className='px-4 py-1'>{t('model')}</th>
+                                <th className='px-4 py-1'>{t('serialNumber')}</th>
+                                <th className='px-4 py-1 text-center'>{t('paidAmountLabel')}</th>
+                                <th className='px-4 py-1'>{t('paymentMethod')}</th>
+                                <th className='px-4 py-1'>{t('paidDate')}</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
-                                <tr><td colSpan={7} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                                <tr><td colSpan={7} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                             ) : visibleDataList.length === 0 ? (
-                                <tr><td colSpan={7} className="text-center py-8 text-slate-500 italic">No payment transaction records found.</td></tr>
+                                <tr><td colSpan={7} className="text-center py-8 text-slate-500 italic">{t('noPaymentTransactionRecords')}</td></tr>
                             ) : (
                                 visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/40 transition-colors'>
@@ -445,18 +445,18 @@ const InstallmentReport = () => {
                             <MdTableChart className="text-emerald-600 text-xl" />
                             <span>{t('summaryTable')}</span>
                         </h3>
-                        <p className="text-xs text-slate-500 font-medium">ចំនួន Transaction ទឹកប្រាក់ប្រមូលបាន និងចំនួនអតិថិជនអ្នកបង់ប្រាក់</p>
+                        <p className="text-xs text-slate-500 font-medium">{t('installmentReportSummaryDescription')}</p>
                     </div>
                     <div className='w-full overflow-x-auto rounded-[5px] border border-slate-200 table-container'>
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-emerald-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-1 text-center'>No</th>
-                                    <th className='px-3.5 py-1'>Brand Domain</th>
-                                    <th className='px-3.5 py-1 text-center'>Total Transactions</th>
-                                    <th className='px-3.5 py-1 text-right text-emerald-200'>Total Revenue Collected ($)</th>
-                                    <th className='px-3.5 py-1 text-center'>Unique Paying Customers</th>
-                                    <th className='px-3.5 py-1 text-right'>Avg Payment ($)</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-3.5 py-1'>{t('brandDomain')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('totalTransactions')}</th>
+                                    <th className='px-3.5 py-1 text-right text-emerald-200'>{t('totalRevenueCollected')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('uniquePayingCustomers')}</th>
+                                    <th className='px-3.5 py-1 text-right'>{t('averagePayment')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
@@ -479,7 +479,7 @@ const InstallmentReport = () => {
 
                                 {/* Grand Total Row */}
                                 <tr className="bg-emerald-100/80 border-t-2 border-emerald-400 font-black text-emerald-950">
-                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">{t('totalLabel')}</td>
                                     <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-emerald-950">
                                         {summaryBreakdown.grandTotal.brand}
                                     </td>

@@ -61,20 +61,20 @@ const UnlockWallpaper = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>Unlocked Date & Time</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('unlockedDateTime')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Performed By</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('performedBy')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
-                            <tr><td colSpan={7} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                            <tr><td colSpan={7} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                         ) : logs.length === 0 ? (
-                            <tr><td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No wallpaper unlocking activity recorded yet.</td></tr>
+                            <tr><td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">{t('noWallpaperUnlockingActivity')}</td></tr>
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>

@@ -124,6 +124,7 @@ const getStatusBadgeClass = (status) => {
 };
 
 const CopyButton = ({ text }) => {
+    const { t } = useLanguage();
     const [copied, setCopied] = useState(false);
     if (!text) return null;
     const handleCopy = (e) => {
@@ -135,7 +136,7 @@ const CopyButton = ({ text }) => {
     return (
         <button
             onClick={handleCopy}
-            title={copied ? "Copied!" : "Copy"}
+            title={copied ? t('copied') : t('auditCopy')}
             className="text-slate-400 hover:text-emerald-600 transition-colors p-1 cursor-pointer"
         >
             {copied ? <FaCheck className="text-emerald-600 text-xs" /> : <FaCopy className="text-xs" />}
@@ -417,7 +418,7 @@ const AuditTelegram = () => {
     const handleOpenAuditModal = (row) => {
         const isLocallyLocked = localStorage.getItem(`telegram_audit_submitted_${selectedDate}`) === 'true';
         if (isSubmitted || isLocallyLocked) {
-            alert('ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!');
+            alert(t('auditLockedAlert'));
             return;
         }
         setAuditModalItem(row);
@@ -443,7 +444,7 @@ const AuditTelegram = () => {
         e?.preventDefault();
         const isLocallyLocked = localStorage.getItem(`telegram_audit_submitted_${selectedDate}`) === 'true';
         if (isSubmitted || isLocallyLocked) {
-            alert('ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!');
+            alert(t('auditLockedAlert'));
             return;
         }
         if (!auditModalItem) return;
@@ -454,7 +455,7 @@ const AuditTelegram = () => {
         }
 
         if (!finalStatus) {
-            alert('សូមជ្រើសរើស ឬបញ្ចូល Status Account ជាមុនសិន!');
+            alert(t('auditStatusRequiredAlert'));
             return;
         }
 
@@ -501,11 +502,11 @@ const AuditTelegram = () => {
                 }
                 setAuditModalItem(null);
             } else {
-                alert('បរាជ័យក្នុងការរក្សាទុក Audit: ' + (data.error || 'Server Error'));
+                alert(`${t('auditSaveFailed')}${data.error || t('auditServerError')}`);
             }
         } catch (err) {
             console.error('Error saving audit log:', err);
-            alert('មានបញ្ហាតភ្ជាប់ទៅកាន់ Server!');
+            alert(t('networkError'));
         } finally {
             setSavingAudit(false);
         }
@@ -515,7 +516,7 @@ const AuditTelegram = () => {
     const handleOpenContactModal = (row) => {
         setOpenMenuId(null);
         if (row.hasContactInfo && !isAdmin) {
-            alert('Contact នេះបានរក្សាទុករួចហើយ (ជាប់រហូត)! មានតែ Admin ធំ (Super Admin) ទេទើបអាចចូលទៅកែប្រែបាន។');
+            alert(t('auditContactAdminOnly'));
             return;
         }
         setContactModalItem(row);
@@ -532,7 +533,7 @@ const AuditTelegram = () => {
         if (!contactModalItem) return;
 
         if (contactModalItem.hasContactInfo && !isAdmin) {
-            alert('អ្នកមិនមានសិទ្ធិកែប្រែ Contact នេះទេ! មានតែ Admin ធំទេទើបអាចកែប្រែបាន។');
+            alert(t('auditContactEditDenied'));
             return;
         }
 
@@ -574,11 +575,11 @@ const AuditTelegram = () => {
                 setContactModalItem(null);
                 fetchAuditState(selectedDate);
             } else {
-                alert('បរាជ័យក្នុងការរក្សាទុក Contact: ' + (data.error || 'Server error'));
+                alert(`${t('auditContactSaveFailed')}${data.error || t('auditServerError')}`);
             }
         } catch (err) {
             console.error('Error saving contact:', err);
-            alert('មានបញ្ហាតភ្ជាប់ទៅកាន់ Server!');
+            alert(t('networkError'));
         } finally {
             setSavingContact(false);
         }
@@ -612,7 +613,7 @@ const AuditTelegram = () => {
         if (!logItem.auditDate) return;
         setJumpConfirmModal({
             targetDate: logItem.auditDate,
-            customerName: historyModalItem?.customerName || logItem.customerName || 'អតិថិជននេះ'
+            customerName: historyModalItem?.customerName || logItem.customerName || ''
         });
     };
 
@@ -647,14 +648,14 @@ const AuditTelegram = () => {
                     localStorage.setItem(`telegram_audit_submitted_${selectedDate}`, 'true');
                 } catch {}
                 setConfirmSubmitModal(false);
-                alert(data.message || `បាន Submit និងចាក់សោរទិន្នន័យសម្រាប់ថ្ងៃ ${selectedDate} ដោយជោគជ័យ!`);
+                alert(data.message || `${t('auditSubmitSuccess')}${selectedDate}!`);
                 fetchAuditState(selectedDate);
             } else {
-                alert('បរាជ័យក្នុងការ Submit: ' + (data.error || 'Server error'));
+                alert(`${t('auditSubmitFailed')}${data.error || t('auditServerError')}`);
             }
         } catch (err) {
             console.error('Error submitting daily audit:', err);
-            alert('មានបញ្ហាតភ្ជាប់ទៅកាន់ Server!');
+            alert(t('networkError'));
         } finally {
             setSubmittingDaily(false);
         }
@@ -670,13 +671,13 @@ const AuditTelegram = () => {
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Audit Telegram</h1>
+                            <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{t('auditTelegram')}</h1>
                             <span className="px-2 py-0.5 rounded-[5px] text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                Activate Sync
+                                {t('auditActivateSync')}
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                            គ្រប់គ្រង និងតាមដានសវនកម្មគណនី Telegram ប្រចាំថ្ងៃរបស់អតិថិជន
+                            {t('auditTelegramDescription')}
                         </p>
                     </div>
                 </div>
@@ -686,7 +687,7 @@ const AuditTelegram = () => {
                     {/* Date Picker (Auto defaults to Today) */}
                     <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-[5px] border border-slate-300">
                         <FaCalendarAlt className="text-emerald-600 text-sm" />
-                        <span className="text-xs font-bold text-slate-600">ថ្ងៃ Audit:</span>
+                        <span className="text-xs font-bold text-slate-600">{t('auditDate')}:</span>
                         <input
                             type="date"
                             value={selectedDate}
@@ -701,7 +702,7 @@ const AuditTelegram = () => {
                                 onClick={() => setSelectedDate(todayStr)}
                                 className="ml-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-[5px] transition-colors"
                             >
-                                ថ្ងៃនេះ
+                                {t('today')}
                             </button>
                         )}
                     </div>
@@ -710,12 +711,12 @@ const AuditTelegram = () => {
                     {isSubmitted ? (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold shadow-2xs">
                             <FaLock size={12} />
-                            <span>បាន Submit រួចរាល់ (Locked)</span>
+                            <span>{t('auditSubmittedLocked')}</span>
                         </div>
                     ) : (
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold shadow-2xs">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>កំពុងដំណើរការ (Editable)</span>
+                            <span>{t('auditInProgressEditable')}</span>
                         </div>
                     )}
 
@@ -733,14 +734,14 @@ const AuditTelegram = () => {
                         ) : (
                             <FaCheckCircle className="text-sm" />
                         )}
-                        <span>{isSubmitted ? 'បាន Submit រួចហើយ' : 'Submit Daily Audit'}</span>
+                        <span>{isSubmitted ? t('auditAlreadySubmitted') : t('auditSubmitDaily')}</span>
                     </button>
 
                     {/* Refresh Button */}
                     <button
                         onClick={() => fetchAuditState(selectedDate)}
                         disabled={reloading}
-                        title="Reload"
+                        title={t('reload')}
                         className="p-2.5 rounded-[5px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs cursor-pointer transition-colors"
                     >
                         <FaSync className={`text-sm ${reloading ? 'animate-spin text-emerald-600' : ''}`} />
@@ -751,33 +752,33 @@ const AuditTelegram = () => {
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
-                    <p className="text-xs font-bold text-slate-500">អតិថិជនសរុប</p>
+                    <p className="text-xs font-bold text-slate-500">{t('auditTotalCustomers')}</p>
                     <p className="text-xl font-black text-slate-800 mt-1">{totalItems}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-blue-200 shadow-2xs bg-blue-50/25">
                     <p className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-blue-500 shadow-xs shadow-blue-500/50"></span>
-                        បាន Audit
+                        {t('auditCompleted')}
                     </p>
                     <p className="text-xl font-black text-blue-700 mt-1">{auditedCount}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-rose-200 shadow-2xs bg-rose-50/25">
                     <p className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-rose-500 shadow-xs shadow-rose-500/50"></span>
-                        នៅសល់មិនទាន់ Audit
+                        {t('pending')}
                     </p>
                     <p className="text-xl font-black text-rose-700 mt-1">{pendingCount}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
-                    <p className="text-xs font-bold text-slate-500">ស្ថានភាពថ្ងៃ {selectedDate}</p>
+                    <p className="text-xs font-bold text-slate-500">{t('auditDayStatus')} {selectedDate}</p>
                     <p className="text-sm font-bold mt-1.5">
                         {isSubmitted ? (
                             <span className="text-rose-600 font-extrabold flex items-center gap-1">
-                                <FaLock size={12} /> Locked (11:59PM)
+                                <FaLock size={12} /> {t('auditLockedUntil')}
                             </span>
                         ) : (
                             <span className="text-emerald-600 font-extrabold flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Open for Audit
+                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span> {t('auditOpenForAudit')}
                             </span>
                         )}
                     </p>
@@ -792,7 +793,7 @@ const AuditTelegram = () => {
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
                             type="text"
-                            placeholder="ស្វែងរកឈ្មោះ, Contract iid, Username, លេខទូរស័ព្ទ..."
+                            placeholder={t('auditSearchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => {
                                 setSearchTerm(e.target.value);
@@ -821,9 +822,9 @@ const AuditTelegram = () => {
                             }}
                             className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-[5px] px-2.5 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer"
                         >
-                            <option value="All">ស្ថានភាពទាំងអស់ (All)</option>
-                            <option value="Audited">🔵 បាន Audit រួចរាល់ (បន្ទាត់ខៀវ)</option>
-                            <option value="Pending">🔴 នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)</option>
+                            <option value="All">{t('auditAllStatuses')}</option>
+                            <option value="Audited">🔵 {t('auditCompletedFilter')}</option>
+                            <option value="Pending">🔴 {t('auditPendingFilter')}</option>
                             {availableStatuses.map(st => (
                                 <option key={st} value={st}>{st}</option>
                             ))}
@@ -833,7 +834,7 @@ const AuditTelegram = () => {
 
                 {/* Items Per Page */}
                 <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
-                    <span>បង្ហាញ:</span>
+                    <span>{t('show')}:</span>
                     <select
                         value={itemsPerPage}
                         onChange={(e) => {
@@ -858,18 +859,18 @@ const AuditTelegram = () => {
                         <thead>
                             <tr className="text-slate-700 font-black tracking-wider uppercase text-[11px]">
                                 <th className="px-3.5 py-3 text-center w-12 bg-slate-100/90 border-b border-slate-200 first:rounded-l-[5px]">#</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">ឈ្មោះអតិថិជន</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">Contract iid</th>
-                                <th className="px-3.5 py-3 text-right bg-slate-100/90 border-b border-slate-200">Amount</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Contact Name</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Username</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Phone number</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200 whitespace-nowrap">Status Audit</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">Status Account</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Account Activity</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">Note Audit</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">ថ្ងៃ Audit</th>
-                                <th className="px-3.5 py-3 text-center w-28 bg-slate-100/90 border-b border-slate-200 last:rounded-r-[5px]">Action</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('customerName')}</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">{t('contract')}</th>
+                                <th className="px-3.5 py-3 text-right bg-slate-100/90 border-b border-slate-200">{t('amount')}</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('auditContactName')}</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('username')}</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('phone')}</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200 whitespace-nowrap">{t('auditStatusAudit')}</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">{t('accountStatus')}</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('auditAccountActivity')}</th>
+                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('auditNote')}</th>
+                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">{t('auditDate')}</th>
+                                <th className="px-3.5 py-3 text-center w-28 bg-slate-100/90 border-b border-slate-200 last:rounded-r-[5px]">{t('actionLabel')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -879,10 +880,10 @@ const AuditTelegram = () => {
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center gap-2">
                                                 <FaSpinner className="animate-spin text-2xl text-emerald-600" />
-                                                <span>កំពុងទាញយកទិន្នន័យពី Activate...</span>
+                                                <span>{t('auditLoadingActivate')}</span>
                                             </div>
                                         ) : (
-                                            'មិនមានទិន្នន័យអតិថិជនត្រូវបានរកឃើញឡើយ'
+                                            t('auditNoCustomers')
                                         )}
                                     </td>
                                 </tr>
@@ -907,7 +908,7 @@ const AuditTelegram = () => {
                                                             ? 'bg-blue-500 shadow-xs shadow-blue-500/50'
                                                             : 'bg-rose-500 shadow-xs shadow-rose-500/50 animate-pulse'
                                                             }`}
-                                                        title={row.isAudited ? 'បាន Audit រួចរាល់ (បន្ទាត់ខៀវ)' : 'នៅសល់មិនទាន់ Audit (បន្ទាត់ក្រហម)'}
+                                                        title={row.isAudited ? t('auditCompletedFilter') : t('auditPendingFilter')}
                                                     ></span>
                                                     <span className={row.isAudited ? 'text-blue-900 font-black' : 'text-rose-900 font-bold'}>{rowNum}</span>
                                                 </div>
@@ -968,12 +969,12 @@ const AuditTelegram = () => {
                                                 {row.isAudited ? (
                                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-300 shadow-2xs">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                                                        <span>បាន Audit</span>
+                                                        <span>{t('auditCompleted')}</span>
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                                                        <span>មិនទាន់ Audit</span>
+                                                        <span>{t('auditNotCompleted')}</span>
                                                     </span>
                                                 )}
                                             </td>
@@ -991,16 +992,16 @@ const AuditTelegram = () => {
                                                                 ? 'cursor-not-allowed opacity-75'
                                                                 : 'cursor-pointer hover:border-emerald-300 hover:text-emerald-700'
                                                         }`}
-                                                        title={`ស្ថានភាពពីមុន: ${row.previousStatusAccount} (${row.previousAuditDate || ''})`}
+                                                        title={`${t('auditPreviousStatus')}: ${row.previousStatusAccount} (${row.previousAuditDate || ''})`}
                                                         onClick={() => {
                                                             if (isSubmitted) {
-                                                                alert('ទិន្នន័យសម្រាប់ថ្ងៃនេះត្រូវបាន Submit និងចាក់សោររួចហើយ មិនអាចកែប្រែបានទៀតទេ!');
+                                                                alert(t('auditLockedAlert'));
                                                                 return;
                                                             }
                                                             handleOpenAuditModal(row);
                                                         }}
                                                     >
-                                                        {row.previousStatusAccount} <span className="text-[9px] text-slate-400 font-normal">(ពីមុន)</span>
+                                                        {row.previousStatusAccount} <span className="text-[9px] text-slate-400 font-normal">({t('auditPrevious')})</span>
                                                     </span>
                                                 ) : (
                                                     <span className="text-slate-300 text-[11px] font-medium">—</span>
@@ -1035,7 +1036,7 @@ const AuditTelegram = () => {
                                                     <button
                                                         onClick={() => handleOpenAuditModal(row)}
                                                         disabled={isSubmitted}
-                                                        title={isSubmitted ? "Locked (Submitted)" : "Audit ទិន្នន័យ"}
+                                                        title={isSubmitted ? t('auditSubmittedLocked') : t('auditRecord')}
                                                         className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${isSubmitted
                                                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                                             : row.isAudited
@@ -1053,7 +1054,7 @@ const AuditTelegram = () => {
                                                                 e.stopPropagation();
                                                                 setOpenMenuId(isRowMenuOpen ? null : row.rawContractId);
                                                             }}
-                                                            title="Menu"
+                                                            title={t('auditMenu')}
                                                             className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
                                                         >
                                                             <AiOutlineMenu size={14} />
@@ -1068,7 +1069,7 @@ const AuditTelegram = () => {
                                                                     className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                 >
                                                                     <FaHistory className="text-emerald-600" />
-                                                                    <span>Activity log</span>
+                                                                    <span>{t('activityHistory')}</span>
                                                                 </button>
 
                                                                 {/* Add Contact (When empty) / Edit Contact (Admin ធំ Only) / Contact Locked */}
@@ -1078,7 +1079,7 @@ const AuditTelegram = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaUserPlus className="text-indigo-600" />
-                                                                        <span>Add Contact</span>
+                                                                        <span>{t('auditAddContact')}</span>
                                                                     </button>
                                                                 ) : isAdmin ? (
                                                                     <button
@@ -1086,15 +1087,15 @@ const AuditTelegram = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaUserEdit className="text-amber-600" />
-                                                                        <span>Edit Contact (Admin)</span>
+                                                                        <span>{t('auditEditContactAdmin')}</span>
                                                                     </button>
                                                                 ) : (
                                                                     <div
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-[5px] flex items-center gap-2 cursor-not-allowed select-none"
-                                                                        title="Contact បានរក្សាទុកជាប់រហូត (មានតែ Admin ធំទេទើបអាចកែប្រែបាន)"
+                                                                        title={t('auditContactAdminOnly')}
                                                                     >
                                                                         <FaLock className="text-slate-400" size={12} />
-                                                                        <span>Contact Locked</span>
+                                                                        <span>{t('auditContactLocked')}</span>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1114,9 +1115,9 @@ const AuditTelegram = () => {
                 {totalItems > 0 && (
                     <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 font-semibold">
                         <div>
-                            បង្ហាញពី <span className="font-bold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> ដល់{' '}
-                            <span className="font-bold text-slate-900">{Math.min(currentPage * itemsPerPage, totalItems)}</span> នៃ{' '}
-                            <span className="font-bold text-slate-900">{totalItems}</span> ជួរ
+                            {t('auditShowing')} <span className="font-bold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> {t('auditTo')}{' '}
+                            <span className="font-bold text-slate-900">{Math.min(currentPage * itemsPerPage, totalItems)}</span> {t('auditOf')}{' '}
+                            <span className="font-bold text-slate-900">{totalItems}</span> {t('records')}
                         </div>
 
                         <div className="flex items-center gap-1.5">
@@ -1125,7 +1126,7 @@ const AuditTelegram = () => {
                                 disabled={currentPage === 1}
                                 className="px-3 py-1.5 rounded-[5px] border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-bold"
                             >
-                                ថយក្រោយ
+                                {t('previousPage')}
                             </button>
                             <span className="px-3 py-1.5 font-bold text-slate-800">
                                 {currentPage} / {totalPages}
@@ -1135,7 +1136,7 @@ const AuditTelegram = () => {
                                 disabled={currentPage === totalPages}
                                 className="px-3 py-1.5 rounded-[5px] border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer font-bold"
                             >
-                                បន្ទាប់
+                                {t('nextPage')}
                             </button>
                         </div>
                     </div>
@@ -1153,8 +1154,8 @@ const AuditTelegram = () => {
                             <div className="flex items-center gap-2.5">
                                 <FaEdit size={18} />
                                 <div>
-                                    <h3 className="font-black text-sm tracking-tight">Audit Telegram Account</h3>
-                                    <p className="text-[11px] text-emerald-100 font-medium">កាលបរិច្ឆេទ: {selectedDate}</p>
+                                    <h3 className="font-black text-sm tracking-tight">{t('auditTelegramAccount')}</h3>
+                                    <p className="text-[11px] text-emerald-100 font-medium">{t('date')}: {selectedDate}</p>
                                 </div>
                             </div>
                             <button
@@ -1168,11 +1169,11 @@ const AuditTelegram = () => {
                         {/* Customer Information Preview */}
                         <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-semibold">
                             <div>
-                                <span className="text-slate-500">ឈ្មោះអតិថិជន: </span>
+                                <span className="text-slate-500">{t('customerName')}: </span>
                                 <span className="font-black text-slate-800">{auditModalItem.customerName}</span>
                             </div>
                             <div>
-                                <span className="text-slate-500">Contract iid: </span>
+                                <span className="text-slate-500">{t('contract')}: </span>
                                 <span className="font-mono font-bold text-indigo-700">{auditModalItem.contractIid}</span>
                             </div>
                         </div>
@@ -1183,7 +1184,7 @@ const AuditTelegram = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="block text-xs font-bold text-slate-700">
-                                        Status Account <span className="text-rose-500">*</span>
+                                        {t('accountStatus')} <span className="text-rose-500">*</span>
                                     </label>
                                     {!auditModalItem.statusAccount && auditModalItem.previousStatusAccount && (
                                         <button
@@ -1207,10 +1208,10 @@ const AuditTelegram = () => {
                                                     }));
                                                 }
                                             }}
-                                            title="ចុចដើម្បីជ្រើសរើសស្ថានភាពពីមុននេះ"
+                                            title={t('auditUsePreviousStatus')}
                                             className="text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-2 py-0.5 rounded border border-emerald-300 transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
                                         >
-                                            <span>📋 យកពីមុន: {auditModalItem.previousStatusAccount} {auditModalItem.previousAuditDate ? `(${auditModalItem.previousAuditDate})` : ''}</span>
+                                            <span>📋 {t('auditUsePrevious')}: {auditModalItem.previousStatusAccount} {auditModalItem.previousAuditDate ? `(${auditModalItem.previousAuditDate})` : ''}</span>
                                         </button>
                                     )}
                                 </div>
@@ -1229,18 +1230,18 @@ const AuditTelegram = () => {
                                             }}
                                             className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
                                         >
-                                            <option value="">-- ជ្រើសរើស Status Account --</option>
+                                            <option value="">-- {t('auditSelectStatusAccount')} --</option>
                                             {availableStatuses.map(st => (
                                                 <option key={st} value={st}>{st}</option>
                                             ))}
-                                            <option value="__CUSTOM__">✏️ + បញ្ចូលស្ថានភាពថ្មី (Custom Status)</option>
+                                            <option value="__CUSTOM__">✏️ + {t('auditEnterCustomStatus')}</option>
                                         </select>
 
                                         {auditForm.isCustomStatus && (
                                             <div className="mt-2">
                                                 <input
                                                     type="text"
-                                                    placeholder="បញ្ចូល Status Account ថ្មី..."
+                                                    placeholder={t('auditEnterNewStatusPlaceholder')}
                                                     value={auditForm.customStatus}
                                                     onChange={(e) => setAuditForm(prev => ({ ...prev, customStatus: e.target.value }))}
                                                     required
@@ -1254,7 +1255,7 @@ const AuditTelegram = () => {
                                     /* If no statuses entered before, directly show input to type */
                                     <input
                                         type="text"
-                                        placeholder="បញ្ចូល Status Account..."
+                                        placeholder={t('auditEnterStatusPlaceholder')}
                                         value={auditForm.customStatus || auditForm.statusAccount}
                                         onChange={(e) => setAuditForm(prev => ({
                                             ...prev,
@@ -1273,18 +1274,18 @@ const AuditTelegram = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="block text-xs font-bold text-slate-700">
-                                        Account Activity
+                                        {t('auditAccountActivity')}
                                     </label>
                                     {!isStatusFilled && (
                                         <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                                            🔒 ត្រូវបំពេញ Status Account សិន
+                                            🔒 {t('auditStatusRequired')}
                                         </span>
                                     )}
                                 </div>
                                 <textarea
                                     rows={3}
                                     disabled={!isStatusFilled}
-                                    placeholder={!isStatusFilled ? "សូមជ្រើសរើស ឬបញ្ចូល Status Account ជាមុនសិន..." : "បញ្ចូលសកម្មភាពគណនី Telegram..."}
+                                    placeholder={!isStatusFilled ? t('auditStatusRequiredPlaceholder') : t('auditEnterActivityPlaceholder')}
                                     value={auditForm.accountActivity}
                                     onChange={(e) => setAuditForm(prev => ({ ...prev, accountActivity: e.target.value }))}
                                     className={`w-full text-xs font-medium rounded-[5px] p-2.5 transition-all ${!isStatusFilled
@@ -1298,18 +1299,18 @@ const AuditTelegram = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="block text-xs font-bold text-slate-700">
-                                        Note Audit
+                                        {t('auditNote')}
                                     </label>
                                     {!isStatusFilled && (
                                         <span className="text-[10px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                                            🔒 ត្រូវបំពេញ Status Account សិន
+                                            🔒 {t('auditStatusRequired')}
                                         </span>
                                     )}
                                 </div>
                                 <textarea
                                     rows={3}
                                     disabled={!isStatusFilled}
-                                    placeholder={!isStatusFilled ? "សូមជ្រើសរើស ឬបញ្ចូល Status Account ជាមុនសិន..." : "កំណត់សម្គាល់បន្ថែមពីសវនកម្ម..."}
+                                    placeholder={!isStatusFilled ? t('auditStatusRequiredPlaceholder') : t('auditEnterNotePlaceholder')}
                                     value={auditForm.noteAudit}
                                     onChange={(e) => setAuditForm(prev => ({ ...prev, noteAudit: e.target.value }))}
                                     className={`w-full text-xs font-medium rounded-[5px] p-2.5 transition-all ${!isStatusFilled
@@ -1326,7 +1327,7 @@ const AuditTelegram = () => {
                                     onClick={() => setAuditModalItem(null)}
                                     className="px-4 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                                 >
-                                    Cancel
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
@@ -1337,7 +1338,7 @@ const AuditTelegram = () => {
                                         }`}
                                 >
                                     {savingAudit ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
-                                    <span>Audit</span>
+                                    <span>{t('audit')}</span>
                                 </button>
                             </div>
                         </form>
@@ -1361,11 +1362,11 @@ const AuditTelegram = () => {
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h3 className="font-black text-sm tracking-tight">
-                                            {contactModalItem.hasContactInfo ? 'Edit Contact Info (Admin ធំ)' : 'Add Contact Info'}
+                                            {contactModalItem.hasContactInfo ? t('auditEditContactInfoAdmin') : t('auditAddContactInfo')}
                                         </h3>
                                         {contactModalItem.hasContactInfo && (
                                             <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-400 text-amber-950 uppercase">
-                                                Admin ធំ
+                                                {t('auditSuperAdmin')}
                                             </span>
                                         )}
                                     </div>
@@ -1385,11 +1386,11 @@ const AuditTelegram = () => {
                             {contactModalItem.hasContactInfo ? (
                                 <p className="text-amber-800 font-semibold flex items-center gap-1.5">
                                     <FaLock size={11} className="text-amber-600" />
-                                    <span>Contact នេះជាប់លើឈ្មោះអតិថិជននេះរួចរាល់ហើយ មានតែ Admin ធំទេទើបអាចកែប្រែបាន។</span>
+                                    <span>{t('auditContactAdminOnly')}</span>
                                 </p>
                             ) : (
                                 <p className="text-slate-600">
-                                    💡 ពេល Add Contact ហើយ ព័ត៌មាននឹង<strong className="text-indigo-700">ជាប់លើឈ្មោះអតិថិជននេះរហូត</strong> (មិនបាច់បញ្ចូលរាល់ថ្ងៃទេ) ហើយមានតែ Admin ធំទេទើបអាចកែប្រែបាន។
+                                    💡 {t('auditContactPersistence')}
                                 </p>
                             )}
                         </div>
@@ -1398,11 +1399,11 @@ const AuditTelegram = () => {
                         <form onSubmit={handleSaveContact} className="p-5 space-y-3.5">
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Contact Name Customer
+                                    {t('auditContactName')}
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="បញ្ចូលឈ្មោះអ្នកទំនាក់ទំនង..."
+                                    placeholder={t('auditEnterContactNamePlaceholder')}
                                     value={contactForm.contactName}
                                     onChange={(e) => setContactForm(prev => ({ ...prev, contactName: e.target.value }))}
                                     className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-[5px] px-3 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
@@ -1411,7 +1412,7 @@ const AuditTelegram = () => {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Username (Telegram)
+                                    {t('auditTelegramUsername')}
                                 </label>
                                 <input
                                     type="text"
@@ -1424,7 +1425,7 @@ const AuditTelegram = () => {
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Phone number
+                                    {t('phone')}
                                 </label>
                                 <input
                                     type="text"
@@ -1441,7 +1442,7 @@ const AuditTelegram = () => {
                                     onClick={() => setContactModalItem(null)}
                                     className="px-4 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                                 >
-                                    Cancel
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
@@ -1452,7 +1453,7 @@ const AuditTelegram = () => {
                                         }`}
                                 >
                                     {savingContact ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
-                                    <span>{contactModalItem.hasContactInfo ? 'កែប្រែ Contact' : 'រក្សាទុក Contact'}</span>
+                                    <span>{contactModalItem.hasContactInfo ? t('auditEditContact') : t('auditSaveContact')}</span>
                                 </button>
                             </div>
                         </form>
@@ -1471,7 +1472,7 @@ const AuditTelegram = () => {
                             <div className="flex items-center gap-2.5">
                                 <FaHistory size={18} className="text-emerald-400" />
                                 <div>
-                                    <h3 className="font-black text-sm tracking-tight">Activity Log History</h3>
+                                    <h3 className="font-black text-sm tracking-tight">{t('activityHistory')}</h3>
                                     <p className="text-[11px] text-slate-300 font-medium">
                                         {historyModalItem.customerName} ({historyModalItem.contractIid})
                                     </p>
@@ -1487,9 +1488,9 @@ const AuditTelegram = () => {
 
                         {/* Instruction info */}
                         <div className="px-4 py-2 bg-emerald-50 border-b border-emerald-200 text-xs text-emerald-800 font-bold flex items-center justify-between">
-                            <span>💡 ចុចលើជួរកាតណាមួយ ដើម្បីស្វែងរកឈ្មោះ និងនាំទៅកាន់ថ្ងៃ Audit នោះ</span>
+                            <span>💡 {t('auditHistoryCardHint')}</span>
                             <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded-[5px] border border-emerald-300">
-                                {historyLogs.length} Records
+                                {historyLogs.length} {t('records')}
                             </span>
                         </div>
 
@@ -1498,11 +1499,11 @@ const AuditTelegram = () => {
                             {loadingHistory ? (
                                 <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
                                     <FaSpinner className="animate-spin text-2xl text-emerald-600" />
-                                    <span className="text-xs font-semibold">កំពុងទាញយកប្រវត្តិ Activity log...</span>
+                                    <span className="text-xs font-semibold">{t('auditLoadingHistory')}</span>
                                 </div>
                             ) : historyLogs.length === 0 ? (
                                 <div className="py-12 text-center text-slate-400 text-xs font-medium">
-                                    មិនទាន់មានប្រវត្តិ Audit សម្រាប់អតិថិជននេះពីមុនមកទេ
+                                    {t('auditNoHistory')}
                                 </div>
                             ) : (
                                 historyLogs.map((log, index) => (
@@ -1531,7 +1532,7 @@ const AuditTelegram = () => {
                                                     </span>
                                                 )}
                                                 <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                                    ទៅកាន់ថ្ងៃនេះ <FaArrowRight size={10} />
+                                                    {t('auditGoToDate')} <FaArrowRight size={10} />
                                                 </span>
                                             </div>
                                         </div>
@@ -1539,7 +1540,7 @@ const AuditTelegram = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                             <div>
                                                 <span className="text-[11px] font-bold text-slate-400 block mb-0.5">
-                                                    Account Activity:
+                                                    {t('auditAccountActivity')}:
                                                 </span>
                                                 <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
                                                     {log.accountActivity || '—'}
@@ -1548,7 +1549,7 @@ const AuditTelegram = () => {
 
                                             <div>
                                                 <span className="text-[11px] font-bold text-slate-400 block mb-0.5">
-                                                    Note Audit:
+                                                    {t('auditNote')}:
                                                 </span>
                                                 <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
                                                     {log.noteAudit || '—'}
@@ -1558,8 +1559,8 @@ const AuditTelegram = () => {
 
                                         {log.auditedBy && (
                                             <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
-                                                <span>Audited by: <strong className="text-slate-600">{log.auditedBy}</strong></span>
-                                                {log.contractIid && <span>IID: {log.contractIid}</span>}
+                                                <span>{t('auditAuditedBy')}: <strong className="text-slate-600">{log.auditedBy}</strong></span>
+                                                {log.contractIid && <span>{t('contract')}: {log.contractIid}</span>}
                                             </div>
                                         )}
                                     </div>
@@ -1573,7 +1574,7 @@ const AuditTelegram = () => {
                                 onClick={() => setHistoryModalItem(null)}
                                 className="px-5 py-1.5 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
-                                បិទ (Close)
+                                {t('close')}
                             </button>
                         </div>
                     </div>
@@ -1590,10 +1591,10 @@ const AuditTelegram = () => {
                             <FaCalendarAlt size={20} />
                         </div>
                         <div className="text-center space-y-1">
-                            <h4 className="text-base font-black text-slate-800">បញ្ជាក់ការផ្លាស់ប្តូរកាលបរិច្ឆេទ</h4>
+                            <h4 className="text-base font-black text-slate-800">{t('auditConfirmDateChange')}</h4>
                             <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                                តើអ្នកចង់ទៅកាន់កាលបរិច្ឆេទ Audit <strong>{jumpConfirmModal.targetDate}</strong> របស់អតិថិជន{' '}
-                                <strong>"{jumpConfirmModal.customerName}"</strong> មែនទេ?
+                                {t('auditJumpToDatePrompt')} <strong>{jumpConfirmModal.targetDate}</strong> {t('auditForCustomer')}{' '}
+                                <strong>"{jumpConfirmModal.customerName || t('auditThisCustomer')}"</strong>?
                             </p>
                         </div>
                         <div className="flex items-center justify-center gap-3 pt-2">
@@ -1601,13 +1602,13 @@ const AuditTelegram = () => {
                                 onClick={() => setJumpConfirmModal(null)}
                                 className="px-5 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={confirmJumpToDate}
                                 className="px-6 py-2 rounded-[5px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
                             >
-                                យល់ព្រមទៅកាន់ថ្ងៃនេះ
+                                {t('auditGoToDate')}
                             </button>
                         </div>
                     </div>
@@ -1625,14 +1626,14 @@ const AuditTelegram = () => {
                         </div>
                         <div className="text-center space-y-2">
                             <h4 className="text-base font-black text-slate-800">
-                                បញ្ជាក់ការ Submit Daily Audit
+                                {t('auditConfirmDailySubmit')}
                             </h4>
                             <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                                តើអ្នកពិតជាចង់ Submit ទិន្នន័យ Audit សម្រាប់ថ្ងៃ{' '}
-                                <strong className="text-rose-600 font-black">{selectedDate}</strong> មែនទេ?
+                                {t('auditSubmitConfirmPrompt')}{' '}
+                                <strong className="text-rose-600 font-black">{selectedDate}</strong>?
                             </p>
                             <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-[5px] border border-amber-200 font-bold">
-                                ⚠️ បន្ទាប់ពី Submit រួច ទិន្នន័យសម្រាប់ថ្ងៃនេះនឹងត្រូវបានចាក់សោរ (Locked) ហើយអ្នកនឹងមិនអាចកែប្រែបានទៀតទេ!
+                                ⚠️ {t('auditSubmitLockWarning')}
                             </p>
                         </div>
                         <div className="flex items-center justify-center gap-3 pt-2">
@@ -1641,7 +1642,7 @@ const AuditTelegram = () => {
                                 disabled={submittingDaily}
                                 className="px-5 py-2 rounded-[5px] text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={handleConfirmDailySubmit}
@@ -1649,7 +1650,7 @@ const AuditTelegram = () => {
                                 className="px-6 py-2 rounded-[5px] text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center gap-2"
                             >
                                 {submittingDaily ? <FaSpinner className="animate-spin text-sm" /> : <FaCheck className="text-sm" />}
-                                <span>យល់ព្រម Submit & Lock</span>
+                                <span>{t('auditConfirmSubmitLock')}</span>
                             </button>
                         </div>
                     </div>

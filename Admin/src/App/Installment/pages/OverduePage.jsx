@@ -106,14 +106,14 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
             style={{ position: 'fixed', top: pos.bottom + 4, left, width: dropdownWidth, zIndex: 999999 }}
             className="bg-white border border-slate-200 rounded-[5px] shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}>
-            <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Repayment Actions</div>
+            <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">{t('repaymentActions')}</div>
             <button onClick={() => { onOpenQrModal(item); onClose(); }}
                 className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[6px] flex items-center gap-2 cursor-pointer transition-colors">
-                <MdQrCode2 className="text-emerald-600 text-base flex-shrink-0" /><span>QR Code Payment</span>
+                <MdQrCode2 className="text-emerald-600 text-base flex-shrink-0" /><span>{t('qrCodePayment')}</span>
             </button>
             <button onClick={() => { const idx = activeIdx === -1 ? schedule.length - 1 : Math.max(0, activeIdx); onOpenSchedule(item, idx); onClose(); }}
                 className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[6px] flex items-center gap-2 cursor-pointer transition-colors">
-                <FaDollarSign className="text-red-500 text-sm flex-shrink-0" /><span>Repayment Schedule ($)</span>
+                <FaDollarSign className="text-red-500 text-sm flex-shrink-0" /><span>{t('repaymentScheduleAmount')}</span>
             </button>
             {schedule.length > 0 && (
                 <div className="border-l-2 border-red-200 ml-4 pl-2 space-y-0.5">
@@ -249,7 +249,7 @@ const OverduePage = () => {
             <header className='p-2 w-full border border-red-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-red-500 flex items-center gap-2 flex-wrap'>
-                        <span>Overdue Customers</span>
+                        <span>{t('overdueCustomers')}</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-950 text-red-300 border border-red-800 font-normal">{overdueContracts.length} Records</span>
                         {user?.brand && <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 font-semibold">{user.brand}</span>}
                     </h1>
@@ -257,7 +257,7 @@ const OverduePage = () => {
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
-                        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search name, model, serial..." className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-red-500 w-52 outline-none font-medium shadow-xs" />
+                        <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder={t('activatedSearchPlaceholder')} className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-red-500 w-52 outline-none font-medium shadow-xs" />
                     </div>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                 </div>
@@ -268,26 +268,26 @@ const OverduePage = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-red-50 text-red-800 uppercase tracking-wider border-b border-red-100 sticky top-0 z-10'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>Loan Date</th>
-                            <th className='px-4 py-1'>Customer Name</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Model</th>
-                            <th className='px-4 py-1'>Due Date</th>
-                            <th className='px-4 py-1 text-center'>Late Days</th>
-                            <th className='px-4 py-1 text-right font-mono text-emerald-700'>Total Loan Amount</th>
-                            <th className='px-4 py-1 text-right text-amber-600'>Penalty</th>
-                            <th className='px-4 py-1 text-right text-sky-600'>Scheduled Amount</th>
-                            <th className='px-4 py-1 text-right text-emerald-600 font-extrabold'>Total</th>
-                            <th className='px-4 py-1 text-right text-emerald-700'>Paid Amount</th>
-                            <th className='px-4 py-1'>Comment</th>
-                            <th className='px-4 py-1 text-purple-600'>Paid Date</th>
-                            <th className='px-4 py-1 text-center'>Action</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('inputDate')}</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>{t('dueDateLabel')}</th>
+                            <th className='px-4 py-1 text-center'>{t('lateDays')}</th>
+                            <th className='px-4 py-1 text-right font-mono text-emerald-700'>{t('customerTotalLoanAmount')}</th>
+                            <th className='px-4 py-1 text-right text-amber-600'>{t('penalty')}</th>
+                            <th className='px-4 py-1 text-right text-sky-600'>{t('scheduledAmountLabel')}</th>
+                            <th className='px-4 py-1 text-right text-emerald-600 font-extrabold'>{t('total')}</th>
+                            <th className='px-4 py-1 text-right text-emerald-700'>{t('paidAmountLabel')}</th>
+                            <th className='px-4 py-1'>{t('commentLabel')}</th>
+                            <th className='px-4 py-1 text-purple-600'>{t('paidDate')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actionLabel')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-red-50 font-medium text-slate-800'>
                         {loading ? (
-                            <tr><td colSpan={15} className="text-center py-10 text-red-500 font-semibold">Loading...</td></tr>
+                            <tr><td colSpan={15} className="text-center py-10 text-red-500 font-semibold">{t('loading')}</td></tr>
                         ) : overdueContracts.length === 0 ? (
                             <tr><td colSpan={15} className="text-center py-8 text-slate-500 italic font-medium">{searchTerm ? `No overdue results for "${searchTerm}"` : 'No overdue customers found. All payments are up to date!'}</td></tr>
                         ) : overdueContracts.map((item, idx) => {

@@ -53,6 +53,14 @@ router.get(['/payments/contract/:contractId', '/contract/:contractId'], async (r
 // GET payments
 router.get(['/payments', '/'], async (req, res) => {
     try {
+        const {
+            brand = '',
+            limit = '10',
+            page = '1',
+            dateFrom = '',
+            dateTo = '',
+            search = ''
+        } = req.query;
         const isolation = await resolveUserIsolation(req);
         const requestedBrand = isolation.isMasterAdmin ? (brand || isolation.brand) : isolation.brand;
         const isGetAll = limit === 'all' || req.query.all === 'true';

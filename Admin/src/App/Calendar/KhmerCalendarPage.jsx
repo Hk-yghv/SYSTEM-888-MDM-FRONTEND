@@ -2,13 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getKhmerHolidays, toKhmerLunarDate } from 'khmer-chhankitek-calendar';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { MdChevronLeft, MdChevronRight, MdDeleteOutline, MdEdit, MdEvent } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa';
 
-const WEEKDAYS = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
-const MONTH_NAMES = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 const PAID_STATUSES = new Set(['paid', 'payoff', 'settled']);
-const EVENT_LABELS = { event: 'កម្មវិធី', holiday: 'ថ្ងៃបុណ្យ', note: 'កំណត់ចំណាំ' };
 
 const toDateKey = (date) => {
     const year = date.getFullYear();
@@ -46,7 +44,24 @@ const getIdentityParams = (user) => ({
 
 const KhmerCalendarPage = () => {
     const { API_BASE1, user, hasPermission } = useAuth();
+    const { lang, t } = useLanguage();
     const navigate = useNavigate();
+    const calendarLocale = {
+        km: 'km-KH',
+        en: 'en-US',
+        ja: 'ja-JP',
+        th: 'th-TH',
+        vi: 'vi-VN',
+        zh: 'zh-CN',
+        ko: 'ko-KR',
+        ru: 'ru-RU',
+        la: 'lo-LA'
+    }[lang] || 'km-KH';
+    const weekdays = useMemo(() => {
+        const firstSunday = new Date(2024, 0, 7);
+        return Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(calendarLocale, { weekday: 'short' })
+            .format(new Date(firstSunday.getFullYear(), firstSunday.getMonth(), firstSunday.getDate() + index)));
+    }, [calendarLocale]);
     const [visibleMonth, setVisibleMonth] = useState(() => {
         const now = new Date();
         return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -106,7 +121,7 @@ const KhmerCalendarPage = () => {
                                     requireSchedule: 'true'
                                 });
                                 const response = await fetch(`${API_BASE1}/contracts?${params}`, { headers: requestHeaders });
-                                if (!response.ok) throw new Error('មិនអាចទាញយកកាលវិភាគបង់ប្រាក់បានទេ');
+                                if (!response.ok) throw new Error(t('calendarLoadPaymentsFailed', lang === 'km' ? 'មិនអាចទាញយកកាលវិភាគបង់ប្រាក់បានទេ' : 'Unable to load the payment schedule.'));
                                 const result = await response.json();
                                 allContracts.push(...(Array.isArray(result.data) ? result.data : []));
                                 totalPages = Number(result.totalPages || 1);
@@ -117,7 +132,7 @@ const KhmerCalendarPage = () => {
                     })(),
                     (async () => {
                         const response = await fetch(`${API_BASE1}/calendar-events?${eventParams}`, { headers: requestHeaders });
-                        if (!response.ok) throw new Error(`មិនអាចទាញយក event និង note បានទេ (HTTP ${response.status})`);
+                        if (!response.ok) throw new Error(`${t('calendarLoadEventsFailed', lang === 'km' ? 'មិនអាចទាញយក event និង note បានទេ' : 'Unable to load events and notes.')} (HTTP ${response.status})`);
                         const result = await response.json();
                         return Array.isArray(result.data) ? result.data : [];
                     })()
@@ -127,7 +142,7 @@ const KhmerCalendarPage = () => {
                     setEvents(eventResult);
                 }
             } catch (error) {
-                if (!cancelled) setLoadError(error.message || 'មានបញ្ហាក្នុងការទាញទិន្នន័យ');
+                if (!cancelled) setLoadError(error.message || t('calendarLoadError', lang === 'km' ? 'មានបញ្ហាក្នុងការទាញទិន្នន័យ' : 'There was a problem loading data.'));
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -239,7 +254,7 @@ const KhmerCalendarPage = () => {
                 body: JSON.stringify(body)
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'មិនអាចរក្សាទុកបានទេ');
+            if (!response.ok) throw new Error(result.error || t('calendarSaveFailed', lang === 'km' ? 'មិនអាចរក្សាទុកបានទេ' : 'Unable to save.'));
             setEvents((current) => editingId
                 ? current.map((item) => item._id === editingId ? result.data : item)
                 : [...current, result.data]);
@@ -248,28 +263,33 @@ const KhmerCalendarPage = () => {
             setFormOpen(false);
             setEditingId('');
         } catch (error) {
-            setFormError(error.message || 'មានបញ្ហាក្នុងការរក្សាទុក');
+            setFormError(error.message || t('calendarSaveError', lang === 'km' ? 'មានបញ្ហាក្នុងការរក្សាទុក' : 'There was a problem saving.'));
         } finally {
             setSaving(false);
         }
     };
 
     const handleDeleteEvent = async (eventId) => {
-        if (!window.confirm('តើអ្នកចង់លុបកំណត់ត្រានេះមែនទេ?')) return;
+        if (!window.confirm(t('calendarConfirmDelete', lang === 'km' ? 'តើអ្នកចង់លុបកំណត់ត្រានេះមែនទេ?' : 'Are you sure you want to delete this entry?'))) return;
         try {
             const response = await fetch(`${API_BASE1}/calendar-events/${encodeURIComponent(eventId)}`, {
                 method: 'DELETE',
                 headers: {}
             });
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'មិនអាចលុបបានទេ');
+            if (!response.ok) throw new Error(result.error || t('calendarDeleteFailed', lang === 'km' ? 'មិនអាចលុបបានទេ' : 'Unable to delete.'));
             setEvents((current) => current.filter((item) => item._id !== eventId));
         } catch (error) {
-            setLoadError(error.message || 'មានបញ្ហាក្នុងការលុប');
+            setLoadError(error.message || t('calendarDeleteError', lang === 'km' ? 'មានបញ្ហាក្នុងការលុប' : 'There was a problem deleting the entry.'));
         }
     };
 
-    const monthTitle = `${MONTH_NAMES[visibleMonth.getMonth()]} ${visibleMonth.getFullYear()}`;
+    const monthTitle = new Intl.DateTimeFormat(calendarLocale, { month: 'long', year: 'numeric' }).format(visibleMonth);
+    const eventLabels = {
+        event: t('calendarEvent'),
+        holiday: t('calendarHolidayType'),
+        note: t('note')
+    };
 
     return (
         <main className="min-h-full bg-[var(--app-bg,#f4f6f8)] p-2 sm:p-2 space-y-4">
@@ -278,26 +298,26 @@ const KhmerCalendarPage = () => {
                     <h1 className="mt-1 text-2xl font-bold text-[var(--app-text,#102a2a)]">{monthTitle}</h1>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => moveMonth(-1)} aria-label="ខែមុន" className="h-9 w-9 flex items-center justify-center border border-[var(--app-border,#cbd5e1)] bg-white text-slate-700 hover:bg-emerald-50">
+                    <button type="button" onClick={() => moveMonth(-1)} aria-label={t('calendarPreviousMonth')} className="h-9 w-9 flex items-center justify-center border border-[var(--app-border,#cbd5e1)] bg-white text-slate-700 hover:bg-emerald-50">
                         <MdChevronLeft size={21} />
                     </button>
-                    <button type="button" onClick={() => moveMonth(1)} aria-label="ខែបន្ទាប់" className="h-9 w-9 flex items-center justify-center border border-[var(--app-border,#cbd5e1)] bg-white text-slate-700 hover:bg-emerald-50">
+                    <button type="button" onClick={() => moveMonth(1)} aria-label={t('calendarNextMonth')} className="h-9 w-9 flex items-center justify-center border border-[var(--app-border,#cbd5e1)] bg-white text-slate-700 hover:bg-emerald-50">
                         <MdChevronRight size={21} />
                     </button>
                     <button type="button" onClick={() => { const now = new Date(); setVisibleMonth(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDate(toDateKey(now)); }} className="h-9 border border-emerald-700 bg-emerald-700 px-3 text-xs font-bold text-white hover:bg-emerald-800">
-                        ថ្ងៃនេះ
+                        {t('today')}
                     </button>
                 </div>
             </header>
 
             {loadError && <div role="alert" className="flex items-center justify-between border-l-4 border-rose-500 bg-rose-50 px-3 py-2 text-sm text-rose-800">
-                <span>{loadError}</span><button type="button" onClick={() => setLoadError('')} aria-label="បិទ" className="px-2 font-bold">×</button>
+                <span>{loadError}</span><button type="button" onClick={() => setLoadError('')} aria-label={t('close')} className="px-2 font-bold">×</button>
             </div>}
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <section aria-label="ប្រតិទិនប្រចាំខែ" className="min-w-0 border border-[var(--app-border,#dbe3e8)] bg-[var(--app-card,#fff)]">
+                <section aria-label={t('calendarMonthly')} className="min-w-0 border border-[var(--app-border,#dbe3e8)] bg-[var(--app-card,#fff)]">
                     <div className="grid grid-cols-7 border-b border-[var(--app-border,#dbe3e8)] bg-white text-center text-[10px] font-bold text-black sm:text-xs">
-                        {WEEKDAYS.map((day) => <div key={day} className="py-2.5">{day}</div>)}
+                        {weekdays.map((day) => <div key={day} className="py-2.5">{day}</div>)}
                     </div>
                     <div className="grid grid-cols-7">
                         {calendarDates.map((date) => {
@@ -315,7 +335,7 @@ const KhmerCalendarPage = () => {
                                     key={dateKey}
                                     type="button"
                                     onClick={() => handleSelectDate(date)}
-                                    aria-label={`${dateKey}${dueCount ? `, ${dueCount} due` : ''}`}
+                                    aria-label={`${dateKey}${dueCount ? `, ${dueCount} ${t('calendarDue')}` : ''}`}
                                     aria-pressed={isSelected}
                                     className={`relative min-h-[82px] border-b border-r border-[var(--app-border,#e2e8f0)] p-2 text-left transition-colors sm:min-h-[104px] sm:p-2 ${isSelected ? 'bg-emerald-50 ring-2 ring-inset ring-emerald-600' : 'hover:bg-slate-50'} ${!inMonth ? 'bg-slate-50/70' : ''}`}
                                 >
@@ -327,42 +347,42 @@ const KhmerCalendarPage = () => {
                                     </div>
                                     {lunar && <p className="mt-0.5 truncate text-[9px] leading-4 text-slate-500">{lunar.khmerMonth}</p>}
                                     <div className="mt-1 flex flex-wrap gap-1">
-                                        {dueCount > 0 && <span className="inline-flex items-center gap-1 bg-sky-100 px-1 py-0.5 text-[9px] font-bold text-sky-800"><span className="h-1.5 w-1.5 bg-sky-600" />{dueCount} បង់</span>}
-                                        {(dayHolidays.length > 0 || lunar?.isSilDay) && <span className="h-1.5 w-1.5 bg-rose-500" title={dayHolidays[0]?.nameKm || 'ថ្ងៃសីល'} />}
-                                        {dayEvents.length > 0 && <span className="h-1.5 w-1.5 bg-amber-500" title={`${dayEvents.length} event`} />}
+                                        {dueCount > 0 && <span className="inline-flex items-center gap-1 bg-sky-100 px-1 py-0.5 text-[9px] font-bold text-sky-800"><span className="h-1.5 w-1.5 bg-sky-600" />{dueCount} {t('calendarDue')}</span>}
+                                        {(dayHolidays.length > 0 || lunar?.isSilDay) && <span className="h-1.5 w-1.5 bg-rose-500" title={dayHolidays[0]?.nameKm || t('calendarObservance')} />}
+                                        {dayEvents.length > 0 && <span className="h-1.5 w-1.5 bg-amber-500" title={`${dayEvents.length} ${t('calendarEvent')}`} />}
                                     </div>
                                     {dayHolidays[0] && <p className="mt-1 hidden truncate text-[9px] font-semibold text-rose-700 sm:block">{dayHolidays[0].nameKm}{dayHolidays.length > 1 ? ` +${dayHolidays.length - 1}` : ''}</p>}
-                                    {dueCount > 0 && <p className="hidden truncate text-[9px] font-semibold text-sky-700 sm:block">អតិថិជនត្រូវបង់</p>}
+                                    {dueCount > 0 && <p className="hidden truncate text-[9px] font-semibold text-sky-700 sm:block">{t('calendarCustomerDue')}</p>}
                                 </button>
                             );
                         })}
                     </div>
                     <footer className="flex flex-wrap gap-x-4 gap-y-2 px-3 py-2.5 text-[10px] text-slate-600">
-                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-sky-600" />ថ្ងៃត្រូវបង់</span>
-                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-rose-500" />បុណ្យ / ថ្ងៃសីល</span>
-                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-500" />Event / Note</span>
-                        {loading && <span className="ml-auto text-emerald-700">កំពុងទាញទិន្នន័យ…</span>}
+                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-sky-600" />{t('calendarDue')}</span>
+                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-rose-500" />{t('calendarHoliday')}</span>
+                        <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 bg-amber-500" />{t('calendarEventsAndNotes')}</span>
+                        {loading && <span className="ml-auto text-emerald-700">{t('loading')}</span>}
                     </footer>
                 </section>
 
                 <aside className="min-w-0 border-t-2 border-emerald-800 bg-[var(--app-card,#fff)] p-2 xl:border-t-0 xl:border-l-2">
                     <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
                         <div>
-                            <p className="text-xs font-bold uppercase text-emerald-700">ថ្ងៃដែលបានជ្រើស</p>
+                            <p className="text-xs font-bold uppercase text-emerald-700">{t('calendarSelectedDate')}</p>
                             <h2 className="mt-1 text-lg font-bold text-slate-900">{selectedDateInfo?.gregorianDateText || selectedDate}</h2>
-                            <p className="mt-1 text-xs leading-5 text-slate-600">{selectedDateInfo?.lunarDateText || 'មិនមានទិន្នន័យចន្ទគតិ'}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">{selectedDateInfo?.lunarDateText || t('calendarNoLunarData')}</p>
                         </div>
-                        {canCreate && <button type="button" onClick={startNewEvent} title="បន្ថែមកម្មវិធី ឬកំណត់ចំណាំ" className="flex h-9 w-9 shrink-0 items-center justify-center bg-emerald-700 text-white hover:bg-emerald-800">
+                        {canCreate && <button type="button" onClick={startNewEvent} title={t('calendarAddEvent')} className="flex h-9 w-9 shrink-0 items-center justify-center bg-emerald-700 text-white hover:bg-emerald-800">
                             <FaPlus size={13} />
                         </button>}
                     </div>
 
-                    {selectedDateInfo?.isSilDay && <div className="mt-3 border-l-2 border-rose-500 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">{selectedDateInfo.observanceText || 'ថ្ងៃសីល'}</div>}
+                    {selectedDateInfo?.isSilDay && <div className="mt-3 border-l-2 border-rose-500 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">{selectedDateInfo.observanceText || t('calendarObservance')}</div>}
 
                     <div className="mt-4 space-y-4">
                         <section>
-                            <h3 className="flex items-center justify-between text-xs font-bold text-sky-800"><span>ភ្ញៀវត្រូវបង់</span><span>{selectedDueItems.length}</span></h3>
-                            {selectedDueItems.length === 0 ? <p className="mt-2 text-xs text-slate-500">គ្មានភ្ញៀវត្រូវបង់នៅថ្ងៃនេះ</p> : (
+                            <h3 className="flex items-center justify-between text-xs font-bold text-sky-800"><span>{t('calendarDueCustomers')}</span><span>{selectedDueItems.length}</span></h3>
+                            {selectedDueItems.length === 0 ? <p className="mt-2 text-xs text-slate-500">{t('calendarNoDueToday')}</p> : (
                                 <ul className="mt-2 divide-y divide-slate-200">
                                     {selectedDueItems.map((item) => <li key={item.id} className="py-2.5">
                                         <div className="flex items-start justify-between gap-2">
@@ -389,8 +409,8 @@ const KhmerCalendarPage = () => {
                         </section>
 
                         <section>
-                            <h3 className="text-xs font-bold text-rose-800">ថ្ងៃបុណ្យជាតិ និងថ្ងៃសំខាន់</h3>
-                            {selectedHolidays.length === 0 ? <p className="mt-2 text-xs text-slate-500">មិនមានថ្ងៃបុណ្យជាតិក្នុងថ្ងៃនេះទេ</p> : (
+                            <h3 className="text-xs font-bold text-rose-800">{t('calendarNationalHolidays')}</h3>
+                            {selectedHolidays.length === 0 ? <p className="mt-2 text-xs text-slate-500">{t('calendarNoNationalHoliday')}</p> : (
                                 <ul className="mt-2 space-y-1.5">
                                     {selectedHolidays.map((holiday, index) => <li key={`${holiday.date}-${holiday.nameEn}-${index}`} className="border-l-2 border-rose-400 pl-2.5 text-xs font-semibold text-rose-800">{holiday.nameKm}<span className="mt-0.5 block text-[10px] font-normal text-slate-500">{holiday.nameEn}</span></li>)}
                                 </ul>
@@ -398,19 +418,19 @@ const KhmerCalendarPage = () => {
                         </section>
 
                         <section>
-                            <h3 className="text-xs font-bold text-amber-800">កម្មវិធី និងកំណត់ចំណាំ</h3>
-                            {selectedEvents.length === 0 ? <p className="mt-2 text-xs text-slate-500">មិនទាន់មានកម្មវិធី ឬ Note</p> : (
+                            <h3 className="text-xs font-bold text-amber-800">{t('calendarEventsAndNotes')}</h3>
+                            {selectedEvents.length === 0 ? <p className="mt-2 text-xs text-slate-500">{t('calendarNoEventsOrNotes')}</p> : (
                                 <ul className="mt-2 divide-y divide-slate-200">
                                     {selectedEvents.map((event) => <li key={event._id} className="py-2.5">
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
-                                                <span className="text-[9px] font-bold uppercase text-amber-700">{EVENT_LABELS[event.type] || EVENT_LABELS.event} · {event.visibility === 'private' ? 'Private' : 'Public'}{event.brand ? ` · ${event.brand}` : ''}</span>
+                                                <span className="text-[9px] font-bold uppercase text-amber-700">{eventLabels[event.type] || eventLabels.event} · {t(event.visibility === 'private' ? 'private' : 'public')}{event.brand ? ` · ${event.brand}` : ''}</span>
                                                 <p className="mt-0.5 break-words text-xs font-bold text-slate-900">{event.title}</p>
                                                 {event.note && <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-slate-600">{event.note}</p>}
                                             </div>
                                             <div className="flex shrink-0 gap-1">
-                                                {canEdit && <button type="button" onClick={() => startEditEvent(event)} title="កែប្រែ" className="flex h-7 w-7 items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-800"><MdEdit size={15} /></button>}
-                                                {canDelete && <button type="button" onClick={() => handleDeleteEvent(event._id)} title="លុប" className="flex h-7 w-7 items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-700"><MdDeleteOutline size={17} /></button>}
+                                                {canEdit && <button type="button" onClick={() => startEditEvent(event)} title={t('edit')} className="flex h-7 w-7 items-center justify-center text-slate-500 hover:bg-amber-50 hover:text-amber-800"><MdEdit size={15} /></button>}
+                                                {canDelete && <button type="button" onClick={() => handleDeleteEvent(event._id)} title={t('delete')} className="flex h-7 w-7 items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-700"><MdDeleteOutline size={17} /></button>}
                                             </div>
                                         </div>
                                     </li>)}
@@ -421,23 +441,23 @@ const KhmerCalendarPage = () => {
 
                     {formOpen && <form onSubmit={handleSaveEvent} className="mt-4 space-y-3 border-t border-slate-200 pt-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-900">{editingId ? 'កែប្រែព័ត៌មាន' : 'បន្ថែមព័ត៌មាន'}</h3>
-                            <button type="button" onClick={() => { setFormOpen(false); setEditingId(''); }} className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800">បិទ</button>
+                            <h3 className="text-sm font-bold text-slate-900">{editingId ? t('calendarEditInfo') : t('calendarAddInfo')}</h3>
+                            <button type="button" onClick={() => { setFormOpen(false); setEditingId(''); }} className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800">{t('close')}</button>
                         </div>
-                        <label className="block text-xs font-semibold text-slate-700">កាលបរិច្ឆេទ
+                        <label className="block text-xs font-semibold text-slate-700">{t('date')}
                             <input required type="date" value={form.date} onChange={(e) => setForm((current) => ({ ...current, date: e.target.value }))} className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
                         </label>
-                        <label className="block text-xs font-semibold text-slate-700">ប្រភេទ
+                        <label className="block text-xs font-semibold text-slate-700">{t('type')}
                             <select value={form.type} onChange={(e) => setForm((current) => ({ ...current, type: e.target.value }))} className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600">
-                                <option value="note">កំណត់ចំណាំ</option><option value="event">កម្មវិធី</option><option value="holiday">ថ្ងៃបុណ្យ</option>
+                                <option value="note">{t('note')}</option><option value="event">{t('calendarEvent')}</option><option value="holiday">{t('calendarHolidayType')}</option>
                             </select>
                         </label>
                         <fieldset className="space-y-1.5">
-                            <legend className="text-xs font-semibold text-slate-700">បង្ហាញចំណាំជា</legend>
-                            <div className="grid grid-cols-2 border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label="Note visibility">
+                            <legend className="text-xs font-semibold text-slate-700">{t('calendarNoteVisibility')}</legend>
+                            <div className="grid grid-cols-2 border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label={t('calendarNoteVisibility')}>
                                 {[
-                                    { value: 'public', label: 'Public' },
-                                    { value: 'private', label: 'Private' }
+                                    { value: 'public', label: t('public') },
+                                    { value: 'private', label: t('private') }
                                 ].map((option) => (
                                     <label key={option.value} className={`cursor-pointer px-3 py-2 text-center text-xs font-bold ${form.visibility === option.value ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
                                         <input type="radio" name="calendar-visibility" value={option.value} checked={form.visibility === option.value} onChange={() => setForm((current) => ({ ...current, visibility: option.value }))} className="sr-only" />
@@ -446,18 +466,18 @@ const KhmerCalendarPage = () => {
                                 ))}
                             </div>
                         </fieldset>
-                        <label className="block text-xs font-semibold text-slate-700">ចំណងជើង
-                            <input required maxLength={120} value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder="បញ្ចូលចំណងជើង" className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
+                        <label className="block text-xs font-semibold text-slate-700">{t('calendarTitle')}
+                            <input required maxLength={120} value={form.title} onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))} placeholder={t('calendarTitlePlaceholder')} className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
                         </label>
-                        <label className="block text-xs font-semibold text-slate-700">ព័ត៌មានបន្ថែម
-                            <textarea maxLength={2000} rows={3} value={form.note} onChange={(e) => setForm((current) => ({ ...current, note: e.target.value }))} placeholder="សរសេរ Note..." className="mt-1 w-full resize-y border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
+                        <label className="block text-xs font-semibold text-slate-700">{t('calendarAdditionalInfo')}
+                            <textarea maxLength={2000} rows={3} value={form.note} onChange={(e) => setForm((current) => ({ ...current, note: e.target.value }))} placeholder={t('calendarNotePlaceholder')} className="mt-1 w-full resize-y border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
                         </label>
-                        {isMaster && <label className="block text-xs font-semibold text-slate-700">Brand (ទទេទុកជាព័ត៌មានទូទៅ)
-                            <input maxLength={80} value={form.brand} onChange={(e) => setForm((current) => ({ ...current, brand: e.target.value }))} placeholder="គ្រប់ Brand" className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
+                        {isMaster && <label className="block text-xs font-semibold text-slate-700">{t('brand')} ({t('calendarGeneralInfo')})
+                            <input maxLength={80} value={form.brand} onChange={(e) => setForm((current) => ({ ...current, brand: e.target.value }))} placeholder={t('allBrands')} className="mt-1 w-full border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-emerald-600" />
                         </label>}
                         {formError && <p role="alert" className="text-xs text-rose-700">{formError}</p>}
                         <button type="submit" disabled={saving || (editingId ? !canEdit : !canCreate)} className="w-full bg-emerald-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
-                            {saving ? 'កំពុងរក្សាទុក…' : 'រក្សាទុក'}
+                            {saving ? t('saving') : t('save')}
                         </button>
                     </form>}
                 </aside>

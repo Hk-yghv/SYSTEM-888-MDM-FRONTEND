@@ -504,12 +504,12 @@ const FollowUp2 = () => {
                     setDuplicateData(errData.existingRecord || errData.data);
                     setIsDuplicateModalOpen(true);
                 } else {
-                    alert(errData.message || 'Error saving follow-up 2 record');
+                    alert(errData.message || t('errorSavingFollowUp2Record'));
                 }
             }
         } catch (err) {
             console.error('Save follow up 2 error:', err);
-            alert('Network error while saving follow-up 2');
+            alert(t('networkErrorSavingFollowUp2'));
         } finally {
             setSubmitting(false);
             setUploadingImages(false);
@@ -518,7 +518,7 @@ const FollowUp2 = () => {
 
 
     const handleDelete = async (item) => {
-        if (!window.confirm(`Are you sure you want to delete entry for customer: ${item.customerName}?`)) {
+        if (!window.confirm(`${t('confirmDeleteFollowUp2ForCustomer')} ${item.customerName}?`)) {
             return;
         }
         try {
@@ -528,7 +528,7 @@ const FollowUp2 = () => {
             if (res.ok) {
                 fetchData(page);
             } else {
-                alert('Failed to delete record');
+                alert(t('failedToDeleteRecord'));
             }
         } catch (err) {
             console.error('Delete follow up 2 error:', err);
@@ -672,7 +672,7 @@ const FollowUp2 = () => {
             const items = resJson.data || [];
 
             if (items.length === 0) {
-                alert('No follow up 2 data found in the selected date range to export.');
+                alert(t('noFollowUp2DataInSelectedDateRange'));
                 setIsExporting(false);
                 return;
             }
@@ -690,20 +690,20 @@ const FollowUp2 = () => {
                 { header: t('source'), accessor: (row) => row.source || '' },
                 { header: t('phone'), accessor: (row) => row.phone || '' },
                 {
-                    header: 'ចំនួនស្នើបញ្ចាំ ($)',
+                    header: `${t('requestedAmount')} ($)`,
                     accessor: (row) => row.requestedAmount !== undefined && row.requestedAmount !== ''
                         ? `$${Number(row.requestedAmount || 0).toLocaleString()}`
                         : ''
                 },
-                { header: 'ប្រភេទទ្រព្យបញ្ចាំ', accessor: (row) => row.collateralType || '' },
+                { header: t('collateral'), accessor: (row) => row.collateralType || '' },
                 { header: t('model'), accessor: (row) => row.model || '' },
-                { header: 'អ្នកឆ្លើយតបឆាត', accessor: (row) => row.responder || '' },
-                { header: 'កាលបរិច្ឆេទឆ្នាំ', accessor: (row) => row.date ? row.date.split('T')[0] : '' },
-                { header: 'វាយតម្លៃបានចន្លោះណាដល់ណា', accessor: (row) => row.valuationRange || '' },
-                { header: t('evidencePhotos'), accessor: (row) => (row.isTotalRow ? '' : `${(row.images || []).length} រូប`) },
-                { header: t('status'), accessor: (row) => row.status || '' },
+                { header: t('responder'), accessor: (row) => row.responder || '' },
+                { header: t('date'), accessor: (row) => row.date ? row.date.split('T')[0] : '' },
+                { header: t('valuationRange'), accessor: (row) => row.valuationRange || '' },
+                { header: t('evidencePhotos'), accessor: (row) => (row.isTotalRow ? '' : `${(row.images || []).length} ${t('images')}`) },
+                { header: t('status'), accessor: (row) => row.status === 'ជោគជ័យ' || row.status === 'Success' ? t('success') : row.status === 'បរាជ័យ' || row.status === 'Failed' ? t('failed') : row.status === 'Review' || row.status === 'review' || row.status === 'ពិនិត្យ' || row.status === 'កំពុងពិនិត្យ' ? t('inReview') : row.status || '' },
                 { header: t('note'), accessor: (row) => row.reason || '' },
-                { header: 'Brand', accessor: (row) => row.brand || '' }
+                { header: t('brand'), accessor: (row) => row.brand || '' }
             ];
 
             // Build structured export data with Daily Subtotals and Grand Total
@@ -729,17 +729,17 @@ const FollowUp2 = () => {
                 exportDataWithTotals.push({
                     isTotalRow: true,
                     isDailyTotal: true,
-                    customerName: `សរុបប្រចាំថ្ងៃ (${dStr})`,
-                    source: `ចំនួន: ${dayItems.length} នាក់`,
+                    customerName: `${t('dailyTotal')} (${dStr})`,
+                    source: `${t('total')}: ${dayItems.length}`,
                     phone: '',
                     requestedAmount: dAmount,
                     collateralType: '',
                     responder: '',
                     date: dStr,
-                    valuationRange: `Success: ${dRate}%`,
+                    valuationRange: `${t('success')}: ${dRate}%`,
                     images: [],
-                    status: `ជោគជ័យ: ${dSucc} | បរាជ័យ: ${dFail}`,
-                    reason: `Subtotal for ${dStr}`,
+                    status: `${t('success')}: ${dSucc} | ${t('failed')}: ${dFail}`,
+                    reason: `${t('subtotalFor')} ${dStr}`,
                     brand: ''
                 });
             });
@@ -749,16 +749,16 @@ const FollowUp2 = () => {
                 isTotalRow: true,
                 isGrandTotal: true,
                 customerName: t('grandTotal'),
-                source: `សរុប: ${items.length} នាក់`,
+                source: `${t('total')}: ${items.length}`,
                 phone: '',
                 requestedAmount: totalAmount,
                 collateralType: '',
                 responder: '',
                 date: '',
-                valuationRange: `Success Rate: ${overallRate}%`,
+                valuationRange: `${t('successRate')}: ${overallRate}%`,
                 images: [],
-                status: `ជោគជ័យ: ${totalSucc} | បរាជ័យ: ${totalFail}`,
-                reason: 'Grand Summary Totals',
+                status: `${t('success')}: ${totalSucc} | ${t('failed')}: ${totalFail}`,
+                reason: t('grandSummaryTotals'),
                 brand: ''
             });
 
@@ -773,7 +773,7 @@ const FollowUp2 = () => {
             setIsExportModalOpen(false);
         } catch (err) {
             console.error('Export error:', err);
-            alert('Export failed: ' + err.message);
+            alert(`${t('exportFailed')}: ${err.message}`);
         } finally {
             setIsExporting(false);
         }
@@ -787,7 +787,7 @@ const FollowUp2 = () => {
                 <div>
                     <div>
                         <h1 className="text-xl font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
-                            <span>Follow up 2</span>
+                            <span>{t('followUp2')}</span>
                         </h1>
                     </div>
                 </div>
@@ -798,8 +798,8 @@ const FollowUp2 = () => {
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}
                             onExportPDF={(orientation) => handleOpenExportModal('pdf', orientation)}
-                            excelLabel={t('exportExcel') || 'Export Excel'}
-                            pdfLabel={t('exportPDF') || 'Export PDF'}
+                            excelLabel={t('exportExcel')}
+                            pdfLabel={t('exportPDF')}
                         />
                     )}
 
@@ -809,7 +809,7 @@ const FollowUp2 = () => {
                             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs hover:shadow-md cursor-pointer active:scale-95 ml-auto md:ml-0"
                         >
                             <FaPlusCircle size={15} />
-                            <span>{t('create') || 'Create Entry'}</span>
+                            <span>{t('createEntry')}</span>
                         </button>
                     )}
                 </div>
@@ -820,61 +820,61 @@ const FollowUp2 = () => {
                 {/* Total Records */}
                 <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>កំណត់ត្រាសរុប</span>
+                        <span>{t('totalRecords')}</span>
                         <FaListUl className="text-indigo-500" size={14} />
                     </div>
                     <div className="mt-2 text-2xl font-bold text-[var(--app-text,#0f172a)]">
                         {summary.totalRecords.toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-indigo-600 mt-1 font-medium">Total Inquiries</span>
+                    <span className="text-[11px] text-indigo-600 mt-1 font-medium">{t('inquiredMessages')}</span>
                 </div>
 
                 {/* Total Loan / Pawn Requested */}
                 <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>{t('requestedAmount') || 'សរុបស្នើបញ្ចាំ'}</span>
+                        <span>{t('totalRequestedAmount')}</span>
                         <FaDollarSign className="text-amber-500" size={14} />
                     </div>
                     <div className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">
                         ${(summary.totalRequestedAmount || 0).toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-amber-600/80 mt-1 font-medium">Requested Amount</span>
+                    <span className="text-[11px] text-amber-600/80 mt-1 font-medium">{t('requestedAmount')}</span>
                 </div>
 
                 {/* Total Success */}
                 <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>{t('totalSuccess') || 'សរុបជោគជ័យ'}</span>
+                        <span>{t('totalSuccess')}</span>
                         <FaCheckCircle className="text-emerald-500" size={14} />
                     </div>
                     <div className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                         {summary.totalSuccess.toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-emerald-600/80 mt-1 font-medium">Successful Pawns</span>
+                    <span className="text-[11px] text-emerald-600/80 mt-1 font-medium">{t('successfulPawns')}</span>
                 </div>
 
                 {/* Total Failed */}
                 <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>{t('totalFailed') || 'សរុបបរាជ័យ'}</span>
+                        <span>{t('totalFailed')}</span>
                         <FaTimesCircle className="text-rose-500" size={14} />
                     </div>
                     <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
                         {summary.totalFailed.toLocaleString()}
                     </div>
-                    <span className="text-[11px] text-rose-600/80 mt-1 font-medium">Failed / Cancelled</span>
+                    <span className="text-[11px] text-rose-600/80 mt-1 font-medium">{t('failedCancelled')}</span>
                 </div>
 
                 {/* Success Rate */}
                 <div className="bg-[var(--app-card,#ffffff)] p-2 rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs flex flex-col justify-between col-span-2 sm:col-span-1">
                     <div className="flex items-center justify-between text-[var(--app-text-muted,#64748b)] text-xs font-semibold">
-                        <span>{t('successRate') || 'អត្រាជោគជ័យ'}</span>
+                        <span>{t('successRate')}</span>
                         <FaChartPie className="text-sky-500" size={14} />
                     </div>
                     <div className="mt-2 text-2xl font-bold text-sky-600 dark:text-sky-400">
                         {summary.successRate}%
                     </div>
-                    <span className="text-[11px] text-sky-600/80 mt-1 font-medium">Conversion Rate</span>
+                    <span className="text-[11px] text-sky-600/80 mt-1 font-medium">{t('successRate')}</span>
                 </div>
             </div>
 
@@ -896,7 +896,7 @@ const FollowUp2 = () => {
                         ...(selectedBrand ? { brand: selectedBrand } : {})
                     }}
                     value={searchTerm}
-                    placeholder="ស្វែងរកតាម ឈ្មោះ, Tel, អ្នកឆ្លើយតប, ទ្រព្យ, មូលហេតុ..."
+                    placeholder={t('searchFollowUp2Placeholder')}
                     onChange={(value) => {
                         setSearchTerm(value);
                         setSelectedSearchRecord(null);
@@ -930,10 +930,10 @@ const FollowUp2 = () => {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         className="px-2.5 py-1.5 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                     >
-                        <option value="">ស្ថានភាពទាំងអស់</option>
-                        <option value="ជោគជ័យ">ជោគជ័យ</option>
+                        <option value="">{t('allStatus')}</option>
+                        <option value="ជោគជ័យ">{t('success')}</option>
                         <option value="Review">{t('inReview')}</option>
-                        <option value="បរាជ័យ">បរាជ័យ</option>
+                        <option value="បរាជ័យ">{t('failed')}</option>
                     </select>
                 </div>
 
@@ -946,7 +946,7 @@ const FollowUp2 = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="px-2.5 py-1.5 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
                         >
-                            <option value="">{t('allBranches') || 'All Brands'}</option>
+                            <option value="">{t('allBrandsShort')}</option>
                             {brandsList.map((b, idx) => (
                                 <option key={idx} value={b}>{b}</option>
                             ))}
@@ -961,7 +961,7 @@ const FollowUp2 = () => {
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
                     >
                         <FaFilter size={12} />
-                        <span>{t('filterAuditLogs') || 'Filter'}</span>
+                        <span>{t('filter')}</span>
                     </button>
                     {(searchTerm || filterDate || startDate || endDate || filterStatus || selectedBrand) && (
                         <button
@@ -969,7 +969,7 @@ const FollowUp2 = () => {
                             onClick={handleResetFilters}
                             className="px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition-all cursor-pointer"
                         >
-                            សម្អាត
+                            {t('clear')}
                         </button>
                     )}
                 </div>
@@ -979,17 +979,17 @@ const FollowUp2 = () => {
             <div className="bg-[var(--app-card,#ffffff)] rounded-[5px] border border-[var(--app-border,#e2e8f0)] shadow-xs overflow-hidden flex flex-col">
                 <div className="px-5 py-3.5 bg-slate-50/70 dark:bg-slate-800/40 border-b border-[var(--app-border,#e2e8f0)] flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[var(--app-text,#0f172a)]">បញ្ជីកំណត់ត្រា Follow up 2</span>
+                        <span className="text-xs font-bold text-[var(--app-text,#0f172a)]">{t('followUp2Records')}</span>
                         <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
-                            {total.toLocaleString()} Records
+                            {total.toLocaleString()} {t('records')}
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
                         <ExportDropdown
                             onExportExcel={() => handleOpenExportModal('excel')}
                             onExportPDF={(orientation) => handleOpenExportModal('pdf', orientation)}
-                            excelLabel="Export Excel"
-                            pdfLabel="Export PDF"
+                            excelLabel={t('exportExcel')}
+                            pdfLabel={t('exportPDF')}
                         />
                     </div>
                 </div>
@@ -998,19 +998,19 @@ const FollowUp2 = () => {
                         <thead>
                             <tr className="bg-[var(--app-bg,#f8fafc)] border-b border-[var(--app-border,#e2e8f0)] text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted,#64748b)]">
                                 <th className="py-1 px-3 w-10 text-center">#</th>
-                                <th className="py-1 px-4 min-w-[130px]">ឈ្មោះអតិថិជន</th>
-                                <th className="py-1 px-3 min-w-[90px]">តាមរយៈ</th>
-                                <th className="py-1 px-3 min-w-[100px]">Tel</th>
-                                <th className="py-1 px-3 text-right min-w-[100px]">ចំនួនស្នើបញ្ចាំ</th>
-                                <th className="py-1 px-3 min-w-[120px]">ប្រភេទទ្រព្យ</th>
-                                <th className="py-1 px-3 min-w-[110px]">Model</th>
-                                <th className="py-1 px-3 min-w-[90px] text-center">រូបភាព</th>
-                                <th className="py-1 px-3 min-w-[110px]">អ្នកឆ្លើយតប</th>
-                                <th className="py-1 px-3 min-w-[95px]">កាលបរិច្ឆេទ</th>
-                                <th className="py-1 px-3 min-w-[120px]">វាយតម្លៃបាន</th>
-                                <th className="py-1 px-3 text-center min-w-[90px]">ស្ថានភាព</th>
-                                <th className="py-1 px-4 min-w-[130px]">មូលហេតុ</th>
-                                <th className="py-1 px-3 text-center min-w-[80px]">សកម្មភាព</th>
+                                <th className="py-1 px-4 min-w-[130px]">{t('customerName')}</th>
+                                <th className="py-1 px-3 min-w-[90px]">{t('source')}</th>
+                                <th className="py-1 px-3 min-w-[100px]">{t('phone')}</th>
+                                <th className="py-1 px-3 text-right min-w-[100px]">{t('requestedAmount')}</th>
+                                <th className="py-1 px-3 min-w-[120px]">{t('collateral')}</th>
+                                <th className="py-1 px-3 min-w-[110px]">{t('model')}</th>
+                                <th className="py-1 px-3 min-w-[90px] text-center">{t('images')}</th>
+                                <th className="py-1 px-3 min-w-[110px]">{t('responder')}</th>
+                                <th className="py-1 px-3 min-w-[95px]">{t('date')}</th>
+                                <th className="py-1 px-3 min-w-[120px]">{t('valuation')}</th>
+                                <th className="py-1 px-3 text-center min-w-[90px]">{t('status')}</th>
+                                <th className="py-1 px-4 min-w-[130px]">{t('reason')}</th>
+                                <th className="py-1 px-3 text-center min-w-[80px]">{t('actionLabel')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--app-border,#e2e8f0)] text-xs font-medium text-[var(--app-text,#0f172a)]">
@@ -1026,7 +1026,7 @@ const FollowUp2 = () => {
                             ) : (selectedSearchRecord ? [selectedSearchRecord] : dataList).length === 0 ? (
                                 <tr>
                                     <td colSpan="14" className="py-12 text-center text-slate-400 font-normal">
-                                        មិនមានទិន្នន័យ Follow up 2 នៅឡើយទេ! សូមចុចប៊ូតុង "Create Entry" ដើម្បីបញ្ចូលទិន្នន័យថ្មី។
+                                        {t('noFollowUp2RecordsCreateEntry')}
                                     </td>
                                 </tr>
                             ) : (
@@ -1081,7 +1081,7 @@ const FollowUp2 = () => {
                                                                 <div
                                                                     onClick={() => handleOpenImageViewer(imgList, 0)}
                                                                     className="inline-flex items-center gap-1.5 cursor-pointer group p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                                                                    title="ចុចដើម្បីមើលរូបភាពធំ"
+                                                                    title={t('clickToViewLargerImage')}
                                                                 >
                                                                     <div className="w-8 h-8 rounded-md overflow-hidden border border-indigo-400 shadow-2xs relative flex-shrink-0 bg-slate-100">
                                                                         <img
@@ -1091,11 +1091,11 @@ const FollowUp2 = () => {
                                                                         />
                                                                     </div>
                                                                     <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
-                                                                        {imgList.length} រូប
+                                                                        {imgList.length} {t('images')}
                                                                     </span>
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-slate-300 text-[11px]">គ្មាន</span>
+                                                                <span className="text-slate-300 text-[11px]">{t('noData')}</span>
                                                             )}
                                                         </td>
                                                         <td className="py-1 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -1121,7 +1121,7 @@ const FollowUp2 = () => {
                                                                 ) : (
                                                                     <FaTimesCircle size={10} />
                                                                 )}
-                                                                <span>{item.status || 'ជោគជ័យ'}</span>
+                                                                <span>{item.status === 'ជោគជ័យ' || item.status === 'Success' ? t('success') : item.status === 'បរាជ័យ' || item.status === 'Failed' ? t('failed') : item.status === 'Review' || item.status === 'review' || item.status === 'ពិនិត្យ' || item.status === 'កំពុងពិនិត្យ' ? t('inReview') : item.status || t('success')}</span>
                                                             </span>
                                                         </td>
                                                         <td className="py-1 px-4 text-slate-600 dark:text-slate-400">
@@ -1135,7 +1135,7 @@ const FollowUp2 = () => {
                                                                     <button
                                                                         onClick={() => handleOpenEdit(item)}
                                                                         className="p-2 text-amber-600 hover:bg-amber-500/15 rounded-md transition-all cursor-pointer"
-                                                                        title="កែប្រែ"
+                                                                        title={t('edit')}
                                                                     >
                                                                         <FaEdit size={14} />
                                                                     </button>
@@ -1144,7 +1144,7 @@ const FollowUp2 = () => {
                                                                     <button
                                                                         onClick={() => handleDelete(item)}
                                                                         className="p-2 text-rose-600 hover:bg-rose-500/15 rounded-md transition-all cursor-pointer"
-                                                                        title="លុប"
+                                                                        title={t('delete')}
                                                                     >
                                                                         <FaTrashAlt size={13} />
                                                                     </button>
@@ -1158,7 +1158,7 @@ const FollowUp2 = () => {
                                             {/* Total តាមថ្ងៃ (Daily Subtotal Row) */}
                                             <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-[var(--app-border,#e2e8f0)] text-xs font-semibold">
                                                 <td colSpan="4" className="py-2.5 px-4 text-slate-500">
-                                                    សរុបប្រចាំថ្ងៃ ({group.date})
+                                                    {t('dailyTotal')} ({group.date})
                                                 </td>
                                                 <td className="py-2.5 px-3 text-right font-bold text-amber-600 dark:text-amber-400">
                                                     ${(group.summary.totalAmount || 0).toLocaleString()}
@@ -1167,12 +1167,12 @@ const FollowUp2 = () => {
                                                     colSpan="9"
                                                     className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700 dark:text-slate-300"
                                                 >
-                                                    ជោគជ័យ:{' '}
+                                                    {t('success')}:{' '}
                                                     <span className="text-emerald-600 font-extrabold">
                                                         {group.summary.success}
                                                     </span>
                                                     {' '} &bull; {' '}
-                                                    បរាជ័យ:{' '}
+                                                    {t('failed')}:{' '}
                                                     <span className="text-rose-600 font-extrabold">
                                                         {group.summary.failed}
                                                     </span>
@@ -1211,14 +1211,14 @@ const FollowUp2 = () => {
                                         colSpan="6"
                                         className="py-3.5 px-3 text-right font-semibold text-slate-600 dark:text-slate-300"
                                     >
-                                        ជោគជ័យ:{' '}
+                                        {t('success')}:{' '}
                                         <span className="text-emerald-600 font-bold">
                                             {summary.totalSuccess}
                                         </span>
 
                                         {' '} &bull; {' '}
 
-                                        បរាជ័យ:{' '}
+                                        {t('failed')}:{' '}
                                         <span className="text-rose-600 font-bold">
                                             {summary.totalFailed}
                                         </span>
@@ -1251,7 +1251,7 @@ const FollowUp2 = () => {
                 {/* Pagination */}
                 {!selectedSearchRecord && <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
                     <span className="text-xs text-[var(--app-text-muted,#64748b)]">
-                        បង្ហាញទំព័រ {page} នៃ {Math.ceil(total / LIMIT) || 1} (សរុប {total} កំណត់ត្រា)
+                        {t('page')} {page} {t('auditOf')} {Math.ceil(total / LIMIT) || 1} ({t('total')} {total} {t('records')})
                     </span>
                     <Pagination
                         currentPage={page}
@@ -1270,7 +1270,7 @@ const FollowUp2 = () => {
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border,#e2e8f0)] bg-slate-50 dark:bg-slate-800/50">
                             <h2 className="text-base font-bold text-[var(--app-text,#0f172a)] flex items-center gap-2">
                                 <FaUserTie className="text-indigo-600" size={20} />
-                                <span>{editingItem ? [t('editFollowUp2')]: 'បញ្ចូលទិន្នន័យ Follow up 2 ថ្មី'}</span>
+                                <span>{editingItem ? t('editFollowUp2') : `${t('create')} ${t('followUp2')}`}</span>
                             </h2>
                             <button
                                 onClick={() => setIsFormOpen(false)}
@@ -1287,10 +1287,10 @@ const FollowUp2 = () => {
                                 <div className="p-2 rounded-[5px] bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex items-center justify-between gap-3 animate-in fade-in">
                                     <div>
                                         <p className="text-xs font-bold text-emerald-900">
-                                            ⚡ រកឃើញទិន្នន័យអតិថិជនធ្លាប់បញ្ចូលពីមុន៖ {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
+                                            ⚡ {t('existingCustomerRecordFound')}: {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
                                         </p>
                                         <p className="text-[11px] text-emerald-700">
-                                            តាមរយៈ: {detectedMatch.source || '—'} | ទ្រព្យ: {detectedMatch.collateralType || '—'} | ម៉ូឌែល: {detectedMatch.model || '—'}
+                                            {t('source')}: {detectedMatch.source || '—'} | {t('collateral')}: {detectedMatch.collateralType || '—'} | {t('model')}: {detectedMatch.model || '—'}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -1299,7 +1299,7 @@ const FollowUp2 = () => {
                                             onClick={() => handleAutoFillFromMatch(detectedMatch)}
                                             className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
                                         >
-                                            បំពេញស្វ័យប្រវត្តិ
+                                            {t('autoFill')}
                                         </button>
                                         <button
                                             type="button"
@@ -1316,12 +1316,12 @@ const FollowUp2 = () => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        ឈ្មោះអតិថិជន <span className="text-rose-500">*</span>
+                                        {t('customerName')} <span className="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="text"
                                         required
-                                        placeholder="បញ្ចូលឈ្មោះអតិថិជន..."
+                                        placeholder={t('enterCustomerName')}
                                         value={formData.customerName}
                                         onChange={(e) => handleFieldChange('customerName', e.target.value)}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1334,7 +1334,7 @@ const FollowUp2 = () => {
                                     <input
                                         type="text"
                                         list="sourceList"
-                                        placeholder="ឧ. Facebook, Telegram, Walk-in..."
+                                        placeholder={t('sourceExamplesPlaceholder')}
                                         value={formData.source}
                                         onChange={(e) => handleFieldChange('source', e.target.value)}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1355,7 +1355,7 @@ const FollowUp2 = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="012 345 678..."
+                                        placeholder={t('phone')}
                                         value={formData.phone}
                                         onChange={(e) => handleFieldChange('phone', e.target.value)}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1363,7 +1363,7 @@ const FollowUp2 = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-amber-700 dark:text-amber-400 mb-1.5">
-                                        ចំនួនស្នើបញ្ចាំ ($)
+                                        {t('requestedAmount')} ($)
                                     </label>
                                     <input
                                         type="number"
@@ -1380,12 +1380,12 @@ const FollowUp2 = () => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        ប្រភេទទ្រព្យបញ្ចាំ
+                                        {t('collateral')}
                                     </label>
                                     <input
                                         type="text"
                                         list="collateralList"
-                                        placeholder="ឧ. iPhone 15 Pro Max, Click 160..."
+                                        placeholder={t('collateralExamplesPlaceholder')}
                                         value={formData.collateralType}
                                         onChange={(e) => setFormData(prev => ({ ...prev, collateralType: e.target.value }))}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1399,12 +1399,12 @@ const FollowUp2 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5 flex items-center justify-between">
                                         <span>{t('model')}</span>
-                                        <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Control System</span>
+                                        <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">{t('controlSystem')}</span>
                                     </label>
                                     <input
                                         type="text"
                                         list="modelsDatalistOptions"
-                                        placeholder="ជ្រើសរើស ឬ វាយបញ្ចូល Model..."
+                                        placeholder={t('selectOrTypeModel')}
                                         value={formData.model}
                                         onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1425,7 +1425,7 @@ const FollowUp2 = () => {
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="ឈ្មោះបុគ្គលិកឆ្លើយតប..."
+                                        placeholder={t('responderNamePlaceholder')}
                                         value={formData.responder}
                                         onChange={(e) => setFormData(prev => ({ ...prev, responder: e.target.value }))}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1433,11 +1433,11 @@ const FollowUp2 = () => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        វាយតម្លៃបានចន្លោះណាដល់ណា
+                                        {t('valuationRange')}
                                     </label>
                                     <input
                                         type="text"
-                                        placeholder="ឧ. $300 - $450"
+                                        placeholder={t('valuationRangeExample')}
                                         value={formData.valuationRange}
                                         onChange={(e) => setFormData(prev => ({ ...prev, valuationRange: e.target.value }))}
                                         className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-semibold text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1464,10 +1464,10 @@ const FollowUp2 = () => {
                                 <div className="flex items-center justify-between">
                                     <label className="text-xs font-bold text-[var(--app-text,#334155)] flex items-center gap-1.5">
                                         <FaCamera className="text-indigo-600" size={14} />
-                                        <span>បញ្ចូលរូបភាពទ្រព្យ/ឯកសារ (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>
+                                        <span>{t('uploadCollateralImagesMultiple')}</span>
                                     </label>
                                     <span className="text-[11px] font-semibold text-slate-400">
-                                        {selectedImages.length} រូបភាព
+                                        {selectedImages.length} {t('images')}
                                     </span>
                                 </div>
 
@@ -1476,7 +1476,7 @@ const FollowUp2 = () => {
                                     <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={submitting} />
                                     <label className="flex items-center justify-center gap-2 p-2 bg-[var(--app-card,#ffffff)] hover:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-700 rounded-[5px] cursor-pointer transition-all text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-2xs">
                                         <MdCloudUpload size={18} />
-                                        <span>ចុចទីនេះដើម្បីជ្រើសរើសរូបភាព (អាចជ្រើសរើសបានច្រើនសន្លឹក)</span>
+                                        <span>{t('selectImagesMultiple')}</span>
                                         <input
                                             type="file"
                                             multiple
@@ -1505,13 +1505,13 @@ const FollowUp2 = () => {
                                                     type="button"
                                                     onClick={() => handleRemoveSelectedImage(imgIdx)}
                                                     className="absolute top-1 right-1 p-2 bg-rose-600 text-white rounded-full opacity-80 hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
-                                                    title="លុបរូបភាពនេះ"
+                                                    title={t('removeImage')}
                                                 >
                                                     <FaTimes size={10} />
                                                 </button>
                                                 {imgItem.type === 'file' && (
                                                     <span className="absolute bottom-1 left-1 bg-amber-500 text-white text-[8px] font-bold px-1 rounded shadow-xs">
-                                                        New
+                                                        {t('newBadge')}
                                                     </span>
                                                 )}
                                             </div>
@@ -1523,7 +1523,7 @@ const FollowUp2 = () => {
                             {/* Row 5: ស្ថានភាពជោគជ័យឬបរាជ័យ */}
                             <div>
                                 <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                    ស្ថានភាព (ជោគជ័យ ឬ បរាជ័យ)
+                                    {t('status')} ({t('success')} / {t('failed')})
                                 </label>
                                 <div className="grid grid-cols-3 gap-3">
                                     <button
@@ -1551,7 +1551,7 @@ const FollowUp2 = () => {
                                             }`}
                                     >
                                         <MdOutlineRateReview size={17} />
-                                        <span>Review</span>
+                                        <span>{t('inReview')}</span>
                                     </button>
                                     <button
                                         type="button"
@@ -1574,7 +1574,7 @@ const FollowUp2 = () => {
                                 </label>
                                 <textarea
                                     rows="2"
-                                    placeholder="បញ្ចូលមូលហេតុ ឬចំណាំផ្សេងៗ..."
+                                    placeholder={t('reasonOrNotesPlaceholder')}
                                     value={formData.reason}
                                     onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                                     className="w-full px-3 py-2 bg-[var(--app-bg,#f8fafc)] border border-[var(--app-border,#cbd5e1)] rounded-lg text-xs font-medium text-[var(--app-text,#0f172a)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -1585,7 +1585,7 @@ const FollowUp2 = () => {
                             {(!user?.brand || user?.role === 'Administrator' || user?.isImmutable) && (
                                 <div>
                                     <label className="block text-xs font-bold text-[var(--app-text,#334155)] mb-1.5">
-                                        Brand
+                                        {t('brand')}
                                     </label>
                                     <select
                                         value={formData.brand}
@@ -1606,7 +1606,7 @@ const FollowUp2 = () => {
                                     onClick={() => setIsFormOpen(false)}
                                     className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition-all cursor-pointer"
                                 >
-                                    {t('cancel') || 'Cancel'}
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
@@ -1615,7 +1615,7 @@ const FollowUp2 = () => {
                                 >
                                     {(submitting || uploadingImages) && <MdOutlineSync className="animate-spin" size={14} />}
                                     <span>
-                                        {uploadingImages ? [t('uploadingImage')]: (submitting ? 'កំពុងរក្សាទុក...' : (t('submit') || 'Save'))}
+                                        {uploadingImages ? t('uploadingImage') : (submitting ? t('saving') : t('save'))}
                                     </span>
                                 </button>
                             </div>
@@ -1669,7 +1669,7 @@ const FollowUp2 = () => {
                                             }`}
                                     >
                                         <FaFileExcel size={18} />
-                                        <span>Excel (.xlsx)</span>
+                                        <span>{t('exportExcel')} (.xlsx)</span>
                                     </button>
 
                                     <button
@@ -1681,7 +1681,7 @@ const FollowUp2 = () => {
                                             }`}
                                     >
                                         <MdPictureAsPdf size={19} />
-                                        <span>PDF Report</span>
+                                        <span>{t('exportPDF')}</span>
                                     </button>
                                 </div>
                             </div>
@@ -1700,7 +1700,7 @@ const FollowUp2 = () => {
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-slate-100'
                                             }`}
                                     >
-                                        📅 {t('byDay') || 'ជាថ្ងៃ (ថ្ងៃនេះ)'}
+                                        📅 {t('byDay')}
                                     </button>
 
                                     <button
@@ -1711,7 +1711,7 @@ const FollowUp2 = () => {
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-slate-100'
                                             }`}
                                     >
-                                        🗓️ {t('byWeek') || 'ជាអាទិត្យ (សប្តាហ៍នេះ)'}
+                                        🗓️ {t('byWeek')}
                                     </button>
 
                                     <button
@@ -1722,7 +1722,7 @@ const FollowUp2 = () => {
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-slate-100'
                                             }`}
                                     >
-                                        📆 {t('byMonth') || 'ជាខែ (ខែនេះ)'}
+                                        📆 {t('byMonth')}
                                     </button>
 
                                     <button
@@ -1733,7 +1733,7 @@ const FollowUp2 = () => {
                                             : 'bg-[var(--app-bg,#f8fafc)] border-[var(--app-border,#cbd5e1)] text-[var(--app-text,#334155)] hover:bg-slate-100'
                                             }`}
                                     >
-                                        ⚙️ {t('customRange') || 'Custom Range'}
+                                        ⚙️ {t('customRange')}
                                     </button>
                                 </div>
                             </div>
@@ -1742,7 +1742,7 @@ const FollowUp2 = () => {
                             {exportScope === 'custom' && (
                                 <div className="p-2 bg-indigo-500/5 border border-indigo-500/20 rounded-[5px] space-y-3 animate-in fade-in duration-200">
                                     <div className="text-xs font-bold text-indigo-800 dark:text-indigo-300">
-                                        ជ្រើសរើសពីថ្ងៃណា ដល់ថ្ងៃណា:
+                                        {t('selectDateRange')}:
                                     </div>
                                     <div className="grid grid-cols-2 gap-2.5">
                                         <div>
@@ -1774,7 +1774,7 @@ const FollowUp2 = () => {
                                     <span>{t('summaryTable')}</span>
                                 </p>
                                 <p className="text-[11px] leading-relaxed">
-                                    នៅពេល Export ប្រព័ន្ធនឹងគណនាសរុប (ចំនួនស្នើបញ្ចាំសរុប, ចំនួនជោគជ័យ, ចំនួនបរាជ័យ, Success Rate) នៅពីខាងក្រោមតារាងដោយស្វ័យប្រវត្តិ។
+                                    {t('followUp2ExportTotalsExplanation')}
                                 </p>
                             </div>
                         </div>
@@ -1786,7 +1786,7 @@ const FollowUp2 = () => {
                                 onClick={() => setIsExportModalOpen(false)}
                                 className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition-all cursor-pointer"
                             >
-                                {t('cancel') || 'Cancel'}
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -1803,7 +1803,7 @@ const FollowUp2 = () => {
                                 ) : (
                                     <>
                                         <FaFileDownload size={14} />
-                                        <span>ទាញយករបាយការណ៍ ({exportFormat.toUpperCase()})</span>
+                                        <span>{t('downloadReport')} ({exportFormat.toUpperCase()})</span>
                                     </>
                                 )}
                             </button>
@@ -1822,51 +1822,51 @@ const FollowUp2 = () => {
                                 ⚠️
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">រកឃើញទិន្នន័យដែលបានរក្សាទុករួចហើយ!</h3>
-                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Found existing record with similar data</p>
+                                <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">{t('existingRecordFound')}</h3>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">{t('existingRecordSimilarData')}</p>
                             </div>
                         </div>
 
                         {/* Body — show existing record summary */}
                         <div className="px-5 py-4 space-y-3">
                             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                                ទិន្នន័យខាងក្រោមត្រូវបានរក្សាទុករួចហើយ។ តើអ្នកចង់បញ្ចូលអូតូពីទិន្នន័យនេះ?
+                                {t('existingRecordAutofillPrompt')}
                             </p>
                             <div className="bg-slate-50 dark:bg-slate-800 rounded-[5px] border border-slate-200 dark:border-slate-700 divide-y divide-slate-200 dark:divide-slate-700 text-xs">
                                 {duplicateData.customerName && (
                                     <div className="flex justify-between px-3 py-2">
-                                        <span className="text-slate-500 font-medium">ឈ្មោះ</span>
+                                        <span className="text-slate-500 font-medium">{t('customerName')}</span>
                                         <span className="font-bold text-slate-800 dark:text-slate-200">{duplicateData.customerName}</span>
                                     </div>
                                 )}
                                 {duplicateData.phone && (
                                     <div className="flex justify-between px-3 py-2">
-                                        <span className="text-slate-500 font-medium">ទូរស័ព្ទ</span>
+                                        <span className="text-slate-500 font-medium">{t('phone')}</span>
                                         <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{duplicateData.phone}</span>
                                     </div>
                                 )}
                                 {duplicateData.model && (
                                     <div className="flex justify-between px-3 py-2">
-                                        <span className="text-slate-500 font-medium">Model</span>
+                                        <span className="text-slate-500 font-medium">{t('model')}</span>
                                         <span className="font-bold text-slate-800 dark:text-slate-200">{duplicateData.model}</span>
                                     </div>
                                 )}
                                 {duplicateData.date && (
                                     <div className="flex justify-between px-3 py-2">
-                                        <span className="text-slate-500 font-medium">កាលបរិច្ឆេទ</span>
+                                        <span className="text-slate-500 font-medium">{t('date')}</span>
                                         <span className="font-mono text-slate-700 dark:text-slate-300">{String(duplicateData.date).split('T')[0]}</span>
                                     </div>
                                 )}
                                 {duplicateData.status && (
                                     <div className="flex justify-between px-3 py-2">
-                                        <span className="text-slate-500 font-medium">ស្ថានភាព</span>
-                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{duplicateData.status}</span>
+                                        <span className="text-slate-500 font-medium">{t('status')}</span>
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{duplicateData.status === 'ជោគជ័យ' || duplicateData.status === 'Success' ? t('success') : duplicateData.status === 'បរាជ័យ' || duplicateData.status === 'Failed' ? t('failed') : duplicateData.status === 'Review' || duplicateData.status === 'review' || duplicateData.status === 'ពិនិត្យ' || duplicateData.status === 'កំពុងពិនិត្យ' ? t('inReview') : duplicateData.status}</span>
                                     </div>
                                 )}
                                 {/* Image preview if exists */}
                                 {Array.isArray(duplicateData.images) && duplicateData.images.length > 0 && (
                                     <div className="flex items-center justify-between px-3 py-2">
-                                        <span className="text-slate-500 font-medium">រូបភាព</span>
+                                        <span className="text-slate-500 font-medium">{t('images')}</span>
                                         <div className="flex gap-1">
                                             {duplicateData.images.slice(0, 3).map((img, i) => (
                                                 <img key={i} src={img} alt="" className="w-8 h-8 rounded object-cover border border-slate-300" />
@@ -1879,7 +1879,7 @@ const FollowUp2 = () => {
                                 )}
                             </div>
                             <p className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
-                                ចុច <strong>"បញ្ចូលអូតូ"</strong> ដើម្បីបំពេញ form ដោយស្វ័យប្រវត្តិ (រូបភាពនឹងបញ្ចូលជា URL ដោយមិនបាច់ upload ម្ដងទៀត)
+                                {t('duplicateAutofillImageInfo')}
                             </p>
                         </div>
 
@@ -1889,13 +1889,13 @@ const FollowUp2 = () => {
                                 onClick={() => { setIsDuplicateModalOpen(false); setDuplicateData(null); }}
                                 className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-[5px] text-xs font-bold transition-all cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={handleAutoFillFromDuplicate}
                                 className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-[5px] text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
                             >
-                                បញ្ចូលអូតូ
+                                {t('autoFill')}
                             </button>
                         </div>
                     </div>

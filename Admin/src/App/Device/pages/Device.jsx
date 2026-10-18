@@ -160,17 +160,17 @@ const Device = () => {
     const handleExportExcel = async () => {
         const allData = await fetchAllForExport();
         const data = allData.map((d, idx) => ({
-            'No': idx + 1,
-            'Model': d.model || '',
-            'Version / OS': d.version || '',
-            'Serial Number': d.serialNumber || '',
-            'IMEI 1': formatIMEI(d.imei1),
-            'IMEI 2': formatIMEI(d.imei2),
-            'MEID': d.meid || '',
-            'Color': d.color || '',
-            'Customer Name': d.customerNameEn || '',
-            'Phone Lock Status': d.lockPhoneStatus || 'Unlocked',
-            'Wallpaper Lock Status': d.lockWallpaperStatus || 'Unlocked'
+            [t('no')]: idx + 1,
+            [t('model')]: d.model || '',
+            [t('deviceVersionOs')]: d.version || '',
+            [t('serialNumber')]: d.serialNumber || '',
+            [t('imei1')]: formatIMEI(d.imei1),
+            [t('imei2')]: formatIMEI(d.imei2),
+            [t('deviceMeid')]: d.meid || '',
+            [t('deviceColor')]: d.color || '',
+            [t('customerName')]: d.customerNameEn || '',
+            [t('devicePhoneLockStatus')]: d.lockPhoneStatus === 'Locked' ? t('locked') : d.lockPhoneStatus || t('unlocked'),
+            [t('deviceWallpaperLockStatus')]: d.lockWallpaperStatus === 'Locked' ? t('locked') : d.lockWallpaperStatus || t('unlocked')
         }));
         exportToExcel(data, 'Device_Inventory_Report');
     };
@@ -178,16 +178,16 @@ const Device = () => {
     const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Version', accessor: 'version' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'IMEI 1', cell: (d) => formatIMEI(d.imei1) },
-            { header: 'Customer', accessor: 'customerNameEn' },
-            { header: 'Phone Lock', accessor: 'lockPhoneStatus' },
-            { header: 'Wallpaper Lock', accessor: 'lockWallpaperStatus' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('model'), accessor: 'model' },
+            { header: t('deviceVersionOs'), accessor: 'version' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('imei1'), cell: (d) => formatIMEI(d.imei1) },
+            { header: t('customerName'), accessor: 'customerNameEn' },
+            { header: t('devicePhoneLock'), accessor: 'lockPhoneStatus' },
+            { header: t('deviceWallpaper'), accessor: 'lockWallpaperStatus' }
         ];
-        exportToPDF('Device Inventory Report', columns, allData, user?.brand || '', orientation);
+        exportToPDF(t('deviceInventoryReport'), columns, allData, user?.brand || '', orientation);
     };
 
     return (
@@ -219,7 +219,7 @@ const Device = () => {
                             }}
                             className="px-3 py-2 bg-white border border-purple-300 rounded-[5px] text-xs text-purple-900 font-semibold focus:border-purple-500 outline-none shadow-xs cursor-pointer"
                         >
-                            <option value="">All Brands</option>
+                            <option value="">{t('deviceAllBrands')}</option>
                             {brandsList.map((b, i) => (
                                 <option key={i} value={b}>🏷️ {b}</option>
                             ))}
@@ -236,7 +236,7 @@ const Device = () => {
                             }}
                             className="px-3 py-2 bg-white border border-indigo-300 rounded-[5px] text-xs text-indigo-900 font-semibold focus:border-indigo-500 outline-none shadow-xs cursor-pointer"
                         >
-                            <option value="">All Sub Brands</option>
+                            <option value="">{t('deviceAllSubBrands')}</option>
                             {user.subBrands.map((sb, i) => (
                                 <option key={i} value={sb}>🏢 {sb}</option>
                             ))}
@@ -268,23 +268,23 @@ const Device = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1'>Version / OS</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Sub Brand</th>
+                            <th className='px-4 py-1'>{t('deviceVersionOs')}</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('deviceSubBrand')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1'>IMEI 1</th>
+                            <th className='px-4 py-1'>{t('imei1')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
-                            <th className='px-4 py-1 text-center'>Phone Lock Status</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('devicePhoneLockStatus')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredDevices.length === 0 ? (
                             <tr>
                                 <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
-                                    No devices linked to activated contracts.
+                                    {t('deviceNoActivatedContracts')}
                                 </td>
                             </tr>
                         ) : (
@@ -312,7 +312,7 @@ const Device = () => {
                                     <td className='px-4 py-1 text-center'>
                                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase flex items-center justify-center gap-1.5 w-24 mx-auto ${item.lockPhoneStatus === 'Locked' ? 'bg-red-50 border border-red-300 text-red-700' : 'bg-emerald-50 border border-emerald-300 text-emerald-800'}`}>
                                             {item.lockPhoneStatus === 'Locked' ? <FaLock size={10} /> : <FaUnlock size={10} />}
-                                            {item.lockPhoneStatus || 'Unlocked'}
+                                            {item.lockPhoneStatus === 'Locked' ? t('locked') : item.lockPhoneStatus === 'Unlocked' ? t('unlocked') : item.lockPhoneStatus || t('unlocked')}
                                         </span>
                                     </td>
                                     <td className='px-4 py-1 text-center'>
@@ -322,7 +322,7 @@ const Device = () => {
                                                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 mx-auto cursor-pointer"
                                             >
                                                 <FaMobileAlt />
-                                                <span>Info</span>
+                                                <span>{t('info')}</span>
                                             </button>
                                         ) : (
                                             <span className="text-slate-400 font-mono text-[11px]">—</span>
@@ -391,7 +391,7 @@ const Device = () => {
                                     font-bold
                                     uppercase
                                 ">
-                                                <CopyCell text={selectedDevice.brand || 'Device'} className="text-gray-700 font-bold" />
+                                                <CopyCell text={selectedDevice.brand || t('deviceLabel')} className="text-gray-700 font-bold" />
                                             </span>
 
                                         </div>
@@ -403,7 +403,7 @@ const Device = () => {
                                 mt-1
                                 truncate
                             ">
-                                            Serial: <CopyCell text={selectedDevice.serialNumber} className="text-gray-600 font-mono font-bold" />
+                                            {t('serialNumber')}: <CopyCell text={selectedDevice.serialNumber} className="text-gray-600 font-mono font-bold" />
                                         </p>
 
                                     </div>
@@ -448,7 +448,7 @@ const Device = () => {
                             uppercase
                             tracking-[0.12em]
                         ">
-                                        Hardware Specifications
+                                        {t('deviceHardwareSpecifications')}
                                     </h4>
 
                                     <div className="flex-1 h-px bg-gray-100"></div>
@@ -461,7 +461,7 @@ const Device = () => {
                                     {/* Model */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            Model Name
+                                            {t('model')}
                                         </span>
 
                                         <CopyCell text={selectedDevice.model} className="text-[11px] font-bold text-gray-900 truncate block" />
@@ -471,7 +471,7 @@ const Device = () => {
                                     {/* Version */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            Version / OS
+                                            {t('deviceVersionOs')}
                                         </span>
 
                                         <CopyCell text={selectedDevice.version || '—'} className="text-[11px] font-bold text-violet-600 truncate block" />
@@ -481,7 +481,7 @@ const Device = () => {
                                     {/* Serial */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            Serial Number
+                                            {t('serialNumber')}
                                         </span>
 
                                         <CopyCell text={selectedDevice.serialNumber} className="text-[10px] font-mono font-bold text-emerald-600 truncate block" />
@@ -491,7 +491,7 @@ const Device = () => {
                                     {/* IMEI 1 */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            IMEI 1
+                                            {t('imei1')}
                                         </span>
 
                                         <CopyCell text={formatIMEI(selectedDevice.imei1)} copyValue={selectedDevice.imei1} className="text-[10px] font-mono font-bold text-sky-600 truncate block" />
@@ -501,7 +501,7 @@ const Device = () => {
                                     {/* IMEI 2 */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            IMEI 2
+                                            {t('imei2')}
                                         </span>
 
                                         <CopyCell text={formatIMEI(selectedDevice.imei2)} copyValue={selectedDevice.imei2} className="text-[10px] font-mono font-bold text-sky-600 truncate block" />
@@ -511,7 +511,7 @@ const Device = () => {
                                     {/* MEID */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            MEID
+                                            {t('deviceMeid')}
                                         </span>
 
                                         <CopyCell text={selectedDevice.meid || '—'} className="text-[10px] font-mono font-bold text-fuchsia-600 truncate block" />
@@ -521,7 +521,7 @@ const Device = () => {
                                     {/* Color */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            Color
+                                            {t('deviceColor')}
                                         </span>
 
                                         <CopyCell text={selectedDevice.color || '—'} className="text-[11px] font-bold text-gray-800 truncate block" />
@@ -531,7 +531,7 @@ const Device = () => {
                                     {/* Brand */}
                                     <div className="p-2 bg-white rounded-[5px] border border-gray-200 hover:border-gray-300 transition-colors">
                                         <span className="text-[9px] text-gray-400 block mb-1">
-                                            Brand
+                                            {t('brand')}
                                         </span>
 
                                         <CopyCell text={selectedDevice.brand || '—'} className="text-[11px] font-bold text-indigo-600 truncate block" />
@@ -573,7 +573,7 @@ const Device = () => {
                                 uppercase
                                 tracking-wider
                             ">
-                                            Linked Customer
+                                            {t('deviceLinkedCustomer')}
                                         </h4>
 
                                     </div>
@@ -589,12 +589,12 @@ const Device = () => {
                                     </p>
 
                                     <p className="text-[10px] text-gray-500 font-mono mt-2">
-                                        Phone:
+                                        {t('phone')}:
                                         <CopyCell text={selectedDevice.phone || '—'} className="text-gray-700 ml-1 font-mono font-bold" />
                                     </p>
 
                                     <p className="text-[10px] text-gray-400 font-mono mt-1">
-                                        Contract ID:
+                                        {t('deviceContractId')}:
                                         <CopyCell text={selectedDevice.contractIid || selectedDevice.contractId || '—'} className="text-gray-600 ml-1 font-mono font-bold" />
                                     </p>
 
@@ -629,7 +629,7 @@ const Device = () => {
                                 uppercase
                                 tracking-wider
                             ">
-                                            Security Lock Status
+                                            {t('deviceSecurityLockStatus')}
                                         </h4>
 
                                     </div>
@@ -652,7 +652,7 @@ const Device = () => {
                                     block
                                     mb-1
                                 ">
-                                                Phone Lock
+                                                {t('devicePhoneLock')}
                                             </span>
 
                                             <span className={`
@@ -668,7 +668,7 @@ const Device = () => {
                                                     : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                                                 }
                                 `}>
-                                                {selectedDevice.lockPhoneStatus || 'Unlocked'}
+                                                {selectedDevice.lockPhoneStatus === 'Locked' ? t('locked') : selectedDevice.lockPhoneStatus === 'Unlocked' ? t('unlocked') : selectedDevice.lockPhoneStatus || t('unlocked')}
                                             </span>
 
                                         </div>
@@ -689,7 +689,7 @@ const Device = () => {
                                     block
                                     mb-1
                                 ">
-                                                Wallpaper
+                                                {t('deviceWallpaper')}
                                             </span>
 
                                             <span className={`
@@ -705,7 +705,7 @@ const Device = () => {
                                                     : 'bg-emerald-50 text-emerald-600 border-emerald-200'
                                                 }
                                 `}>
-                                                {selectedDevice.lockWallpaperStatus || 'Unlocked'}
+                                                {selectedDevice.lockWallpaperStatus === 'Locked' ? t('locked') : selectedDevice.lockWallpaperStatus === 'Unlocked' ? t('unlocked') : selectedDevice.lockWallpaperStatus || t('unlocked')}
                                             </span>
 
                                         </div>
@@ -721,14 +721,14 @@ const Device = () => {
                                 <div className="p-2 bg-white border border-indigo-200 rounded-[5px]">
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xs">🔧</span>
-                                        <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Device Actions (Lock / Wallpaper)</h4>
+                                        <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">{t('deviceActionsTitle')}</h4>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2">
                                         {/* Lock Phone */}
                                         <button
                                             disabled={actionLoading}
                                             onClick={async () => {
-                                                if (!window.confirm(`ចង់ Lock Phone លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
+                                                if (!window.confirm(t('deviceConfirmLockPhone').replace('{customer}', selectedDevice.customerNameEn))) return;
                                                 setActionLoading(true);
                                                 try {
                                                     const res = await fetch(`${API_BASE2}/history/device-actions`, {
@@ -746,11 +746,11 @@ const Device = () => {
                                                         setSelectedDevice(null);
                                                         navigate('/history/device-history');
                                                     } else {
-                                                        alert('Failed to create Lock Phone action');
+                                                        alert(t('deviceLockPhoneFailed'));
                                                     }
                                                 } catch (err) {
                                                     console.error('Lock phone action error:', err);
-                                                    alert('Network error');
+                                                    alert(t('networkError'));
                                                 } finally {
                                                     setActionLoading(false);
                                                 }
@@ -758,14 +758,14 @@ const Device = () => {
                                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white rounded-[5px] text-xs font-bold shadow-md shadow-red-600/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <FaLock size={12} />
-                                            <span>Lock Phone</span>
+                                            <span>{t('deviceLockPhone')}</span>
                                         </button>
 
                                         {/* Unlock Phone */}
                                         <button
                                             disabled={actionLoading}
                                             onClick={async () => {
-                                                if (!window.confirm(`ចង់ Unlock Phone លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
+                                                if (!window.confirm(t('deviceConfirmUnlockPhone').replace('{customer}', selectedDevice.customerNameEn))) return;
                                                 setActionLoading(true);
                                                 try {
                                                     const res = await fetch(`${API_BASE2}/history/device-actions`, {
@@ -783,11 +783,11 @@ const Device = () => {
                                                         setSelectedDevice(null);
                                                         navigate('/history/device-history');
                                                     } else {
-                                                        alert('Failed to create Unlock Phone action');
+                                                        alert(t('deviceUnlockPhoneFailed'));
                                                     }
                                                 } catch (err) {
                                                     console.error('Unlock phone action error:', err);
-                                                    alert('Network error');
+                                                    alert(t('networkError'));
                                                 } finally {
                                                     setActionLoading(false);
                                                 }
@@ -795,14 +795,14 @@ const Device = () => {
                                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-[5px] text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <FaUnlock size={12} />
-                                            <span>Unlock Phone</span>
+                                            <span>{t('deviceUnlockPhone')}</span>
                                         </button>
 
                                         {/* Set Wallpaper */}
                                         <button
                                             disabled={actionLoading}
                                             onClick={async () => {
-                                                if (!window.confirm(`ចង់ Set Wallpaper លើ "${selectedDevice.customerNameEn}" មែនទេ?`)) return;
+                                                if (!window.confirm(t('deviceConfirmSetWallpaper').replace('{customer}', selectedDevice.customerNameEn))) return;
                                                 setActionLoading(true);
                                                 try {
                                                     const res = await fetch(`${API_BASE2}/history/device-actions`, {
@@ -820,11 +820,11 @@ const Device = () => {
                                                         setSelectedDevice(null);
                                                         navigate('/history/device-history');
                                                     } else {
-                                                        alert('Failed to create Set Wallpaper action');
+                                                        alert(t('deviceSetWallpaperFailed'));
                                                     }
                                                 } catch (err) {
                                                     console.error('Set wallpaper action error:', err);
-                                                    alert('Network error');
+                                                    alert(t('networkError'));
                                                 } finally {
                                                     setActionLoading(false);
                                                 }
@@ -832,7 +832,7 @@ const Device = () => {
                                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white rounded-[5px] text-xs font-bold shadow-md shadow-purple-600/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <MdOutlineWallpaper size={14} />
-                                            <span>Set Wallpaper</span>
+                                            <span>{t('deviceSetWallpaper')}</span>
                                         </button>
 
                                         {/* View History */}
@@ -841,11 +841,11 @@ const Device = () => {
                                             className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-[5px] text-xs font-bold shadow-md shadow-slate-700/20 transition-all cursor-pointer active:scale-95"
                                         >
                                             <FaHistory size={11} />
-                                            <span>View History</span>
+                                            <span>{t('deviceViewHistory')}</span>
                                         </button>
                                     </div>
                                     {actionLoading && (
-                                        <p className="text-center text-indigo-600 font-bold text-xs mt-2 animate-pulse">⏳ កំពុងដំណើរការ...</p>
+                                        <p className="text-center text-indigo-600 font-bold text-xs mt-2 animate-pulse">⏳ {t('processing')}...</p>
                                     )}
                                 </div>
                             )}
@@ -880,7 +880,7 @@ const Device = () => {
                             uppercase
                             tracking-wider
                         ">
-                                        {t('deviceProblem') || 'Device Problem / Notes'}
+                                        {t('deviceProblemNotes')}
                                     </h4>
 
                                 </div>
@@ -928,7 +928,7 @@ const Device = () => {
                             uppercase
                             tracking-wider
                         ">
-                                        Device Visualization
+                                        {t('deviceVisualization')}
                                     </h4>
 
                                 </div>
@@ -963,7 +963,7 @@ const Device = () => {
                         transition-all
                     "
                             >
-                                Close
+                                {t('close')}
                             </button>
 
                         </div>

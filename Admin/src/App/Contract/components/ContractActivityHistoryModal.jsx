@@ -43,7 +43,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             type: 'create',
             icon: <FaFileAlt className="text-emerald-500" />,
             title: t('appCreated'),
-            description: `Contract ID: ${contract.contractId} created for ${contract.customerNameEn || contract.customerNameKh}`,
+            description: `${t('contractId')}: ${contract.contractId} ${t('createdFor')} ${contract.customerNameEn || contract.customerNameKh}`,
             badge: 'Application',
             badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-300'
         });
@@ -56,7 +56,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             type: 'activate',
             icon: <FaCheckCircle className="text-purple-500" />,
             title: t('contractActivated'),
-            description: `Device model: ${contract.model || '—'} (${contract.serialNumber || '—'}) enrolled in active installment`,
+            description: `${t('deviceModel')}: ${contract.model || '—'} (${contract.serialNumber || '—'}) ${t('enrolledInInstallment')}`,
             badge: 'Activated',
             badgeColor: 'bg-purple-50 text-purple-700 border-purple-300'
         });
@@ -68,9 +68,9 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             date: new Date(contract.updatedAt || Date.now()),
             type: 'lock_phone',
             icon: <FaLock className="text-red-500" />,
-            title: `Device Status: ${contract.lockPhoneStatus}`,
-            description: `Phone lock applied due to policy or overdue installment`,
-            badge: 'Lock Phone',
+            title: `${t('deviceStatus')}: ${t(String(contract.lockPhoneStatus || '').toLowerCase())}`,
+            description: t('phoneLockPolicyDescription'),
+            badge: t('lockPhone'),
             badgeColor: 'bg-red-50 text-red-700 border-red-300'
         });
     }
@@ -81,9 +81,9 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             date: new Date(contract.updatedAt || Date.now()),
             type: 'wallpaper',
             icon: <FaMobileAlt className="text-amber-500" />,
-            title: `Wallpaper Status: ${contract.lockWallpaperStatus}`,
-            description: `Notification wallpaper displayed on customer phone screen`,
-            badge: 'Wallpaper',
+            title: `${t('wallpaperStatus')}: ${t(String(contract.lockWallpaperStatus || '').toLowerCase())}`,
+            description: t('notificationWallpaperDescription'),
+            badge: t('wallpaper'),
             badgeColor: 'bg-amber-50 text-amber-700 border-amber-300'
         });
     }
@@ -94,9 +94,9 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             date: new Date(p.paidDate || p.createdAt || Date.now()),
             type: 'payment',
             icon: <FaMoneyBillWave className="text-emerald-600" />,
-            title: `Payment Received: $${(parseFloat(p.amount) || 0).toFixed(2)}`,
-            description: `Payment ID: ${p.paymentId || '—'} via ${p.paidBy || 'QR Mobile Payment'}. ${p.description || ''}`,
-            badge: 'Payment',
+            title: `${t('paymentReceived')}: $${(parseFloat(p.amount) || 0).toFixed(2)}`,
+            description: `${t('paymentId')}: ${p.paymentId || '—'} ${t('via')} ${p.paidBy || t('qrMobilePayment')}. ${p.description || ''}`,
+            badge: t('payment'),
             badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300'
         });
     });
@@ -109,7 +109,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
             icon: <FaCommentDots className="text-cyan-500" />,
             title: t('staffComment'),
             description: contract.notes || contract.comments,
-            badge: 'Note',
+            badge: t('note'),
             badgeColor: 'bg-cyan-50 text-cyan-700 border-cyan-300'
         });
     }
@@ -121,11 +121,11 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                 date: new Date(h.timestamp || Date.now()),
                 type: 'edit',
                 icon: <FaUserEdit className="text-amber-500" />,
-                title: `Data Edited by ${h.editedBy || 'Staff'}: ${h.reason || 'Contract update'}`,
+                title: `${t('dataEditedBy')} ${h.editedBy || t('staff')}: ${h.reason || t('contractUpdate')}`,
                 description: Array.isArray(h.changedFields) && h.changedFields.length > 0
-                    ? `Changed fields: [${h.changedFields.join(', ')}]`
-                    : 'Information updated and synced.',
-                badge: 'Edit Revision',
+                    ? `${t('changedFields')}: [${h.changedFields.join(', ')}]`
+                    : t('informationUpdatedSynced'),
+                badge: t('editRevision'),
                 badgeColor: 'bg-amber-50 text-amber-700 border-amber-300'
             });
         });
@@ -148,7 +148,7 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                                 {t('activityHistory')}
                             </h3>
                             <p className="text-xs text-slate-500 font-mono">
-                                Contract: <span className="font-bold text-indigo-600">{contract.contractId || '—'}</span> &bull; {contract.customerNameEn} ({contract.customerNameKh || '—'})
+                                {t('contract')}: <span className="font-bold text-indigo-600">{contract.contractId || '—'}</span> &bull; {contract.customerNameEn} ({contract.customerNameKh || '—'})
                             </p>
                         </div>
                     </div>
@@ -163,22 +163,22 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                 {/* Customer Quick Summary Pill */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 p-2 rounded-[5px] border border-slate-200">
                     <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Device Model</span>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">{t('deviceModel')}</span>
                         <span className="font-bold text-slate-800">{contract.model || '—'}</span>
                     </div>
                     <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Phone Number</span>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">{t('phoneNumber')}</span>
                         <span className="font-bold text-slate-800 font-mono">{contract.phone || '—'}</span>
                     </div>
                     <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Lock Phone Status</span>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">{t('lockPhoneStatus')}</span>
                         <span className={`font-bold ${contract.lockPhoneStatus === 'Locked' ? 'text-red-600' : 'text-emerald-600'}`}>
                             {contract.lockPhoneStatus || 'Unlocked'}
                         </span>
                     </div>
                     <div>
-                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">Total Payments</span>
-                        <span className="font-bold text-indigo-600 font-mono">{payments.length} Transaction(s)</span>
+                        <span className="text-[10px] text-slate-400 block font-semibold uppercase">{t('totalPayments')}</span>
+                        <span className="font-bold text-indigo-600 font-mono">{payments.length} {t('transactions')}</span>
                     </div>
                 </div>
 
@@ -187,11 +187,11 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                     {loading ? (
                         <div className="flex items-center justify-center py-12 gap-2 text-indigo-600 text-xs font-bold">
                             <MdOutlineSync className="spin-reload text-lg" />
-                            <span>Loading customer timeline activities...</span>
+                            <span>{t('loadingTimeline')}</span>
                         </div>
                     ) : timelineEvents.length === 0 ? (
                         <div className="text-center py-12 text-slate-400 italic text-xs">
-                            No recorded activity events for this contract yet.
+                            {t('noActivityEvents')}
                         </div>
                     ) : (
                         <div className="relative border-l-2 border-slate-200 ml-4 pl-4 space-y-4">
@@ -212,8 +212,8 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
                                         </div>
                                         <p className="text-slate-600 text-[11px] leading-relaxed">{evt.description}</p>
                                         <div className="pt-1 text-[10px] text-slate-400 font-mono flex items-center justify-between border-t border-slate-50">
-                                            <span>{isNaN(evt.date.getTime()) ? 'Recent' : evt.date.toLocaleString('en-GB')}</span>
-                                            <span className="text-slate-400 font-sans">Recorded Event</span>
+                                            <span>{isNaN(evt.date.getTime()) ? t('recent') : evt.date.toLocaleString('en-GB')}</span>
+                                            <span className="text-slate-400 font-sans">{t('recordedEvent')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -224,12 +224,12 @@ const ContractActivityHistoryModal = ({ contract, onClose }) => {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <span className="text-[11px] text-slate-400 font-mono">Total Recorded Events: {timelineEvents.length}</span>
+                    <span className="text-[11px] text-slate-400 font-mono">{t('totalRecordedEvents')}: {timelineEvents.length}</span>
                     <button
                         onClick={onClose}
                         className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-[5px] text-xs font-bold transition-all cursor-pointer shadow-sm"
                     >
-                        Close
+                        {t('close')}
                     </button>
                 </div>
             </div>

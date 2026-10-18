@@ -12,7 +12,7 @@ import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 const LIMIT = 10;
 
 const DeviceActionHistory = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
 
     const [logs, setLogs] = useState([]);
@@ -221,13 +221,13 @@ const DeviceActionHistory = () => {
 
                 <div className='flex items-center gap-3 flex-wrap'>
                     <div className='flex items-center gap-2'>
-                        <label className='text-xs font-bold text-slate-600'>Status:</label>
+                        <label className='text-xs font-bold text-slate-600'>{t('status')}:</label>
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
-                            <option value=''>All Status</option>
+                            <option value=''>{t('allStatus')}</option>
                             <option value='Pending'>{t('pending')}</option>
                             <option value='Success'>{t('success')}</option>
                             <option value='Rejected'>{t('rejected')}</option>
@@ -235,18 +235,18 @@ const DeviceActionHistory = () => {
                     </div>
 
                     <div className='flex items-center gap-2'>
-                        <label className='text-xs font-bold text-slate-600'>Action:</label>
+                        <label className='text-xs font-bold text-slate-600'>{t('actionLabel')}:</label>
                         <select
                             value={actionFilter}
                             onChange={(e) => setActionFilter(e.target.value)}
                             className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-amber-500 cursor-pointer'
                         >
-                            <option value=''>All Actions</option>
-                            <option value='Lock Phone'>Lock Phone</option>
-                            <option value='Unlock Phone'>Unlock Phone</option>
-                            <option value='Set Wallpaper'>Set Wallpaper</option>
-                            <option value='Lock Wallpaper'>Lock Wallpaper</option>
-                            <option value='Unlock Wallpaper'>Unlock Wallpaper</option>
+                            <option value=''>{t('historyAllActions', lang === 'km' ? 'សកម្មភាពទាំងអស់' : 'All Actions')}</option>
+                            <option value='Lock Phone'>{t('lockPhone')}</option>
+                            <option value='Unlock Phone'>{t('unlockPhone')}</option>
+                            <option value='Set Wallpaper'>{t('deviceSetWallpaper')}</option>
+                            <option value='Lock Wallpaper'>{t('lockWallpaper')}</option>
+                            <option value='Unlock Wallpaper'>{t('unlockWallpaper')}</option>
                         </select>
                     </div>
                 </div>
@@ -257,22 +257,22 @@ const DeviceActionHistory = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>Date & Time</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('dateTime', lang === 'km' ? 'កាលបរិច្ឆេទ និងម៉ោង' : 'Date & Time')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
                             <th className='px-4 py-1 font-mono'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1 text-center'>Action Type</th>
+                            <th className='px-4 py-1 text-center'>{t('historyActionType', lang === 'km' ? 'ប្រភេទសកម្មភាព' : 'Action Type')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
-                            <th className='px-4 py-1'>Performed By</th>
+                            <th className='px-4 py-1'>{t('performedBy')}</th>
                             <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr>
-                                <td colSpan={10} className="text-center py-10 text-slate-400">Loading device action logs...</td>
+                                <td colSpan={10} className="text-center py-10 text-slate-400">{t('historyLoadingDeviceActions', lang === 'km' ? 'កំពុងផ្ទុកប្រវត្តិសកម្មភាពឧបករណ៍...' : 'Loading device action logs...')}</td>
                             </tr>
                         ) : (selectedSearchRecord ? [selectedSearchRecord] : logs).length === 0 ? (
                             <tr>
@@ -371,7 +371,7 @@ const DeviceActionHistory = () => {
                                                         </button>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-amber-700 font-semibold text-xs italic">Pending (Read Only)</span>
+                                                    <span className="text-amber-700 font-semibold text-xs italic">{t('historyPendingReadOnly', lang === 'km' ? 'កំពុងរង់ចាំ (មើលបានតែប៉ុណ្ណោះ)' : 'Pending (Read Only)')}</span>
                                                 )
                                             ) : isRejected ? (
                                                 <span className='text-xs text-red-600 font-bold inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-red-50 rounded-full border border-red-200' title={item.reason || ''}>
@@ -414,7 +414,7 @@ const DeviceActionHistory = () => {
                                     {rejectingItem.customerName}
                                 </p>
                                 <p className='text-slate-600'>
-                                    Action: <span className='font-bold text-red-700'>{rejectingItem.actionType}</span> | Model: <span className='font-semibold'>{rejectingItem.model}</span>
+                                    {t('actionLabel')}: <span className='font-bold text-red-700'>{rejectingItem.actionType}</span> | {t('model')}: <span className='font-semibold'>{rejectingItem.model}</span>
                                 </p>
                                 <p className='text-slate-500 font-mono text-[11px]'>
                                     S/N: {rejectingItem.serialNumber}

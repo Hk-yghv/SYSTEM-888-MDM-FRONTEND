@@ -89,7 +89,7 @@ const Actions = () => {
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                            Wallpaper
+                            {t('wallpaper')}
                         </h1>
                     </div>
                 </div>
@@ -106,7 +106,7 @@ const Actions = () => {
                             isImmutable: user?.isImmutable ? 'true' : 'false'
                         }}
                         value={searchTerm}
-                        placeholder="Search customer, model, serial..."
+                        placeholder={t('searchPlaceholder')}
                         onChange={(value) => {
                             setSelectedSearchRecord(null);
                             setPage(1);
@@ -125,19 +125,19 @@ const Actions = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1 text-center'>Current Wallpaper Status</th>
-                            <th className='px-4 py-1 text-center'>Toggle Action</th>
+                            <th className='px-4 py-1 text-center'>{t('currentWallpaperStatus')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-8 text-slate-500 italic font-medium">
-                                    No devices found.
+                                    {t('noData')}
                                 </td>
                             </tr>
                         ) : (
@@ -171,7 +171,7 @@ const Actions = () => {
                                                         className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-blue-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                                     >
                                                         <FaUnlock size={11} />
-                                                        <span>Set to Unlock Wallpaper</span>
+                                                        <span>{t('setToUnlockWallpaper')}</span>
                                                     </button>
                                                 ) : (
                                                     <button
@@ -180,11 +180,11 @@ const Actions = () => {
                                                         className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-purple-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                                                     >
                                                         <FaLock size={11} />
-                                                        <span>Set to Lock Wallpaper</span>
+                                                        <span>{t('setToLockWallpaper')}</span>
                                                     </button>
                                                 )
                                             ) : (
-                                                <span className="text-slate-400 font-semibold text-xs italic">Read Only</span>
+                                                <span className="text-slate-400 font-semibold text-xs italic">{t('readOnly')}</span>
                                             )}
                                         </td>
                                     </tr>

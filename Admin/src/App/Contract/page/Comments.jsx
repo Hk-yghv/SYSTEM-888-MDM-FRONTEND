@@ -147,14 +147,14 @@ const Comments = () => {
             await fetchCommentsContracts(page, searchTerm);
         } catch (err) {
             console.error('Save contract comment error:', err);
-            window.alert(err.message || 'Failed to save comment');
+            window.alert(err.message || t('saveCommentFailed'));
         } finally {
             setCommentSaving(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Delete this record?')) return;
+        if (!window.confirm(t('confirmDelete'))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (res.ok) fetchCommentsContracts();
@@ -255,7 +255,7 @@ const Comments = () => {
                             userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
                         }}
                         value={searchTerm}
-                        placeholder="Search customer..."
+                        placeholder={t('searchCustomer')}
                         onChange={(value) => {
                             setSelectedSearchRecord(null);
                             setPage(1);
@@ -285,20 +285,20 @@ const Comments = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>Comment Date</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('commentDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1'>Comment Note</th>
+                            <th className='px-4 py-1'>{t('commentNote')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
-                            <th className='px-4 py-1 text-center'>Contract</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('contract')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {visibleContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">No contracts with comments found.</td>
+                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">{t('noContractsWithComments')}</td>
                             </tr>
                         ) : (
                             visibleContracts.map((item, idx) => (
@@ -315,10 +315,10 @@ const Comments = () => {
                                     </td>
                                     <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                     <td className='px-4 py-1 text-teal-800 font-khmer max-w-[260px] truncate' title={hasActiveCommentToday(item) ? item.notes : ''}>
-                                        {hasActiveCommentToday(item) ? item.notes : <span className="text-slate-400 italic font-normal">No comment provided</span>}
+                                        {hasActiveCommentToday(item) ? item.notes : <span className="text-slate-400 italic font-normal">{t('noCommentProvided')}</span>}
                                     </td>
                                     <td className='px-4 py-1 text-center'>
-                                        <span className='px-3 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded-full font-bold text-[10px] uppercase'>Comments</span>
+                                        <span className='px-3 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded-full font-bold text-[10px] uppercase'>{t('comments')}</span>
                                     </td>
                                     <td className='px-4 py-1 text-center font-khmer text-indigo-700 font-bold'>
                                         <CopyCell text={item.contractIid || '—'} className='font-khmer font-bold text-indigo-700' />
@@ -333,7 +333,7 @@ const Comments = () => {
                                                 <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                     {hasPermission('/contract/comments', 'information') && (
                                                         <button onClick={() => { setSelectedInfo(item); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdInfo className="text-indigo-600" /> Details
+                                                            <MdInfo className="text-indigo-600" /> {t('details')}
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/comments', 'edit') && (
@@ -351,7 +351,7 @@ const Comments = () => {
                                                     )}
                                                     {hasPermission('/contract/comments', 'delete') && (
                                                         <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdDelete className="text-red-600" /> Delete
+                                                            <MdDelete className="text-red-600" /> {t('delete')}
                                                         </button>
                                                     )}
                                                 </div>
@@ -379,18 +379,18 @@ const Comments = () => {
                                     {selectedHistoryItem.customerNameEn} · {selectedHistoryItem.model}
                                 </p>
                             </div>
-                            <button onClick={() => setSelectedHistoryItem(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close">×</button>
+                            <button onClick={() => setSelectedHistoryItem(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label={t('close')}>×</button>
                         </header>
                         <div className="max-h-[60vh] overflow-auto p-4">
                             {commentHistoryEntries.length === 0 ? (
-                                <p className="py-8 text-center text-sm text-slate-500">No previous comments.</p>
+                                <p className="py-8 text-center text-sm text-slate-500">{t('noPreviousComments')}</p>
                             ) : (
                                 <table className="w-full text-left text-xs">
                                     <thead className="bg-slate-100 uppercase text-slate-600">
                                         <tr>
-                                            <th className="whitespace-nowrap px-3 py-2">Comment Date</th>
-                                            <th className="px-3 py-2">Comment</th>
-                                            {isMasterAdmin && <th className="px-3 py-2 text-center">Action</th>}
+                                            <th className="whitespace-nowrap px-3 py-2">{t('commentDate')}</th>
+                                            <th className="px-3 py-2">{t('commentLabel')}</th>
+                                            {isMasterAdmin && <th className="px-3 py-2 text-center">{t('actionLabel')}</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -400,7 +400,7 @@ const Comments = () => {
                                                     {formatCommentDate(entry.commentedAt, entry.isCurrent ? formatCommentDate(selectedHistoryItem.updatedAt, selectedHistoryItem.inputDate) : '')}
                                                 </td>
                                                 <td className="whitespace-pre-wrap px-3 py-2 text-slate-800">
-                                                    {entry.isCurrent && <span className="mr-2 rounded bg-teal-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-teal-700">Latest</span>}
+                                                    {entry.isCurrent && <span className="mr-2 rounded bg-teal-50 px-1.5 py-0.5 text-[10px] font-bold uppercase text-teal-700">{t('latest')}</span>}
                                                     {entry.comment || '—'}
                                                 </td>
                                                 {isMasterAdmin && (
@@ -418,7 +418,7 @@ const Comments = () => {
                                                             }}
                                                             className="inline-flex items-center gap-1 rounded-[5px] bg-amber-50 px-2 py-1 font-semibold text-amber-700 hover:bg-amber-100"
                                                         >
-                                                            <MdEdit /> Edit
+                                                            <MdEdit /> {t('edit')}
                                                         </button>
                                                     </td>
                                                 )}
@@ -437,7 +437,7 @@ const Comments = () => {
                                     <FaPlus /> Add Comment
                                 </button>
                             ) : <span />}
-                            <button onClick={() => setSelectedHistoryItem(null)} className="rounded-[5px] bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">Close</button>
+                            <button onClick={() => setSelectedHistoryItem(null)} className="rounded-[5px] bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">{t('close')}</button>
                         </footer>
                     </section>
                 </div>
@@ -455,15 +455,15 @@ const Comments = () => {
                                 type="button"
                                 onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); setIsAddingComment(false); }}
                                 className="rounded px-2 py-1 text-slate-400 hover:bg-slate-800"
-                                aria-label="Close"
+                                aria-label={t('close')}
                             >×</button>
                         </header>
                         <div className="rounded-[5px] border border-slate-700 bg-slate-800/70 p-3 text-xs text-slate-300">
-                            <p>Customer: <span className="font-bold text-black">{selectedCommentItem.customerNameEn}</span></p>
-                            <p className="mt-1">Model: <span className="font-semibold text-black">{selectedCommentItem.model}</span></p>
+                            <p>{t('customer')}: <span className="font-bold text-black">{selectedCommentItem.customerNameEn}</span></p>
+                            <p className="mt-1">{t('model')}: <span className="font-semibold text-black">{selectedCommentItem.model}</span></p>
                         </div>
                         <label className="block text-xs font-semibold text-slate-300">
-                            Comment <span className="font-normal text-slate-500">(optional)</span>
+                            {t('commentLabel')} <span className="font-normal text-slate-500">({t('optional')})</span>
                             <textarea
                                 rows={5}
                                 value={commentInput}
@@ -473,7 +473,7 @@ const Comments = () => {
                                         setIsDateAppended(false);
                                     }
                                 }}
-                                placeholder="Write a comment or leave blank..."
+                                placeholder={t('writeCommentPlaceholder')}
                                 className="mt-2 w-full rounded-[5px] border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none focus:border-teal-500"
                             />
                         </label>
@@ -482,7 +482,7 @@ const Comments = () => {
                                 type="button"
                                 onClick={() => { setSelectedCommentItem(null); setEditingHistoryEntry(null); setIsAddingComment(false); setIsDateAppended(false); }}
                                 className="rounded-[5px] bg-slate-700 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600"
-                            >Cancel</button>
+                            >{t('cancel')}</button>
                             {!isDateAppended ? (
                                 <button
                                     key="btn-input-date"
@@ -491,7 +491,7 @@ const Comments = () => {
                                     className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 cursor-pointer shadow-md transition-all"
                                 >
                                     <MdDateRange className="text-base" />
-                                    Input date
+                                    {t('inputDate')}
                                 </button>
                             ) : (
                                 <button
@@ -502,7 +502,7 @@ const Comments = () => {
                                     className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-60 cursor-pointer shadow-md transition-all"
                                 >
                                     {commentSaving ? <MdOutlineSync className="animate-spin" /> : <MdEdit />}
-                                    Save
+                                    {t('save')}
                                 </button>
                             )}
                         </footer>
@@ -516,21 +516,21 @@ const Comments = () => {
                     <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-base font-bold text-cyan-300 flex items-center gap-2">
-                                <MdComment /> Contract Comment Details
+                                <MdComment /> {t('contractCommentDetails')}
                             </h3>
                             <button onClick={() => setSelectedInfo(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
                         <div className="p-2 bg-gray-900/80 rounded-[5px] border border-cyan-500/30 space-y-2 text-xs">
-                            <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedInfo.customerNameEn}</span></p>
-                            <p className="text-gray-400">Device Model: <span className="text-gray-200 font-semibold">{selectedInfo.model}</span></p>
-                            <p className="text-gray-400">Serial Number: <span className="text-indigo-300 font-khmer">{selectedInfo.serialNumber}</span></p>
+                            <p className="text-gray-400">{t('customer')}: <span className="text-gray-100 font-bold">{selectedInfo.customerNameEn}</span></p>
+                            <p className="text-gray-400">{t('deviceModel')}: <span className="text-gray-200 font-semibold">{selectedInfo.model}</span></p>
+                            <p className="text-gray-400">{t('serialNumber')}: <span className="text-indigo-300 font-khmer">{selectedInfo.serialNumber}</span></p>
                             <div className="pt-2 border-t border-gray-800">
-                                <span className="text-cyan-400 font-bold block mb-1">Comment Note:</span>
-                                <p className="text-white bg-gray-950 p-2 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{hasActiveCommentToday(selectedInfo) ? selectedInfo.notes : 'No comment provided'}</p>
+                                <span className="text-cyan-400 font-bold block mb-1">{t('commentNote')}:</span>
+                                <p className="text-white bg-gray-950 p-2 rounded-[5px] border border-gray-800 font-sans leading-relaxed">{hasActiveCommentToday(selectedInfo) ? selectedInfo.notes : t('noCommentProvided')}</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-cyan-600 text-white font-bold text-xs rounded-[5px]">Close</button>
+                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-cyan-600 text-white font-bold text-xs rounded-[5px]">{t('close')}</button>
                         </div>
                     </div>
                 </div>

@@ -164,13 +164,13 @@ const statusTextClass = (status) => {
 };
 
 // ─── Row Urgency Highlight Calculation ─────────────────────────────────────────
-const getRowUrgency = (displayRow, isAllDone) => {
+const getRowUrgency = (displayRow, isAllDone, t) => {
     if (isAllDone || ['Paid', 'PayOff', 'Settled'].includes(displayRow?.status)) {
         return {
             type: 'done',
             rowClass: 'bg-emerald-50/20 hover:bg-emerald-50/50 border-l-4 border-l-emerald-500',
             dueBadgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold',
-            badgeText: '✓ បានបង់ចប់'
+            badgeText: `✓ ${t('installmentPaidComplete')}`
         };
     }
     if (!displayRow?.dueDate) {
@@ -203,9 +203,11 @@ const getRowUrgency = (displayRow, isAllDone) => {
         if (overdueDays >= 30) {
             const months = Math.floor(overdueDays / 30);
             const remDays = overdueDays % 30;
-            overdueText = remDays > 0 ? `លើស ${months} ខែ ${remDays} ថ្ងៃ` : `លើស ${months} ខែ`;
+            overdueText = remDays > 0
+                ? t('overdueMonthsAndDays').replace('{months}', months).replace('{days}', remDays)
+                : t('overdueMonthsOnly').replace('{months}', months);
         } else {
-            overdueText = `លើស ${overdueDays} ថ្ងៃ`;
+            overdueText = t('overdueDays').replace('{days}', overdueDays);
         }
 
         return {
@@ -224,7 +226,7 @@ const getRowUrgency = (displayRow, isAllDone) => {
             diffDays,
             rowClass: 'bg-amber-50/70 hover:bg-amber-100/80 border-l-4 border-l-amber-500',
             dueBadgeClass: 'bg-amber-100 text-amber-900 border-amber-300 font-black animate-pulse',
-            badgeText: '⏰ ដល់ថ្ងៃថ្ងៃនេះ'
+            badgeText: `⏰ ${t('dueTodayBadge')}`
         };
     }
 
@@ -235,7 +237,7 @@ const getRowUrgency = (displayRow, isAllDone) => {
             diffDays,
             rowClass: 'bg-orange-50/60 hover:bg-orange-100/70 border-l-4 border-l-orange-500',
             dueBadgeClass: 'bg-orange-100 text-orange-900 border-orange-300 font-bold',
-            badgeText: '⏳ សល់ ១ ថ្ងៃ'
+            badgeText: `⏳ ${t('dueInOneDayBadge')}`
         };
     }
 
@@ -246,7 +248,7 @@ const getRowUrgency = (displayRow, isAllDone) => {
             diffDays,
             rowClass: 'bg-sky-50/60 hover:bg-sky-100/70 border-l-4 border-l-sky-500',
             dueBadgeClass: 'bg-sky-100 text-sky-900 border-sky-300 font-bold',
-            badgeText: `📅 សល់ ${diffDays} ថ្ងៃ`
+            badgeText: `📅 ${t('daysRemainingBadge').replace('{days}', diffDays)}`
         };
     }
 
@@ -300,7 +302,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
         >
             {/* Header label */}
             <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                Repayment Actions
+                {t('repaymentActions')}
             </div>
 
             {/* QR Code Payment button */}
@@ -312,7 +314,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
                 className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[6px] flex items-center gap-2 cursor-pointer transition-colors"
             >
                 <MdQrCode2 className="text-emerald-600 text-base flex-shrink-0" />
-                <span>QR Code Payment</span>
+                <span>{t('qrCodePayment')}</span>
             </button>
 
             {/* Auto-open button — opens to the current unpaid month */}
@@ -325,7 +327,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
                 className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[6px] flex items-center gap-2 cursor-pointer transition-colors"
             >
                 <FaDollarSign className="text-amber-500 text-sm flex-shrink-0" />
-                <span>Repayment Schedule ($)</span>
+                <span>{t('repaymentScheduleAmount')}</span>
             </button>
 
             {/* Month list — always visible, one click per month */}
@@ -483,7 +485,7 @@ const InstallmentPage = () => {
 
         return rowsToDisplay.map(({ scheduleRow, scheduleIdx }) => {
             const row = getDisplayValues(scheduleRow || getDisplayRow(schedule), item, latePenaltyRules);
-            const urgency = getRowUrgency(row, activeIdx === -1);
+            const urgency = getRowUrgency(row, activeIdx === -1, t);
             return { item, itemId, scheduleIdx, displayRow: row, urgency };
         }).filter(row => urgencyFilter === 'all' || row.urgency.type === urgencyFilter);
     }), [contracts, urgencyFilter, latePenaltyRules, dateFrom, dateTo]);
@@ -570,23 +572,23 @@ const InstallmentPage = () => {
         const data = visibleRows.map(({ item, displayRow }, i) => {
             const calcs = getContractRepaymentCalculations(item, latePenaltyRules);
             return {
-                'No': i + 1,
-                'Loan Date': item.inputDate || '',
-                'Customer Name': `${item.customerNameEn || ''} (${item.customerNameKh || ''})`,
-                'Brand': item.brand || '',
-                'Model': item.model || '',
-                'ថ្ងៃខែត្រូវបង់': displayRow?.dueDate || '',
-                'Total Loan Amount ($)': displayRow?.loanAmount || item.amount || 0,
-                'ការប្រាក់គណនា ($)': calcs.monthlyInterest || 0,
-                'ការប្រាក់សរុប ($)': calcs.totalInterest || 0,
-                'សរុបត្រូវបង់ (គ្មានពិន័យ) ($)': calcs.totalScheduledNoPenalty || 0,
-                'ពិន័យ ($)': displayRow?.penalty || 0,
-                'ត្រូវបង់ខែនេះ ($)': displayRow?.scheduledAmount || 0,
-                'សរុបត្រូវបង់ទាំងអស់ (+ពិន័យ) ($)': calcs.totalPayableWithPenalty || 0,
-                'ភ្ញៀវបានបង់សរុប ($)': calcs.totalPaid || 0,
-                '% បានបង់': calcs.percentPaidStr,
-                'Comment': displayRow?.comment || '',
-                'កាលបរិច្ឆេទបានបង់': displayRow?.paidDate || '',
+                [t('rowNumber')]: i + 1,
+                [t('inputDate')]: item.inputDate || '',
+                [t('customerName')]: `${item.customerNameEn || ''} (${item.customerNameKh || ''})`,
+                [t('brand')]: item.brand || '',
+                [t('model')]: item.model || '',
+                [t('installmentDueDate')]: displayRow?.dueDate || '',
+                [`${t('totalLoanAmount')} ($)`]: displayRow?.loanAmount || item.amount || 0,
+                [`${t('calculatedInterest')} ($)`]: calcs.monthlyInterest || 0,
+                [`${t('installmentTotalInterest')} ($)`]: calcs.totalInterest || 0,
+                [`${t('installmentTotalDueNoPenalty')} ($)`]: calcs.totalScheduledNoPenalty || 0,
+                [`${t('penalty')} ($)`]: displayRow?.penalty || 0,
+                [`${t('installmentDueThisMonth')} ($)`]: displayRow?.scheduledAmount || 0,
+                [`${t('installmentTotalDueWithPenalty')} ($)`]: calcs.totalPayableWithPenalty || 0,
+                [`${t('installmentTotalPaidByCustomer')} ($)`]: calcs.totalPaid || 0,
+                [`${t('installmentPercentPaid')}`]: calcs.percentPaidStr,
+                [t('commentLabel')]: displayRow?.comment || '',
+                [t('paidDate')]: displayRow?.paidDate || '',
             };
         });
         exportToExcel(data, 'Installment_Schedule');
@@ -594,21 +596,21 @@ const InstallmentPage = () => {
 
     const handleExportPDF = (orientation = 'portrait') => {
         const columns = [
-            { header: 'No', cell: (_, i) => i + 1 },
-            { header: 'Customer', accessor: 'customerNameEn' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Brand', accessor: 'brand' },
-            { header: 'Loan Date', accessor: 'inputDate' },
-            { header: 'Due Date', accessor: 'dueDate' },
-            { header: 'This Month', accessor: (c) => `$${Number(c.scheduledAmount || 0).toLocaleString()}` },
-            { header: 'Loan Amount', accessor: (c) => `$${Number(c.amount || 0).toLocaleString()}` },
-            { header: 'Monthly Int', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).monthlyInterest).toLocaleString()}` },
-            { header: 'Total Int', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalInterest).toLocaleString()}` },
-            { header: 'Total Payable', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPayableWithPenalty).toLocaleString()}` },
-            { header: 'Total Paid', accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPaid).toLocaleString()}` },
-            { header: '% Paid', accessor: (c) => getContractRepaymentCalculations(c, latePenaltyRules).percentPaidStr },
+            { header: t('rowNumber'), cell: (_, i) => i + 1 },
+            { header: t('customerName'), accessor: 'customerNameEn' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('brand'), accessor: 'brand' },
+            { header: t('inputDate'), accessor: 'inputDate' },
+            { header: t('installmentDueDate'), accessor: 'dueDate' },
+            { header: t('installmentDueThisMonth'), accessor: (c) => `$${Number(c.scheduledAmount || 0).toLocaleString()}` },
+            { header: t('totalLoanAmount'), accessor: (c) => `$${Number(c.amount || 0).toLocaleString()}` },
+            { header: t('calculatedInterest'), accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).monthlyInterest).toLocaleString()}` },
+            { header: t('installmentTotalInterest'), accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalInterest).toLocaleString()}` },
+            { header: t('installmentTotalDueWithPenalty'), accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPayableWithPenalty).toLocaleString()}` },
+            { header: t('totalPaid'), accessor: (c) => `$${Number(getContractRepaymentCalculations(c, latePenaltyRules).totalPaid).toLocaleString()}` },
+            { header: t('installmentPercentPaid'), accessor: (c) => getContractRepaymentCalculations(c, latePenaltyRules).percentPaidStr },
         ];
-        exportToPDF('Installment Schedule', columns, visibleRows.map(({ item, displayRow }, orientation) => ({
+        exportToPDF(t('installmentSchedule'), columns, visibleRows.map(({ item, displayRow }, orientation) => ({
             ...item,
             inputDate: item.inputDate || '',
             dueDate: displayRow?.dueDate || '',
@@ -659,7 +661,7 @@ const InstallmentPage = () => {
             <header className='p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2 flex-wrap'>
-                        <span>Installment</span>
+                        <span>{t('installment')}</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
                             {visibleRows.length} Records
                         </span>
@@ -709,7 +711,7 @@ const InstallmentPage = () => {
                                 else newParams.set('search', val);
                                 setSearchParams(newParams);
                             }}
-                            placeholder="Search name, model, serial..."
+                            placeholder={t('activatedSearchPlaceholder')}
                             className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 w-48 sm:w-52 outline-none font-medium shadow-xs"
                         />
                     </div>
@@ -729,32 +731,32 @@ const InstallmentPage = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10'>
                         <tr>
-                            <th className='px-3 py-1 text-center'>No</th>
-                            <th className='px-3 py-1'>Loan Date</th>
-                            <th className='px-3 py-1'>Customer Name</th>
-                            <th className='px-3 py-1'>Brand</th>
-                            <th className='px-3 py-1'>Model</th>
-                            <th className='px-3 py-1'>ថ្ងៃខែត្រូវបង់</th>
-                            <th className='px-3 py-1 text-right text-emerald-600 font-extrabold'>សរុបត្រូវបង់ទាំងអស់</th>
-                            <th className='px-3 py-1 text-right font-mono text-indigo-700'>ការប្រាក់សរុប</th>
-                            <th className='px-3 py-1 text-right font-mono text-blue-700'>សរុបត្រូវបង់ (គ្មានពិន័យ)</th>
-                            <th className='px-3 py-1 text-right font-mono text-emerald-700'>Total Loan Amount</th>
-                            <th className='px-3 py-1 text-right font-mono text-violet-700'>ការប្រាក់</th>
-                            <th className='px-3 py-1 text-right text-sky-600'>ត្រូវបង់ខែនេះ</th>
-                            <th className='px-3 py-1 text-right text-amber-600'>ពិន័យ</th>
-                            <th className='px-3 py-1 text-right text-emerald-700 font-bold'>ភ្ញៀវបានបង់សរុប</th>
-                            <th className='px-3 py-1 text-center text-indigo-700 font-extrabold'>% បានបង់</th>
-                            <th className='px-3 py-1'>Comment</th>
-                            <th className='px-3 py-1 text-purple-600'>កាលបរិច្ឆេទបានបង់</th>
-                            <th className='px-3 py-1 text-center'>Action</th>
+                            <th className='px-3 py-1 text-center'>{t('no')}</th>
+                            <th className='px-3 py-1'>{t('inputDate')}</th>
+                            <th className='px-3 py-1'>{t('customerName')}</th>
+                            <th className='px-3 py-1'>{t('brand')}</th>
+                            <th className='px-3 py-1'>{t('model')}</th>
+                            <th className='px-3 py-1'>{t('installmentDueDate')}</th>
+                            <th className='px-3 py-1 text-right text-emerald-600 font-extrabold'>{t('installmentTotalDue')}</th>
+                            <th className='px-3 py-1 text-right font-mono text-indigo-700'>{t('installmentTotalInterest')}</th>
+                            <th className='px-3 py-1 text-right font-mono text-blue-700'>{t('installmentTotalDueNoPenalty')}</th>
+                            <th className='px-3 py-1 text-right font-mono text-emerald-700'>{t('customerTotalLoanAmount')}</th>
+                            <th className='px-3 py-1 text-right font-mono text-violet-700'>{t('interest')}</th>
+                            <th className='px-3 py-1 text-right text-sky-600'>{t('installmentDueThisMonth')}</th>
+                            <th className='px-3 py-1 text-right text-amber-600'>{t('penalty')}</th>
+                            <th className='px-3 py-1 text-right text-emerald-700 font-bold'>{t('installmentTotalPaidByCustomer')}</th>
+                            <th className='px-3 py-1 text-center text-indigo-700 font-extrabold'>{t('percentPaid', lang === 'km' ? '% បានបង់' : '% Paid')}</th>
+                            <th className='px-3 py-1'>{t('commentLabel')}</th>
+                            <th className='px-3 py-1 text-purple-600'>{t('paidDate')}</th>
+                            <th className='px-3 py-1 text-center'>{t('actionLabel')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
-                            <tr><td colSpan={18} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                            <tr><td colSpan={18} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                         ) : visibleRows.length === 0 ? (
                             <tr><td colSpan={18} className="text-center py-8 text-slate-500 italic font-medium">
-                                {searchTerm ? `No results found for "${searchTerm}"` : 'No installment records found matching this filter.'}
+                                {searchTerm ? t('noResultsForSearch').replace('{search}', searchTerm) : t('noInstallmentRecordsMatchingFilter')}
                             </td></tr>
                         ) : (
                             visibleRows.map(({ item, itemId, scheduleIdx, displayRow, urgency }, idx) => {
@@ -886,7 +888,7 @@ const InstallmentPage = () => {
                             <tr>
                                 {/* Col 1-6: No, Loan Date, Customer, Brand, Model, Due Date */}
                                 <td colSpan={6} className='px-3 py-1 text-center text-xs font-extrabold text-slate-600 uppercase tracking-wide'>
-                                    សរុប ({visibleRows.length} records)
+                                    {t('totalRecords', lang === 'km' ? 'សរុប' : 'Total')} ({visibleRows.length} {t('records', lang === 'km' ? 'កំណត់ត្រា' : 'records')})
                                 </td>
                                 {/* Col 7: សរុបត្រូវបង់ទាំងអស់ (payableWithPenalty) */}
                                 <td className='px-3 py-1 text-center font-mono font-extrabold text-emerald-600 text-xs border-l border-slate-200'>
@@ -947,7 +949,7 @@ const InstallmentPage = () => {
                     </span>
 
                     <label className="flex items-center gap-1.5 text-slate-500">
-                        <span className="font-medium">Show:</span>
+                        <span className="font-medium">{t('show')}:</span>
                         <select
                             value={limit}
                             onChange={e => setLimit(Number(e.target.value))}

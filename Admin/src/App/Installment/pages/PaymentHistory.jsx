@@ -24,11 +24,12 @@ const PaymentHistory = () => {
         user?.isImmutable ||
         user?.role === 'Administrator' ||
         user?.role === 'Admin' ||
-        hasPermission('/installment/payment-history', 'edit')
+        hasPermission('/installment/paymentHistory', 'edit')
     );
 
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState('');
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedRecord, setSelectedRecord] = useState(null);
@@ -95,6 +96,7 @@ const PaymentHistory = () => {
 
     const fetchPayments = useCallback(async (pg = 1, search = searchTerm, from = activeDateFrom, to = activeDateTo) => {
         setReloading(true);
+        setFetchError('');
         try {
             const pageToFetch = typeof pg === 'number' ? pg : 1;
             const params = new URLSearchParams({
@@ -109,18 +111,18 @@ const PaymentHistory = () => {
             if (from) params.set('dateFrom', from);
             if (to) params.set('dateTo', to);
             const res = await fetch(`${API_BASE1}/payments?${params.toString()}`);
-            if (res.ok) {
-                const data = await res.json();
-                setPayments(data.data || []);
-                setTotal(data.total || 0);
-            }
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || t('paymentHistoryLoadFailed'));
+            setPayments(Array.isArray(data.data) ? data.data : []);
+            setTotal(Number(data.total) || 0);
         } catch (err) {
             console.error('Fetch payments error:', err);
+            setFetchError(err.message || t('paymentHistoryLoadFailed'));
         } finally {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, activeDateFrom, activeDateTo, searchTerm]);
+    }, [API_BASE1, user, activeDateFrom, activeDateTo, searchTerm, t]);
 
     useEffect(() => {
         if (selectedRecord) return;
@@ -258,7 +260,7 @@ const PaymentHistory = () => {
 
             const data = await res.json();
             if (!res.ok || !data.success) {
-                throw new Error(data.error || 'បរាជ័យក្នុងការកែប្រែទិន្នន័យ');
+                throw new Error(data.error || t('paymentRecordUpdateFailed'));
             }
 
             const updated = data.payment;
@@ -270,12 +272,12 @@ const PaymentHistory = () => {
                 setSelectedRecord(updated);
             }
 
-            setActionMessage(`បានកែប្រែទិន្នន័យបង់ប្រាក់របស់ ${updated.customerName} ដោយជោគជ័យ!`);
+            setActionMessage(t('paymentRecordUpdated').replace('{customer}', updated.customerName));
             setTimeout(() => setActionMessage(''), 4000);
             closeEditModal();
         } catch (err) {
             console.error('Save edit error:', err);
-            setEditError(err.message || 'Error updating payment');
+            setEditError(err.message || t('paymentRecordUpdateFailed'));
         } finally {
             setSavingEdit(false);
         }
@@ -285,7 +287,9 @@ const PaymentHistory = () => {
     const handleDeletePayment = async (item) => {
         const id = item._id || item.paymentId;
         if (!id) return;
-        const confirmed = window.confirm(`តើអ្នកប្រាកដជាចង់លុបទិន្នន័យបង់ប្រាក់ចំនួន $${item.amount} របស់អតិថិជន "${item.customerName}" នេះមែនទេ?`);
+        const confirmed = window.confirm(
+            t('paymentConfirmDelete').replace('{amount}', item.amount).replace('{customer}', item.customerName)
+        );
         if (!confirmed) return;
 
         setDeletingId(id);
@@ -304,7 +308,7 @@ const PaymentHistory = () => {
 
             const data = await res.json();
             if (!res.ok || !data.success) {
-                throw new Error(data.error || 'បរាជ័យក្នុងការលុបទិន្នន័យ');
+                throw new Error(data.error || t('paymentRecordDeleteFailed'));
             }
 
             setPayments(prev => prev.filter(p => p._id !== id && p.paymentId !== id));
@@ -312,10 +316,10 @@ const PaymentHistory = () => {
                 setSelectedRecord(null);
             }
             setTotal(prev => Math.max(0, prev - 1));
-            setActionMessage(`បានលុបទិន្នន័យបង់ប្រាក់ជោគជ័យ!`);
+            setActionMessage(t('paymentRecordDeleted'));
             setTimeout(() => setActionMessage(''), 4000);
         } catch (err) {
-            alert(err.message || 'Error deleting payment');
+            alert(err.message || t('paymentRecordDeleteFailed'));
         } finally {
             setDeletingId(null);
         }
@@ -330,7 +334,7 @@ const PaymentHistory = () => {
                     index={viewImageIdx}
                     onIndexChange={setViewImageIdx}
                     onClose={closeImageViewer}
-                    title="Payment receipts"
+                    title={t('paymentReceipts')}
                 />
             )}
 
@@ -356,12 +360,12 @@ const PaymentHistory = () => {
                                 {t('paymentHistory')}
                                 {hasDateFilter && (
                                     <span className='text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300'>
-                                        Filter Active
+                                        {t('filterActive')}
                                     </span>
                                 )}
                                 {isMasterAdmin && (
                                     <span className='text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300'>
-                                        Admin Edit Mode Enabled
+                                        {t('paymentAdminEditMode')}
                                     </span>
                                 )}
                             </h1>
@@ -369,7 +373,7 @@ const PaymentHistory = () => {
                     </div>
 
                     <div className='flex items-center gap-3'>
-                        {hasPermission('/installment/payment-history', 'export') && (
+                        {hasPermission('/installment/paymentHistory', 'export') && (
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         )}
 
@@ -390,10 +394,12 @@ const PaymentHistory = () => {
                             className="w-44"
                             onChange={(value) => {
                                 setSelectedRecord(null);
+                                setFetchError('');
                                 setSearchTerm(value);
                                 setPage(1);
                             }}
                             onSelect={(record) => {
+                                setFetchError('');
                                 setSelectedRecord(record);
                                 setLoading(false);
                                 setSearchTerm(record.customerName || record.contractId || record.paymentId || record._id || '');
@@ -411,7 +417,7 @@ const PaymentHistory = () => {
                 <div className='flex flex-wrap items-center justify-end gap-2 pt-1 border-t border-slate-100'>
                     <div className='flex items-center gap-1.5 text-xs font-bold text-slate-500'>
                         <FaFilter className='text-slate-400 text-[10px]' />
-                        <span>Filter ថ្ងៃ:</span>
+                        <span>{t('filterByDate')}:</span>
                     </div>
                     <DateRangeDropdown
                         from={dateFrom}
@@ -432,29 +438,35 @@ const PaymentHistory = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('paidDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
-                            <th className='px-4 py-1'>{t('model')} & Serial</th>
-                            <th className='px-4 py-1'>Brand</th>
+                            <th className='px-4 py-1'>{t('model')} & {t('serialNumber')}</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
                             <th className='px-4 py-1'>{t('paidBy')}</th>
                             <th className='px-4 py-1 text-right'>{t('amount')}</th>
-                            <th className='px-4 py-1 text-center'>រូបភាព</th>
+                            <th className='px-4 py-1 text-center'>{t('images')}</th>
                             <th className='px-4 py-1'>{t('description')}</th>
-                            {isMasterAdmin && <th className='px-4 py-1 text-center'>សកម្មភាព (Actions)</th>}
+                            {isMasterAdmin && <th className='px-4 py-1 text-center'>{t('actions')}</th>}
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr>
                                 <td colSpan={isMasterAdmin ? 10 : 9} className="text-center py-10 text-emerald-600 font-semibold">
-                                    Loading...
+                                    {t('loading')}
+                                </td>
+                            </tr>
+                        ) : fetchError ? (
+                            <tr>
+                                <td colSpan={isMasterAdmin ? 10 : 9} className="text-center py-8 text-rose-600 font-semibold">
+                                    {fetchError}
                                 </td>
                             </tr>
                         ) : visiblePayments.length === 0 ? (
                             <tr>
                                 <td colSpan={isMasterAdmin ? 10 : 9} className="text-center py-8 text-slate-500 italic font-medium">
-                                    No payment history records found.
+                                    {t('noPaymentHistoryRecords')}
                                 </td>
                             </tr>
                         ) : (
@@ -498,10 +510,10 @@ const PaymentHistory = () => {
                                                 <button
                                                     onClick={() => openImageViewer(unique, 0)}
                                                     className='inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-[10px] font-bold cursor-pointer transition-all'
-                                                    title='មើលរូបភាព'
+                                                    title={t('viewImages')}
                                                 >
                                                     <FaImage className='text-emerald-600' />
-                                                    <span>មើល{unique.length > 1 ? ` (${unique.length})` : ''}</span>
+                                                    <span>{t('view')}{unique.length > 1 ? ` (${unique.length})` : ''}</span>
                                                 </button>
                                             );
                                         })()}
@@ -516,17 +528,17 @@ const PaymentHistory = () => {
                                                     type="button"
                                                     onClick={() => openEditModal(item)}
                                                     className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-md text-[11px] font-bold transition-all shadow-2xs hover:scale-105"
-                                                    title="កែសម្រួលទិន្នន័យបង់ប្រាក់ (Edit Payment)"
+                                                    title={t('editPayment')}
                                                 >
                                                     <FaEdit className="text-amber-600" />
-                                                    <span>កែ</span>
+                                                    <span>{t('edit')}</span>
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleDeletePayment(item)}
                                                     disabled={deletingId === (item._id || item.paymentId)}
                                                     className="inline-flex items-center p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-md text-[11px] font-bold transition-all disabled:opacity-50 hover:scale-105"
-                                                    title="លុបទិន្នន័យបង់ប្រាក់នេះ (Delete)"
+                                                    title={t('deletePayment')}
                                                 >
                                                     <FaTrashAlt />
                                                 </button>
@@ -542,7 +554,7 @@ const PaymentHistory = () => {
                         <tfoot>
                             <tr className='bg-emerald-50 border-t-2 border-emerald-300'>
                                 <td colSpan={6} className='px-4 py-1 text-right text-xs font-black text-slate-700 uppercase tracking-wider'>
-                                    សរុបទំព័រនេះ ({visiblePayments.length} records):
+                                    {t('paymentPageTotal').replace('{count}', visiblePayments.length)}
                                 </td>
                                 <td className='px-4 py-1 text-right font-black text-emerald-800 font-mono text-sm'>
                                     ${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -580,9 +592,9 @@ const PaymentHistory = () => {
                                     <FaEdit size={16} />
                                 </span>
                                 <div>
-                                    <h3 className="text-sm font-bold">កែសម្រួលទិន្នន័យបង់ប្រាក់ (Edit Payment)</h3>
+                                    <h3 className="text-sm font-bold">{t('editPayment')}</h3>
                                     <p className="text-[11px] text-slate-300">
-                                        លេខសម្គាល់: <span className="font-mono text-amber-300">{editingPayment?.paymentId || editingPayment?._id}</span>
+                                        {t('paymentIdLabel')}: <span className="font-mono text-amber-300">{editingPayment?.paymentId || editingPayment?._id}</span>
                                     </p>
                                 </div>
                             </div>
@@ -608,7 +620,7 @@ const PaymentHistory = () => {
                                 {/* Paid Date */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        កាលបរិច្ឆេទបង់ (Paid Date) <span className="text-rose-500">*</span>
+                                        {t('paidDate')} <span className="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="date"
@@ -622,7 +634,7 @@ const PaymentHistory = () => {
                                 {/* Amount */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        ចំនួនទឹកប្រាក់ ($ Amount) <span className="text-rose-500">*</span>
+                                        {t('amount')} ($) <span className="text-rose-500">*</span>
                                     </label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
@@ -642,7 +654,7 @@ const PaymentHistory = () => {
                                 {/* Customer Name */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        ឈ្មោះអតិថិជន (Customer Name) <span className="text-rose-500">*</span>
+                                        {t('customerName')} <span className="text-rose-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -650,70 +662,70 @@ const PaymentHistory = () => {
                                         value={editForm.customerName}
                                         onChange={e => setEditForm(prev => ({ ...prev, customerName: e.target.value }))}
                                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-semibold"
-                                        placeholder="ឈ្មោះអតិថិជន"
+                                        placeholder={t('customerName')}
                                     />
                                 </div>
 
                                 {/* Contract ID */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        លេខកិច្ចសន្យា (Contract ID)
+                                        {t('contract')} ID
                                     </label>
                                     <input
                                         type="text"
                                         value={editForm.contractId}
                                         onChange={e => setEditForm(prev => ({ ...prev, contractId: e.target.value }))}
                                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
-                                        placeholder="ឧ. CT-2026-001"
+                                        placeholder={t('contractIdPlaceholder')}
                                     />
                                 </div>
 
                                 {/* Model */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        ម៉ូឌែលទូរស័ព្ទ (Model)
+                                        {t('model')}
                                     </label>
                                     <input
                                         type="text"
                                         value={editForm.model}
                                         onChange={e => setEditForm(prev => ({ ...prev, model: e.target.value }))}
                                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-semibold"
-                                        placeholder="ឧ. iPhone 15 Pro Max"
+                                        placeholder={t('deviceModelPlaceholder')}
                                     />
                                 </div>
 
                                 {/* Serial Number / IMEI */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        Serial Number / IMEI
+                                        {t('serialNumber')} / IMEI
                                     </label>
                                     <input
                                         type="text"
                                         value={editForm.serialNumber}
                                         onChange={e => setEditForm(prev => ({ ...prev, serialNumber: e.target.value }))}
                                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
-                                        placeholder="លេខសម្គាល់ម៉ាស៊ីន"
+                                        placeholder={t('serialNumber')}
                                     />
                                 </div>
 
                                 {/* Brand */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        Brand (ម៉ាក)
+                                        {t('brand')}
                                     </label>
                                     <input
                                         type="text"
                                         value={editForm.brand}
                                         onChange={e => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
                                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                                        placeholder="ឧ. Apple, Samsung"
+                                        placeholder={t('brand')}
                                     />
                                 </div>
 
                                 {/* Paid By */}
                                 <div>
                                     <label className="block font-bold text-slate-700 mb-1">
-                                        បង់តាមរយៈ / អ្នកបង់ (Paid By)
+                                        {t('paidBy')}
                                     </label>
                                     <select
                                         value={editForm.paidBy}
@@ -733,7 +745,7 @@ const PaymentHistory = () => {
                             {/* Receipt Image URL */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1">
-                                    រូបភាពបង្កាន់ដៃ (Receipt Image URL)
+                                    {t('receiptImageUrl')}
                                 </label>
                                 <div className="flex gap-2 items-center">
                                     <input
@@ -741,7 +753,7 @@ const PaymentHistory = () => {
                                         value={editForm.receiptImage}
                                         onChange={e => setEditForm(prev => ({ ...prev, receiptImage: e.target.value }))}
                                         className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
-                                        placeholder="https://..."
+                                        placeholder={t('receiptImageUrlPlaceholder')}
                                     />
                                     {editForm.receiptImage && (
                                         <button
@@ -758,14 +770,14 @@ const PaymentHistory = () => {
                             {/* Description / Remarks */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1">
-                                    ការពិពណ៌នា / កំណត់ចំណាំ (Description)
+                                    {t('description')}
                                 </label>
                                 <textarea
                                     rows="2"
                                     value={editForm.description}
                                     onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                                    placeholder="ព័ត៌មានបន្ថែម..."
+                                    placeholder={t('description')}
                                 />
                             </div>
 
@@ -776,7 +788,7 @@ const PaymentHistory = () => {
                                     onClick={closeEditModal}
                                     className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 transition-colors"
                                 >
-                                    បោះបង់ (Cancel)
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
@@ -786,12 +798,12 @@ const PaymentHistory = () => {
                                     {savingEdit ? (
                                         <>
                                             <MdOutlineSync className="animate-spin text-sm" />
-                                            <span>កំពុងរក្សាទុក...</span>
+                                            <span>{t('saving')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <FaSave />
-                                            <span>រក្សាទុកការកែប្រែ</span>
+                                            <span>{t('saveChanges')}</span>
                                         </>
                                     )}
                                 </button>

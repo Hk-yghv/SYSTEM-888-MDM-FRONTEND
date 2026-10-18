@@ -12,7 +12,7 @@ import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 const LIMIT = 10;
 
 const LoginHistory = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE2, user } = useAuth();
 
     const [logs, setLogs] = useState([]);
@@ -111,7 +111,7 @@ const LoginHistory = () => {
 
     const handleSendTelegramReport = async () => {
         if (sendingTelegram) return;
-        if (!window.confirm('តើអ្នកពិតជាចង់ផ្ញើរបាយការណ៍នេះ និងលុបទិន្នន័យប្រវត្តិ Login ដើម្បីរាប់ថយក្រោយជាថ្មីមែនទេ?')) {
+        if (!window.confirm(t('loginHistorySendReportConfirm', lang === 'km' ? 'តើអ្នកពិតជាចង់ផ្ញើរបាយការណ៍នេះ និងលុបទិន្នន័យប្រវត្តិចូលប្រព័ន្ធ ដើម្បីចាប់ផ្តើមរាប់ថយក្រោយថ្មីមែនទេ?' : 'Send this report and clear login history to start a new countdown?'))) {
             return;
         }
 
@@ -166,14 +166,14 @@ const LoginHistory = () => {
     const handleExportExcel = async () => {
         const allData = await fetchAllForExport();
         const dataToExport = allData.map((l, idx) => ({
-            No: idx + 1,
-            Username: l.username,
-            Name: l.name,
-            Role: l.role,
-            IP: l.ip,
-            DeviceInfo: l.deviceInfo,
-            Timestamp: l.timestamp ? new Date(l.timestamp).toLocaleString() : '',
-            Status: l.status || 'Success'
+            [t('no')]: idx + 1,
+            [t('username')]: l.username,
+            [t('fullName', lang === 'km' ? 'ឈ្មោះពេញ' : 'Name')]: l.name,
+            [t('role')]: l.role,
+            [t('ipAddress', lang === 'km' ? 'អាសយដ្ឋាន IP' : 'IP Address')]: l.ip,
+            [t('loginDeviceBrowser', lang === 'km' ? 'ឧបករណ៍ / កម្មវិធីរុករក' : 'Device / Browser')]: l.deviceInfo,
+            [t('dateTime', lang === 'km' ? 'កាលបរិច្ឆេទ និងម៉ោង' : 'Time')]: l.timestamp ? new Date(l.timestamp).toLocaleString() : '',
+            [t('status')]: l.status || t('success')
         }));
         exportToExcel(dataToExport, 'User_Login_History');
     };
@@ -181,16 +181,16 @@ const LoginHistory = () => {
     const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Username', accessor: 'username' },
-            { header: 'Name', accessor: 'name' },
-            { header: 'Role', accessor: 'role' },
-            { header: 'IP Address', accessor: 'ip' },
-            { header: 'Device / Browser', accessor: 'deviceInfo' },
-            { header: 'Time', cell: (r) => r.timestamp ? new Date(r.timestamp).toLocaleString() : '' },
-            { header: 'Status', cell: (r) => r.status || 'Success' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('username'), accessor: 'username' },
+            { header: t('fullName', lang === 'km' ? 'ឈ្មោះពេញ' : 'Name'), accessor: 'name' },
+            { header: t('role'), accessor: 'role' },
+            { header: t('ipAddress', lang === 'km' ? 'អាសយដ្ឋាន IP' : 'IP Address'), accessor: 'ip' },
+            { header: t('loginDeviceBrowser', lang === 'km' ? 'ឧបករណ៍ / កម្មវិធីរុករក' : 'Device / Browser'), accessor: 'deviceInfo' },
+            { header: t('dateTime', lang === 'km' ? 'កាលបរិច្ឆេទ និងម៉ោង' : 'Time'), cell: (r) => r.timestamp ? new Date(r.timestamp).toLocaleString() : '' },
+            { header: t('status'), cell: (r) => r.status || t('success') }
         ];
-        exportToPDF('User Login Audit History Report', columns, allData, user?.brand || '', orientation);
+        exportToPDF(t('loginHistoryPdfTitle', lang === 'km' ? 'របាយការណ៍សវនកម្មប្រវត្តិចូលប្រព័ន្ធ' : 'User Login Audit History Report'), columns, allData, user?.brand || '', orientation);
     };
 
     return (
@@ -203,7 +203,7 @@ const LoginHistory = () => {
                         {toast.type === 'success' ? <FaCheckCircle className='text-emerald-600 text-base' /> : <FaExclamationTriangle className='text-red-600 text-base' />}
                         <span>{toast.message}</span>
                     </div>
-                    <button onClick={() => setToast(null)} className='text-xs underline font-semibold ml-4 cursor-pointer text-slate-500 hover:text-slate-700'>Dismiss</button>
+                    <button onClick={() => setToast(null)} className='text-xs underline font-semibold ml-4 cursor-pointer text-slate-500 hover:text-slate-700'>{t('historyDismiss', lang === 'km' ? 'បិទ' : 'Dismiss')}</button>
                 </div>
             )}
 
@@ -315,11 +315,11 @@ const LoginHistory = () => {
                             onChange={(e) => setRoleFilter(e.target.value)}
                             className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
                         >
-                            <option value=''>All Roles</option>
-                            <option value='Administrator'>Administrator</option>
-                            <option value='Manager'>Manager</option>
-                            <option value='Staff'>Staff</option>
-                            <option value='Viewer'>Viewer</option>
+                            <option value=''>{t('historyAllRoles', lang === 'km' ? 'តួនាទីទាំងអស់' : 'All Roles')}</option>
+                            <option value='Administrator'>{t('admin')}</option>
+                            <option value='Manager'>{t('manager', lang === 'km' ? 'អ្នកគ្រប់គ្រង' : 'Manager')}</option>
+                            <option value='Staff'>{t('staff')}</option>
+                            <option value='Viewer'>{t('viewer', lang === 'km' ? 'អ្នកមើល' : 'Viewer')}</option>
                         </select>
                     </div>
 
@@ -332,9 +332,9 @@ const LoginHistory = () => {
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className='px-3 py-2 border border-slate-300 rounded-[5px] text-xs font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer'
                         >
-                            <option value=''>All Statuses</option>
-                            <option value='Success'>Success Only</option>
-                            <option value='Failed'>Failed Only</option>
+                            <option value=''>{t('historyAllStatuses', lang === 'km' ? 'ស្ថានភាពទាំងអស់' : 'All Statuses')}</option>
+                            <option value='Success'>{t('historySuccessOnly', lang === 'km' ? 'តែជោគជ័យប៉ុណ្ណោះ' : 'Success Only')}</option>
+                            <option value='Failed'>{t('historyFailedOnly', lang === 'km' ? 'តែបរាជ័យប៉ុណ្ណោះ' : 'Failed Only')}</option>
                         </select>
                     </div>
                 </div>
@@ -345,21 +345,21 @@ const LoginHistory = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-semibold'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('username')}</th>
-                            <th className='px-4 py-1'>Full Name</th>
+                            <th className='px-4 py-1'>{t('fullName', lang === 'km' ? 'ឈ្មោះពេញ' : 'Full Name')}</th>
                             <th className='px-4 py-1 text-center'>{t('role')}</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1 font-mono'>IP Address</th>
-                            <th className='px-4 py-1'>Device & OS</th>
-                            <th className='px-4 py-1'>Date & Time</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1 font-mono'>{t('ipAddress', lang === 'km' ? 'អាសយដ្ឋាន IP' : 'IP Address')}</th>
+                            <th className='px-4 py-1'>{t('historyDeviceOs', lang === 'km' ? 'ឧបករណ៍ និងប្រព័ន្ធប្រតិបត្តិការ' : 'Device & OS')}</th>
+                            <th className='px-4 py-1'>{t('dateTime', lang === 'km' ? 'កាលបរិច្ឆេទ និងម៉ោង' : 'Date & Time')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {loading ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-10 text-slate-400">Loading history logs...</td>
+                                <td colSpan={9} className="text-center py-10 text-slate-400">{t('historyLoadingLoginLogs', lang === 'km' ? 'កំពុងផ្ទុកកំណត់ត្រាប្រវត្តិចូលប្រព័ន្ធ...' : 'Loading login history logs...')}</td>
                             </tr>
                         ) : (selectedSearchRecord ? [selectedSearchRecord] : logs).length === 0 ? (
                             <tr>
@@ -403,12 +403,12 @@ const LoginHistory = () => {
                                             {item.status === 'Failed' ? (
                                                 <>
                                                     <FaExclamationTriangle size={9} />
-                                                    <span>Failed</span>
+                                                    <span>{t('failed')}</span>
                                                 </>
                                             ) : (
                                                 <>
                                                     <FaCheckCircle size={9} />
-                                                    <span>Success</span>
+                                                    <span>{t('success')}</span>
                                                 </>
                                             )}
                                         </span>

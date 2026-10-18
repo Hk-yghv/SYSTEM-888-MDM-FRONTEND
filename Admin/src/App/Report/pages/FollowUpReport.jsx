@@ -356,21 +356,21 @@ const FollowUpReport = () => {
                 { header: '#', accessor: (r, idx) => (r.isGrandTotal ? '★' : String(idx + 1)) },
                 { header: t('date'), accessor: (r) => r.date },
                 // Follow Up 2 Section
-                { header: 'FU2 សរុប', accessor: (r) => Number(r.fu2?.total || 0).toLocaleString() },
-                { header: 'FU2 ជោគជ័យ', accessor: (r) => Number(r.fu2?.success || 0).toLocaleString() },
-                { header: 'FU2 បរាជ័យ', accessor: (r) => Number(r.fu2?.failed || 0).toLocaleString() },
-                { header: 'FU2 Review', accessor: (r) => Number(r.fu2?.review || 0).toLocaleString() },
-                { header: 'FU2 ស្នើបញ្ចាំ ($)', accessor: (r) => `$${Number(r.fu2?.amount || 0).toLocaleString()}` },
+                { header: t('followUp2Summary'), accessor: (r) => Number(r.fu2?.total || 0).toLocaleString() },
+                { header: t('followUp2Success'), accessor: (r) => Number(r.fu2?.success || 0).toLocaleString() },
+                { header: t('followUp2Failed'), accessor: (r) => Number(r.fu2?.failed || 0).toLocaleString() },
+                { header: t('followUpReview'), accessor: (r) => Number(r.fu2?.review || 0).toLocaleString() },
+                { header: t('followUp2CollateralAmount'), accessor: (r) => `$${Number(r.fu2?.amount || 0).toLocaleString()}` },
                 // Follow Up 3 Descriptions Dynamic
                 ...uniqueFu3Descriptions.map(desc => ({
                     header: `FU3: ${desc}`,
                     accessor: (r) => Number(r.fu3?.descCounts?.[desc] || (r.isGrandTotal ? r.fu3DescTotals?.[desc] || 0 : 0)).toLocaleString()
                 })),
                 { header: t('totalLeads'), accessor: (r) => Number(r.fu3?.total || 0).toLocaleString() },
-                { header: 'FU3 ស្នើបញ្ចាំ ($)', accessor: (r) => `$${Number(r.fu3?.amount || 0).toLocaleString()}` },
+                { header: t('followUp3CollateralAmount'), accessor: (r) => `$${Number(r.fu3?.amount || 0).toLocaleString()}` },
                 // Combined Totals
-                { header: 'សរុប Leads រួម', accessor: (r) => Number((r.fu2?.total || 0) + (r.fu3?.total || 0)).toLocaleString() },
-                { header: 'សរុបទឹកប្រាក់រួម ($)', accessor: (r) => `$${Number((r.fu2?.amount || 0) + (r.fu3?.amount || 0)).toLocaleString()}` }
+                { header: t('combinedFollowUpLeads'), accessor: (r) => Number((r.fu2?.total || 0) + (r.fu3?.total || 0)).toLocaleString() },
+                { header: t('combinedCollateralAmount'), accessor: (r) => `$${Number((r.fu2?.amount || 0) + (r.fu3?.amount || 0)).toLocaleString()}` }
             ];
 
             // Grand Total row
@@ -393,7 +393,7 @@ const FollowUpReport = () => {
             };
 
             const dataWithSummary = [...dailyReportData, grandTotalRow];
-            const title = `Follow_Up_Report_${new Date().toISOString().split('T')[0]}`;
+            const title = `${t('followUpReport')}_${new Date().toISOString().split('T')[0]}`;
 
             if (exportFormat === 'excel') {
                 exportToExcel(title, columns, dataWithSummary, selectedBrand || user?.brand || 'SYSTEM');
@@ -404,7 +404,7 @@ const FollowUpReport = () => {
             setIsExportModalOpen(false);
         } catch (err) {
             console.error('Export error:', err);
-            alert(`Export failed: ${err.message}`);
+            alert(`${t('exportFailed')}: ${err.message}`);
         } finally {
             setIsExporting(false);
         }
@@ -417,7 +417,7 @@ const FollowUpReport = () => {
                 <div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                            {t('followUpReport') || 'របាយការណ៍ Follow Up'}
+                            {t('followUpReport')}
                         </h1>
                     </div>
                 </div>
@@ -430,7 +430,7 @@ const FollowUpReport = () => {
                             className="px-3.5 py-2 rounded-[5px] border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer"
                         >
                             <FaFileDownload className="text-sm" />
-                            <span>{t('export') || 'Export'}</span>
+                            <span>{t('export')}</span>
                         </button>
                     )}
                 </div>
@@ -463,7 +463,7 @@ const FollowUpReport = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                Follow Up 2 (ជោគជ័យ / អត្រា)
+                                {t('followUp2SuccessRate')}
                             </p>
                             <h3 className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">
                                 {Number(grandSummary.fu2SuccessCount).toLocaleString()}
@@ -472,7 +472,7 @@ const FollowUpReport = () => {
                                 </span>
                             </h3>
                             <p className="text-xs text-slate-400 mt-1">
-                                បរាជ័យ: {grandSummary.fu2FailedCount} | Review: {grandSummary.fu2ReviewCount}
+                                {t('failed')}: {grandSummary.fu2FailedCount} | {t('followUpReview')}: {grandSummary.fu2ReviewCount}
                             </p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
@@ -486,13 +486,15 @@ const FollowUpReport = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                Follow Up 3 (តាមបរិយាយ)
+                                {t('followUp3ByDescription')}
                             </p>
                             <h3 className="text-2xl sm:text-3xl font-black text-teal-600 mt-1">
                                 {Number(grandSummary.fu3TotalCount).toLocaleString()}
                             </h3>
                             <p className="text-xs text-slate-400 mt-1 truncate max-w-[200px]" title={uniqueFu3Descriptions.join(', ')}>
-                                {uniqueFu3Descriptions.length > 0 ? `${uniqueFu3Descriptions.length} បរិយាយខុសៗគ្នា` : 'គ្មានបរិយាយ'}
+                                {uniqueFu3Descriptions.length > 0
+                                    ? `${uniqueFu3Descriptions.length} ${t('distinctDescriptions')}`
+                                    : t('noDescription')}
                             </p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-teal-50 text-teal-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
@@ -506,7 +508,7 @@ const FollowUpReport = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                ទឹកប្រាក់ស្នើសុំសរុប ($)
+                                {t('totalRequestedAmount')} ($)
                             </p>
                             <h3 className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">
                                 ${Number(grandSummary.combinedAmount).toLocaleString()}
@@ -528,7 +530,7 @@ const FollowUpReport = () => {
                 <div className="flex items-center flex-wrap gap-2">
                     <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
                         <FaCalendarAlt className="text-slate-400" />
-                        ចន្លោះពេល៖
+                        {t('timeRange')}:
                     </span>
                     {[
                         { key: 'today', label: t('today') },
@@ -558,7 +560,7 @@ const FollowUpReport = () => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="ស្វែងរកតាម កាលបរិច្ឆេទ, ឈ្មោះ, លេខទូរស័ព្ទ, បរិយាយ, ស្ថានភាព..."
+                            placeholder={t('followUpReportSearchPlaceholder')}
                             className="w-full pl-4 pr-4 py-2 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700 bg-slate-50/50 hover:bg-white transition"
                         />
                     </div>
@@ -582,7 +584,7 @@ const FollowUpReport = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                         >
-                            <option value="">{t('allBrandsShort')} ទាំងអស់</option>
+                            <option value="">{t('allBrandsShort')}</option>
                             {brandsList.map(b => (
                                 <option key={b} value={b}>{b}</option>
                             ))}
@@ -596,7 +598,7 @@ const FollowUpReport = () => {
                             className="flex-1 lg:flex-none px-4 py-2 rounded-[5px] bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
                         >
                             <FaFilter className="text-xs" />
-                            <span>ស្វែងរក</span>
+                            <span>{t('search')}</span>
                         </button>
 
                         {(searchTerm || filterDate || startDate || endDate || selectedBrand) && (
@@ -607,7 +609,7 @@ const FollowUpReport = () => {
                                     applyDatePreset('thisMonth');
                                 }}
                                 className="px-3 py-2 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs sm:text-sm font-bold transition cursor-pointer"
-                                title="Clear Filters"
+                                title={t('clearFilter')}
                             >
                                 <FaTimes />
                             </button>
@@ -622,14 +624,14 @@ const FollowUpReport = () => {
                     <div>
                         <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
                             <MdTableChart className="text-emerald-600" />
-                            តារាងរបាយការណ៍បូកសរុបប្រចាំថ្ងៃ (Daily Grouped Breakdown)
+                            {t('dailyFollowUpBreakdownTitle')}
                         </h2>
                         <p className="text-xs text-slate-500 mt-0.5">
-                            រាប់ទិន្នន័យតាមថ្ងៃ ញែកចេញជាផ្នែក Follow Up 2 និង Follow Up 3 (តាមបរិយាយ)
+                            {t('dailyFollowUpBreakdownDescription')}
                         </p>
                     </div>
                     <span className="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                        សរុប {dailyReportData.length} ថ្ងៃ
+                        {t('totalDays')}: {dailyReportData.length}
                     </span>
                 </div>
 
@@ -646,21 +648,21 @@ const FollowUpReport = () => {
                                 <th colSpan={5} className="py-2.5 px-4 text-center bg-indigo-50/80 text-indigo-900 border-r border-indigo-200 font-black">
                                     <span className="flex items-center justify-center gap-1.5">
                                         <FaComments className="text-indigo-600" />
-                                        ផ្នែក FOLLOW UP 2 (បញ្ចាំ & ឆ្លើយតបឆាត)
+                                        {t('followUp2SectionTitle')}
                                     </span>
                                 </th>
                                 {/* FU3 Main Group */}
                                 <th colSpan={uniqueFu3Descriptions.length + 2} className="py-2.5 px-4 text-center bg-teal-50/80 text-teal-900 border-r border-teal-200 font-black">
                                     <span className="flex items-center justify-center gap-1.5">
                                         <FaTags className="text-teal-600" />
-                                        ផ្នែក FOLLOW UP 3 (រាប់តាមបរិយាយ)
+                                        {t('followUp3SectionTitle')}
                                     </span>
                                 </th>
                                 {/* Combined Daily Total */}
                                 <th colSpan={2} className="py-2.5 px-4 text-center bg-emerald-50/80 text-emerald-900 font-black">
                                     <span className="flex items-center justify-center gap-1.5">
                                         <FaLayerGroup className="text-emerald-600" />
-                                        សរុបរួមប្រចាំថ្ងៃ
+                                        {t('dailyCombinedTotal')}
                                     </span>
                                 </th>
                             </tr>
@@ -668,11 +670,11 @@ const FollowUpReport = () => {
                             {/* Sub-Columns Level 2 Header */}
                             <tr className="bg-slate-50 text-[11px] font-bold text-slate-600 border-b border-slate-200">
                                 {/* FU2 Sub Columns */}
-                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-indigo-900">សរុប</th>
-                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-emerald-700">ជោគជ័យ</th>
-                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-rose-700">បរាជ័យ</th>
-                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-amber-700">Review</th>
-                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-indigo-900 border-r border-indigo-200">ស្នើបញ្ចាំ ($)</th>
+                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-indigo-900">{t('total')}</th>
+                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-emerald-700">{t('success')}</th>
+                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-rose-700">{t('failed')}</th>
+                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-amber-700">{t('followUpReview')}</th>
+                                <th className="py-2.5 px-3 text-right bg-indigo-50/40 text-indigo-900 border-r border-indigo-200">{t('collateralRequested')} ($)</th>
 
                                 {/* FU3 Dynamic Descriptions Sub Columns */}
                                 {uniqueFu3Descriptions.map((desc, i) => (
@@ -680,12 +682,12 @@ const FollowUpReport = () => {
                                         {desc}
                                     </th>
                                 ))}
-                                <th className="py-2.5 px-3 text-right bg-teal-50/50 text-teal-900 font-black">សរុប FU3</th>
-                                <th className="py-2.5 px-3 text-right bg-teal-50/50 text-teal-900 font-black border-r border-teal-200">ស្នើបញ្ចាំ ($)</th>
+                                <th className="py-2.5 px-3 text-right bg-teal-50/50 text-teal-900 font-black">{t('followUp3Summary')}</th>
+                                <th className="py-2.5 px-3 text-right bg-teal-50/50 text-teal-900 font-black border-r border-teal-200">{t('collateralRequested')} ($)</th>
 
                                 {/* Combined Sub Columns */}
-                                <th className="py-2.5 px-3 text-right bg-emerald-50/40 text-emerald-900 font-black">សរុប Leads</th>
-                                <th className="py-2.5 px-3 text-right bg-emerald-50/40 text-emerald-900 font-black">ទឹកប្រាក់រួម ($)</th>
+                                <th className="py-2.5 px-3 text-right bg-emerald-50/40 text-emerald-900 font-black">{t('totalLeads')}</th>
+                                <th className="py-2.5 px-3 text-right bg-emerald-50/40 text-emerald-900 font-black">{t('combinedAmount')} ($)</th>
                             </tr>
                         </thead>
 
@@ -695,14 +697,14 @@ const FollowUpReport = () => {
                                     <td colSpan={uniqueFu3Descriptions.length + 11} className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="w-7 h-7 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                                            <span className="font-semibold text-xs">កំពុងរៀបចំ និងបូកសរុបរបាយការណ៍...</span>
+                                            <span className="font-semibold text-xs">{t('preparingFollowUpReport')}</span>
                                         </div>
                                     </td>
                                 </tr>
                             ) : dailyReportData.length === 0 ? (
                                 <tr>
                                     <td colSpan={uniqueFu3Descriptions.length + 11} className="py-12 text-center text-slate-400 font-medium">
-                                        មិនមានទិន្នន័យ Follow Up សម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ
+                                        {t('noFollowUpDataForDateRange')}
                                     </td>
                                 </tr>
                             ) : (
@@ -846,8 +848,8 @@ const FollowUpReport = () => {
                                     <FaFileDownload />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-black text-slate-800">Export Report Follow Up</h3>
-                                    <p className="text-xs text-slate-500">ជ្រើសរើសទម្រង់ និងចន្លោះទិន្នន័យ</p>
+                                    <h3 className="text-base font-black text-slate-800">{t('exportFollowUpReport')}</h3>
+                                    <p className="text-xs text-slate-500">{t('selectExportFormatAndDateRange')}</p>
                                 </div>
                             </div>
                             <button
@@ -871,7 +873,7 @@ const FollowUpReport = () => {
                                         }`}
                                 >
                                     <FaFileExcel className="text-emerald-600 text-base" />
-                                    <span>Microsoft Excel (.xlsx)</span>
+                                    <span>{t('excelSpreadsheet')} (.xlsx)</span>
                                 </button>
                                 <button
                                     type="button"
@@ -882,7 +884,7 @@ const FollowUpReport = () => {
                                         }`}
                                 >
                                     <MdPictureAsPdf className="text-rose-600 text-lg" />
-                                    <span>PDF Document</span>
+                                    <span>{t('pdfDocument')}</span>
                                 </button>
                             </div>
                             {exportFormat === 'pdf' && (
@@ -892,14 +894,14 @@ const FollowUpReport = () => {
                                         onClick={() => setExportOrientation('portrait')}
                                         className={`p-2 rounded border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${exportOrientation === 'portrait' ? 'border-rose-500 bg-rose-50 text-rose-700 font-black' : 'border-slate-200 text-slate-600 bg-slate-50/50'}`}
                                     >
-                                        <span>📄 {t('pdfPortrait') || 'PDF បញ្ឈរ (Portrait)'}</span>
+                                        <span>📄 {t('pdfPortrait')}</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setExportOrientation('landscape')}
                                         className={`p-2 rounded border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${exportOrientation === 'landscape' ? 'border-rose-500 bg-rose-50 text-rose-700 font-black' : 'border-slate-200 text-slate-600 bg-slate-50/50'}`}
                                     >
-                                        <span>🖼️ {t('pdfLandscape') || 'PDF ផ្តេក (Landscape)'}</span>
+                                        <span>🖼️ {t('pdfLandscape')}</span>
                                     </button>
                                 </div>
                             )}

@@ -116,18 +116,18 @@ const Actions = () => {
 
                 const failedNotifications = result.telegramNotifications?.failed || [];
                 if (result.telegramNotifications?.error) {
-                    alert(`Phone lock was saved, but Telegram notification failed: ${result.telegramNotifications.error}`);
+                    alert(`${t('phoneLockSavedTelegramNotificationFailed')}: ${result.telegramNotifications.error}`);
                 } else if (failedNotifications.length > 0) {
                     const failedIds = failedNotifications.map((notification) => notification.chatId).join(', ');
-                    alert(`Phone lock was saved, but Telegram could not send to: ${failedIds}`);
+                    alert(`${t('phoneLockSavedTelegramDeliveryFailed')}: ${failedIds}`);
                 }
                 setConfirmModalData(null);
             } else {
-                alert(`Failed to update phone lock: ${result.error || res.statusText}`);
+                alert(`${t('failedToUpdatePhoneLock')}: ${result.error || res.statusText}`);
             }
         } catch (err) {
             console.error('Toggle lock error:', err);
-            alert(`Failed to update phone lock: ${err.message}`);
+            alert(`${t('failedToUpdatePhoneLock')}: ${err.message}`);
         } finally {
             setTogglingId(null);
         }
@@ -139,7 +139,7 @@ const Actions = () => {
                 <div className='flex items-center gap-3'>
                     <div>
                         <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                            Lost Phone
+                            {t('lostPhone')}
                         </h1>
                     </div>
                 </div>
@@ -156,7 +156,7 @@ const Actions = () => {
                             isImmutable: user?.isImmutable ? 'true' : 'false'
                         }}
                         value={searchTerm}
-                        placeholder="Search customer, model, serial..."
+                        placeholder={t('searchPlaceholder')}
                         onChange={(value) => {
                             setSelectedSearchRecord(null);
                             setPage(1);
@@ -175,19 +175,19 @@ const Actions = () => {
                 <table className='w-full text-left text-xs whitespace-nowrap'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1 text-center'>Current Lock Status</th>
-                            <th className='px-4 py-1 text-center'>Toggle Action</th>
+                            <th className='px-4 py-1 text-center'>{t('currentLockStatus')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap'>
                         {filteredContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-8 text-slate-500 italic font-medium">
-                                    No devices found.
+                                    {t('noData')}
                                 </td>
                             </tr>
                         ) : (
@@ -221,7 +221,7 @@ const Actions = () => {
                                                         className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-emerald-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
                                                     >
                                                         <FaUnlock size={11} />
-                                                        <span>Set to Unlock Phone</span>
+                                                        <span>{t('setToUnlockPhone')}</span>
                                                     </button>
                                                 ) : (
                                                     <button
@@ -230,11 +230,11 @@ const Actions = () => {
                                                         className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-[5px] text-xs shadow-lg shadow-red-600/20 transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
                                                     >
                                                         <FaLock size={11} />
-                                                        <span>Set to Lock Phone</span>
+                                                        <span>{t('setToLockPhone')}</span>
                                                     </button>
                                                 )
                                             ) : (
-                                                <span className="text-slate-400 font-semibold text-xs italic">Read Only</span>
+                                                <span className="text-slate-400 font-semibold text-xs italic">{t('readOnly')}</span>
                                             )}
                                         </td>
                                     </tr>
@@ -284,44 +284,44 @@ const Actions = () => {
                             </div>
                             <h3 className="text-base font-bold text-slate-900 dark:text-white font-khmer">
                                 {confirmModalData.newStatus === 'Locked'
-                                    ? 'បញ្ជាក់ការចាក់សោទូរស័ព្ទ (Lock Device)'
-                                    : 'បញ្ជាក់ការដោះសោទូរស័ព្ទ (Unlock Device)'}
+                                    ? t('confirmPhoneLockHeading')
+                                    : t('confirmPhoneUnlockHeading')}
                             </h3>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                                 {confirmModalData.newStatus === 'Locked'
-                                    ? 'តើអ្នកពិតជាចង់កំណត់ចាក់សោ (Lock) លើឧបករណ៍នេះមែនទេ?'
-                                    : 'តើអ្នកពិតជាចង់កំណត់ដោះសោ (Unlock) លើឧបករណ៍នេះមែនទេ?'}
+                                    ? t('confirmPhoneLockPrompt')
+                                    : t('confirmPhoneUnlockPrompt')}
                             </p>
                         </div>
 
                         {/* Device Info Summary Card */}
                         <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs space-y-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-slate-500 dark:text-slate-400 font-medium">អតិថិជន (Customer):</span>
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">{t('customerName')}:</span>
                                 <span className="font-bold text-slate-800 dark:text-slate-100 truncate max-w-[200px]">
                                     {confirmModalData.contract?.customerNameKh || confirmModalData.contract?.customerNameEn || '—'}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-slate-500 dark:text-slate-400 font-medium">ម៉ូឌែល (Model):</span>
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">{t('model')}:</span>
                                 <span className="font-semibold text-slate-800 dark:text-slate-100">
                                     {confirmModalData.contract?.model || '—'}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-slate-500 dark:text-slate-400 font-medium">Serial / IMEI:</span>
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">{t('serialImei')}:</span>
                                 <span className="font-mono font-bold text-emerald-600">
                                     {confirmModalData.contract?.serialNumber || '—'}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
-                                <span className="text-slate-500 dark:text-slate-400 font-medium">សកម្មភាព (Action):</span>
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">{t('actions')}:</span>
                                 <span className={`px-2 py-0.5 rounded font-bold text-[11px] ${
                                     confirmModalData.newStatus === 'Locked'
                                         ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
                                         : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
                                 }`}>
-                                    {confirmModalData.newStatus === 'Locked' ? '🔴 Set to Lock Phone' : '🟢 Set to Unlock Phone'}
+                                    {confirmModalData.newStatus === 'Locked' ? `🔴 ${t('setToLockPhone')}` : `🟢 ${t('setToUnlockPhone')}`}
                                 </span>
                             </div>
                         </div>
@@ -334,7 +334,7 @@ const Actions = () => {
                                 onClick={() => setConfirmModalData(null)}
                                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold cursor-pointer transition-all disabled:opacity-40"
                             >
-                                បោះបង់ (Cancel)
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -349,17 +349,17 @@ const Actions = () => {
                                 {togglingId ? (
                                     <>
                                         <FaSpinner className="animate-spin text-xs" />
-                                        <span>កំពុងដំណើរការ...</span>
+                                        <span>{t('processing')}</span>
                                     </>
                                 ) : confirmModalData.newStatus === 'Locked' ? (
                                     <>
                                         <FaLock size={11} />
-                                        <span>បញ្ជាក់ចាក់សោ (Confirm Lock)</span>
+                                        <span>{t('confirmLock')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <FaUnlock size={11} />
-                                        <span>បញ្ជាក់ដោះសោ (Confirm Unlock)</span>
+                                        <span>{t('confirmUnlock')}</span>
                                     </>
                                 )}
                             </button>

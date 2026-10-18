@@ -20,7 +20,7 @@ import {
 } from 'react-icons/fa';
 
 const PrintIdCard = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
 
     // Image state
     const [imageSrc, setImageSrc] = useState(null);
@@ -251,7 +251,7 @@ const PrintIdCard = () => {
                             type="button"
                             onClick={() => setCopies((prev) => Math.max(1, prev - 1))}
                             className="w-7 h-7 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 rounded-md transition-all active:scale-95 cursor-pointer shadow-2xs"
-                            title="បន្ថយ ១ សន្លឹក"
+                            title={t('printDecreaseCopies', lang === 'km' ? 'បន្ថយចំនួនសន្លឹកមួយ' : 'Decrease copies by one')}
                         >
                             <FaMinus size={10} />
                         </button>
@@ -270,7 +270,7 @@ const PrintIdCard = () => {
                             type="button"
                             onClick={() => setCopies((prev) => Math.min(50, prev + 1))}
                             className="w-7 h-7 flex items-center justify-center bg-white hover:bg-slate-200 text-slate-700 rounded-md transition-all active:scale-95 cursor-pointer shadow-2xs"
-                            title="បន្ថែម ១ សន្លឹក"
+                            title={t('printIncreaseCopies', lang === 'km' ? 'បន្ថែមចំនួនសន្លឹកមួយ' : 'Increase copies by one')}
                         >
                             <FaPlus size={10} />
                         </button>
@@ -281,10 +281,10 @@ const PrintIdCard = () => {
                         type="button"
                         onClick={handleResetAll}
                         className="h-[38px] px-3.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer active:scale-95 shadow-2xs"
-                        title="សម្អាតរូបភាព និង កំណត់ឡើងវិញទាំងអស់"
+                        title={t('printClearAll', lang === 'km' ? 'សម្អាតរូបភាព និងកំណត់ឡើងវិញទាំងអស់' : 'Clear image and reset all settings')}
                     >
                         <FaUndoAlt size={12} className="text-rose-600" />
-                        <span>កំណត់ឡើងវិញ</span>
+                        <span>{t('printResetSettings', lang === 'km' ? 'កំណត់ឡើងវិញ' : 'Reset settings')}</span>
                     </button>
 
                     {/* Adjust Margins Button */}
@@ -295,10 +295,10 @@ const PrintIdCard = () => {
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs'
                             : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
                             }`}
-                        title="កំណត់គម្លាតបន្ថែម"
+                        title={t('printAdjustMargins', lang === 'km' ? 'កំណត់គម្លាតបន្ថែម' : 'Adjust margins')}
                     >
                         <FaSlidersH size={13} className="text-emerald-600" />
-                        <span>គម្លាត</span>
+                        <span>{t('printMargins', lang === 'km' ? 'គម្លាត' : 'Margins')}</span>
                     </button>
 
                     {/* Print Button (Opens Custom Alert UI Confirmation) */}
@@ -309,7 +309,7 @@ const PrintIdCard = () => {
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/25 border border-emerald-500'
                             : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed shadow-none'
                             }`}
-                        title={imageSrc ? `ចុចព្រីនចំនួន ${copies} សន្លឹក` : 'សូមបញ្ចូលរូបភាពជាមុនសិន'}
+                        title={imageSrc ? t('printCopiesTitle', lang === 'km' ? `ចុចព្រីនចំនួន ${copies} សន្លឹក` : `Print ${copies} copies`) : t('printImageRequired', lang === 'km' ? 'សូមបញ្ចូលរូបភាពជាមុនសិន' : 'Please add an image first')}
                     >
                         <FaPrint size={14} />
                         <span>{t('printNow') || 'ចុចព្រីន'} ({copies})</span>
@@ -321,7 +321,7 @@ const PrintIdCard = () => {
             {pasteSuccess && (
                 <div className="no-print bg-emerald-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200 shadow-md">
                     <FaCheck size={13} />
-                    <span>បានបិទភ្ជាប់រូបភាពដោយជោគជ័យពី Clipboard!</span>
+                    <span>{t('printClipboardPasteSuccess', lang === 'km' ? 'បានបិទភ្ជាប់រូបភាពដោយជោគជ័យពី Clipboard!' : 'Image pasted from clipboard successfully!')}</span>
                 </div>
             )}
 
@@ -339,17 +339,17 @@ const PrintIdCard = () => {
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-medium">
                                 <FaPaste size={11} className="text-amber-600" />
-                                អាចចុច <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-amber-300 font-bold">Ctrl + V</kbd> ដើម្បី Paste
+                                {t('printCanPasteShortcut', lang === 'km' ? 'អាចចុច' : 'Press')} <kbd className="font-mono bg-white px-1 py-0.5 rounded border border-amber-300 font-bold">Ctrl + V</kbd> {t('printToPaste', lang === 'km' ? 'ដើម្បីបិទភ្ជាប់' : 'to paste')}
                             </span>
 
                             <button
                                 type="button"
                                 onClick={() => setShowKioskTip(!showKioskTip)}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-sky-50 text-sky-800 border border-sky-200 text-[11px] font-medium hover:bg-sky-100 cursor-pointer"
-                                title="ព័ត៌មានអំពីការព្រីនស្វ័យប្រវត្តិកុំឱ្យចេញផ្ទាំង Browser"
+                                title={t('printKioskModeInfo', lang === 'km' ? 'ព័ត៌មានអំពីការព្រីនស្វ័យប្រវត្តិកុំឱ្យចេញផ្ទាំង Browser' : 'Information about kiosk printing without the browser dialog')}
                             >
                                 <FaInfoCircle size={11} className="text-sky-600" />
-                                <span>ព្រីនយកម៉ង</span>
+                                <span>{t('printKioskModeButton', lang === 'km' ? 'ព្រីនភ្លាមៗ' : 'Print instantly')}</span>
                             </button>
                         </div>
                     </div>
@@ -358,19 +358,19 @@ const PrintIdCard = () => {
                     {showKioskTip && (
                         <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-900 space-y-1.5 animate-in fade-in duration-200">
                             <div className="flex items-center justify-between font-bold">
-                                <span>💡 របៀបព្រីនភ្លាមៗដោយមិនចាំបាច់ឆ្លងកាត់ផ្ទាំង Browser:</span>
+                                <span>💡 {t('printKioskModeHeading', lang === 'km' ? 'របៀបព្រីនភ្លាមៗដោយមិនចាំបាច់ឆ្លងកាត់ផ្ទាំង Browser:' : 'How to print instantly without the browser dialog:')}</span>
                                 <button type="button" onClick={() => setShowKioskTip(false)} className="text-sky-600 hover:text-sky-800">
                                     <FaTimes size={12} />
                                 </button>
                             </div>
                             <p className="text-[11px] text-sky-800">
-                                Browser ដូចជា Google Chrome និង Microsoft Edge មានមុខងារសុវត្ថិភាពទាមទារផ្ទាំង Print Preview។ ប៉ុន្តែប្រសិនបើអ្នកចង់ឱ្យចុចព្រីនហើយចេញទៅម៉ាស៊ីនព្រីនភ្លាមៗ អ្នកអាចបើក Chrome ដោយបន្ថែម parameter នេះលើ Shortcut របស់ Chrome:
+                                {t('printKioskModeInstructions', lang === 'km' ? 'កម្មវិធីរុករកដូចជា Google Chrome និង Microsoft Edge ទាមទារឱ្យបង្ហាញផ្ទាំង Print Preview។ បើអ្នកចង់ឱ្យការចុចព្រីនបញ្ជូនទៅម៉ាស៊ីនព្រីនភ្លាមៗ អ្នកអាចបើក Chrome ដោយបន្ថែម parameter នេះទៅ Shortcut របស់ Chrome:' : 'Browsers such as Google Chrome and Microsoft Edge require a Print Preview dialog. To send print jobs directly to the printer, add this parameter to the Chrome shortcut:')}
                             </p>
                             <code className="block bg-white p-2 rounded border border-sky-300 font-mono text-[11px] select-all font-bold text-sky-700">
                                 chrome.exe --kiosk-printing
                             </code>
                             <p className="text-[10px] text-sky-600">
-                                នៅពេលដំណើរការរបៀបនេះ រាល់ពេលចុច "ព្រីនឥឡូវនេះ" វានឹងព្រីនទៅម៉ាស៊ីនព្រីនផ្ទាល់តែម្តង ដោយគ្មានផ្ទាំងរំខានឡើយ!
+                                {t('printKioskModeResult', lang === 'km' ? 'នៅពេលប្រើរបៀបនេះ ការចុច "ព្រីនឥឡូវនេះ" នឹងបោះពុម្ពផ្ទាល់ទៅម៉ាស៊ីនព្រីន ដោយមិនបង្ហាញផ្ទាំងរំខានឡើយ!' : 'With this mode enabled, clicking "Print now" sends the job directly to the printer without another dialog.')}
                             </p>
                         </div>
                     )}
@@ -411,11 +411,11 @@ const PrintIdCard = () => {
                                         {imageName}
                                     </p>
                                     <p className="text-[11px] text-slate-500 mt-0.5">
-                                        ទំហំ: {imageSize || 'N/A'} • ចំនួនព្រីន: <strong className="text-emerald-700">{copies} សន្លឹក</strong>
+                                        {t('fileSize', lang === 'km' ? 'ទំហំ' : 'Size')}: {imageSize || 'N/A'} • {t('printCopies', lang === 'km' ? 'ចំនួនព្រីន' : 'Copies')}: <strong className="text-emerald-700">{copies} {t('sheets', lang === 'km' ? 'សន្លឹក' : 'sheets')}</strong>
                                     </p>
                                     <div className="flex items-center gap-2 mt-2">
                                         <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                            រួចរាល់សម្រាប់ព្រីន
+                                            {t('printReady', lang === 'km' ? 'រួចរាល់សម្រាប់ព្រីន' : 'Ready to print')}
                                         </span>
                                     </div>
                                 </div>
@@ -428,7 +428,7 @@ const PrintIdCard = () => {
                                         }}
                                         className="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
                                     >
-                                        ប្តូររូប
+                                        {t('changeImage', lang === 'km' ? 'ប្តូររូប' : 'Change image')}
                                     </button>
                                     <button
                                         type="button"
@@ -437,7 +437,7 @@ const PrintIdCard = () => {
                                             handleResetAll();
                                         }}
                                         className="px-2.5 py-1.5 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium transition-colors border border-rose-200"
-                                        title="សម្អាតរូបចេញ"
+                                        title={t('printRemoveImage', lang === 'km' ? 'សម្អាតរូបភាពចេញ' : 'Remove image')}
                                     >
                                         <FaTrashAlt size={11} />
                                     </button>
@@ -452,7 +452,7 @@ const PrintIdCard = () => {
                                     {t('dragDropOrPaste') || 'ទាញរូបភាពទម្លាក់ទីនេះ ឬ ចុច Ctrl+V ដើម្បីបិទភ្ជាប់រូប (Paste)'}
                                 </p>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    គាំទ្រឯកសារ PNG, JPG, JPEG, WEBP ឬ រូបភាពដែលបាន Copy ពី Snipping Tool
+                                    {t('printSupportedImageTypes', lang === 'km' ? 'គាំទ្រឯកសារ PNG, JPG, JPEG, WEBP ឬរូបភាពដែលបាន Copy ពី Snipping Tool' : 'Supports PNG, JPG, JPEG, WEBP, or images copied from Snipping Tool')}
                                 </p>
                                 <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold shadow-xs hover:bg-emerald-700 transition-colors">
                                     <FaFileImage size={13} />
@@ -468,7 +468,7 @@ const PrintIdCard = () => {
                             {/* Top Margin Slider */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between font-semibold text-slate-700">
-                                    <span>គម្លាតពីលើ:</span>
+                                    <span>{t('printTopMargin', lang === 'km' ? 'គម្លាតពីលើ:' : 'Top margin:')}</span>
                                     <span className="font-mono text-emerald-700 font-bold">{topMargin}px</span>
                                 </div>
                                 <input
@@ -480,13 +480,13 @@ const PrintIdCard = () => {
                                     onChange={(e) => setTopMargin(Number(e.target.value))}
                                     className="w-full accent-emerald-600 cursor-pointer"
                                 />
-                                <p className="text-[10px] text-slate-400">តាមស្តង់ដារ: 100px</p>
+                                <p className="text-[10px] text-slate-400">{t('printStandardValue', lang === 'km' ? 'តាមស្តង់ដារ:' : 'Standard:')} 100px</p>
                             </div>
 
                             {/* Left/Right Margin Slider */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between font-semibold text-slate-700">
-                                    <span>គម្លាតសងខាង (Side Margins):</span>
+                                    <span>{t('printSideMargins', lang === 'km' ? 'គម្លាតសងខាង' : 'Side margins')}:</span>
                                     <span className="font-mono text-emerald-700 font-bold">{sideMargin}px</span>
                                 </div>
                                 <input
@@ -498,13 +498,13 @@ const PrintIdCard = () => {
                                     onChange={(e) => setSideMargin(Number(e.target.value))}
                                     className="w-full accent-emerald-600 cursor-pointer"
                                 />
-                                <p className="text-[10px] text-slate-400">តាមស្តង់ដារ: 200px</p>
+                                <p className="text-[10px] text-slate-400">{t('printStandardValue', lang === 'km' ? 'តាមស្តង់ដារ:' : 'Standard:')} 200px</p>
                             </div>
 
                             {/* Image Scale Slider */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between font-semibold text-slate-700">
-                                    <span>ទំហំរូបភាព (Scale):</span>
+                                    <span>{t('printImageScale', lang === 'km' ? 'ទំហំរូបភាព (Scale):' : 'Image scale:')}</span>
                                     <span className="font-mono text-emerald-700 font-bold">{scalePercent}%</span>
                                 </div>
                                 <input
@@ -516,7 +516,7 @@ const PrintIdCard = () => {
                                     onChange={(e) => setScalePercent(Number(e.target.value))}
                                     className="w-full accent-emerald-600 cursor-pointer"
                                 />
-                                <p className="text-[10px] text-slate-400">ទំហំដើម: 100%</p>
+                                <p className="text-[10px] text-slate-400">{t('printOriginalSize', lang === 'km' ? 'ទំហំដើម:' : 'Original size:')} 100%</p>
                             </div>
 
                             {/* Quick Action Buttons */}
@@ -528,7 +528,7 @@ const PrintIdCard = () => {
                                         className="flex-1 h-[32px] px-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                                     >
                                         <FaRedo size={11} className="text-emerald-600" />
-                                        <span>បង្វិល 90° ({rotation}°)</span>
+                                        <span>{t('printRotate90', lang === 'km' ? 'បង្វិល 90°' : 'Rotate 90°')} ({rotation}°)</span>
                                     </button>
                                     <button
                                         type="button"
@@ -537,9 +537,9 @@ const PrintIdCard = () => {
                                             ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
                                             : 'bg-white border-slate-200 text-slate-600'
                                             }`}
-                                        title="បង្ហាញបន្ទាត់គែម"
+                                        title={t('printShowBorder', lang === 'km' ? 'បង្ហាញបន្ទាត់គែម' : 'Show border')}
                                     >
-                                        <span>បន្ទាត់កាត់</span>
+                                        <span>{t('printCropBorder', lang === 'km' ? 'បន្ទាត់កាត់' : 'Crop border')}</span>
                                     </button>
                                 </div>
                                 <button
@@ -553,7 +553,7 @@ const PrintIdCard = () => {
                                     }}
                                     className="w-full h-[32px] rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-colors cursor-pointer"
                                 >
-                                    កំណត់តាមលំនាំដើម (100px & 200px)
+                                    {t('printResetToDefaults', lang === 'km' ? 'កំណត់តាមលំនាំដើម (100px & 200px)' : 'Reset to defaults (100px & 200px)')}
                                 </button>
                             </div>
                         </div>
@@ -571,15 +571,15 @@ const PrintIdCard = () => {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-slate-500">
                             <span className="px-2 py-0.5 rounded bg-emerald-50 font-mono text-[11px] text-emerald-800 font-bold border border-emerald-200">
-                                ចំនួនព្រីន: {copies} សន្លឹក
+                                {t('printCopies', lang === 'km' ? 'ចំនួនព្រីន' : 'Copies')}: {copies} {t('sheets', lang === 'km' ? 'សន្លឹក' : 'sheets')}
                             </span>
                             <span className="hidden sm:inline text-slate-400">•</span>
                             <span className="hidden sm:inline">
-                                គម្លាតពីលើ: <strong className="text-slate-700">{topMargin}px</strong>
+                                {t('printTopMargin', lang === 'km' ? 'គម្លាតពីលើ:' : 'Top margin:')} <strong className="text-slate-700">{topMargin}px</strong>
                             </span>
                             <span className="hidden sm:inline text-slate-400">•</span>
                             <span className="hidden sm:inline">
-                                គម្លាតសងខាង: <strong className="text-slate-700">{sideMargin}px</strong>
+                                {t('printSideMargins', lang === 'km' ? 'គម្លាតសងខាង' : 'Side margins')}: <strong className="text-slate-700">{sideMargin}px</strong>
                             </span>
                         </div>
                     </div>
@@ -742,10 +742,10 @@ const PrintIdCard = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-800">
-                                        បញ្ជាក់ការព្រីន
+                                        {t('confirmPrint', lang === 'km' ? 'បញ្ជាក់ការព្រីន' : 'Confirm print')}
                                     </h3>
                                     <p className="text-[11px] text-slate-500">
-                                        សូមពិនិត្យព័ត៌មានមុនពេលដំណើរការព្រីន
+                                        {t('printReviewBeforePrinting', lang === 'km' ? 'សូមពិនិត្យព័ត៌មានមុនពេលដំណើរការព្រីន' : 'Review the details before printing.')}
                                     </p>
                                 </div>
                             </div>
@@ -768,24 +768,24 @@ const PrintIdCard = () => {
                                 )}
                                 <div className="min-w-0 flex-1">
                                     <p className="font-bold text-slate-800 truncate">{imageName || 'ID_Card.png'}</p>
-                                    <p className="text-[11px] text-slate-500">ទំហំឯកសារ: {imageSize || 'N/A'}</p>
+                                    <p className="text-[11px] text-slate-500">{t('fileSize', lang === 'km' ? 'ទំហំឯកសារ' : 'File size')}: {imageSize || 'N/A'}</p>
                                 </div>
                             </div>
 
                             <div className="border-t border-slate-200/80 pt-2.5 space-y-1.5 font-medium text-slate-600 text-[11px]">
                                 <div className="flex justify-between items-center">
-                                    <span>ចំនួនសន្លឹកព្រីនចេញ:</span>
+                                    <span>{t('printCopies', lang === 'km' ? 'ចំនួនសន្លឹកព្រីនចេញ' : 'Number of copies')}:</span>
                                     <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-200">
-                                        {copies} សន្លឹក
+                                        {copies} {t('sheets', lang === 'km' ? 'សន្លឹក' : 'sheets')}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span>ទម្រង់ក្រដាស:</span>
-                                    <span className="font-semibold text-slate-800">A4 Portrait</span>
+                                    <span>{t('paperOrientation', lang === 'km' ? 'ទម្រង់ក្រដាស' : 'Paper orientation')}:</span>
+                                    <span className="font-semibold text-slate-800">{t('printA4Portrait', lang === 'km' ? 'A4 បញ្ឈរ' : 'A4 Portrait')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span>គម្លាតកំណត់:</span>
-                                    <span className="font-mono text-slate-700">ពីលើ {topMargin}px | សងខាង {sideMargin}px</span>
+                                    <span>{t('printMargins', lang === 'km' ? 'គម្លាតកំណត់' : 'Margins')}:</span>
+                                    <span className="font-mono text-slate-700">{t('printTopMargin', lang === 'km' ? 'ពីលើ' : 'Top')} {topMargin}px | {t('printSideMargins', lang === 'km' ? 'សងខាង' : 'Sides')} {sideMargin}px</span>
                                 </div>
                             </div>
                         </div>
@@ -797,7 +797,7 @@ const PrintIdCard = () => {
                                 onClick={() => setShowConfirmModal(false)}
                                 className="h-[38px] px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -805,7 +805,7 @@ const PrintIdCard = () => {
                                 className="h-[38px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 border border-emerald-500 flex items-center gap-2 cursor-pointer active:scale-95"
                             >
                                 <FaPrint size={13} />
-                                <span>ព្រីនឥឡូវនេះ</span>
+                                <span>{t('printNow', lang === 'km' ? 'ព្រីនឥឡូវនេះ' : 'Print now')}</span>
                             </button>
                         </div>
                     </div>
@@ -821,7 +821,7 @@ const PrintIdCard = () => {
                         </div>
                         <div className="space-y-1">
                             <h3 className="text-sm font-bold text-slate-800">
-                                សូមបញ្ជាក់ព័ត៌មាន
+                                {t('printNotice', lang === 'km' ? 'សូមបញ្ជាក់ព័ត៌មាន' : 'Please review the details')}
                             </h3>
                             <p className="text-xs text-slate-600 leading-relaxed">
                                 {warningModalMessage}
@@ -833,7 +833,7 @@ const PrintIdCard = () => {
                                 onClick={() => setWarningModalMessage('')}
                                 className="w-full h-[36px] rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-md shadow-amber-600/20 cursor-pointer"
                             >
-                                យល់ព្រម
+                                {t('ok', lang === 'km' ? 'យល់ព្រម' : 'OK')}
                             </button>
                         </div>
                     </div>

@@ -240,19 +240,19 @@ const ReportAll = () => {
     // Export to Excel (Styled Spreadsheet)
     const handleExportExcel = () => {
         const columns = [
-            { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-            { header: 'Brand Name', accessor: 'brand' },
-            { header: 'Customers', accessor: 'totalCustomers' },
-            { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Total Paid ($)', cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Remaining ($)', cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Activated', accessor: 'activatedCount' },
-            { header: 'Application', accessor: 'applicationCount' },
-            { header: 'Check', accessor: 'checkCount' },
-            { header: 'Redeem', accessor: 'redeemCount' },
-            { header: 'Blacklist', accessor: 'blacklistCount' },
-            { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
-            { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+            { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+            { header: t('branchName'), accessor: 'brand' },
+            { header: t('totalCustomers'), accessor: 'totalCustomers' },
+            { header: t('loanDisbursedCol'), cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: t('totalPaid'), cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: t('remainingBalanceShort'), cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: t('activated'), accessor: 'activatedCount' },
+            { header: t('application'), accessor: 'applicationCount' },
+            { header: t('check'), accessor: 'checkCount' },
+            { header: t('redeem'), accessor: 'redeemCount' },
+            { header: t('blacklist'), accessor: 'blacklistCount' },
+            { header: t('lockPhone'), accessor: 'lockedPhoneCount' },
+            { header: t('lockWallpaper'), accessor: 'lockedWallpaperCount' }
         ];
         const exportData = [...brandSummaryData.rows, brandSummaryData.grandTotal];
         exportToExcel('Master Executive Summary Report', columns, exportData, user?.brand || 'GLOBAL ALL');
@@ -261,17 +261,17 @@ const ReportAll = () => {
     // Export to PDF
     const handleExportPDF = (orientation = 'portrait') => {
         const columns = [
-            { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-            { header: 'Brand Name', accessor: 'brand' },
-            { header: 'Customers', accessor: 'totalCustomers' },
-            { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Total Paid ($)', cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Remaining ($)', cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
-            { header: 'Activated', accessor: 'activatedCount' },
-            { header: 'App / Check', cell: (r) => `${r.applicationCount || 0} / ${r.checkCount || 0}` },
-            { header: 'Redeem / Blacklist', cell: (r) => `${r.redeemCount || 0} / ${r.blacklistCount || 0}` },
-            { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
-            { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+            { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+            { header: t('branchName'), accessor: 'brand' },
+            { header: t('totalCustomers'), accessor: 'totalCustomers' },
+            { header: t('loanDisbursedCol'), cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: t('totalPaid'), cell: (r) => `$${(r.totalPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: t('remainingBalanceShort'), cell: (r) => `$${(r.remainingBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+            { header: t('activated'), accessor: 'activatedCount' },
+            { header: t('applicationCheck'), cell: (r) => `${r.applicationCount || 0} / ${r.checkCount || 0}` },
+            { header: t('redeemBlacklist'), cell: (r) => `${r.redeemCount || 0} / ${r.blacklistCount || 0}` },
+            { header: t('lockPhone'), accessor: 'lockedPhoneCount' },
+            { header: t('lockWallpaper'), accessor: 'lockedWallpaperCount' }
         ];
 
         const pdfData = [...brandSummaryData.rows, brandSummaryData.grandTotal];
@@ -295,7 +295,7 @@ const ReportAll = () => {
                     {/* Brand Selector Filter */}
                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-[5px] text-xs font-bold text-indigo-900">
                         <MdFilterList size={16} className="text-indigo-600" />
-                        <span>Brand Filter:</span>
+                        <span>{t('brandFilter')}:</span>
                         <select
                             value={selectedBrand}
                             onChange={(e) => setSelectedBrand(e.target.value)}
@@ -338,7 +338,7 @@ const ReportAll = () => {
                         <FaUsers />
                     </div>
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Customers</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalCustomers')}</p>
                         <h3 className="text-lg font-black text-slate-900 mt-0.5">{kpi.totalCustomers.toLocaleString()}</h3>
                     </div>
                 </div>
@@ -348,7 +348,7 @@ const ReportAll = () => {
                         <FaDollarSign />
                     </div>
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Loan ($)</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('loanDisbursedCol')}</p>
                         <h3 className="text-lg font-black text-blue-700 mt-0.5">${kpi.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                     </div>
                 </div>
@@ -358,7 +358,7 @@ const ReportAll = () => {
                         <FaMoneyBillWave />
                     </div>
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Received ($)</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalReceived')}</p>
                         <h3 className="text-lg font-black text-emerald-700 mt-0.5">${kpi.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                     </div>
                 </div>
@@ -368,7 +368,7 @@ const ReportAll = () => {
                         <FaExchangeAlt />
                     </div>
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Remaining Balance ($)</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('remainingBalance')}</p>
                         <h3 className="text-lg font-black text-amber-700 mt-0.5">${kpi.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                     </div>
                 </div>
@@ -378,7 +378,7 @@ const ReportAll = () => {
                         <FaLock />
                     </div>
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Lock Phone Devices</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('lockPhoneDevices')}</p>
                         <h3 className="text-lg font-black text-rose-700 mt-0.5">{kpi.lockedPhone.toLocaleString()}</h3>
                     </div>
                 </div>
@@ -388,7 +388,7 @@ const ReportAll = () => {
                         <FaImage />
                     </div>
                     <div>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Lock Wallpaper Devices</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('lockWallpaperDevices')}</p>
                         <h3 className="text-lg font-black text-purple-700 mt-0.5">{kpi.lockedWallpaper.toLocaleString()}</h3>
                     </div>
                 </div>
@@ -397,12 +397,12 @@ const ReportAll = () => {
             {/* Line Chart Component */}
             <LineChart
                 title={t('contractFinancialChart')}
-                subtitle="បង្ហាញពីការកើនឡើងចំនួនកិច្ចសន្យា ទឹកប្រាក់ឥណទាន និងទឹកប្រាក់ទទួលបានប្រចាំថ្ងៃ/ខែ"
+                subtitle={t('reportAllTrendDescription')}
                 data={chartTrendData}
                 series={[
                     { key: 'contractsCount', label: t('contract'), color: '#6366f1', isCurrency: false },
-                    { key: 'loanAmount', label: 'ទឹកប្រាក់ឥណទាន ($)', color: '#3b82f6', isCurrency: true },
-                    { key: 'paidAmount', label: 'ទឹកប្រាក់ទទួលបាន ($)', color: '#10b981', isCurrency: true }
+                    { key: 'loanAmount', label: t('loanDisbursedCol'), color: '#3b82f6', isCurrency: true },
+                    { key: 'paidAmount', label: t('totalReceived'), color: '#10b981', isCurrency: true }
                 ]}
             />
 
@@ -422,7 +422,7 @@ const ReportAll = () => {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Search customer, model, serial..."
+                            placeholder={t('searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-4 pr-4 py-1.5 bg-slate-50 border border-slate-300 rounded-[5px] text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all w-60 shadow-2xs"
@@ -434,30 +434,30 @@ const ReportAll = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-indigo-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                             <tr>
-                                <th className='px-3.5 py-1 text-center'>No</th>
-                                <th className='px-3.5 py-1'>Brand Name</th>
-                                <th className='px-3.5 py-1 text-center'>Total Customers</th>
-                                <th className='px-3.5 py-1 text-right'>Total Loan ($)</th>
-                                <th className='px-3.5 py-1 text-right text-emerald-200'>Total Paid ($)</th>
-                                <th className='px-3.5 py-1 text-right text-amber-200'>Remaining ($)</th>
-                                <th className='px-3.5 py-1 text-center'>Activated</th>
-                                <th className='px-3.5 py-1 text-center'>App / Check</th>
-                                <th className='px-3.5 py-1 text-center'>Redeem / Blacklist</th>
-                                <th className='px-3.5 py-1 text-center text-rose-200'>Lock Phone</th>
-                                <th className='px-3.5 py-1 text-center text-purple-200'>Lock Wallpaper</th>
+                                <th className='px-3.5 py-1 text-center'>{t('no')}</th>
+                                <th className='px-3.5 py-1'>{t('branchName')}</th>
+                                <th className='px-3.5 py-1 text-center'>{t('totalCustomers')}</th>
+                                <th className='px-3.5 py-1 text-right'>{t('loanDisbursedCol')}</th>
+                                <th className='px-3.5 py-1 text-right text-emerald-200'>{t('totalPaid')}</th>
+                                <th className='px-3.5 py-1 text-right text-amber-200'>{t('remainingBalanceShort')}</th>
+                                <th className='px-3.5 py-1 text-center'>{t('activated')}</th>
+                                <th className='px-3.5 py-1 text-center'>{t('applicationCheck')}</th>
+                                <th className='px-3.5 py-1 text-center'>{t('redeemBlacklist')}</th>
+                                <th className='px-3.5 py-1 text-center text-rose-200'>{t('lockPhone')}</th>
+                                <th className='px-3.5 py-1 text-center text-purple-200'>{t('lockWallpaper')}</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
                             {loading ? (
                                 <tr>
                                     <td colSpan={11} className="text-center py-10 text-indigo-600 font-bold">
-                                        Loading Master Executive Summary Report...
+                                        {t('loadingMasterExecutiveSummary')}
                                     </td>
                                 </tr>
                             ) : brandSummaryData.rows.length === 0 ? (
                                 <tr>
                                     <td colSpan={11} className="text-center py-8 text-slate-400 italic">
-                                        No data records found for selected brand scope.
+                                        {t('noDataForSelectedBrand')}
                                     </td>
                                 </tr>
                             ) : (
@@ -485,7 +485,7 @@ const ReportAll = () => {
                             {/* Grand Total Summary Row */}
                             {!loading && brandSummaryData.rows.length > 0 && (
                                 <tr className="bg-indigo-100/80 border-t-2 border-indigo-400 font-black text-indigo-950">
-                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">{t('totalLabel')}</td>
                                     <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-indigo-950">
                                         {brandSummaryData.grandTotal.brand}
                                     </td>

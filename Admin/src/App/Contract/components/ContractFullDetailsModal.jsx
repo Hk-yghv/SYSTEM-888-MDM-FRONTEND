@@ -353,7 +353,7 @@ const ContractFullDetailsModal = ({
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700 bg-gray-800 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <h3 className="text-sm font-bold text-gray-100 flex items-center gap-2">
-                            <span>Contract:</span>
+                            <span>{t('contract')}:</span>
                             <span className="font-mono text-indigo-400 font-bold">{contract.contractIid || contract.contractId || '—'}</span>
                             {contract.contractIid && contract.contractId && (
                                 <span className="text-xs font-mono text-amber-300 font-medium">({contract.contractId})</span>
@@ -373,7 +373,7 @@ const ContractFullDetailsModal = ({
                             disabled={downloadingPdf}
                             onClick={handleDirectExportPdf}
                             className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-[5px] text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm`}
-                            title="Download Customer Dossier & Repayment Schedule as PDF directly"
+                            title={t('downloadCustomerDossierPdf')}
                         >
                             <FaFilePdf className={downloadingPdf ? 'animate-pulse' : ''} />
                             <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
@@ -433,11 +433,11 @@ const ContractFullDetailsModal = ({
                                         )}
                                     </div>
                                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-gray-400">
-                                        <span>Brand: <strong className="text-gray-200">{contract.brand || '—'}</strong></span>
+                                        <span>{t('brand')}: <strong className="text-gray-200">{contract.brand || '—'}</strong></span>
                                         <span>•</span>
-                                        <span>Date: <strong className="text-amber-300 font-mono">{contract.inputDate || '—'}</strong></span>
+                                        <span>{t('date')}: <strong className="text-amber-300 font-mono">{contract.inputDate || '—'}</strong></span>
                                         <span>•</span>
-                                        <span>Phone: <strong className="text-emerald-400 font-mono">{contract.phone || '—'}</strong></span>
+                                        <span>{t('phone')}: <strong className="text-emerald-400 font-mono">{contract.phone || '—'}</strong></span>
                                     </div>
                                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                                         {contract.urlFb && (
@@ -457,47 +457,47 @@ const ContractFullDetailsModal = ({
                             {/* Customer Info Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract IID (Manual)</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('contractIidManual')}</span>
                                     <span className="font-mono text-indigo-400 font-bold">{contract.contractIid || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract ID (Auto)</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('contractIdAuto')}</span>
                                     <span className="font-mono text-amber-300 font-bold">{contract.contractId || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">ID Card</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('idCard')}</span>
                                     <span className="font-mono text-gray-100 font-bold">{contract.idCardNumber || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Date of Birth</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('dob')}</span>
                                     <span className="font-mono text-gray-200">{contract.dob || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Gender</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('customerGender')}</span>
                                     <span className="text-gray-100 capitalize">{contract.gender || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Phone Number</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('phoneNumber')}</span>
                                     <span className="font-mono text-emerald-400 font-bold">{contract.phone || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Relative Phone</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('customerRelativePhone')}</span>
                                     <span className="font-mono text-gray-300">{contract.relativePhone || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Telegram</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('telegram')}</span>
                                     <span className="text-sky-400 font-semibold">{contract.telegramName || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Facebook</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('facebook')}</span>
                                     <span className="text-indigo-300 font-semibold">{contract.facebookName || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Current Address</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('customerCurrentAddress')}</span>
                                     <span className="text-gray-200">{contract.currentAddress || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Birth Address</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('customerBirthAddress')}</span>
                                     <span className="text-gray-200">{contract.birthAddress || '—'}</span>
                                 </div>
                             </div>
@@ -509,49 +509,49 @@ const ContractFullDetailsModal = ({
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Device Model</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('deviceModel')}</span>
                                     <span className="text-purple-300 font-bold">{contract.model || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Brand</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('brand')}</span>
                                     <span className="text-gray-100 font-bold">{contract.brand || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Serial Number</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('serialNumber')}</span>
                                     <span className="font-mono text-cyan-400 font-bold">{contract.serialNumber || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">IMEI 1</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('imei1')}</span>
                                     <span className="font-mono text-gray-200 font-bold">{formatIMEI(contract.imei1)}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">IMEI 2</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('imei2')}</span>
                                     <span className="font-mono text-gray-300">{formatIMEI(contract.imei2)}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">MEID</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('deviceMeid')}</span>
                                     <span className="font-mono text-pink-400 font-semibold">{contract.meid || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">OS Version</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('osVersion')}</span>
                                     <span className="text-indigo-300 font-semibold">{contract.version || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Color</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('deviceColor')}</span>
                                     <span className="text-gray-200">{contract.color || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Capacity / Storage</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('capacityStorage')}</span>
                                     <span className="text-gray-200 font-mono">{contract.capacity || '—'}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Phone Lock</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('devicePhoneLock')}</span>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${contract.lockPhoneStatus === 'Locked' ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}`}>
                                         {contract.lockPhoneStatus || 'Unlocked'}
                                     </span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Wallpaper Lock</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('wallpaperLockCol')}</span>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${contract.lockWallpaperStatus === 'Locked' ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-emerald-950 text-emerald-400 border border-emerald-800'}`}>
                                         {contract.lockWallpaperStatus || 'Unlocked'}
                                     </span>
@@ -560,7 +560,7 @@ const ContractFullDetailsModal = ({
 
                             {contract.deviceProblem && (
                                 <div className="p-2 bg-amber-950/30 border border-amber-800/50 rounded-[5px] text-xs">
-                                    <span className="text-amber-400 block text-[10px] font-bold uppercase mb-0.5">Device Problem / Issues</span>
+                                    <span className="text-amber-400 block text-[10px] font-bold uppercase mb-0.5">{t('deviceProblemIssues')}</span>
                                     <p className="text-amber-200 font-medium">{contract.deviceProblem}</p>
                                 </div>
                             )}
@@ -572,43 +572,43 @@ const ContractFullDetailsModal = ({
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract IID (Manual)</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('contractIidManual')}</span>
                                     <span className="font-mono text-indigo-400 font-bold text-sm">{contract.contractIid || '—'}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Contract ID (Auto)</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('contractIdAuto')}</span>
                                     <span className="font-mono text-amber-300 font-bold text-sm">{contract.contractId || '—'}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Loan Input Date</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('loanInputDate')}</span>
                                     <span className="font-mono text-amber-300 font-bold">{contract.inputDate || '—'}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Total Loan Amount</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('customerTotalLoanAmount')}</span>
                                     <span className="font-mono text-emerald-400 font-bold text-base">${Number(contract.amount || contract.totalAmount || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Customer Received / Monthly</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('customerReceivedMonthly')}</span>
                                     <span className="font-mono text-cyan-400 font-bold text-base">${Number(contract.monthlyPayment || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Interest Rate</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('interestRate')}</span>
                                     <span className="text-gray-100 font-bold">{contract.interest || contract.interestType || '14%'}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Loan Duration</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('loanDuration')}</span>
                                     <span className="text-gray-100 font-bold">{contract.duration || '12 Months'}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Admin Fee</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('adminFee')}</span>
                                     <span className="font-mono text-gray-200 font-bold">${Number(contract.adminFee || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="p-2 bg-gray-800/80 rounded-[5px] border border-gray-700 md:col-span-2">
-                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">Payment Summary</span>
+                                    <span className="text-gray-400 block text-[10px] font-bold uppercase mb-0.5">{t('paymentSummary')}</span>
                                     <div className="flex items-center gap-3 text-xs mt-1">
-                                        <span className="text-gray-300">Paid: <strong className="text-emerald-400 font-mono">${totalPaid.toLocaleString()}</strong></span>
+                                        <span className="text-gray-300">{t('paid')}: <strong className="text-emerald-400 font-mono">${totalPaid.toLocaleString()}</strong></span>
                                         <span className="text-gray-500">•</span>
-                                        <span className="text-gray-300">Remaining: <strong className="text-amber-400 font-mono">${Math.max(0, totalScheduled - totalPaid).toLocaleString()}</strong></span>
+                                        <span className="text-gray-300">{t('remainingBalance')}: <strong className="text-amber-400 font-mono">${Math.max(0, totalScheduled - totalPaid).toLocaleString()}</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -621,19 +621,19 @@ const ContractFullDetailsModal = ({
                             {/* Summary Info Cards */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                                 <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
-                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">Total Loan</span>
+                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">{t('customerTotalLoan')}</span>
                                     <span className="text-emerald-400 font-mono font-bold text-sm">${totalLoan.toLocaleString()}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
-                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">Total Scheduled</span>
+                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">{t('totalScheduledAmountLabel')}</span>
                                     <span className="text-cyan-400 font-mono font-bold text-sm">${totalScheduled.toLocaleString()}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
-                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">Total Paid</span>
+                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">{t('totalPaid')}</span>
                                     <span className="text-emerald-400 font-mono font-bold text-sm">${totalPaid.toLocaleString()}</span>
                                 </div>
                                 <div className="p-2.5 bg-gray-800/80 border border-gray-700 rounded-[5px]">
-                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">Remaining</span>
+                                    <span className="text-gray-400 block text-[10px] uppercase font-bold">{t('dashboardRemaining')}</span>
                                     <span className="text-amber-400 font-mono font-bold text-sm">${Math.max(0, totalScheduled - totalPaid).toLocaleString()}</span>
                                 </div>
                             </div>
@@ -644,15 +644,15 @@ const ContractFullDetailsModal = ({
                                     <thead>
                                         <tr className="bg-gray-800 text-gray-300 border-b border-gray-700 text-[11px] uppercase tracking-wider font-semibold">
                                             <th className="px-3 py-2 text-center">N°</th>
-                                            <th className="px-3 py-2">Schedule Month</th>
-                                            <th className="px-3 py-2">Due Date</th>
-                                            <th className="px-3 py-2 text-right">Scheduled ($)</th>
-                                            <th className="px-3 py-2 text-right">Penalty ($)</th>
-                                            <th className="px-3 py-2 text-right">Total ($)</th>
-                                            <th className="px-3 py-2 text-right">Paid ($)</th>
-                                            <th className="px-3 py-2 text-center">Status</th>
-                                            <th className="px-3 py-2">Comment</th>
-                                            <th className="px-3 py-2 text-center">Actions</th>
+                                            <th className="px-3 py-2">{t('scheduleMonth')}</th>
+                                            <th className="px-3 py-2">{t('dueDateLabel')}</th>
+                                            <th className="px-3 py-2 text-right">{t('scheduledAmountLabel')} ($)</th>
+                                            <th className="px-3 py-2 text-right">{t('penalty')} ($)</th>
+                                            <th className="px-3 py-2 text-right">{t('total')} ($)</th>
+                                            <th className="px-3 py-2 text-right">{t('paid')} ($)</th>
+                                            <th className="px-3 py-2 text-center">{t('status')}</th>
+                                            <th className="px-3 py-2">{t('commentLabel')}</th>
+                                            <th className="px-3 py-2 text-center">{t('actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-800 text-gray-200">
@@ -718,7 +718,7 @@ const ContractFullDetailsModal = ({
                                                             type="text"
                                                             value={row.comment || ''}
                                                             onChange={e => handleRowChange(idx, 'comment', e.target.value)}
-                                                            placeholder="Note / remark"
+                                                            placeholder={t('noteRemarkPlaceholder')}
                                                             className="w-full min-w-[100px] px-2 py-1 bg-gray-800/80 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-200 text-xs outline-none"
                                                         />
                                                     </td>
@@ -747,7 +747,7 @@ const ContractFullDetailsModal = ({
                                                                             onClick={() => handleSaveRowDraft(idx)}
                                                                             className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-400 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer"
                                                                         >
-                                                                            <FaSave size={11} /> Save
+                                                                            <FaSave size={11} /> {t('save')}
                                                                         </button>
 
                                                                         <button
@@ -755,7 +755,7 @@ const ContractFullDetailsModal = ({
                                                                             onClick={() => { handleRowChange(idx, 'status', 'Pending'); setActiveDropdownIdx(null); }}
                                                                             className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer"
                                                                         >
-                                                                            <FaEdit size={11} /> Edit
+                                                                            <FaEdit size={11} /> {t('edit')}
                                                                         </button>
 
                                                                         {!isLastMonth && row.status !== 'PayOff' && (
@@ -764,7 +764,7 @@ const ContractFullDetailsModal = ({
                                                                                 onClick={() => handleMarkPaid(idx)}
                                                                                 className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
                                                                             >
-                                                                                <FaCheckCircle size={11} /> Paid
+                                                                                <FaCheckCircle size={11} /> {t('paid')}
                                                                             </button>
                                                                         )}
 
@@ -773,7 +773,7 @@ const ContractFullDetailsModal = ({
                                                                             onClick={() => handleMarkPayOff(idx)}
                                                                             className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-300 hover:bg-gray-800 flex items-center gap-1.5 cursor-pointer border-t border-gray-800"
                                                                         >
-                                                                            <FaLock size={11} /> Pay Off
+                                                                            <FaLock size={11} /> {t('payOff')}
                                                                         </button>
 
                                                                         {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (
@@ -807,7 +807,7 @@ const ContractFullDetailsModal = ({
                 <div className="flex items-center justify-between px-4 py-2.5 border-t border-gray-700 bg-gray-800 flex-shrink-0">
                     <div className="text-xs text-gray-400">
                         {activeTab === 'schedule' && (
-                            <span>Total Rows: <strong className="text-indigo-400 font-mono">{rows.length}</strong></span>
+                            <span>{t('totalRows')}: <strong className="text-indigo-400 font-mono">{rows.length}</strong></span>
                         )}
                     </div>
 
@@ -820,7 +820,7 @@ const ContractFullDetailsModal = ({
                                 className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-purple-600/30 flex items-center gap-1.5 transition-all"
                             >
                                 <MdSwapHoriz size={16} />
-                                <span>Redeem</span>
+                                <span>{t('redeem')}</span>
                             </button>
                         )}
 

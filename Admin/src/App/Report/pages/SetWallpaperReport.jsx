@@ -114,47 +114,47 @@ const SetWallpaperReport = () => {
         if (activeTab === 'summary') {
             const rows = [...summaryBreakdown.rows, { ...summaryBreakdown.grandTotal }];
             const exported = rows.map((r, idx) => ({
-                'No': r.isTotalRow ? 'TOTAL' : idx + 1,
-                'Brand Domain': r.brand,
-                'Total Wallpaper Actions': r.totalWallpaperActions,
-                'Unique Customers': r.uniqueCustomers
+                [t('no')]: r.isTotalRow ? t('totalLabel') : idx + 1,
+                [t('brandDomain')]: r.brand,
+                [t('totalWallpaperActions')]: r.totalWallpaperActions,
+                [t('uniqueCustomers')]: r.uniqueCustomers
             }));
-            return exportToExcel(exported, 'SetWallpaper_Summary_Report');
+            return exportToExcel(exported, t('setWallpaperSummaryTable'));
         }
         const allData = await fetchAllForExport();
         const exported = allData.map((item, idx) => ({
-            'No': idx + 1,
-            'Customer Name': item.customerName || '',
-            'Model': item.model || '',
-            'Serial Number': item.serialNumber || '',
-            'Brand': item.brand || user?.brand || 'SYSTEM',
-            'Last Set': item.lastSetTime || `${item.date} ${item.time}`,
-            'Performed By': item.performedBy || ''
+            [t('no')]: idx + 1,
+            [t('customerName')]: item.customerName || '',
+            [t('model')]: item.model || '',
+            [t('serialNumber')]: item.serialNumber || '',
+            [t('brand')]: item.brand || user?.brand || 'SYSTEM',
+            [t('lastSet')]: item.lastSetTime || `${item.date} ${item.time}`,
+            [t('performedBy')]: item.performedBy || ''
         }));
-        exportToExcel(exported, 'Set_Wallpaper_Report');
+        exportToExcel(exported, t('setWallpaperReportTitle'));
     };
 
     const handleExportPDF = async (orientation = 'portrait') => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Wallpaper Actions', accessor: 'totalWallpaperActions' },
-                { header: 'Unique Customers', accessor: 'uniqueCustomers' }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalWallpaperActions'), accessor: 'totalWallpaperActions' },
+                { header: t('uniqueCustomers'), accessor: 'uniqueCustomers' }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToPDF('Set Wallpaper — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
+            return exportToPDF(t('setWallpaperSummaryTable'), summaryColumns, pdfData, user?.brand || '', pdfOrientation);
         }
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer', accessor: 'customerName' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Last Set', cell: (r) => r.lastSetTime || `${r.date} ${r.time}` },
-            { header: 'Performed By', accessor: 'performedBy' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('customerName'), accessor: 'customerName' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('lastSet'), cell: (r) => r.lastSetTime || `${r.date} ${r.time}` },
+            { header: t('performedBy'), accessor: 'performedBy' }
         ];
-        exportToPDF('Set Wallpaper Report', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF(t('setWallpaperReportTitle'), columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Calculate Brand Summary Grouping
@@ -270,7 +270,7 @@ const SetWallpaperReport = () => {
                                 <FaImage />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Set Wallpaper Actions</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t('totalSetWallpaperActions')}</p>
                                 <h3 className="text-2xl font-black text-purple-700 mt-0.5">{kpi.totalWallpaperActions.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -280,7 +280,7 @@ const SetWallpaperReport = () => {
                                 <FaUserCheck />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Unique Wallpaper Locked Customers</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t('uniqueWallpaperLockedCustomers')}</p>
                                 <h3 className="text-2xl font-black text-indigo-700 mt-0.5">{kpi.uniqueCustomers.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -289,10 +289,10 @@ const SetWallpaperReport = () => {
                     {/* Line Chart Component */}
                     <LineChart
                         title={t('setWallpaperTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួនប្រតិបត្តិការត័រ Wallpaper ប្រចាំថ្ងៃ/ខែ"
+                        subtitle={t('setWallpaperReportTrendDescription')}
                         data={chartTrendData}
                         series={[
-                            { key: 'wallpaperCount', label: 'Set Wallpaper', color: '#a855f7', isCurrency: false }
+                            { key: 'wallpaperCount', label: t('setWallpaper'), color: '#a855f7', isCurrency: false }
                         ]}
                     />
 
@@ -345,19 +345,19 @@ const SetWallpaperReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-1 text-center'>No</th>
-                                <th className='px-4 py-1'>Customer</th>
-                                <th className='px-4 py-1'>Model</th>
-                                <th className='px-4 py-1'>Serial Number</th>
-                                <th className='px-4 py-1'>Last Set Date & Time</th>
-                                <th className='px-4 py-1'>Performed By</th>
+                                <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                <th className='px-4 py-1'>{t('customerLabel')}</th>
+                                <th className='px-4 py-1'>{t('model')}</th>
+                                <th className='px-4 py-1'>{t('serialNumber')}</th>
+                                <th className='px-4 py-1'>{t('lastSetDateTime')}</th>
+                                <th className='px-4 py-1'>{t('performedBy')}</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
-                                <tr><td colSpan={6} className="text-center py-10 text-purple-600 font-semibold">Loading...</td></tr>
+                                <tr><td colSpan={6} className="text-center py-10 text-purple-600 font-semibold">{t('loading')}</td></tr>
                             ) : visibleDataList.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">No set wallpaper records found.</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">{t('noSetWallpaperRecords')}</td></tr>
                             ) : (
                                 visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-purple-50/40 transition-colors'>
@@ -389,11 +389,11 @@ const SetWallpaperReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-purple-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-1 text-center'>No</th>
-                                    <th className='px-3.5 py-1'>Brand Domain</th>
-                                    <th className='px-3.5 py-1 text-center'>Total Set Wallpaper Actions</th>
-                                    <th className='px-3.5 py-1 text-center'>Unique Wallpaper Customers</th>
-                                    <th className='px-3.5 py-1 text-center'>Wallpaper Status</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-3.5 py-1'>{t('brandDomain')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('totalSetWallpaperActions')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('uniqueWallpaperCustomers')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('wallpaperStatus')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
@@ -407,19 +407,19 @@ const SetWallpaperReport = () => {
                                         </td>
                                         <td className="px-3.5 py-1 text-center font-bold text-purple-700">{row.totalWallpaperActions.toLocaleString()}</td>
                                         <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.uniqueCustomersCount.toLocaleString()}</td>
-                                        <td className="px-3.5 py-1 text-center font-bold text-purple-700">Set / Locked</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-purple-700">{t('setLocked', 'Set / Locked')}</td>
                                     </tr>
                                 ))}
 
                                 {/* Grand Total Row */}
                                 <tr className="bg-purple-100/80 border-t-2 border-purple-400 font-black text-purple-950">
-                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">{t('totalLabel')}</td>
                                     <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-purple-950">
                                         {summaryBreakdown.grandTotal.brand}
                                     </td>
                                     <td className="px-3.5 py-3.5 text-center text-purple-950 font-black">{summaryBreakdown.grandTotal.totalWallpaperActions.toLocaleString()}</td>
                                     <td className="px-3.5 py-3.5 text-center text-slate-900 font-black">{summaryBreakdown.grandTotal.uniqueCustomersCount.toLocaleString()}</td>
-                                    <td className="px-3.5 py-3.5 text-center font-black text-purple-950">Set / Locked</td>
+                                    <td className="px-3.5 py-3.5 text-center font-black text-purple-950">{t('setLocked')}</td>
                                 </tr>
                             </tbody>
                         </table>

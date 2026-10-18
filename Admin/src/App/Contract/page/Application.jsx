@@ -87,7 +87,7 @@ const Application = () => {
     };
 
     const handleDeleteContract = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this application contract?')) return;
+        if (!window.confirm(t('deleteApplicationConfirm'))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (!res.ok) {
@@ -99,7 +99,7 @@ const Application = () => {
             setOpenMenuId(null);
         } catch (err) {
             console.error('Delete error:', err);
-            window.alert(err.message || 'Unable to delete this application contract.');
+            window.alert(err.message || t('deleteApplicationFailed'));
         }
     };
 
@@ -185,7 +185,7 @@ const Application = () => {
                             userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : ''
                         }}
                         value={searchTerm}
-                        placeholder="Search customer, model, serial..."
+                        placeholder={t('searchCustomerModelSerial')}
                         className="w-64"
                         onChange={(value) => {
                             setSelectedSearchRecord(null);
@@ -220,16 +220,16 @@ const Application = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
-                            <th className='px-4 py-1 text-center'>Contract</th>
+                            <th className='px-4 py-1 text-center'>{t('contract')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Sub Brand</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('deviceSubBrand')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
@@ -264,7 +264,7 @@ const Application = () => {
                                     </td>
                                     <td className='px-4 py-1 text-center'>
                                         <span className='px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 rounded-full font-bold text-[10px] uppercase'>
-                                            Application
+                                            {t('application')}
                                         </span>
                                     </td>
                                     <td className='px-4 py-1 text-center font-mono text-indigo-700 font-bold'>
@@ -305,7 +305,7 @@ const Application = () => {
                                                                 onClick={() => handleActivateContract(item._id)}
                                                                 className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                             >
-                                                                <span>Set to Activated</span>
+                                                                <span>{t('setToActivated')}</span>
                                                             </button>
                                                         )}
                                                         {(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL) && (
@@ -313,7 +313,7 @@ const Application = () => {
                                                                 onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
                                                                 className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                             >
-                                                                <span>Open Mosyle</span>
+                                                                <span>{t('openMosyle')}</span>
                                                             </button>
                                                         )}
                                                         {canEdit && (
@@ -377,29 +377,29 @@ const Application = () => {
 
                         {/* Customer Info */}
                         <div className="space-y-2">
-                            <h4 className="text-xs font-bold text-indigo-300 uppercase">Customer Information</h4>
+                            <h4 className="text-xs font-bold text-indigo-300 uppercase">{t('customerInformation')}</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Name EN</span><span className="font-bold text-gray-100">{infoData.customerNameEn}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Name KH</span><span className="font-bold text-indigo-400 font-khmer">{infoData.customerNameKh}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Number</span><span className="font-mono text-gray-200">{infoData.idCardNumber || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{infoData.phone || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Relative Phone</span><span className="font-mono text-gray-200">{infoData.relativePhone || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Current Address</span><span className="text-gray-200">{infoData.currentAddress || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('nameEnglish')}</span><span className="font-bold text-gray-100">{infoData.customerNameEn}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('nameKhmer')}</span><span className="font-bold text-indigo-400 font-khmer">{infoData.customerNameKh}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('idNumber')}</span><span className="font-mono text-gray-200">{infoData.idCardNumber || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('phone')}</span><span className="font-mono text-gray-200">{infoData.phone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('customerRelativePhone')}</span><span className="font-mono text-gray-200">{infoData.relativePhone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('customerCurrentAddress')}</span><span className="text-gray-200">{infoData.currentAddress || '-'}</span></div>
                             </div>
                         </div>
 
                         {/* Device Info */}
                         <div className="space-y-2 pt-2 border-t border-gray-800">
-                            <h4 className="text-xs font-bold text-purple-300 uppercase">Device Details</h4>
+                            <h4 className="text-xs font-bold text-purple-300 uppercase">{t('deviceDetails')}</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Model</span><span className="font-bold text-gray-100">{infoData.model}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Serial Number</span><span className="font-mono font-bold text-indigo-300">{infoData.serialNumber}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 1</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei1)}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">IMEI 2</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei2)}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">MEID</span><span className="font-mono text-pink-400 font-bold">{infoData.meid || '—'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{infoData.version || '—'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Color</span><span className="text-gray-200">{infoData.color || '—'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Brand</span><span className="text-purple-300 font-bold">{infoData.brand || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('model')}</span><span className="font-bold text-gray-100">{infoData.model}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('serialNumber')}</span><span className="font-mono font-bold text-indigo-300">{infoData.serialNumber}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('imei1')}</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei1)}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('imei2')}</span><span className="font-mono text-gray-100 font-bold">{formatIMEI(infoData.imei2)}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('deviceMeid')}</span><span className="font-mono text-pink-400 font-bold">{infoData.meid || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('deviceVersionOs')}</span><span className="text-indigo-300 font-bold">{infoData.version || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('deviceColor')}</span><span className="text-gray-200">{infoData.color || '—'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('brand')}</span><span className="text-purple-300 font-bold">{infoData.brand || '—'}</span></div>
                             </div>
 
                         </div>
@@ -417,16 +417,16 @@ const Application = () => {
                         {/* Loan Info */}
 
                         <div className="space-y-2 pt-2 border-t border-gray-800">
-                            <h4 className="text-xs font-bold text-emerald-300 uppercase">Loan & Financial Details</h4>
+                            <h4 className="text-xs font-bold text-emerald-300 uppercase">{t('loanFinancialDetails')}</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Total Loan Amount</span><span className="font-mono font-bold text-emerald-400">${infoData.amount || infoData.totalAmount || 0}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Monthly Installment</span><span className="font-mono font-bold text-emerald-400">${infoData.monthlyPayment}/mo</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Interest / Duration</span><span className="text-gray-300">{infoData.interest || '14%'} &bull; {infoData.duration || '12 Mo'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('customerTotalLoanAmount')}</span><span className="font-mono font-bold text-emerald-400">${infoData.amount || infoData.totalAmount || 0}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('monthlyInstallment')}</span><span className="font-mono font-bold text-emerald-400">${infoData.monthlyPayment}/mo</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('interestDuration')}</span><span className="text-gray-300">{infoData.interest || '14%'} &bull; {infoData.duration || '12 Mo'}</span></div>
                             </div>
                         </div>
 
                         <div className="text-right pt-2">
-                            <button onClick={() => setInfoData(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-[5px] cursor-pointer">Close</button>
+                            <button onClick={() => setInfoData(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-[5px] cursor-pointer">{t('close')}</button>
                         </div>
                     </div>
                 </div>

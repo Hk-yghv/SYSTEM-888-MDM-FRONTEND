@@ -80,7 +80,7 @@ const getKhmerDateDetails = (dateStr) => {
 };
 
 const SalaryPage = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, hasPermission, user } = useAuth();
 
     // Check if current user is an Admin / "Account ធំ"
@@ -517,7 +517,7 @@ const SalaryPage = () => {
 
     // Delete Record
     const handleDelete = async (id) => {
-        if (!window.confirm('តើអ្នកប្រាកដជាចង់លុបកំណត់ត្រាប្រាក់ខែនេះមែនទេ? (Are you sure you want to delete this salary entry?)')) {
+        if (!window.confirm(t('salaryConfirmDelete', lang === 'km' ? 'តើអ្នកប្រាកដជាចង់លុបកំណត់ត្រាប្រាក់ខែនេះមែនទេ?' : 'Are you sure you want to delete this salary entry?'))) {
             return;
         }
         try {
@@ -528,7 +528,7 @@ const SalaryPage = () => {
                 if (isAdmin) fetchStaffDirectory();
             } else {
                 const data = await res.json();
-                alert(data.error || 'លុបមិនបានជោគជ័យ');
+                alert(data.error || t('salaryDeleteFailed', lang === 'km' ? 'លុបមិនបានជោគជ័យ' : 'Failed to delete salary entry.'));
             }
         } catch (err) {
             console.error('Delete salary error:', err);
@@ -549,7 +549,7 @@ const SalaryPage = () => {
             }
         } catch (err) {
             console.error('Photo upload error:', err);
-            alert(`Photo upload failed: ${err.message}`);
+            alert(`${t('salaryPhotoUploadFailed', lang === 'km' ? 'បរាជ័យក្នុងការផ្ទុករូបភាព' : 'Photo upload failed')}: ${err.message}`);
         } finally {
             setPhotoUploading(false);
             if (photoFileRef.current) photoFileRef.current.value = '';
@@ -568,7 +568,7 @@ const SalaryPage = () => {
             }
         } catch (err) {
             console.error('QR upload error:', err);
-            alert(`QR image upload failed: ${err.message}`);
+            alert(`${t('salaryQrUploadFailed', lang === 'km' ? 'បរាជ័យក្នុងការផ្ទុករូបភាព QR' : 'QR image upload failed')}: ${err.message}`);
         } finally {
             setQrPhotoUploading(false);
             if (qrFileRef.current) qrFileRef.current.value = '';
@@ -579,11 +579,11 @@ const SalaryPage = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.amount || Number(formData.amount) <= 0) {
-            alert('សូមបញ្ចូលចំនួនទឹកប្រាក់ខែឱ្យបានត្រឹមត្រូវ!');
+            alert(t('salaryEnterValidAmount', lang === 'km' ? 'សូមបញ្ចូលចំនួនទឹកប្រាក់ខែឱ្យបានត្រឹមត្រូវ!' : 'Please enter a valid salary amount.'));
             return;
         }
         if (!formData.date) {
-            alert('សូមជ្រើសរើសកាលបរិច្ឆេទ!');
+            alert(t('salarySelectDate', lang === 'km' ? 'សូមជ្រើសរើសកាលបរិច្ឆេទ!' : 'Please select a date.'));
             return;
         }
 
@@ -621,11 +621,11 @@ const SalaryPage = () => {
                 if (isAdmin) fetchStaffDirectory();
             } else {
                 const errData = await res.json();
-                alert(errData.error || 'បរាជ័យក្នុងការរក្សាទុកទិន្នន័យប្រាក់ខែ');
+                alert(errData.error || t('salarySaveFailed', lang === 'km' ? 'បរាជ័យក្នុងការរក្សាទុកទិន្នន័យប្រាក់ខែ' : 'Failed to save salary information.'));
             }
         } catch (err) {
             console.error('Submit salary error:', err);
-            alert('Server error: ' + err.message);
+            alert(`${t('serverError', lang === 'km' ? 'កំហុសម៉ាស៊ីនមេ' : 'Server error')}: ${err.message}`);
         } finally {
             setSubmitting(false);
         }
@@ -750,9 +750,9 @@ const SalaryPage = () => {
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalStaff')}</p>
                             <h3 className="text-2xl font-black text-slate-800 dark:text-white font-khmer mt-1">
-                                {salaryOnlyStaff.length} នាក់
+                                {salaryOnlyStaff.length} {t('people', lang === 'km' ? 'នាក់' : 'people')}
                             </h3>
-                            <p className="text-[10px] text-slate-400 mt-0.5">គណនី និងបុគ្គលិកទាំងអស់</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{t('salaryAllAccountsAndStaff', lang === 'km' ? 'គណនី និងបុគ្គលិកទាំងអស់' : 'All accounts and staff')}</p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-2xl">
                             <FaUsers />
@@ -765,7 +765,7 @@ const SalaryPage = () => {
                             <h3 className="text-2xl font-black text-emerald-600 font-mono mt-1">
                                 ${totalDisbursedAll.toLocaleString()}
                             </h3>
-                            <p className="text-[10px] text-slate-400 mt-0.5">ទូទាំងប្រព័ន្ធបុគ្គលិក</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{t('salaryAcrossStaffSystem', lang === 'km' ? 'ទូទាំងប្រព័ន្ធបុគ្គលិក' : 'Across the staff system')}</p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">
                             <FaDollarSign />
@@ -776,9 +776,9 @@ const SalaryPage = () => {
                         <div>
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('totalRecords')}</p>
                             <h3 className="text-2xl font-black text-cyan-600 font-mono mt-1">
-                                {totalRecordsAll} លើក
+                                {totalRecordsAll} {t('times', lang === 'km' ? 'លើក' : 'entries')}
                             </h3>
-                            <p className="text-[10px] text-slate-400 mt-0.5">ទិន្នន័យប្រាក់ខែបានកត់ត្រា</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{t('salaryRecordedEntries', lang === 'km' ? 'ទិន្នន័យប្រាក់ខែបានកត់ត្រា' : 'Recorded salary entries')}</p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-cyan-500/10 text-cyan-600 flex items-center justify-center text-2xl">
                             <FaReceipt />
@@ -812,13 +812,13 @@ const SalaryPage = () => {
                 {staffLoading ? (
                     <div className="py-20 text-center text-slate-400">
                         <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                        <p className="text-xs font-semibold">កំពុងទាញយកបញ្ជីឈ្មោះបុគ្គលិកទាំងអស់...</p>
+                        <p className="text-xs font-semibold">{t('salaryLoadingStaffDirectory', lang === 'km' ? 'កំពុងទាញយកបញ្ជីឈ្មោះបុគ្គលិកទាំងអស់...' : 'Loading all staff...')}</p>
                     </div>
                 ) : filteredStaffDirectory.length === 0 ? (
                     <div className="bg-[var(--app-card,white)] border border-dashed border-slate-300 rounded-[5px] p-12 text-center text-slate-400">
                         <FaUserTie className="text-4xl mx-auto opacity-30 mb-2" />
-                        <p className="text-sm font-bold text-slate-600">មិនមានទិន្នន័យបុគ្គលិកត្រូវនឹងការស្វែងរកទេ</p>
-                        <p className="text-xs text-slate-400 mt-1">សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែថ្មី" ដើម្បីបង្កើតកំណត់ត្រាដំបូង</p>
+                        <p className="text-sm font-bold text-slate-600">{t('salaryNoStaffSearchResults', lang === 'km' ? 'មិនមានទិន្នន័យបុគ្គលិកត្រូវនឹងការស្វែងរកទេ' : 'No staff match your search')}</p>
+                        <p className="text-xs text-slate-400 mt-1">{t('salaryCreateFirstEntryHint', lang === 'km' ? 'សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែថ្មី" ដើម្បីបង្កើតកំណត់ត្រាដំបូង' : 'Select "Create salary entry" to add the first record')}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -868,7 +868,7 @@ const SalaryPage = () => {
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="text-slate-400 flex items-center gap-1 font-medium">
                                                     <FaCalendarAlt className="text-amber-500" />
-                                                    <span>ចូលបម្រើ:</span>
+                                                    <span>{t('joinDate', lang === 'km' ? 'ចូលបម្រើ:' : 'Joined:')}</span>
                                                 </span>
                                                 <span className="font-mono font-bold text-slate-700 dark:text-slate-200">
                                                     {jDate ? jDate : 'មិនទាន់កំណត់'}
@@ -884,13 +884,13 @@ const SalaryPage = () => {
                                         {/* Financial Summary for this staff */}
                                         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
                                             <div>
-                                                <span className="text-[10px] text-slate-400 block font-medium">ទឹកប្រាក់សរុប</span>
+                                                <span className="text-[10px] text-slate-400 block font-medium">{t('totalAmount', lang === 'km' ? 'ទឹកប្រាក់សរុប' : 'Total amount')}</span>
                                                 <span className="font-mono font-black text-emerald-600 text-sm">
                                                     ${Number(staff.totalAmount || 0).toLocaleString()}
                                                 </span>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-[10px] text-slate-400 block font-medium">កំណត់ត្រា</span>
+                                                <span className="text-[10px] text-slate-400 block font-medium">{t('records', lang === 'km' ? 'កំណត់ត្រា' : 'Records')}</span>
                                                 <span className="font-khmer font-bold text-slate-700 dark:text-slate-300">
                                                     {staff.recordsCount || 0} លើក
                                                 </span>
@@ -906,13 +906,13 @@ const SalaryPage = () => {
                                             className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 active:scale-95"
                                         >
                                             <FaEye />
-                                            <span>មើលប្រាក់ខែ</span>
+                                            <span>{t('viewSalary', lang === 'km' ? 'មើលប្រាក់ខែ' : 'View salary')}</span>
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleOpenCreate(staff)}
                                             className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all"
-                                            title="បញ្ចូលប្រាក់ខែឱ្យបុគ្គលិកនេះ"
+                                            title={t('salaryAddStaffEntry', lang === 'km' ? 'បញ្ចូលប្រាក់ខែឱ្យបុគ្គលិកនេះ' : 'Add a salary entry for this staff member')}
                                         >
                                             <FaPlus />
                                         </button>
@@ -963,7 +963,7 @@ const SalaryPage = () => {
                         </button>
                         <div className="h-6 w-px bg-white/20 hidden sm:block"></div>
                         <div>
-                            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">កំពុងពិនិត្យប្រាក់ខែបុគ្គលិក:</span>
+                            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">{t('salaryViewingStaff', lang === 'km' ? 'កំពុងពិនិត្យប្រាក់ខែបុគ្គលិក:' : 'Viewing staff salary:')}</span>
                             <h2 className="text-sm font-black text-white flex items-center gap-2">
                                 {savedStaffNameKh && <span>{savedStaffNameKh}</span>}
                                 {savedStaffNameEn && <span className="text-slate-300 font-medium">({savedStaffNameEn})</span>}
@@ -973,7 +973,7 @@ const SalaryPage = () => {
 
                     {/* Quick Staff Switch Dropdown */}
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-400 font-medium hidden md:inline">ប្តូរបុគ្គលិក:</span>
+                        <span className="text-xs text-slate-400 font-medium hidden md:inline">{t('switchStaff', lang === 'km' ? 'ប្តូរបុគ្គលិក:' : 'Switch staff:')}</span>
                         <select
                             value={selectedStaff.key || selectedStaff.staffName}
                             onChange={(e) => {
@@ -1054,7 +1054,7 @@ const SalaryPage = () => {
                                 </span>
                             </div>
                             <h2 className="text-sm font-black text-slate-900 dark:text-white mt-0.5 flex items-center gap-2 flex-wrap font-mono">
-                                <span className="text-emerald-700 dark:text-emerald-300">ចូលបម្រើ: {getKhmerDateDetails(savedJoinDate).formatted}</span>
+                                <span className="text-emerald-700 dark:text-emerald-300">{t('joinDate', lang === 'km' ? 'ចូលបម្រើ:' : 'Joined:')} {getKhmerDateDetails(savedJoinDate).formatted}</span>
                                 <span className="text-xs font-normal text-slate-500 dark:text-slate-400 font-mono bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
                                     ({savedJoinDate})
                                 </span>
@@ -1086,7 +1086,7 @@ const SalaryPage = () => {
                                 title={t('qrCode')}
                             >
                                 <FaQrcode className="text-emerald-600" />
-                                <span>+ QR Code</span>
+                                <span>+ {t('qrCode')}</span>
                             </button>
                         )}
 
@@ -1096,7 +1096,7 @@ const SalaryPage = () => {
                             className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-xs"
                         >
                             <FaEdit />
-                            <span>កែប្រែ</span>
+                            <span>{t('edit')}</span>
                         </button>
 
                         {hasPermission('/salary', 'create') && (
@@ -1141,7 +1141,7 @@ const SalaryPage = () => {
                                 type="text"
                                 value={tempNameKh}
                                 onChange={(e) => setTempNameKh(e.target.value)}
-                                placeholder="ឈ្មោះបុគ្គលិកជាភាសាខ្មែរ..."
+                                placeholder={t('salaryStaffNameKhPlaceholder', lang === 'km' ? 'ឈ្មោះបុគ្គលិកជាភាសាខ្មែរ...' : 'Staff name in Khmer...')}
                                 className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 outline-none w-full"
                             />
                         </div>
@@ -1161,7 +1161,7 @@ const SalaryPage = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Day Select */}
                         <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
-                            <span className="text-[11px] font-bold text-slate-500">ទី:</span>
+                            <span className="text-[11px] font-bold text-slate-500">{t('day', lang === 'km' ? 'ទី:' : 'Day:')}</span>
                             <select
                                 value={tempDay}
                                 onChange={(e) => setTempDay(parseInt(e.target.value, 10))}
@@ -1177,7 +1177,7 @@ const SalaryPage = () => {
 
                         {/* Month Select */}
                         <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
-                            <span className="text-[11px] font-bold text-slate-500">ខែ:</span>
+                            <span className="text-[11px] font-bold text-slate-500">{t('month', lang === 'km' ? 'ខែ:' : 'Month:')}</span>
                             <select
                                 value={tempMonth}
                                 onChange={(e) => setTempMonth(parseInt(e.target.value, 10))}
@@ -1193,7 +1193,7 @@ const SalaryPage = () => {
 
                         {/* Year Select */}
                         <div className="flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs">
-                            <span className="text-[11px] font-bold text-slate-500">ឆ្នាំ:</span>
+                            <span className="text-[11px] font-bold text-slate-500">{t('year', lang === 'km' ? 'ឆ្នាំ:' : 'Year:')}</span>
                             <select
                                 value={tempYear}
                                 onChange={(e) => setTempYear(parseInt(e.target.value, 10))}
@@ -1208,7 +1208,7 @@ const SalaryPage = () => {
                         </div>
 
                         {/* Calendar Picker Sync */}
-                        <div className="flex items-center bg-white dark:bg-slate-800 px-2 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs" title="ឬជ្រើសពី Calendar">
+                        <div className="flex items-center bg-white dark:bg-slate-800 px-2 py-1.5 rounded-[5px] border border-amber-300 dark:border-amber-600 shadow-xs" title={t('salaryChooseFromCalendar', lang === 'km' ? 'ឬជ្រើសពីប្រតិទិន' : 'Or choose from calendar')}>
                             <input
                                 type="date"
                                 value={computeTempDateString(tempYear, tempMonth, tempDay)}
@@ -1233,13 +1233,13 @@ const SalaryPage = () => {
                         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                             <FaQrcode className="text-emerald-600 text-sm shrink-0" />
                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                រូបភាព QR Code របស់យើង:
+                            {t('salaryQrImageLabel', lang === 'km' ? 'រូបភាព QR Code របស់យើង:' : 'Our QR code image:')}
                             </span>
                             <input
                                 type="text"
                                 value={tempQrCodePhoto}
                                 onChange={(e) => setTempQrCodePhoto(e.target.value)}
-                                placeholder="បញ្ចូល URL QR Code ឬ ចុចប៊ូតុង Upload..."
+                                placeholder={t('salaryQrUrlPlaceholder', lang === 'km' ? 'បញ្ចូល URL QR Code ឬចុចប៊ូតុងផ្ទុកឡើង...' : 'Enter QR code URL or click Upload...')}
                                 className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-100 outline-none flex-1"
                             />
                         </div>
@@ -1268,7 +1268,7 @@ const SalaryPage = () => {
                                     className="w-7 h-7 object-contain rounded border border-slate-300 cursor-pointer hover:scale-110 transition-transform"
                                     onClick={() => setPreviewImage({
                                         url: tempQrCodePhoto,
-                                        title: 'រូបភាព QR Code របស់យើង (Our QR Code)',
+                                        title: t('salaryOurQrImageTitle', lang === 'km' ? 'រូបភាព QR Code របស់យើង' : 'Our QR code image'),
                                         filename: 'My_Salary_QRCode.png'
                                     })}
                                 />
@@ -1328,7 +1328,7 @@ const SalaryPage = () => {
                 {/* This Month */}
                 <div className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] rounded-[5px] p-2 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">ប្រាក់ខែ{t('thisMonth')}</p>
+                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t('salaryThisMonth', lang === 'km' ? 'ប្រាក់ខែខែនេះ' : 'Salary this month')}</p>
                         <h3 className="text-xl font-black text-cyan-600 font-mono mt-1">
                             ${Number(stats.currentMonthTotal || 0).toLocaleString()}
                         </h3>
@@ -1346,7 +1346,7 @@ const SalaryPage = () => {
                         <h3 className="text-xl font-black text-indigo-600 font-mono mt-1">
                             {stats.totalRecords || total}
                         </h3>
-                        <p className="text-[10px] text-slate-400 mt-0.5">ទិន្នន័យបានបញ្ចូល</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{t('salaryDataEntered', lang === 'km' ? 'ទិន្នន័យបានបញ្ចូល' : 'Entries added')}</p>
                     </div>
                     <div className="w-11 h-11 rounded-[5px] bg-indigo-500/10 text-indigo-600 flex items-center justify-center text-xl">
                         <FaUserTie />
@@ -1364,7 +1364,7 @@ const SalaryPage = () => {
                                 return Math.round(avg).toLocaleString();
                             })()}
                         </h3>
-                        <p className="text-[10px] text-slate-400 mt-0.5">គណនាតាមខែដែលមានទិន្នន័យ</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{t('salaryAverageMonthsWithData', lang === 'km' ? 'គណនាតាមខែដែលមានទិន្នន័យ' : 'Calculated from months with data')}</p>
                     </div>
                     <div className="w-11 h-11 rounded-[5px] bg-amber-500/10 text-amber-600 flex items-center justify-center text-xl">
                         <FaReceipt />
@@ -1377,7 +1377,7 @@ const SalaryPage = () => {
                 data={stats.monthlyStats || []}
                 grandTotal={stats.grandTotal || 0}
                 title={t('monthlySalaryBarChart')}
-                subtitle="ក្រាបស្ថិតិសរុបប្រាក់ខែប្រចាំខែដើម្បីពិនិត្យនិន្នាការនៃការចំណាយ"
+                subtitle={t('salaryChartSubtitle', lang === 'km' ? 'ក្រាបស្ថិតិសរុបប្រាក់ខែប្រចាំខែដើម្បីពិនិត្យនិន្នាការនៃការចំណាយ' : 'Monthly salary totals to help review spending trends')}
             />
 
             {/* Filter & Search Bar */}
@@ -1398,7 +1398,7 @@ const SalaryPage = () => {
                             ...(endDate ? { endDate } : {})
                         }}
                         value={searchTerm}
-                        placeholder="ស្វែងរកតាមឈ្មោះបុគ្គលិក, កំណត់ចំណាំ, ឬប្រភេទ..."
+                        placeholder={t('salarySearchPlaceholder', lang === 'km' ? 'ស្វែងរកតាមឈ្មោះបុគ្គលិក កំណត់ចំណាំ ឬប្រភេទ...' : 'Search by staff name, note, or type...')}
                         onChange={(value) => {
                             setSearchTerm(value);
                             setSelectedSearchRecord(null);
@@ -1417,14 +1417,14 @@ const SalaryPage = () => {
                         type="submit"
                         className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-xs"
                     >
-                        ស្វែងរក
+                        {t('search')}
                     </button>
                 </form>
 
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                     {/* Month Picker */}
                     <div className="flex items-center gap-1">
-                        <span className="text-slate-500 font-semibold text-[11px]">ខែ:</span>
+                        <span className="text-slate-500 font-semibold text-[11px]">{t('month', lang === 'km' ? 'ខែ:' : 'Month:')}</span>
                         <input
                             type="month"
                             value={selectedMonth}
@@ -1435,7 +1435,7 @@ const SalaryPage = () => {
 
                     {/* Method Selector */}
                     <div className="flex items-center gap-1">
-                        <span className="text-slate-500 font-semibold text-[11px]">វិធីសាស្ត្រ:</span>
+                        <span className="text-slate-500 font-semibold text-[11px]">{t('paymentMethod', lang === 'km' ? 'វិធីសាស្ត្រ' : 'Method')}:</span>
                         <select
                             value={selectedPaymentMethod}
                             onChange={(e) => { setSelectedPaymentMethod(e.target.value); setCurrentPage(1); }}
@@ -1445,8 +1445,8 @@ const SalaryPage = () => {
                             <option value="ABA Bank">ABA Bank</option>
                             <option value="Wing">Wing</option>
                             <option value="ACLEDA">ACLEDA</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Cash">{t('cash')}</option>
+                            <option value="Bank Transfer">{t('bankTransfer', lang === 'km' ? 'ផ្ទេរប្រាក់' : 'Bank Transfer')}</option>
                         </select>
                     </div>
 
@@ -1466,24 +1466,24 @@ const SalaryPage = () => {
                 <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-[var(--app-border,#e2e8f0)]">
                         <tr>
-                            <th className="px-4 py-1 text-center">No</th>
+                            <th className="px-4 py-1 text-center">{t('no')}</th>
                             <th className="px-4 py-1">{t('date')}</th>
                             <th className="px-4 py-1">{t('staff')}</th>
-                            <th className="px-4 py-1">ថ្ងៃចូលបម្រើ</th>
+                            <th className="px-4 py-1">{t('joinDate', lang === 'km' ? 'ថ្ងៃចូលបម្រើ' : 'Join date')}</th>
                             <th className="px-4 py-1 text-right">{t('amount')}</th>
-                            <th className="px-4 py-1 text-center">វិធីសាស្ត្រទូទាត់</th>
+                            <th className="px-4 py-1 text-center">{t('paymentMethod')}</th>
                             <th className="px-4 py-1">{t('category')}</th>
-                            <th className="px-4 py-1 text-center">រូបភាពភស្តុតាង</th>
+                            <th className="px-4 py-1 text-center">{t('receiptEvidence', lang === 'km' ? 'រូបភាពភស្តុតាង' : 'Receipt evidence')}</th>
                             <th className="px-4 py-1">{t('note')}</th>
-                            <th className="px-4 py-1">បញ្ចូលដោយ</th>
-                            <th className="px-4 py-1 text-center">Actions</th>
+                            <th className="px-4 py-1">{t('enteredBy', lang === 'km' ? 'បញ្ចូលដោយ' : 'Entered by')}</th>
+                            <th className="px-4 py-1 text-center">{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-[var(--app-text,#0f172a)]">
                         {loading ? (
                             <tr>
                                 <td colSpan={11} className="text-center py-10 text-slate-400 italic">
-                                    កំពុងទាញយកទិន្នន័យប្រាក់ខែ...
+                                    {t('loadingSalaryData', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យប្រាក់ខែ...' : 'Loading salary data...')}
                                 </td>
                             </tr>
                         ) : (selectedSearchRecord ? [selectedSearchRecord] : salaries).length === 0 ? (
@@ -1491,7 +1491,7 @@ const SalaryPage = () => {
                                 <td colSpan={11} className="text-center py-12 text-slate-400 italic">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <FaReceipt className="text-3xl opacity-30 text-slate-400" />
-                                        <span>មិនមានទិន្នន័យប្រាក់ខែនៅឡើយទេ។ សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែ" ដើម្បីបង្កើតថ្មី!</span>
+                                        <span>{t('salaryNoRecords', lang === 'km' ? 'មិនមានទិន្នន័យប្រាក់ខែនៅឡើយទេ។ សូមចុចប៊ូតុង "បញ្ចូលប្រាក់ខែ" ដើម្បីបង្កើតថ្មី!' : 'No salary records yet. Click "Add salary" to create one.')}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -1542,10 +1542,10 @@ const SalaryPage = () => {
                                                 title={t('receiptEvidence')}
                                             >
                                                 <FaEye />
-                                                <span>មើលរូប{getProofPhotos(item).length > 1 ? ` (${getProofPhotos(item).length})` : ''}</span>
+                                                <span>{t('viewImage', lang === 'km' ? 'មើលរូប' : 'View image')}{getProofPhotos(item).length > 1 ? ` (${getProofPhotos(item).length})` : ''}</span>
                                             </button>
                                         ) : (
-                                            <span className="text-slate-400 text-[10px] italic">គ្មានរូប</span>
+                                            <span className="text-slate-400 text-[10px] italic">{t('noImage', lang === 'km' ? 'គ្មានរូប' : 'No image')}</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-1 max-w-[200px] truncate text-slate-600 dark:text-slate-400" title={item.note || ''}>
@@ -1649,15 +1649,15 @@ const SalaryPage = () => {
                                         typeof previewImage === 'object' ? (previewImage.filename || 'salary_photo.png') : 'salary_photo.png'
                                     )}
                                     className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md active:scale-95"
-                                    title="ទាញយករូបភាពនេះទុក (Download Image)"
+                                    title={t('downloadImage', lang === 'km' ? 'ទាញយករូបភាព' : 'Download image')}
                                 >
                                     <FaDownload className="text-xs" />
-                                    <span>ទាញយក (Download)</span>
+                                    <span>{t('download')}</span>
                                 </button>
                                 <button
                                     onClick={() => setPreviewImage(null)}
                                     className="text-slate-400 hover:text-white p-2 rounded-md transition-colors cursor-pointer"
-                                    title="បិទ (Close)"
+                                    title={t('close')}
                                 >
                                     <FaTimes size={16} />
                                 </button>
@@ -1692,7 +1692,7 @@ const CreateEditSalaryModal = ({
     photoFileRef,
     handlePhotoUpload
 }) => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 animate-in fade-in duration-150">
@@ -1701,7 +1701,7 @@ const CreateEditSalaryModal = ({
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--app-border,#e2e8f0)] bg-emerald-600 text-white shrink-0">
                     <h3 className="text-sm font-bold flex items-center gap-2">
                         <FaMoneyBillWave />
-                        <span>{editingItem ? (t('editSalary') || 'កែប្រែប្រាក់ខែ') : 'បញ្ចូលប្រាក់ខែថ្មី (Create Salary Entry)'}</span>
+                        <span>{editingItem ? t('editSalary') : t('salaryCreateEntry', lang === 'km' ? 'បញ្ចូលប្រាក់ខែថ្មី' : 'Create Salary Entry')}</span>
                     </h3>
                     <button
                         onClick={() => setOpenModal(false)}
@@ -1717,25 +1717,25 @@ const CreateEditSalaryModal = ({
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                ឈ្មោះខ្មែរ (Khmer Name)
+                                {t('salaryKhmerName', lang === 'km' ? 'ឈ្មោះខ្មែរ' : 'Khmer Name')}
                             </label>
                             <input
                                 type="text"
                                 value={formData.staffNameKh}
                                 onChange={(e) => setFormData({ ...formData, staffNameKh: e.target.value })}
-                                placeholder="ឈ្មោះបុគ្គលិកជាភាសាខ្មែរ..."
+                                placeholder={t('salaryStaffNameKhPlaceholder', lang === 'km' ? 'ឈ្មោះបុគ្គលិកជាភាសាខ្មែរ...' : 'Staff name in Khmer...')}
                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)] font-bold"
                             />
                         </div>
                         <div>
                             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                ឈ្មោះអង់គ្លេស (English Name)
+                                {t('salaryEnglishName', lang === 'km' ? 'ឈ្មោះអង់គ្លេស' : 'English Name')}
                             </label>
                             <input
                                 type="text"
                                 value={formData.staffNameEn}
                                 onChange={(e) => setFormData({ ...formData, staffNameEn: e.target.value })}
-                                placeholder="e.g. Sok San..."
+                                placeholder={t('salaryStaffNameEnPlaceholder', lang === 'km' ? 'ឧ. សុខ សាន...' : 'e.g. Sok San...')}
                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)] font-bold"
                             />
                         </div>
@@ -1745,7 +1745,7 @@ const CreateEditSalaryModal = ({
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                ថ្ងៃចូលបម្រើការងារ (Join Date)
+                                {t('joinDate')}
                             </label>
                             <input
                                 type="date"
@@ -1757,7 +1757,7 @@ const CreateEditSalaryModal = ({
 
                         <div>
                             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                ចំនួនទឹកប្រាក់ ($) <span className="text-rose-500">*</span>
+                                {t('amount', lang === 'km' ? 'ចំនួនទឹកប្រាក់' : 'Amount')} ($) <span className="text-rose-500">*</span>
                             </label>
                             <div className="relative">
                                 <FaDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold" />
@@ -1767,7 +1767,7 @@ const CreateEditSalaryModal = ({
                                     required
                                     value={formData.amount}
                                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                    placeholder="e.g. 500"
+                                    placeholder={t('salaryAmountPlaceholder', lang === 'km' ? 'ឧ. 500' : 'e.g. 500')}
                                     className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-emerald-600 font-mono font-bold text-sm outline-none focus:border-emerald-500"
                                 />
                             </div>
@@ -1798,11 +1798,11 @@ const CreateEditSalaryModal = ({
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 text-[var(--app-text,#0f172a)]"
                             >
-                                <option value="Basic Salary">Basic Salary (ប្រាក់ខែគោល)</option>
-                                <option value="Bonus">Bonus (ប្រាក់លើកទឹកចិត្ត)</option>
-                                <option value="Commission">Commission (កម្រៃជើងសារ)</option>
-                                <option value="Allowance">Allowance (ប្រាក់ឧបត្ថម្ភ)</option>
-                                <option value="Other">Other (ផ្សេងៗ)</option>
+                                <option value="Basic Salary">{t('basicSalary')}</option>
+                                <option value="Bonus">{t('bonus')}</option>
+                                <option value="Commission">{t('salaryCommission', lang === 'km' ? 'កម្រៃជើងសារ' : 'Commission')}</option>
+                                <option value="Allowance">{t('salaryAllowance', lang === 'km' ? 'ប្រាក់ឧបត្ថម្ភ' : 'Allowance')}</option>
+                                <option value="Other">{t('other', lang === 'km' ? 'ផ្សេងៗ' : 'Other')}</option>
                             </select>
                         </div>
                     </div>
@@ -1811,7 +1811,7 @@ const CreateEditSalaryModal = ({
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                                វិធីសាស្ត្រទូទាត់ (Payment Method)
+                                {t('paymentMethod', lang === 'km' ? 'វិធីសាស្ត្រទូទាត់' : 'Payment Method')}
                             </label>
                             <select
                                 value={formData.paymentMethod}
@@ -1821,9 +1821,9 @@ const CreateEditSalaryModal = ({
                                 <option value="ABA Bank">ABA Bank</option>
                                 <option value="Wing">Wing</option>
                                 <option value="ACLEDA">ACLEDA</option>
-                                <option value="Cash">Cash (សាច់ប្រាក់សុទ្ធ)</option>
-                                <option value="Bank Transfer">Bank Transfer (ផ្ទេរប្រាក់)</option>
-                                <option value="Other">Other</option>
+                                <option value="Cash">{t('cash')}</option>
+                                <option value="Bank Transfer">{t('bankTransfer', lang === 'km' ? 'ផ្ទេរប្រាក់' : 'Bank Transfer')}</option>
+                                <option value="Other">{t('other', lang === 'km' ? 'ផ្សេងៗ' : 'Other')}</option>
                             </select>
                         </div>
 
@@ -1886,7 +1886,7 @@ const CreateEditSalaryModal = ({
                                                     return { ...prev, proofPhoto: proofPhotos[0] || '', proofPhotos };
                                                 })}
                                                 className="absolute -right-1 -top-1 bg-rose-600 text-white p-1.5 rounded-full text-[9px] hover:bg-rose-500 cursor-pointer shadow-md"
-                                                title="ដករូបចេញ"
+                                                title={t('salaryRemoveImage', lang === 'km' ? 'ដករូបភាពចេញ' : 'Remove image')}
                                             >
                                                 <FaTimes />
                                             </button>
@@ -1900,13 +1900,13 @@ const CreateEditSalaryModal = ({
                     {/* Note */}
                     <div>
                         <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            កំណត់ចំណាំ (Remarks / Note)
+                            {t('note')}
                         </label>
                         <textarea
                             rows={2}
                             value={formData.note}
                             onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                            placeholder="បញ្ជាក់ព័ត៌មានបន្ថែម..."
+                            placeholder={t('salaryNotePlaceholder', lang === 'km' ? 'បញ្ជាក់ព័ត៌មានបន្ថែម...' : 'Add any additional notes...')}
                             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-emerald-500 resize-none text-[var(--app-text,#0f172a)]"
                         />
                     </div>
@@ -1918,14 +1918,14 @@ const CreateEditSalaryModal = ({
                             onClick={() => setOpenModal(false)}
                             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer transition-all"
                         >
-                            បោះបង់ (Cancel)
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={submitting}
                             className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
                         >
-                            {submitting ? 'កំពុងរក្សាទុក...' : editingItem ? 'កែប្រែ (Save Changes)' : 'រក្សាទុក (Save Salary)'}
+                            {submitting ? t('saving') : editingItem ? t('saveChanges', lang === 'km' ? 'រក្សាទុកការផ្លាស់ប្តូរ' : 'Save Changes') : t('saveSalary', lang === 'km' ? 'រក្សាទុកប្រាក់ខែ' : 'Save Salary')}
                         </button>
                     </div>
                 </form>

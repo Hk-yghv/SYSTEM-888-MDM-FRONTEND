@@ -431,20 +431,19 @@ const Activated = () => {
     const [redeemDateInput, setRedeemDateInput] = useState(new Date().toISOString().split('T')[0]);
 
     const handleChangeStatus = async (item, targetStatus) => {
-        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ផ្លាស់ប្តូរស្ថានភាពកុងត្រារបស់ "${item.customerNameEn || item.customerNameKh}" ទៅជា ${targetStatus} មែនទេ?`)) return;
+        if (!window.confirm(t('activatedChangeStatusConfirm').replace('{customer}', item.customerNameEn || item.customerNameKh).replace('{status}', targetStatus))) return;
         if (targetStatus === 'Redeem') {
             if (item.lockPhoneStatus === 'Locked' || item.lockWallpaperStatus === 'Locked') {
                 const isPhoneLocked = item.lockPhoneStatus === 'Locked';
                 const isWallpaperLocked = item.lockWallpaperStatus === 'Locked';
-                let lockReason = '';
-                if (isPhoneLocked && isWallpaperLocked) lockReason = 'ឧបករណ៍នេះកំពុងជាប់ចាក់សោរទាំង Lock Phone និង Lock Wallpaper';
-                else if (isPhoneLocked) lockReason = 'ឧបករណ៍នេះកំពុងជាប់ចាក់សោរ Lock Phone';
-                else lockReason = 'ឧបករណ៍នេះកំពុងជាប់ចាក់សោរ Lock Wallpaper';
+                const lockReason = isPhoneLocked && isWallpaperLocked
+                    ? `${t('lockPhone')} + ${t('lockWallpaper')}`
+                    : isPhoneLocked ? t('lockPhone') : t('lockWallpaper');
 
                 setUiModal({
                     open: true,
                     title: t('warning'),
-                    message: `${lockReason}! សូមធ្វើការដោះសោរ (Unlock) ឧបករណ៍នេះជាមុនសិន ទើបប្រព័ន្ធអនុញ្ញាតឱ្យផ្លាស់ប្តូរទៅកាន់ Redeem បាន។`,
+                    message: t('redeemBlockedLockedDevice').replace('{locks}', lockReason),
                     type: 'warning'
                 });
                 setOpenMenuId(null);
@@ -479,7 +478,7 @@ const Activated = () => {
     const handleConfirmRedeem = async (e) => {
         e.preventDefault();
         if (!redeemItem) return;
-        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់បញ្ជាក់ការ Redeem សម្រាប់ "${redeemItem.customerNameEn}" មែនទេ?`)) return;
+        if (!window.confirm(t('activatedRedeemConfirm').replace('{customer}', redeemItem.customerNameEn))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${redeemItem._id}`, {
                 method: 'PUT',
@@ -506,7 +505,7 @@ const Activated = () => {
     };
 
     const handleQuickDeviceAction = async (item, actionType) => {
-        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់បញ្ជូនសកម្មភាព [ ${actionType} ] លើឧបករណ៍របស់ "${item.customerNameEn || item.customerNameKh}" មែនទេ?`)) return;
+        if (!window.confirm(t('activatedDeviceActionConfirm').replace('{action}', actionType).replace('{customer}', item.customerNameEn || item.customerNameKh))) return;
         try {
             const res = await fetch(`${API_BASE2}/history/device-actions`, {
                 method: 'POST',
@@ -721,15 +720,15 @@ const Activated = () => {
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                                 <MdSwapHoriz className="text-purple-600 text-lg" />
-                                ជ្រើសរើស{t('redeem')} {t('date')}
+                                {t('selectRedeemDate')}
                             </h3>
                             <button onClick={() => setRedeemItem(null)} className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer">✕</button>
                         </div>
 
                         <form onSubmit={handleConfirmRedeem} className="space-y-4">
                             <div className="p-2 bg-purple-50 border border-purple-200 rounded-[5px] text-xs space-y-1">
-                                <p className="font-bold text-purple-900">អតិថិជន៖ {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
-                                <p className="text-purple-700 font-mono">ម៉ូឌែល/Serial: {redeemItem.model} • {redeemItem.serialNumber}</p>
+                                <p className="font-bold text-purple-900">{t('customer')}: {redeemItem.customerNameEn} ({redeemItem.customerNameKh})</p>
+                                <p className="text-purple-700 font-mono">{t('model')} / {t('serialNumber')}: {redeemItem.model} • {redeemItem.serialNumber}</p>
                             </div>
 
                             <div>
@@ -744,7 +743,7 @@ const Activated = () => {
                                     className="w-full h-11 px-3 bg-slate-50 border border-slate-300 rounded-[5px] text-slate-900 font-mono font-bold text-sm focus:outline-emerald-500"
                                 />
                                 <p className="text-[11px] text-slate-500 mt-1 italic">
-                                    * បំពេញអូតូថ្ងៃបច្ចុប្បន្ន។ អ្នកអាចប្តូរដាក់ថ្ងៃផ្សេងៗបានតាមតម្រូវការ។
+                                    * {t('redeemDateHelp')}
                                 </p>
                             </div>
 
@@ -760,7 +759,7 @@ const Activated = () => {
                                     type="submit"
                                     className="px-5 py-2 bg-purple-600 text-white rounded-[5px] text-xs font-bold hover:bg-purple-700 shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5"
                                 >
-                                    <MdSwapHoriz size={16} /> Submit Redeem
+                                    <MdSwapHoriz size={16} /> {t('submit')} {t('redeem')}
                                 </button>
                             </div>
                         </form>
@@ -774,7 +773,7 @@ const Activated = () => {
                     <h1 className='text-lg font-bold text-indigo-400 flex items-center gap-2'>
                         <span>{t('activated')}</span>
                         <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-normal">
-                            {displayedTotal} Records
+                            {displayedTotal} {t('records')}
                         </span>
                     </h1>
                 </div>
@@ -786,7 +785,7 @@ const Activated = () => {
                             apiBase={API_BASE1}
                             user={user}
                             status="Activated"
-                            placeholder="Search name, model, serial..."
+                            placeholder={t('activatedSearchPlaceholder')}
                             onChange={(value) => {
                                 setSearchInput(value);
                                 setSearchTerm(value);
@@ -823,13 +822,13 @@ const Activated = () => {
                         </div>
                         <div>
                             <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                <span>ស្ថិតិសរុបភ្ញៀវដាក់ស្នើ</span>
+                                <span>{t('totalSubmittedCustomerStats')}</span>
                                 {summaryLoading && (
                                     <MdOutlineSync className="animate-spin text-emerald-600 text-sm" />
                                 )}
                             </h2>
                             <p className="text-[11px] text-slate-500 font-medium">
-                                សរុបភ្ញៀវតាមរយៈពេលកម្ចីប៉ុន្មានខែ និងតាមខែប្រតិទិនដែលបានដាក់ស្នើ
+                                {t('submittedCustomersByDurationAndMonth')}
                             </p>
                         </div>
                     </div>
@@ -837,12 +836,12 @@ const Activated = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                         {/* Grand Total Counters */}
                         <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-[5px]">
-                            <span className="text-[11px] text-emerald-800 font-bold">ភ្ញៀវសរុប៖</span>
-                            <span className="text-xs font-black text-emerald-700 font-mono">{summaryData.grandTotalCount.toLocaleString()} នាក់</span>
+                            <span className="text-[11px] text-emerald-800 font-bold">{t('totalCustomers')}:</span>
+                            <span className="text-xs font-black text-emerald-700 font-mono">{summaryData.grandTotalCount.toLocaleString()} {t('people')}</span>
                         </div>
                         {summaryData.grandTotalAmount > 0 && (
                             <div className="hidden md:flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-[5px]">
-                                <span className="text-[11px] text-blue-800 font-bold">កម្ចីសរុប៖</span>
+                                <span className="text-[11px] text-blue-800 font-bold">{t('totalLoanAmount')}:</span>
                                 <span className="text-xs font-black text-blue-700 font-mono">${summaryData.grandTotalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         )}
@@ -852,10 +851,10 @@ const Activated = () => {
                             type="button"
                             onClick={() => setSummaryExpanded(!summaryExpanded)}
                             className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[5px] text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
-                            title={summaryExpanded ? "បង្រួម" : "ពង្រីក"}
+                            title={summaryExpanded ? t('collapse') : t('expand')}
                         >
                             {summaryExpanded ? <FaChevronUp size={11} /> : <FaChevronDown size={11} />}
-                            <span className="text-[11px]">{summaryExpanded ? 'បង្រួម' : 'ពង្រីក'}</span>
+                            <span className="text-[11px]">{summaryExpanded ? t('collapse') : t('expand')}</span>
                         </button>
                     </div>
                 </div>
@@ -870,17 +869,17 @@ const Activated = () => {
                                     <div className="flex items-center gap-1.5">
                                         <FaClock className="text-indigo-600 text-xs" />
                                         <span className="text-xs font-bold text-slate-800">
-                                            ១. សរុបតាមរយៈពេលកម្ចី
+                                            1. {t('loanDurationSummary')}
                                         </span>
                                     </div>
                                     <span className="text-[10px] font-mono text-slate-500 font-medium">
-                                        {summaryData.durationList.length} ប្រភេទ
+                                        {summaryData.durationList.length} {t('categories')}
                                     </span>
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
                                     {summaryData.durationList.length === 0 ? (
-                                        <span className="text-xs text-slate-400 italic">មិនទាន់មានទិន្នន័យ</span>
+                                        <span className="text-xs text-slate-400 italic">{t('noData')}</span>
                                     ) : (
                                         summaryData.durationList.map((d) => {
                                             const isSelected = selectedDurationFilter === d.key;
@@ -896,7 +895,7 @@ const Activated = () => {
                                                         ? 'bg-indigo-600 border-indigo-700 text-white font-bold ring-2 ring-indigo-300'
                                                         : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50'
                                                         }`}
-                                                    title={`ចុចដើម្បីច្រោះមើលភ្ញៀវដាក់ស្នើ ${d.labelKh}`}
+                                                    title={t('filterSubmittedCustomersByDuration').replace('{duration}', d.labelKh)}
                                                 >
                                                     <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
                                                         {d.labelKh}
@@ -909,7 +908,7 @@ const Activated = () => {
                                                             ? 'bg-indigo-800 text-white'
                                                             : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                                             }`}>
-                                                            {d.count} នាក់
+                                                            {d.count} {t('people')}
                                                         </span>
                                                         <span className={`text-[10px] font-mono ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>
                                                             {pct}%
@@ -928,17 +927,17 @@ const Activated = () => {
                                     <div className="flex items-center gap-1.5">
                                         <FaCalendarAlt className="text-emerald-600 text-xs" />
                                         <span className="text-xs font-bold text-slate-800">
-                                            ២. សរុបតាមខែដាក់ស្នើ
+                                            2. {t('summaryBySubmissionMonth')}
                                         </span>
                                     </div>
                                     <span className="text-[10px] font-mono text-slate-500 font-medium">
-                                        {summaryData.monthList.length} ខែ
+                                        {summaryData.monthList.length} {t('month')}
                                     </span>
                                 </div>
 
                                 <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
                                     {summaryData.monthList.length === 0 ? (
-                                        <span className="text-xs text-slate-400 italic">មិនទាន់មានទិន្នន័យ</span>
+                                        <span className="text-xs text-slate-400 italic">{t('noData')}</span>
                                     ) : (
                                         summaryData.monthList.map((m) => {
                                             const isSelected = selectedMonthFilter === m.key;
@@ -954,7 +953,7 @@ const Activated = () => {
                                                         ? 'bg-emerald-600 border-emerald-700 text-white font-bold ring-2 ring-emerald-300'
                                                         : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'
                                                         }`}
-                                                    title={`ចុចដើម្បីច្រោះមើលភ្ញៀវដាក់ស្នើក្នុង ${m.labelKh}`}
+                                                    title={t('filterSubmittedCustomersByMonth').replace('{month}', m.labelKh)}
                                                 >
                                                     <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
                                                         {m.labelKh}
@@ -964,7 +963,7 @@ const Activated = () => {
                                                             ? 'bg-emerald-800 text-white'
                                                             : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                                             }`}>
-                                                            {m.count} នាក់
+                                                            {m.count} {t('people')}
                                                         </span>
                                                         <span className={`text-[10px] font-mono ${isSelected ? 'text-emerald-200' : 'text-slate-400'}`}>
                                                             {pct}%
@@ -983,20 +982,20 @@ const Activated = () => {
                             <div className="flex items-center justify-between p-2 bg-amber-50 border border-amber-200 rounded-[5px] text-xs animate-in fade-in duration-150">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-amber-900 flex items-center gap-1">
-                                        <FaFilter className="text-amber-600 text-xs" /> កំពុងច្រោះទិន្នន័យ៖
+                                        <FaFilter className="text-amber-600 text-xs" /> {t('currentlyFiltering')}:
                                     </span>
                                     {selectedDurationFilter && (
                                         <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-bold border border-indigo-200 text-[11px]">
-                                            រយៈពេល៖ {summaryData.durationList.find(d => d.key === selectedDurationFilter)?.labelKh || selectedDurationFilter}
+                                            {t('duration')}: {summaryData.durationList.find(d => d.key === selectedDurationFilter)?.labelKh || selectedDurationFilter}
                                         </span>
                                     )}
                                     {selectedMonthFilter && (
                                         <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold border border-emerald-200 text-[11px]">
-                                            ខែដាក់ស្នើ៖ {summaryData.monthList.find(m => m.key === selectedMonthFilter)?.labelKh || selectedMonthFilter}
+                                            {t('submissionMonth')}: {summaryData.monthList.find(m => m.key === selectedMonthFilter)?.labelKh || selectedMonthFilter}
                                         </span>
                                     )}
                                     <span className="text-slate-600 font-medium">
-                                        (បង្ហាញ {activeFilteredContracts.length} នាក់)
+                                        ({t('showingCustomers')} {activeFilteredContracts.length} {t('people')})
                                     </span>
                                 </div>
 
@@ -1005,7 +1004,7 @@ const Activated = () => {
                                     onClick={handleClearSummaryFilters}
                                     className="px-2.5 py-1 bg-amber-200/70 hover:bg-amber-300 text-amber-900 rounded-[5px] font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
                                 >
-                                    <FaTimes size={10} /> បង្ហាញទាំងអស់ (Clear)
+                                    <FaTimes size={10} /> {t('showAllClear')}
                                 </button>
                             </div>
                         )}
@@ -1018,26 +1017,30 @@ const Activated = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
-                            <th className='px-4 py-1 text-center'>Contract</th>
+                            <th className='px-4 py-1 text-center'>{t('contract')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Sub Brand</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('deviceSubBrand')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1 text-center'>Monthly</th>
-                            <th className='px-4 py-1 text-center'>Device Status</th>
-                            <th className='px-4 py-1 text-center'>Description</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('monthly')}</th>
+                            <th className='px-4 py-1 text-center'>{t('deviceStatus')}</th>
+                            <th className='px-4 py-1 text-center'>{t('description')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {displayedContracts.length === 0 ? (
                             <tr>
                                 <td colSpan={12} className="text-center py-8 text-slate-500 italic font-medium">
-                                    {searchTerm || selectedContractId ? `No results found for "${searchInput}"` : isSummaryFilterActive ? 'រកមិនឃើញទិន្នន័យដែលត្រូវនឹងតម្រងដែលបានជ្រើសរើសឡើយ' : 'No activated contracts yet. Activate contracts in Application page first.'}
+                                    {searchTerm || selectedContractId
+                                        ? t('customerNoResults').replace('{search}', searchInput)
+                                        : isSummaryFilterActive
+                                            ? t('noData')
+                                            : t('activatedNoRecords')}
                                 </td>
                             </tr>
                         ) : (
@@ -1094,16 +1097,30 @@ const Activated = () => {
                                                 <div>
                                                     <CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' />
                                                     <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' />
+                                                    {item.contractIid && (
+                                                        <span className='block font-mono text-[10px] font-semibold text-slate-500'>{item.contractIid}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className='px-4 py-1 text-center'>
                                             <span className='px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>
-                                                Activated
+                                                {t('activated')}
                                             </span>
                                         </td>
-                                        <td className='px-4 py-1 text-center font-mono text-indigo-700 font-bold'>
-                                            <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
+                                        <td className='px-4 py-1 text-center font-mono font-bold'>
+                                            {item.contractIid || item.contractId ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => navigate(`/installment/schedule?search=${encodeURIComponent(item.contractIid || item.contractId)}`)}
+                                                    className='cursor-pointer font-mono font-bold text-blue-600 hover:text-blue-800 hover:underline'
+                                                    title={t('activatedOpenInstallmentSchedule')}
+                                                >
+                                                    {item.contractIid || item.contractId}
+                                                </button>
+                                            ) : (
+                                                <span className='text-slate-400'>—</span>
+                                            )}
                                         </td>
                                         <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                         <td className='px-4 py-1'>
@@ -1127,10 +1144,18 @@ const Activated = () => {
                                         </td>
                                         <td className='px-4 py-1 text-center whitespace-nowrap'>
                                             <span className={`mr-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.lockPhoneStatus === 'Locked' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>
-                                                Phone {item.lockPhoneStatus || 'Unlocked'}
+                                                {t('devicePhoneLock')} {item.lockPhoneStatus === 'Locked'
+                                                    ? t('locked')
+                                                    : item.lockPhoneStatus === 'Unlocked' || !item.lockPhoneStatus
+                                                        ? t('unlocked')
+                                                        : item.lockPhoneStatus}
                                             </span>
                                             <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${item.lockWallpaperStatus === 'Locked' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>
-                                                Wallpaper {item.lockWallpaperStatus || 'Unlocked'}
+                                                {t('deviceWallpaper')} {item.lockWallpaperStatus === 'Locked'
+                                                    ? t('locked')
+                                                    : item.lockWallpaperStatus === 'Unlocked' || !item.lockWallpaperStatus
+                                                        ? t('unlocked')
+                                                        : item.lockWallpaperStatus}
                                             </span>
                                         </td>
                                         <td className='px-4 py-1 text-center'>
@@ -1138,7 +1163,7 @@ const Activated = () => {
                                                 type="button"
                                                 onClick={() => setSelectedDescriptionContract(item)}
                                                 className="max-w-48 truncate rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100"
-                                                title="View status description history"
+                                                title={t('activatedDescriptionHistory')}
                                             >
                                                 {getActivatedDescriptionStatus(item) || 'Set status'}
                                             </button>
@@ -1162,7 +1187,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
                                                                         <MdInfo className="text-indigo-600 text-sm" />
-                                                                        <span>Set Description</span>
+                                                                        <span>{t('setDescription')}</span>
                                                                     </button>
                                                                 )}
                                                                 {matchingCalcSchedule && (
@@ -1174,7 +1199,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"
                                                                     >
                                                                         <FaCalendarAlt className="text-emerald-600 text-sm" />
-                                                                        <span>Payment Schedule</span>
+                                                                        <span>{t('repaymentSchedule')}</span>
                                                                     </button>
                                                                 )}
                                                                 {canOpenMosyle && (
@@ -1182,7 +1207,7 @@ const Activated = () => {
                                                                         onClick={() => window.open(item.mosyleUrl || item.mosyle_url || item.urlMosyle || item.mosyleURL, '_blank')}
                                                                         className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
-                                                                        <span>Open Mosyle</span>
+                                                                        <span>{t('openMosyle')}</span>
                                                                     </button>
                                                                 )}
                                                                 {canOpenFb && (
@@ -1190,7 +1215,7 @@ const Activated = () => {
                                                                         onClick={() => window.open(item.urlFb, '_blank')}
                                                                         className="w-full text-left px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
-                                                                        <span>Open Facebook</span>
+                                                                        <span>{t('openFacebook')}</span>
                                                                     </button>
                                                                 )}
 
@@ -1218,7 +1243,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
                                                                         <MdComment className="text-cyan-600 text-base" />
-                                                                        <span>Comment</span>
+                                                                        <span>{t('comments')}</span>
                                                                     </button>
                                                                 )}
                                                                 {canLock && (
@@ -1227,7 +1252,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
                                                                         <FaLock className="text-red-600 text-sm" />
-                                                                        <span>Lock Device</span>
+                                                                        <span>{t('lockPhone')}</span>
                                                                     </button>
                                                                 )}
                                                                 {canWallpaper && (
@@ -1236,7 +1261,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
                                                                         <MdOutlineWallpaper className="text-amber-600 text-sm" />
-                                                                        <span>Set Wallpaper</span>
+                                                                        <span>{t('deviceSetWallpaper')}</span>
                                                                     </button>
                                                                 )}
                                                                 {canCheck && (
@@ -1245,7 +1270,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
                                                                         <MdSwapHoriz className="text-blue-600 text-base" />
-                                                                        <span>Check</span>
+                                                                        <span>{t('check')}</span>
                                                                     </button>
                                                                 )}
                                                                 {canBlacklist && (
@@ -1254,7 +1279,7 @@ const Activated = () => {
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                                     >
                                                                         <MdSwapHoriz className="text-red-600 text-base" />
-                                                                        <span>Blacklist</span>
+                                                                        <span>{t('blacklist')}</span>
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -1294,18 +1319,18 @@ const Activated = () => {
                     <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
                         <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                             <h3 className="text-base font-bold text-cyan-300 flex items-center gap-2">
-                                <MdComment className="text-lg" /> Add Comment Note
+                                <MdComment className="text-lg" /> {t('activatedAddCommentNote')}
                             </h3>
                             <button type="button" onClick={() => setSelectedCommentItem(null)} className="text-gray-400 hover:text-gray-200 text-sm font-bold">✕</button>
                         </div>
 
                         <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800 text-xs">
-                            <p className="text-gray-400">Customer: <span className="text-gray-100 font-bold">{selectedCommentItem.customerNameEn}</span></p>
-                            <p className="text-gray-400">Model: <span className="text-gray-200 font-semibold">{selectedCommentItem.model}</span></p>
+                            <p className="text-gray-400">{t('customerName')}: <span className="text-gray-100 font-bold">{selectedCommentItem.customerNameEn}</span></p>
+                            <p className="text-gray-400">{t('model')}: <span className="text-gray-200 font-semibold">{selectedCommentItem.model}</span></p>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">Enter Comment Note <span className="font-normal text-gray-500">(optional)</span></label>
+                            <label className="block text-xs font-semibold text-gray-400 mb-1.5">{t('activatedEnterCommentNote')} <span className="font-normal text-gray-500">({t('optional')})</span></label>
                             <textarea
                                 rows={4}
                                 value={commentInput}
@@ -1315,7 +1340,7 @@ const Activated = () => {
                                         setIsDateAppended(false);
                                     }
                                 }}
-                                placeholder="Type comment or leave blank..."
+                                placeholder={t('activatedCommentPlaceholder')}
                                 className="w-full p-2 bg-gray-900 border border-gray-700 rounded-[5px] text-xs text-gray-100 outline-none focus:border-cyan-500 font-khmer"
                             ></textarea>
                         </div>
@@ -1326,7 +1351,7 @@ const Activated = () => {
                                 onClick={() => { setSelectedCommentItem(null); setIsDateAppended(false); }}
                                 className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-[5px] text-xs font-bold"
                             >
-                                Cancel
+                                {t('cancel')}
                             </button>
                             {!isDateAppended ? (
                                 <button
@@ -1360,24 +1385,24 @@ const Activated = () => {
                     <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
                             <div>
-                                <h3 className="font-bold">Activated Description History</h3>
+                                <h3 className="font-bold">{t('activatedDescriptionHistory')}</h3>
                                 <p className="text-xs text-indigo-100">
                                     {selectedDescriptionContract.customerNameEn || selectedDescriptionContract.customerNameKh} · {selectedDescriptionContract.contractId}
                                 </p>
                             </div>
-                            <button type="button" onClick={() => setSelectedDescriptionContract(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-black hover:bg-slate-100" aria-label="Close">&times;</button>
+                            <button type="button" onClick={() => setSelectedDescriptionContract(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-black hover:bg-slate-100" aria-label={t('close')}>&times;</button>
                         </div>
                         <div className="max-h-[75vh] space-y-4 overflow-y-auto p-4 text-sm">
                             <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
-                                <p className="text-xs font-bold uppercase text-indigo-500">Current status</p>
+                                <p className="text-xs font-bold uppercase text-indigo-500">{t('activatedCurrentStatus')}</p>
                                 <p className="mt-1 font-bold text-indigo-900">{getActivatedDescriptionStatus(selectedDescriptionContract) || 'No status set'}</p>
-                                <p className="mt-2 text-xs font-bold uppercase text-indigo-500">Description</p>
+                                <p className="mt-2 text-xs font-bold uppercase text-indigo-500">{t('description')}</p>
                                 <p className="mt-1 whitespace-pre-wrap text-slate-700">
                                     {selectedDescriptionContract.activatedDescriptionHistory?.at(-1)?.description || 'No description yet.'}
                                 </p>
                             </div>
                             <div>
-                                <h4 className="mb-2 font-bold text-slate-800">History</h4>
+                                <h4 className="mb-2 font-bold text-slate-800">{t('history')}</h4>
                                 {selectedDescriptionContract.activatedDescriptionHistory?.length ? (
                                     <ol className="space-y-3">
                                         {[...selectedDescriptionContract.activatedDescriptionHistory].reverse().map((entry, index) => (
@@ -1404,11 +1429,11 @@ const Activated = () => {
                                             </li>
                                         ))}
                                     </ol>
-                                ) : <p className="text-slate-500">No description history yet.</p>}
+                                ) : <p className="text-slate-500">{t('activatedNoDescriptionHistory')}</p>}
                             </div>
                             <div className="flex justify-end">
                                 <button type="button" onClick={() => openActivatedDescriptionForm(selectedDescriptionContract)} className="rounded-md bg-indigo-700 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-800">
-                                    Set Description
+                                    {t('setDescription')}
                                 </button>
                             </div>
                         </div>
@@ -1421,22 +1446,22 @@ const Activated = () => {
                     <div className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
                         <div className="flex items-center justify-between bg-indigo-700 px-4 py-3 text-white">
                             <h3 className="font-bold">{editingDescriptionEntry ? 'Edit Description History' : 'Set Description'}</h3>
-                            <button type="button" onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-black hover:bg-slate-100" aria-label="Close">&times;</button>
+                            <button type="button" onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }} className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-black hover:bg-slate-100" aria-label={t('close')}>&times;</button>
                         </div>
                         <form onSubmit={handleSaveActivatedDescription} className="space-y-4 p-4 text-sm">
                             <div>
-                                <label className="mb-1 block font-bold text-slate-700">Status</label>
+                                <label className="mb-1 block font-bold text-slate-700">{t('status')}</label>
                                 <select
                                     required
                                     value={descriptionStatus}
                                     onChange={event => setDescriptionStatus(event.target.value)}
                                     className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-indigo-500 focus:outline-none"
                                 >
-                                    <option value="" disabled>Select status</option>
+                                    <option value="" disabled>{t('activatedSelectStatus')}</option>
                                     {[...new Set([...activatedDescriptionStatuses, getActivatedDescriptionStatus(selectedDescriptionContract), editingDescriptionEntry?.status].filter(Boolean))].map(status => (
                                         <option key={status} value={status}>{status}</option>
                                     ))}
-                                    <option value="__other__">Other (create new status)</option>
+                                    <option value="__other__">{t('activatedOtherStatusOption')}</option>
                                 </select>
                                 {descriptionStatus === '__other__' && (
                                     <input
@@ -1445,20 +1470,20 @@ const Activated = () => {
                                         maxLength={80}
                                         value={customDescriptionStatus}
                                         onChange={event => setCustomDescriptionStatus(event.target.value)}
-                                        placeholder="Enter a new status"
+                                        placeholder={t('activatedNewStatusPlaceholder')}
                                         className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"
                                     />
                                 )}
                             </div>
                             <div>
-                                <label className="mb-1 block font-bold text-slate-700">Description</label>
+                                <label className="mb-1 block font-bold text-slate-700">{t('description')}</label>
                                 <textarea
                                     required
                                     rows={4}
                                     maxLength={3000}
                                     value={descriptionInput}
                                     onChange={event => setDescriptionInput(event.target.value)}
-                                    placeholder="Write a description..."
+                                    placeholder={t('activatedDescriptionPlaceholder')}
                                     className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 focus:border-indigo-500 focus:outline-none"
                                 />
                             </div>
@@ -1468,7 +1493,7 @@ const Activated = () => {
                                     onClick={() => { setIsDescriptionFormOpen(false); setEditingDescriptionEntry(null); }}
                                     className="rounded-md bg-slate-100 px-4 py-2 font-bold text-slate-700 hover:bg-slate-200"
                                 >
-                                    Cancel
+                                    {t('cancel')}
                                 </button>
                                 <button type="submit" disabled={descriptionSaving} className="rounded-md bg-indigo-700 px-4 py-2 font-bold text-white hover:bg-indigo-800 disabled:opacity-60">
                                     {descriptionSaving ? 'Saving...' : 'Save'}
@@ -1496,22 +1521,22 @@ const Activated = () => {
                                 <h4 className="text-base font-bold text-gray-100">{selectedInfo.customerNameEn}</h4>
                                 <p className="text-sm text-indigo-400 font-khmer">{selectedInfo.customerNameKh}</p>
                                 <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
-                                    Activated
+                                    {t('activated')}
                                 </span>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <h4 className="text-xs font-bold text-indigo-300 uppercase">Customer Info</h4>
+                            <h4 className="text-xs font-bold text-indigo-300 uppercase">{t('customerInfo')}</h4>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Contract ID</span><span className="font-mono text-gray-200 font-bold">{selectedInfo.contractId}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">ID Card</span><span className="font-mono text-gray-200">{selectedInfo.idCardNumber || '-'}</span></div>
-                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">Phone</span><span className="font-mono text-gray-200">{selectedInfo.phone || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('contractIdLabel')}</span><span className="font-mono text-gray-200 font-bold">{selectedInfo.contractId}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('idCardNo')}</span><span className="font-mono text-gray-200">{selectedInfo.idCardNumber || '-'}</span></div>
+                                <div className="p-2.5 bg-gray-900/60 rounded-[5px] border border-gray-800"><span className="text-gray-400 block text-[10px]">{t('phoneNumber')}</span><span className="font-mono text-gray-200">{selectedInfo.phone || '-'}</span></div>
                             </div>
                         </div>
 
                         <div className="text-right pt-2">
-                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-[5px] cursor-pointer">Close</button>
+                            <button onClick={() => setSelectedInfo(null)} className="px-5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-[5px] cursor-pointer">{t('close')}</button>
                         </div>
                     </div>
                 </div>

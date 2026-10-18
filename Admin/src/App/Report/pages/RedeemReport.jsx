@@ -113,49 +113,49 @@ const RedeemReport = () => {
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Redeemed', accessor: 'totalRedeem' },
-                { header: 'Total Redeemed Value ($)', cell: (r) => `$${(r.totalLoanValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalRedeemed'), accessor: 'totalRedeem' },
+                { header: t('totalRedeemedValue'), cell: (r) => `$${(r.totalLoanValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
             ];
             const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToExcel('Redeem Contracts — Summary Table', summaryColumns, excelData, user?.brand || '');
+            return exportToExcel(t('redeemContractsSummaryTable'), summaryColumns, excelData, user?.brand || '');
         }
 
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer (EN)', accessor: 'customerNameEn' },
-            { header: 'Customer (KH)', accessor: 'customerNameKh' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Brand', accessor: 'brand' },
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: `${t('customerName')} (EN)`, accessor: 'customerNameEn' },
+            { header: `${t('customerName')} (KH)`, accessor: 'customerNameKh' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('brand'), accessor: 'brand' },
             { header: 'Status', cell: () => 'Redeem' }
         ];
-        exportToExcel('Redeem Contracts Report', columns, allData, user?.brand || '');
+        exportToExcel(t('redeemContractsReport'), columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async (orientation = 'portrait') => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Redeemed', accessor: 'totalRedeem' },
-                { header: 'Total Redeemed Value ($)', cell: (r) => `$${(r.totalLoanValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalRedeemed'), accessor: 'totalRedeem' },
+                { header: t('totalRedeemedValue'), cell: (r) => `$${(r.totalLoanValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToPDF('Redeem Contracts — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
+            return exportToPDF(t('redeemContractsSummaryTable'), summaryColumns, pdfData, user?.brand || '', pdfOrientation);
         }
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer', accessor: 'customerNameEn' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Brand', accessor: 'brand' },
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('customerName'), accessor: 'customerNameEn' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('brand'), accessor: 'brand' },
             { header: 'Status', cell: () => 'Redeem' }
         ];
-        exportToPDF('Redeem Contracts Report', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF(t('redeemContractsReport'), columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Calculate Brand Summary Grouping
@@ -266,7 +266,7 @@ const RedeemReport = () => {
                                 <FaUndoAlt />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Redeemed Devices</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t('totalRedeemed')}</p>
                                 <h3 className="text-2xl font-black text-slate-900 mt-0.5">{kpi.totalRedeem.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -276,7 +276,7 @@ const RedeemReport = () => {
                                 <FaDollarSign />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Redeemed Loan Value ($)</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t('totalRedeemedLoanValue')}</p>
                                 <h3 className="text-2xl font-black text-blue-700 mt-0.5">${kpi.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -285,11 +285,11 @@ const RedeemReport = () => {
                     {/* Line Chart Component */}
                     <LineChart
                         title={t('redeemTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួន Redeem និងតម្លៃឥណទានប្រចាំថ្ងៃ/ខែ"
+                        subtitle={t('redeemReportTrendDescription')}
                         data={chartTrendData}
                         series={[
-                            { key: 'redeemCount', label: 'Redeem', color: '#f59e0b', isCurrency: false },
-                            { key: 'loanValue', label: 'តម្លៃឥណទាន ($)', color: '#3b82f6', isCurrency: true }
+                            { key: 'redeemCount', label: t('redeem'), color: '#f59e0b', isCurrency: false },
+                            { key: 'loanValue', label: t('loanDisbursedCol'), color: '#3b82f6', isCurrency: true }
                         ]}
                     />
 
@@ -342,19 +342,19 @@ const RedeemReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-1 text-center'>No</th>
-                                <th className='px-4 py-1'>Customer</th>
-                                <th className='px-4 py-1'>Model</th>
-                                <th className='px-4 py-1'>Serial Number</th>
-                                <th className='px-4 py-1'>Brand</th>
-                                <th className='px-4 py-1 text-center'>Status</th>
+                                <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                <th className='px-4 py-1'>{t('customerLabel')}</th>
+                                <th className='px-4 py-1'>{t('model')}</th>
+                                <th className='px-4 py-1'>{t('serialNumber')}</th>
+                                <th className='px-4 py-1'>{t('brand')}</th>
+                                <th className='px-4 py-1 text-center'>{t('status')}</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
-                                <tr><td colSpan={6} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
+                                <tr><td colSpan={6} className="text-center py-10 text-amber-600 font-semibold">{t('loading')}</td></tr>
                             ) : visibleDataList.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">No redeem contracts found.</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">{t('noRedeemContracts')}</td></tr>
                             ) : (
                                 visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-amber-50/40 transition-colors'>
@@ -363,7 +363,7 @@ const RedeemReport = () => {
                                         <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
                                         <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
                                         <td className='px-4 py-1'><span className='px-2.5 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || user?.brand || 'SYSTEM'}</span></td>
-                                        <td className='px-4 py-1 text-center font-bold text-amber-700'>Redeem</td>
+                                        <td className='px-4 py-1 text-center font-bold text-amber-700'>{t('redeem')}</td>
                                     </tr>
                                 ))
                             )}
@@ -386,11 +386,11 @@ const RedeemReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-amber-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-1 text-center'>No</th>
-                                    <th className='px-3.5 py-1'>Brand Domain</th>
-                                    <th className='px-3.5 py-1 text-center'>Total Redeemed Count</th>
-                                    <th className='px-3.5 py-1 text-right'>Total Redeemed Loan Value ($)</th>
-                                    <th className='px-3.5 py-1 text-center'>Status</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-3.5 py-1'>{t('brandDomain')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('totalRedeemedCount')}</th>
+                                    <th className='px-3.5 py-1 text-right'>{t('totalRedeemedLoanValue')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('status')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
@@ -404,19 +404,19 @@ const RedeemReport = () => {
                                         </td>
                                         <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.totalRedeem.toLocaleString()}</td>
                                         <td className="px-3.5 py-1 text-right font-mono font-bold text-blue-700">${row.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3.5 py-1 text-center font-bold text-amber-700">Redeem</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-amber-700">{t('redeem')}</td>
                                     </tr>
                                 ))}
 
                                 {/* Grand Total Row */}
                                 <tr className="bg-amber-100/80 border-t-2 border-amber-400 font-black text-amber-950">
-                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">{t('totalLabel')}</td>
                                     <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-amber-950">
                                         {summaryBreakdown.grandTotal.brand}
                                     </td>
                                     <td className="px-3.5 py-3.5 text-center text-slate-900 font-black">{summaryBreakdown.grandTotal.totalRedeem.toLocaleString()}</td>
                                     <td className="px-3.5 py-3.5 text-right font-mono text-blue-900 font-black">${summaryBreakdown.grandTotal.totalLoanValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td className="px-3.5 py-3.5 text-center font-black text-amber-950">Redeem</td>
+                                    <td className="px-3.5 py-3.5 text-center font-black text-amber-950">{t('redeem')}</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -23,7 +23,7 @@ const MDM_CENTER_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2
 
 const Profile = () => {
     const { user, updateUserState, API_BASE } = useAuth();
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
 
     // Telegram 2FA Settings State
     const [telegramId, setTelegramId] = useState(user?.telegramId || '');
@@ -77,14 +77,14 @@ const Profile = () => {
             try {
                 const response = await fetch(`${API_BASE}/auth/qr-session`);
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Could not load QR codes');
+                if (!response.ok) throw new Error(data.error || t('profileQrLoadFailed', lang === 'km' ? 'មិនអាចផ្ទុក QR Code បានទេ' : 'Could not load QR codes'));
                 if (!cancelled) {
                     setQrSession(data.sessions?.[0] || null);
                     setQrLegacyActive(!!data.legacyActive);
                 }
             } catch (err) {
                 console.error('Fetch profile QR session error:', err);
-                if (!cancelled) setQrError(err.message || 'Could not load QR codes');
+                if (!cancelled) setQrError(err.message || t('profileQrLoadFailed', lang === 'km' ? 'មិនអាចផ្ទុក QR Code បានទេ' : 'Could not load QR codes'));
             } finally {
                 if (!cancelled) setQrSessionLoading(false);
             }
@@ -107,7 +107,7 @@ const Profile = () => {
             setQrRemainingMs(0);
             setQrSession(null);
             setQrLegacyActive(false);
-            setQrError('QR Code បានផុតកំណត់ហើយ សូមបង្កើតថ្មី។');
+            setQrError(t('profileQrExpired', lang === 'km' ? 'QR Code បានផុតកំណត់ហើយ សូមបង្កើតថ្មី។' : 'QR code has expired. Please generate a new one.'));
         };
 
         updateQrCountdown();
@@ -159,11 +159,11 @@ const Profile = () => {
                 setQrVerifyPassword('');
                 setShowQrModal(false);
             } else {
-                setQrError(data.error || 'ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ (Invalid username or password)');
+                setQrError(data.error || t('profileQrInvalidCredentials', lang === 'km' ? 'ឈ្មោះអ្នកប្រើប្រាស់ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ' : 'Invalid username or password'));
             }
         } catch {
             setQrLoading(false);
-            setQrError('Connection error while generating QR code');
+            setQrError(t('profileQrGenerateConnectionError', lang === 'km' ? 'មានបញ្ហាក្នុងការតភ្ជាប់ពេលបង្កើត QR Code' : 'Connection error while generating QR code'));
         }
     };
 
@@ -185,10 +185,10 @@ const Profile = () => {
                 setQrRemainingMs(0);
                 setQrVerifyPassword('');
             } else {
-                setQrError(data.error || 'មិនអាចលុប QR Code បានទេ');
+                setQrError(data.error || t('profileDeleteQrFailed', lang === 'km' ? 'មិនអាចលុប QR Code បានទេ' : 'Unable to delete QR code.'));
             }
         } catch {
-            setQrError('Connection error while deleting QR code');
+            setQrError(t('profileQrDeleteConnectionError', lang === 'km' ? 'មានបញ្ហាក្នុងការតភ្ជាប់ពេលលុប QR Code' : 'Connection error while deleting QR code'));
         } finally {
             setQrDeleting(false);
         }
@@ -225,17 +225,17 @@ const Profile = () => {
             setSaving(false);
 
             if (res.ok) {
-                setMessage('Telegram 2-Step Verification settings updated successfully!');
+                setMessage(t('profileTelegramSettingsUpdated', lang === 'km' ? 'ការកំណត់ការផ្ទៀងផ្ទាត់ Telegram ២ ជំហានត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!' : 'Telegram 2-Step Verification settings updated successfully!'));
                 setSecondPassword('');
                 if (data.user) {
                     updateUserState(data.user);
                 }
             } else {
-                setMessage(data.error || 'Failed to update Telegram 2FA');
+                setMessage(data.error || t('profileTelegramSettingsUpdateFailed', lang === 'km' ? 'មិនអាចធ្វើបច្ចុប្បន្នភាពការផ្ទៀងផ្ទាត់ Telegram ២ ជំហានបានទេ' : 'Failed to update Telegram 2FA'));
             }
         } catch (err) {
             setSaving(false);
-            setMessage('Saved locally. Connect backend server for live Telegram bot dispatch.');
+            setMessage(t('profileSavedLocallyTelegramBackend', lang === 'km' ? 'បានរក្សាទុកក្នុងម៉ាស៊ីន។ សូមភ្ជាប់ម៉ាស៊ីនមេ Backend ដើម្បីផ្ញើសារតាម Telegram Bot។' : 'Saved locally. Connect the backend server for live Telegram bot dispatch.'));
         }
     };
 
@@ -245,7 +245,7 @@ const Profile = () => {
         setPasswordMessage('');
 
         if (newPassword !== confirmPassword) {
-            setPasswordError('New password and confirm password do not match.');
+            setPasswordError(t('profilePasswordMismatch', lang === 'km' ? 'ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនដូចគ្នាទេ។' : 'New password and confirmation do not match.'));
             return;
         }
 
@@ -265,7 +265,7 @@ const Profile = () => {
             setUpdatingPassword(false);
 
             if (res.ok) {
-                setPasswordMessage('Password changed successfully!');
+                setPasswordMessage(t('profilePasswordChanged', lang === 'km' ? 'បានប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ!' : 'Password changed successfully!'));
                 setOldPassword('');
                 setNewPassword('');
                 setConfirmPassword('');
@@ -273,11 +273,11 @@ const Profile = () => {
                     updateUserState(data.user);
                 }
             } else {
-                setPasswordError(data.error || 'Failed to update password');
+                setPasswordError(data.error || t('profilePasswordUpdateFailed', lang === 'km' ? 'មិនអាចធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់បានទេ' : 'Failed to update password'));
             }
         } catch (err) {
             setUpdatingPassword(false);
-            setPasswordError('Failed to change password. Server connection error.');
+            setPasswordError(t('profilePasswordChangeConnectionError', lang === 'km' ? 'មិនអាចប្តូរពាក្យសម្ងាត់បានទេ។ មានបញ្ហាក្នុងការតភ្ជាប់ម៉ាស៊ីនមេ។' : 'Failed to change password. Server connection error.'));
         }
     };
 
@@ -289,7 +289,7 @@ const Profile = () => {
                         <FaShieldAlt className="text-indigo-400" />
                         {t('profile')} &amp; Security Center
                     </h1>
-                    <p className="text-xs text-gray-400 mt-0.5">គ្រប់គ្រងគណនី សុវត្ថិភាព និងរបៀប Log In ចូលប្រព័ន្ធ</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('profileManageAccountSecurity', lang === 'km' ? 'គ្រប់គ្រងគណនី សុវត្ថិភាព និងរបៀបចូលប្រព័ន្ធ' : 'Manage your account, security, and sign-in methods')}</p>
                 </div>
             </div>
 
@@ -309,9 +309,9 @@ const Profile = () => {
                         </div>
                         <div>
                             <h2 className="text-sm font-black text-gray-100 uppercase tracking-wide">
-                                របៀប LOG IN (Login Methods)
+                                {t('profileLoginMethods', lang === 'km' ? 'វិធីចូលប្រព័ន្ធ' : 'Login Methods')}
                             </h2>
-                            <p className="text-xs text-gray-400">ជ្រើសរើស និងកំណត់ជម្រើសចូលប្រើប្រព័ន្ធរបស់អ្នក</p>
+                            <p className="text-xs text-gray-400">{t('profileChooseSignInMethods', lang === 'km' ? 'ជ្រើសរើស និងកំណត់ជម្រើសចូលប្រើប្រព័ន្ធរបស់អ្នក' : 'Choose and configure your sign-in methods')}</p>
                         </div>
                     </div>
                 </div>
@@ -329,7 +329,7 @@ const Profile = () => {
                                 </span>
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-100 text-sm">ពាក្យសម្ងាត់ (Password)</h3>
+                                <h3 className="font-bold text-gray-100 text-sm">{t('password')}</h3>
                                 <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
                                     កំណត់ស្រាប់ដោយស្វ័យប្រវត្តិតាំងពីបង្កើតគណនី (Auto ready on creation)
                                 </p>
@@ -354,34 +354,34 @@ const Profile = () => {
                                         ? 'bg-emerald-950/80 border border-emerald-700/80 text-emerald-300'
                                         : 'bg-cyan-950/80 border border-cyan-700/80 text-cyan-300'
                                 }`}>
-                                    <FaKey className="text-xs" /> {qrSession || qrLegacyActive ? 'QR មានសុពលភាព' : 'ត្រូវការ Verify គណនី'}
+                                    <FaKey className="text-xs" /> {qrSession || qrLegacyActive ? t('profileQrValid', lang === 'km' ? 'QR មានសុពលភាព' : 'QR is valid') : t('profileAccountVerificationRequired', lang === 'km' ? 'ត្រូវការផ្ទៀងផ្ទាត់គណនី' : 'Account verification required')}
                                 </span>
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-100 text-sm">ស្កេន QR Code (QR Login)</h3>
+                                <h3 className="font-bold text-gray-100 text-sm">{t('profileQrLogin', lang === 'km' ? 'ចូលដោយស្កេន QR Code' : 'QR Code Login')}</h3>
                                 <p className="text-[11px] text-gray-400 leading-relaxed mt-1">
-                                    QR Code សកម្មត្រូវបានរក្សាទុកក្នុង database។ អាចលុប QR ចាស់ រួចបង្កើត QR ថ្មីបាន។
+                                    {t('profileActiveQrDescription', lang === 'km' ? 'QR Code សកម្មត្រូវបានរក្សាទុកក្នុងមូលដ្ឋានទិន្នន័យ។ អាចលុប QR ចាស់ រួចបង្កើត QR ថ្មីបាន។' : 'Active QR codes are stored in the database. Delete an old QR code before generating a new one.')}
                                 </p>
                                 {qrSessionLoading && (
-                                    <p className="pt-2 text-xs text-cyan-300">កំពុងពិនិត្យ QR Code ក្នុង database...</p>
+                                    <p className="pt-2 text-xs text-cyan-300">{t('profileCheckingQrDatabase', lang === 'km' ? 'កំពុងពិនិត្យ QR Code ក្នុងមូលដ្ឋានទិន្នន័យ...' : 'Checking QR codes in the database...')}</p>
                                 )}
                                 {qrError && !showQrModal && (
                                     <p role="alert" className="pt-2 text-xs text-rose-300">{qrError}</p>
                                 )}
                                 {qrLegacyActive && !qrCodeData && (
                                     <div className="mt-2 rounded-[6px] border border-amber-700/60 bg-amber-950/40 p-3 text-[11px] text-amber-200">
-                                        មាន QR Code ចាស់នៅសុពលភាព ប៉ុន្តែ QR payload មិនទាន់បានរក្សាទុកក្នុង database ទេ។ សូមលុបវា ហើយបង្កើត QR ថ្មី។
+                                        {t('profileLegacyQrWarning', lang === 'km' ? 'មាន QR Code ចាស់នៅសុពលភាព ប៉ុន្តែទិន្នន័យ QR មិនទាន់បានរក្សាទុកក្នុងមូលដ្ឋានទិន្នន័យទេ។ សូមលុបវា ហើយបង្កើត QR ថ្មី។' : 'An old QR code is still valid, but its payload is not stored in the database. Delete it and generate a new QR code.')}
                                     </div>
                                 )}
                                 {qrSession && (
-                                    <ul className="mt-2 space-y-2" aria-label="QR codes that are still valid">
+                                    <ul className="mt-2 space-y-2" aria-label={t('profileValidQrCodes', lang === 'km' ? 'QR Code ដែលនៅមានសុពលភាព' : 'QR codes that are still valid')}>
                                         <li className="rounded-[6px] border border-cyan-800/60 bg-slate-950/60 p-3">
                                             <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px]">
-                                                <span className="text-gray-300">បង្កើតនៅ៖ <strong className="text-cyan-200">{qrSession.createdAt ? new Date(qrSession.createdAt).toLocaleString() : 'មិនមានទិន្នន័យ'}</strong></span>
-                                                <span className="text-amber-300">ផុតកំណត់៖ {new Date(qrExpiresAt).toLocaleString()}</span>
+                                                <span className="text-gray-300">{t('createdAt', lang === 'km' ? 'បង្កើតនៅ' : 'Created at')}៖ <strong className="text-cyan-200">{qrSession.createdAt ? new Date(qrSession.createdAt).toLocaleString() : t('noData', lang === 'km' ? 'មិនមានទិន្នន័យ' : 'No data')}</strong></span>
+                                                <span className="text-amber-300">{t('expiresAt', lang === 'km' ? 'ផុតកំណត់' : 'Expires at')}៖ {new Date(qrExpiresAt).toLocaleString()}</span>
                                             </div>
                                             <p className="mt-1 text-xs font-bold text-emerald-300" aria-live="off">
-                                                នៅសល់៖ {countdownDays} ថ្ងៃ {countdownHours} ម៉ោង {countdownMinutes} នាទី {countdownRemainderSeconds} វិនាទី
+                                                {t('remaining', lang === 'km' ? 'នៅសល់' : 'Remaining')}: {countdownDays} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')} {countdownHours} {t('hours', lang === 'km' ? 'ម៉ោង' : 'hours')} {countdownMinutes} {t('minutes', lang === 'km' ? 'នាទី' : 'minutes')} {countdownRemainderSeconds} {t('seconds', lang === 'km' ? 'វិនាទី' : 'seconds')}
                                             </p>
                                             {qrCodeData && (
                                                 <div className="pt-2 text-center">
@@ -408,7 +408,7 @@ const Profile = () => {
                                     </ul>
                                 )}
                                 {qrCodeData && (
-                                    <p className="mt-2 text-center text-[11px] text-gray-400">QR នេះអាចប្រើបានរហូតដល់ផុតកំណត់។ អ្នកដែលមានរូប QR អាច Login បាន។</p>
+                                    <p className="mt-2 text-center text-[11px] text-gray-400">{t('profileQrValidityWarning', lang === 'km' ? 'QR នេះអាចប្រើបានរហូតដល់ផុតកំណត់។ អ្នកដែលមានរូប QR អាចចូលប្រព័ន្ធបាន។' : 'This QR code is usable until it expires. Anyone with the image can sign in.')}</p>
                                 )}
                             </div>
                         </div>
@@ -422,7 +422,7 @@ const Profile = () => {
                                             className="flex-1 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                                         >
                                             <FaDownload />
-                                            <span>ទាញយក QR</span>
+                                            <span>{t('download')} QR</span>
                                         </button>
                                     )}
                                     <button
@@ -432,7 +432,7 @@ const Profile = () => {
                                         className="flex-1 py-2 bg-red-950/70 hover:bg-red-900/80 border border-red-800 text-red-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                                     >
                                         <FaTrash />
-                                        {qrDeleting ? 'កំពុងលុប...' : 'លុប QR'}
+                                        {qrDeleting ? t('deleting', lang === 'km' ? 'កំពុងលុប...' : 'Deleting...') : t('profileDeleteQr', lang === 'km' ? 'លុប QR' : 'Delete QR')}
                                     </button>
                                 </div>
                             ) : (
@@ -448,7 +448,7 @@ const Profile = () => {
                                     className="w-full py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:cursor-wait disabled:opacity-50"
                                 >
                                     <FaQrcode />
-                                    <span>បង្កើត QR Code</span>
+                                    <span>{t('profileCreateQrCode', lang === 'km' ? 'បង្កើត QR Code' : 'Generate QR Code')}</span>
                                 </button>
                             )}
                         </div>
@@ -466,7 +466,7 @@ const Profile = () => {
                                     <FaQrcode className="text-lg" />
                                 </div>
                                 <h3 className="font-bold text-gray-100 text-sm">
-                                    {qrCodeData ? 'QR Code សម្រាប់ Log In' : 'ផ្ទៀងផ្ទាត់គណនីដើម្បីយក QR Code'}
+                                    {qrCodeData ? t('profileQrModalTitle', lang === 'km' ? 'QR Code សម្រាប់ចូលប្រព័ន្ធ' : 'QR Code for sign-in') : t('profileQrVerifyModalTitle', lang === 'km' ? 'ផ្ទៀងផ្ទាត់គណនីដើម្បីបង្កើត QR Code' : 'Verify account to generate a QR code')}
                                 </h3>
                             </div>
                             <button
@@ -488,44 +488,44 @@ const Profile = () => {
                             /* Step 1: Prompt for Username & Password to verify ownership */
                             <form onSubmit={handleGenerateQr} className="space-y-3 text-xs">
                                 <p className="text-gray-300 text-[11px] leading-relaxed">
-                                    ដើម្បីសុវត្ថិភាព សូមបញ្ចូល <span className="text-cyan-400 font-bold">Username</span> និង <span className="text-cyan-400 font-bold">Password</span> របស់អ្នកដើម្បីផ្ទៀងផ្ទាត់គណនី (Verify Account):
+                                    {t('profileQrVerifyInstructions', lang === 'km' ? 'ដើម្បីសុវត្ថិភាព សូមបញ្ចូល' : 'For security, enter your')} <span className="text-cyan-400 font-bold">{t('username')}</span> {t('and', lang === 'km' ? 'និង' : 'and')} <span className="text-cyan-400 font-bold">{t('password')}</span> {t('profileVerifyAccountSuffix', lang === 'km' ? 'របស់អ្នកដើម្បីផ្ទៀងផ្ទាត់គណនី:' : 'to verify your account:')}
                                 </p>
 
                                 <div>
-                                    <label className="block font-semibold text-gray-400 mb-1">Username</label>
+                                    <label className="block font-semibold text-gray-400 mb-1">{t('username')}</label>
                                     <input
                                         type="text"
                                         required
                                         value={qrVerifyUsername}
                                         onChange={(e) => setQrVerifyUsername(e.target.value)}
-                                        placeholder="Enter username"
+                                        placeholder={t('username')}
                                         className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-cyan-500 rounded-[6px] text-gray-100"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block font-semibold text-gray-400 mb-1">Password</label>
+                                    <label className="block font-semibold text-gray-400 mb-1">{t('password')}</label>
                                     <input
                                         type="password"
                                         required
                                         value={qrVerifyPassword}
                                         onChange={(e) => setQrVerifyPassword(e.target.value)}
-                                        placeholder="Enter password"
+                                        placeholder={t('password')}
                                         className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-cyan-500 rounded-[6px] text-gray-100"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block font-semibold text-gray-400 mb-1">រយៈពេល QR មានសុពលភាព</label>
+                                    <label className="block font-semibold text-gray-400 mb-1">{t('profileQrValidity', lang === 'km' ? 'រយៈពេលសុពលភាព QR' : 'QR code validity')}</label>
                                     <select
                                         value={qrDuration}
                                         onChange={(e) => setQrDuration(e.target.value)}
                                         className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-cyan-500 rounded-[6px] text-gray-100"
                                     >
-                                        <option value="1d">១ ថ្ងៃ</option>
-                                        <option value="3d">៣ ថ្ងៃ</option>
-                                        <option value="7d">១ អាទិត្យ</option>
-                                        <option value="30d">១ ខែ</option>
+                                        <option value="1d">{t('profileOneDay', lang === 'km' ? '១ ថ្ងៃ' : '1 day')}</option>
+                                        <option value="3d">{t('profileThreeDays', lang === 'km' ? '៣ ថ្ងៃ' : '3 days')}</option>
+                                        <option value="7d">{t('profileOneWeek', lang === 'km' ? '១ អាទិត្យ' : '1 week')}</option>
+                                        <option value="30d">{t('profileOneMonth', lang === 'km' ? '១ ខែ' : '1 month')}</option>
                                     </select>
                                 </div>
 
@@ -539,7 +539,7 @@ const Profile = () => {
                                     ) : (
                                         <>
                                             <FaCheckCircle />
-                                            <span>ផ្ទៀងផ្ទាត់ &amp; បង្ហាញ QR Code (Verify &amp; Generate)</span>
+                                            <span>{t('profileVerifyGenerateQr', lang === 'km' ? 'ផ្ទៀងផ្ទាត់ និងបង្កើត QR Code' : 'Verify & Generate QR Code')}</span>
                                         </>
                                     )}
                                 </button>
@@ -567,18 +567,18 @@ const Profile = () => {
 
                                 <div className="space-y-1">
                                     <p className="font-bold text-gray-100 text-sm">
-                                        QR Code សម្រាប់ Login របស់ <span className="text-cyan-400 font-mono">{user?.username}</span>
+                                        {t('profileQrForLogin', lang === 'km' ? 'QR Code សម្រាប់ចូលប្រព័ន្ធរបស់' : 'QR code for signing in as')} <span className="text-cyan-400 font-mono">{user?.username}</span>
                                     </p>
                                     <p className="text-[11px] text-gray-400">
-                                        QR មិនបង្ហាញព័ត៌មានគណនីទេ ហើយអាចប្រើបានច្រើនដងរហូតដល់ផុតកំណត់។ អ្នកដែលមានរូប QR អាច Login បាន
+                                        {t('profileQrPrivacyDescription', lang === 'km' ? 'QR មិនបង្ហាញព័ត៌មានគណនីទេ ហើយអាចប្រើបានច្រើនដងរហូតដល់ផុតកំណត់។ អ្នកដែលមានរូប QR អាចចូលប្រព័ន្ធបាន' : 'The QR code does not show account details and can be used multiple times until it expires. Anyone with the image can sign in.')}
                                     </p>
                                     {qrExpiresAt && (
                                         <>
                                             <p className="text-[11px] text-amber-300">
-                                                ផុតកំណត់៖ {new Date(qrExpiresAt).toLocaleString()}
+                                                {t('expiresAt', lang === 'km' ? 'ផុតកំណត់' : 'Expires at')}: {new Date(qrExpiresAt).toLocaleString()}
                                             </p>
                                             <p className="text-xs text-emerald-300 font-bold" aria-live="off">
-                                                នៅសល់៖ {countdownDays} ថ្ងៃ {countdownHours} ម៉ោង {countdownMinutes} នាទី {countdownRemainderSeconds} វិនាទី
+                                                {t('remaining', lang === 'km' ? 'នៅសល់' : 'Remaining')}: {countdownDays} {t('days')} {countdownHours} {t('hours', lang === 'km' ? 'ម៉ោង' : 'hours')} {countdownMinutes} {t('minutes', lang === 'km' ? 'នាទី' : 'minutes')} {countdownRemainderSeconds} {t('seconds', lang === 'km' ? 'វិនាទី' : 'seconds')}
                                             </p>
                                         </>
                                     )}
@@ -591,7 +591,7 @@ const Profile = () => {
                                         className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold rounded-[6px] text-xs shadow-lg shadow-emerald-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
                                     >
                                         <FaDownload />
-                                        <span>ទាញយក QR Code (Download QR)</span>
+                                        <span>{t('download')} QR Code</span>
                                     </button>
                                     <button
                                         type="button"
@@ -600,11 +600,11 @@ const Profile = () => {
                                         className="py-2.5 px-4 bg-red-950/70 hover:bg-red-900/80 border border-red-800 text-red-300 font-bold rounded-[6px] text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                                     >
                                         <FaTrash />
-                                        {qrDeleting ? 'កំពុងលុប...' : 'លុប QR'}
+                                        {qrDeleting ? t('deleting', lang === 'km' ? 'កំពុងលុប...' : 'Deleting...') : t('profileDeleteQr', lang === 'km' ? 'លុប QR' : 'Delete QR')}
                                     </button>
                                 </div>
                                 <p className="text-[10px] text-gray-500">
-                                    ត្រូវលុប QR នេះសិន ទើបអាចផ្ទៀងផ្ទាត់ និងបង្កើត QR ថ្មីបាន។
+                                    {t('profileDeleteQrBeforeRecreate', lang === 'km' ? 'ត្រូវលុប QR នេះសិន ទើបអាចផ្ទៀងផ្ទាត់ និងបង្កើត QR ថ្មីបាន។' : 'Delete this QR code before verifying and generating a new one.')}
                                 </p>
                             </div>
                         )}
@@ -628,17 +628,17 @@ const Profile = () => {
                             <h2 className="text-lg font-black text-gray-100">{user?.name || 'BOY BOY'}</h2>
                             <p className="text-xs text-indigo-400 font-mono font-semibold">{user?.username || '@hakyonghouv'}</p>
                             <span className="inline-block mt-2 px-3 py-1 bg-purple-950/80 border border-purple-700 text-purple-300 rounded-full font-bold text-[10px] uppercase tracking-wider">
-                                {user?.role || 'Administrator'}
+                                {user?.role || t('admin')}
                             </span>
                             {user?.brand && (
                                 <span className="block mt-1 text-[11px] text-gray-300">
-                                    Brand: <span className="font-bold text-indigo-400">{user.brand}</span>
+                                    {t('brand')}: <span className="font-bold text-indigo-400">{user.brand}</span>
                                 </span>
                             )}
                             {Array.isArray(user?.subBrands) && user.subBrands.length > 0 && (
                                 <div className="mt-2 text-left bg-gray-900/80 p-2.5 rounded-xl border border-gray-800">
                                     <span className="block text-[10px] text-gray-400 font-bold uppercase mb-1">
-                                        Sub Brands ({user.subBrands.length}):
+                                        {t('deviceSubBrand')} ({user.subBrands.length}):
                                     </span>
                                     <div className="flex flex-wrap gap-1">
                                         {user.subBrands.map((sb, idx) => (
@@ -653,17 +653,17 @@ const Profile = () => {
 
                         <div className="pt-3 border-t border-gray-800/80 text-left text-xs space-y-2.5">
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-400">Account ID:</span>
+                                <span className="text-gray-400">{t('profileAccountId', lang === 'km' ? 'លេខសម្គាល់គណនី' : 'Account ID')}:</span>
                                 <span className="font-mono text-gray-200 font-bold">{user?.userId || '001290312'}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-400">Email:</span>
+                                <span className="text-gray-400">{t('email', lang === 'km' ? 'អ៊ីមែល' : 'Email')}:</span>
                                 <span className="font-mono text-gray-200">{user?.email || 'yonghouvh@gmail.com'}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-400">System Status:</span>
+                                <span className="text-gray-400">{t('profileSystemStatus', lang === 'km' ? 'ស្ថានភាពប្រព័ន្ធ' : 'System Status')}:</span>
                                 <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Online
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> {t('online')}
                                 </span>
                             </div>
                         </div>
@@ -673,7 +673,7 @@ const Profile = () => {
                     <div className="p-6 rounded-3xl glass-card border border-gray-800 space-y-4 shadow-xl text-xs">
                         <div className="flex items-center gap-2 border-b border-gray-800 pb-3">
                             <FaKey className="text-lg text-indigo-400" />
-                            <h3 className="font-bold text-gray-100">Change Password</h3>
+                            <h3 className="font-bold text-gray-100">{t('profileChangePassword', lang === 'km' ? 'ប្តូរពាក្យសម្ងាត់' : 'Change Password')}</h3>
                         </div>
 
                         {passwordMessage && (
@@ -690,37 +690,37 @@ const Profile = () => {
 
                         <form onSubmit={handleChangePassword} className="space-y-3">
                             <div>
-                                <label className="block font-semibold text-gray-400 mb-1">Current Password</label>
+                                <label className="block font-semibold text-gray-400 mb-1">{t('profileCurrentPassword', lang === 'km' ? 'ពាក្យសម្ងាត់បច្ចុប្បន្ន' : 'Current Password')}</label>
                                 <input
                                     type="password"
                                     required
                                     value={oldPassword}
                                     onChange={(e) => setOldPassword(e.target.value)}
-                                    placeholder="Enter current password"
+                                    placeholder={t('profileEnterCurrentPassword', lang === 'km' ? 'បញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន' : 'Enter current password')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-gray-400 mb-1">New Password</label>
+                                <label className="block font-semibold text-gray-400 mb-1">{t('profileNewPassword', lang === 'km' ? 'ពាក្យសម្ងាត់ថ្មី' : 'New Password')}</label>
                                 <input
                                     type="password"
                                     required
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    placeholder="Enter new password"
+                                    placeholder={t('profileEnterNewPassword', lang === 'km' ? 'បញ្ចូលពាក្យសម្ងាត់ថ្មី' : 'Enter new password')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold text-gray-400 mb-1">Confirm New Password</label>
+                                <label className="block font-semibold text-gray-400 mb-1">{t('profileConfirmNewPassword', lang === 'km' ? 'បញ្ជាក់ពាក្យសម្ងាត់ថ្មី' : 'Confirm New Password')}</label>
                                 <input
                                     type="password"
                                     required
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    placeholder="Confirm new password"
+                                    placeholder={t('profileConfirmNewPasswordPlaceholder', lang === 'km' ? 'បញ្ចូលពាក្យសម្ងាត់ថ្មីម្តងទៀត' : 'Confirm new password')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-gray-100"
                                 />
                             </div>
@@ -730,7 +730,7 @@ const Profile = () => {
                                 disabled={updatingPassword}
                                 className="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-[5px] cursor-pointer shadow-md transition-all flex items-center justify-center gap-1.5"
                             >
-                                {updatingPassword ? 'Updating...' : 'Update Password'}
+                                {updatingPassword ? t('updating', lang === 'km' ? 'កំពុងធ្វើបច្ចុប្បន្នភាព...' : 'Updating...') : t('profileUpdatePassword', lang === 'km' ? 'ធ្វើបច្ចុប្បន្នភាពពាក្យសម្ងាត់' : 'Update Password')}
                             </button>
                         </form>
                     </div>
@@ -741,19 +741,19 @@ const Profile = () => {
                     <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
                         <FaTelegramPlane className="text-2xl text-indigo-400" />
                         <div>
-                            <h3 className="text-sm font-bold text-gray-100">Telegram 2-Step Verification (2FA)</h3>
-                            <p className="text-xs text-gray-400">Link Telegram Account ID to receive single-use OTP codes</p>
+                            <h3 className="text-sm font-bold text-gray-100">{t('telegram2FA')} (2FA)</h3>
+                            <p className="text-xs text-gray-400">{t('profileTelegramOtpDescription', lang === 'km' ? 'ភ្ជាប់ Telegram Account ID ដើម្បីទទួលលេខកូដ OTP ប្រើបានម្តង' : 'Link a Telegram Account ID to receive single-use OTP codes')}</p>
                         </div>
                     </div>
 
                     <form onSubmit={handleSaveTelegram2FA} className="space-y-4 text-xs">
                         <div>
-                            <label className="block font-semibold text-gray-300 mb-1">Telegram User Chat ID</label>
+                            <label className="block font-semibold text-gray-300 mb-1">{t('profileTelegramChatId', lang === 'km' ? 'Telegram User Chat ID' : 'Telegram User Chat ID')}</label>
                             <input
                                 type="text"
                                 value={telegramId}
                                 onChange={(e) => setTelegramId(e.target.value)}
-                                placeholder="Enter Telegram ID (e.g. 12903120)"
+                                placeholder={t('profileEnterTelegramId', lang === 'km' ? 'បញ្ចូល Telegram ID (ឧ. 12903120)' : 'Enter Telegram ID (e.g. 12903120)')}
                                 className="w-full h-11 px-4 bg-gray-900 border border-gray-700 focus:border-indigo-500 rounded-[5px] text-xs text-gray-100 font-mono"
                             />
                         </div>
@@ -782,7 +782,7 @@ const Profile = () => {
                                         type="password"
                                         value={secondPassword}
                                         onChange={(e) => setSecondPassword(e.target.value)}
-                                        placeholder="Enter second password to set/change"
+                                        placeholder={t('profileEnterSecondPassword', lang === 'km' ? 'បញ្ចូលពាក្យសម្ងាត់ទីពីរ' : 'Enter second password to set/change')}
                                         className="w-full h-10 px-3 bg-gray-900 border border-gray-800 focus:border-indigo-500 rounded-[5px] text-xs text-gray-100 font-mono"
                                     />
                                 </div>
@@ -792,10 +792,10 @@ const Profile = () => {
                                         📌 Telegram Bot Setup Guide / ការណែនាំភ្ជាប់ Telegram Bot:
                                     </p>
                                     <ol className="list-decimal list-inside space-y-1 text-gray-300">
-                                        <li>Open Telegram and search for your MDM Bot.</li>
-                                        <li>Press <span className="font-bold text-indigo-300 font-mono">/start</span> to initiate communication with the bot.</li>
-                                        <li>Copy your Telegram Chat ID into the field above, set your Password តង់ទី២, and enable 2-Step Verification.</li>
-                                        <li>Every time you sign in, the system will automatically send a 6-digit OTP to your Telegram!</li>
+                                        <li>{t('profileTelegramSetupStep1', lang === 'km' ? 'បើក Telegram ហើយស្វែងរក MDM Bot របស់អ្នក។' : 'Open Telegram and search for your MDM Bot.')}</li>
+                                        <li>{t('profileTelegramSetupStep2', lang === 'km' ? 'ចុច' : 'Press')} <span className="font-bold text-indigo-300 font-mono">/start</span> {t('profileTelegramSetupStep2End', lang === 'km' ? 'ដើម្បីចាប់ផ្តើមទាក់ទងជាមួយ Bot។' : 'to start a conversation with the bot.')}</li>
+                                        <li>{t('profileTelegramSetupStep3', lang === 'km' ? 'ចម្លង Telegram Chat ID ទៅក្នុងប្រអប់ខាងលើ កំណត់ពាក្យសម្ងាត់ទីពីរ និងបើកការផ្ទៀងផ្ទាត់ ២ ជំហាន។' : 'Copy your Telegram Chat ID into the field above, set your second password, and enable 2-Step Verification.')}</li>
+                                        <li>{t('profileTelegramSetupStep4', lang === 'km' ? 'រាល់ពេលចូលប្រព័ន្ធ ប្រព័ន្ធនឹងផ្ញើ OTP ៦ ខ្ទង់ទៅ Telegram របស់អ្នកដោយស្វ័យប្រវត្តិ!' : 'Every time you sign in, the system automatically sends a 6-digit OTP to your Telegram!')}</li>
                                     </ol>
                                 </div>
                             </div>
@@ -811,7 +811,7 @@ const Profile = () => {
                             ) : (
                                 <>
                                     <FaCheckCircle />
-                                    <span>Save Security Settings</span>
+                                    <span>{t('profileSaveSecuritySettings', lang === 'km' ? 'រក្សាទុកការកំណត់សុវត្ថិភាព' : 'Save Security Settings')}</span>
                                 </>
                             )}
                         </button>

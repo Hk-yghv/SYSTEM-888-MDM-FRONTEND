@@ -68,7 +68,7 @@ const SuggestionField = ({ id, value, onChange, options = [], placeholder, texta
                         </button>
                     )) : (
                         <div className="px-3 py-2 text-xs text-slate-400">
-                            គ្មានជម្រើសត្រូវគ្នា — អាចវាយបញ្ចូលតម្លៃថ្មីបាន
+                            {t('noMatchingOptionsEnterNewValue')}
                         </div>
                     )}
                 </div>
@@ -135,7 +135,7 @@ const FollowUp4SubmitModal = ({
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/60 sticky top-0 z-10">
                     <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
                         {editingItem ? <FaEdit className="text-emerald-400" /> : <FaPlusCircle className="text-emerald-400" />}
-                        <span>{editingItem ? [t('editFollowUpSubmit')]: 'បង្កើត FOLLOW UP SUBMIT ថ្មី'}</span>
+                        <span>{editingItem ? t('editFollowUpSubmit') : t('createFollowUpSubmit')}</span>
                     </div>
                     <button
                         onClick={onClose}
@@ -150,7 +150,7 @@ const FollowUp4SubmitModal = ({
                     {/* Brand selection for master admin */}
                     {isMasterAdmin && (
                         <div className="bg-slate-900/50 p-2 rounded-lg border border-slate-700/80 mb-2">
-                            <label className="block text-xs font-semibold text-emerald-400 mb-1">BRAND (Master Admin)</label>
+                            <label className="block text-xs font-semibold text-emerald-400 mb-1">{t('brand')} (Master Admin)</label>
                             <select
                                 value={formData.brand}
                                 onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
@@ -165,7 +165,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">ថ្ងៃខែឆ្នាំ *</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('date')} *</label>
                             <input
                                 type="date"
                                 required
@@ -176,10 +176,10 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">NAME</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('customerName')}</label>
                             <input
                                 type="text"
-                                placeholder="បញ្ចូលឈ្មោះ"
+                                placeholder={t('customerName')}
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
@@ -187,10 +187,10 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">USER NAME</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('username')}</label>
                             <input
                                 type="text"
-                                placeholder="Username"
+                                placeholder={t('username')}
                                 value={formData.userName}
                                 onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
@@ -200,10 +200,10 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">PHONE NUMBER</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('phone')}</label>
                             <input
                                 type="text"
-                                placeholder="លេខទូរស័ព្ទ"
+                                placeholder={t('phone')}
                                 value={formData.phone}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono"
@@ -211,10 +211,10 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">NAME TELEGRAM</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('telegramName')}</label>
                             <input
                                 type="text"
-                                placeholder="ឈ្មោះ Telegram"
+                                placeholder={t('telegramName')}
                                 value={formData.nameTelegram}
                                 onChange={(e) => setFormData({ ...formData, nameTelegram: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
@@ -222,13 +222,13 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">PG/TL From</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('source')}</label>
                             <select
                                 value={formData.fromSource}
                                 onChange={(e) => setFormData({ ...formData, fromSource: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer"
                             >
-                                <option value="">-- ជ្រើសរើសប្រភព --</option>
+                                <option value="">{t('selectSource')}</option>
                                 {sources.map((s, i) => (
                                     <option key={i} value={s}>{s}</option>
                                 ))}
@@ -238,10 +238,10 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">Name PG/TL From</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('pgTlSourceName')}</label>
                             <SuggestionField
                                 id="follow-up-pg-tl-from"
-                                placeholder="NAME PG/TL មកពី"
+                                placeholder={t('pgTlSourceName')}
                                 value={formData.namePgTlFrom}
                                 options={droplists.pgTlNames}
                                 onChange={(namePgTlFrom) => setFormData({ ...formData, namePgTlFrom })}
@@ -249,13 +249,13 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">PG/TL Contact</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('pgTlContact')}</label>
                             <select
                                 value={formData.contactType}
                                 onChange={(e) => setFormData({ ...formData, contactType: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer"
                             >
-                                <option value="">-- ជ្រើសរើសប្រភេទទំនាក់ទំនង --</option>
+                                <option value="">{t('selectContactType')}</option>
                                 {contactTypes.map((c, i) => (
                                     <option key={i} value={c}>{c}</option>
                                 ))}
@@ -263,10 +263,10 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">Name PG/TL Contact</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('pgTlContactName')}</label>
                             <SuggestionField
                                 id="follow-up-pg-tl-contact"
-                                placeholder="NAME PG/TL ទាក់ទង"
+                                placeholder={t('pgTlContactName')}
                                 value={formData.namePgTlContact}
                                 options={droplists.pgTlNames}
                                 onChange={(namePgTlContact) => setFormData({ ...formData, namePgTlContact })}
@@ -276,10 +276,10 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">វាយតម្លៃ</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('evaluation')}</label>
                             <input
                                 type="text"
-                                placeholder="តម្លៃវាយតម្លៃ (ឧទាហរណ៍៖ $500)"
+                                placeholder={t('evaluationAmountPlaceholder')}
                                 value={formData.appraisal}
                                 onChange={(e) => setFormData({ ...formData, appraisal: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono text-amber-300"
@@ -287,10 +287,10 @@ const FollowUp4SubmitModal = ({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">បានស្នើ</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('requested')}</label>
                             <input
                                 type="text"
-                                placeholder="ចំនួនស្នើ (ឧទាហរណ៍៖ $400)"
+                                placeholder={t('requestedAmountPlaceholder')}
                                 value={formData.requested}
                                 onChange={(e) => setFormData({ ...formData, requested: e.target.value })}
                                 className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 font-mono text-emerald-300"
@@ -305,7 +305,7 @@ const FollowUp4SubmitModal = ({
                                     onChange={(e) => setFormData({ ...formData, assetType: e.target.value })}
                                     className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer"
                                 >
-                                    <option value="">-- ជ្រើសរើស ឬ វាយបញ្ចូល --</option>
+                                    <option value="">{t('selectOrType')}</option>
                                     {assetTypes.map((a, i) => (
                                         <option key={i} value={a}>{a}</option>
                                     ))}
@@ -316,7 +316,7 @@ const FollowUp4SubmitModal = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-black mb-1">MODEL</label>
+                            <label className="block text-xs font-semibold text-black mb-1">{t('model')}</label>
                             <div className="relative">
                                 <div className="flex">
                                     <input
@@ -325,7 +325,7 @@ const FollowUp4SubmitModal = ({
                                         aria-autocomplete="list"
                                         aria-expanded={isModelOptionsOpen}
                                         aria-controls="follow-up-model-options"
-                                        placeholder="ម៉ូឌែលទូរស័ព្ទ/ឧបករណ៍"
+                                        placeholder={t('model')}
                                         value={formData.model}
                                         onFocus={() => setIsModelOptionsOpen(true)}
                                         onBlur={() => setIsModelOptionsOpen(false)}
@@ -334,7 +334,7 @@ const FollowUp4SubmitModal = ({
                                     />
                                     <button
                                         type="button"
-                                        aria-label="Show model options"
+                                        aria-label={t('showModelOptions')}
                                         aria-expanded={isModelOptionsOpen}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => setIsModelOptionsOpen(open => !open)}
@@ -366,7 +366,7 @@ const FollowUp4SubmitModal = ({
                                             </button>
                                         )) : (
                                             <div className="px-3 py-2 text-xs text-slate-400">
-                                                គ្មានម៉ូឌែលត្រូវគ្នា — អាចវាយបញ្ចូលម៉ូឌែលថ្មីបាន
+                                                {t('noMatchingModelsEnterNewModel')}
                                             </div>
                                         )}
                                     </div>
@@ -393,7 +393,7 @@ const FollowUp4SubmitModal = ({
                         <SuggestionField
                             id="follow-up-description"
                             textarea
-                            placeholder="ការបរិយាយបន្ថែម..."
+                            placeholder={t('additionalDescription')}
                             value={formData.description}
                             options={droplists.descriptions}
                             onChange={(description) => setFormData({ ...formData, description })}
@@ -406,7 +406,7 @@ const FollowUp4SubmitModal = ({
                             onClick={onClose}
                             className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer"
                         >
-                            បោះបង់
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
@@ -414,7 +414,7 @@ const FollowUp4SubmitModal = ({
                             className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-5 py-2 rounded-lg transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                             <FaSave />
-                            <span>{submitting ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក'}</span>
+                            <span>{submitting ? t('saving') : t('save')}</span>
                         </button>
                     </div>
                 </form>

@@ -129,7 +129,7 @@ const UnlockPhone = () => {
                             }}
                             className="px-3 py-1.5 bg-white border border-indigo-300 rounded-[5px] text-xs text-indigo-900 font-semibold focus:border-indigo-500 outline-none shadow-xs cursor-pointer"
                         >
-                            <option value="">All Sub Brands</option>
+                            <option value="">{t('deviceAllSubBrands')}</option>
                             {user.subBrands.map((sb, i) => (
                                 <option key={i} value={sb}>🏢 {sb}</option>
                             ))}
@@ -148,22 +148,22 @@ const UnlockPhone = () => {
                 <table className='w-full text-left text-xs whitespace-nowrap'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>Unlocked Date &amp; Time</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('unlockedDateTime')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
                             <th className='px-4 py-1'>{t('serialNumber')}</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Sub Brand</th>
-                            <th className='px-4 py-1'>User Name</th>
-                            <th className='px-4 py-1'>Reason</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('deviceSubBrand')}</th>
+                            <th className='px-4 py-1'>{t('userName')}</th>
+                            <th className='px-4 py-1'>{t('reason')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap'>
                         {loading ? (
-                            <tr><td colSpan={9} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                            <tr><td colSpan={9} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                         ) : logs.length === 0 ? (
-                            <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">No phone unlocking activity recorded yet.</td></tr>
+                            <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic font-medium">{t('noPhoneUnlockingActivity')}</td></tr>
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>

@@ -78,7 +78,7 @@ const Customer = () => {
             }, 300);
         } catch (err) {
             console.error('Direct customer PDF export error:', err);
-            alert('Download Failed: ' + err.message);
+            alert(`${t('downloadFailed')}: ${err.message}`);
         } finally {
             setExportingCustomerPdfId(null);
         }
@@ -166,11 +166,11 @@ const Customer = () => {
                 setQrDataUrl(data.qrDataUrl);
                 setQrInfoPageUrl(data.infoPageUrl);
             } else {
-                setQrError('Unable to generate customer QR code. Please try again.');
+                setQrError(t('customerQrGenerationFailed'));
             }
         } catch (err) {
             console.error('Fetch Customer QR payload error:', err);
-            setQrError('Unable to connect to the server. Please try again.');
+            setQrError(t('customerQrServerError'));
         } finally {
             setQrLoading(false);
         }
@@ -272,7 +272,7 @@ const Customer = () => {
                             apiBase={API_BASE1}
                             user={user}
                             status="Activated"
-                            placeholder="Search name, phone, model..."
+                            placeholder={t('customerSearchPlaceholder')}
                             onChange={(value) => {
                                 setSearchInput(value);
                                 setSearchTerm(value);
@@ -304,24 +304,26 @@ const Customer = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
-                            <th className='px-4 py-1'>ថ្ងៃដាក់បញ្ចាំ</th>
-                            <th className='px-4 py-1'>Customer</th>
-                            <th className='px-4 py-1'>ID Card</th>
-                            <th className='px-4 py-1'>Phone</th>
-                            <th className='px-4 py-1'>Brand</th>
-                            <th className='px-4 py-1'>Device Model</th>
-                            <th className='px-4 py-1'>Serial No.</th>
-                            <th className='px-4 py-1 text-center'>Monthly</th>
-                            <th className='px-4 py-1 text-center'>Status</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('inputDate')}</th>
+                            <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('customerIdCardNumber')}</th>
+                            <th className='px-4 py-1'>{t('phoneNumber')}</th>
+                            <th className='px-4 py-1'>{t('brand')}</th>
+                            <th className='px-4 py-1'>{t('deviceModel')}</th>
+                            <th className='px-4 py-1'>{t('serialNumber')}</th>
+                            <th className='px-4 py-1 text-center'>{t('monthly')}</th>
+                            <th className='px-4 py-1 text-center'>{t('status')}</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
                                 <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
-                                    {searchTerm || selectedContractId ? `No results for "${searchInput}"` : 'No active customers found.'}
+                                    {searchTerm || selectedContractId
+                                        ? t('customerNoResults').replace('{search}', searchInput)
+                                        : t('customerNoActive')}
                                 </td>
                             </tr>
                         ) : (
@@ -353,9 +355,9 @@ const Customer = () => {
                                         </td>
                                         <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
                                         <td className='px-4 py-1 font-mono text-emerald-700 font-semibold text-[11px]'><CopyCell text={item.serialNumber} className='font-mono text-emerald-700 font-semibold text-[11px]' /></td>
-                                        <td className='px-4 py-1 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}/mo</td>
+                                        <td className='px-4 py-1 text-center font-mono font-bold text-emerald-700'>${item.monthlyPayment}{t('perMonth')}</td>
                                         <td className='px-4 py-1 text-center'>
-                                            <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>Activated</span>
+                                            <span className='px-2.5 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-full font-bold text-[10px] uppercase'>{t('activated')}</span>
                                         </td>
                                         <td className='px-4 py-1 text-center'>
                                             {hasAnyAction ? (
@@ -368,7 +370,7 @@ const Customer = () => {
                                                         }}
                                                         className="px-2.5 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                                                     >
-                                                        <span>Actions</span>
+                                                        <span>{t('actions')}</span>
                                                         <span className="text-[9px]">▼</span>
                                                     </button>
 
@@ -419,7 +421,7 @@ const Customer = () => {
                                                                     className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
                                                                 >
                                                                     <FaQrcode className="text-indigo-600" />
-                                                                    <span>QR Code</span>
+                                                                    <span>{t('qrCode')}</span>
                                                                 </button>
                                                             )}
 
@@ -435,7 +437,7 @@ const Customer = () => {
                                                                     className="w-full px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 font-medium cursor-pointer transition-colors"
                                                                 >
                                                                     <MdPictureAsPdf className="text-red-600" />
-                                                                    <span>{exportingCustomerPdfId === (item._id || item.contractId) ? 'Exporting...' : 'Export PDF'}</span>
+                                                                    <span>{exportingCustomerPdfId === (item._id || item.contractId) ? t('exporting') : t('customerExportPdf')}</span>
                                                                 </button>
                                                             )}
                                                         </div>
@@ -484,15 +486,15 @@ const Customer = () => {
 
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        Activated
+                                        {t('activated')}
                                     </span>
 
                                     <span className="text-[10px] text-gray-500 font-bold">
-                                        Contract: <CopyCell text={selectedCustomer.contractIid || selectedCustomer.contractId} className="text-gray-700 font-mono" />
+                                        {t('contract')}: <CopyCell text={selectedCustomer.contractIid || selectedCustomer.contractId} className="text-gray-700 font-mono" />
                                     </span>
 
                                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                        <CopyCell text={selectedCustomer.brand || 'Device'} className="text-emerald-700 font-bold" />
+                                        <CopyCell text={selectedCustomer.brand || t('deviceLabel')} className="text-emerald-700 font-bold" />
                                     </span>
                                 </div>
                             </div>
@@ -562,7 +564,7 @@ const Customer = () => {
                                             <FaFileExcel className="text-emerald-600 text-sm" />
                                         </span>
 
-                                        <span>Excel</span>
+                                        <span>{t('customerExcel')}</span>
                                     </button>
 
                                     {/* PDF */}
@@ -596,7 +598,7 @@ const Customer = () => {
                                             <MdPictureAsPdf className={`text-red-500 text-sm ${exportingCustomerPdfId === (selectedCustomer._id || selectedCustomer.contractId) ? 'animate-pulse' : ''}`} />
                                         </span>
 
-                                        <span>{exportingCustomerPdfId === (selectedCustomer._id || selectedCustomer.contractId) ? 'Downloading...' : 'PDF Dossier'}</span>
+                                        <span>{exportingCustomerPdfId === (selectedCustomer._id || selectedCustomer.contractId) ? t('customerDownloading') : t('customerPdfDossier')}</span>
                                     </button>
 
                                     {/* QR Profile */}
@@ -629,7 +631,7 @@ const Customer = () => {
                                             <FaQrcode className="text-emerald-600 text-sm" />
                                         </span>
 
-                                        <span>QR Profile</span>
+                                        <span>{t('customerQrProfile')}</span>
                                     </button>
                                 </div>
 
@@ -674,24 +676,24 @@ const Customer = () => {
                         mb-3
                         flex items-center gap-2
                     ">
-                                    Customer Personal Information
+                                    {t('customerPersonalInfo')}
                                 </h4>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 
                                     {[
-                                        ['Name English', selectedCustomer.customerNameEn],
-                                        ['Name Khmer', selectedCustomer.customerNameKh],
-                                        ['ID Card Number', selectedCustomer.idCardNumber || '-'],
-                                        ['Date of Birth', selectedCustomer.dob || '-'],
-                                        ['Gender', selectedCustomer.gender || '-'],
-                                        ['Brand', selectedCustomer.brand || '-'],
-                                        ['Phone Number', selectedCustomer.phone || '-'],
-                                        ['Relative Phone', selectedCustomer.relativePhone || '-'],
-                                        ['Birth Address', selectedCustomer.birthAddress || '-'],
-                                        ['Current Address', selectedCustomer.currentAddress || '-'],
-                                        ['Facebook Name', selectedCustomer.facebookName || '-'],
-                                        ['Telegram Name', selectedCustomer.telegramName || '-'],
+                                        [t('customerNameEnglish'), selectedCustomer.customerNameEn],
+                                        [t('customerNameKhmer'), selectedCustomer.customerNameKh],
+                                        [t('customerIdCardNumber'), selectedCustomer.idCardNumber || '-'],
+                                        [t('dob'), selectedCustomer.dob || '-'],
+                                        [t('customerGender'), selectedCustomer.gender || '-'],
+                                        [t('brand'), selectedCustomer.brand || '-'],
+                                        [t('phoneNumber'), selectedCustomer.phone || '-'],
+                                        [t('customerRelativePhone'), selectedCustomer.relativePhone || '-'],
+                                        [t('customerBirthAddress'), selectedCustomer.birthAddress || '-'],
+                                        [t('customerCurrentAddress'), selectedCustomer.currentAddress || '-'],
+                                        [t('customerFacebookName'), selectedCustomer.facebookName || '-'],
+                                        [t('customerTelegramName'), selectedCustomer.telegramName || '-'],
                                     ].map(([label, value]) => (
                                         <div
                                             key={label}
@@ -743,21 +745,21 @@ const Customer = () => {
                         tracking-[0.14em]
                         mb-3
                     ">
-                                    Device Hardware Information
+                                    {t('customerDeviceHardwareInfo')}
                                 </h4>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 
                                     {[
-                                        ['Device Model', selectedCustomer.model],
-                                        ['Brand', selectedCustomer.brand || '-'],
-                                        ['Serial Number', selectedCustomer.serialNumber],
-                                        ['IMEI 1', formatIMEI(selectedCustomer.imei1), selectedCustomer.imei1],
-                                        ['IMEI 2', formatIMEI(selectedCustomer.imei2), selectedCustomer.imei2],
-                                        ['MEID', selectedCustomer.meid || '-'],
-                                        ['Color', selectedCustomer.color || '-'],
-                                        ['Storage / Version', `${selectedCustomer.capacity || '-'} / ${selectedCustomer.version || '-'}`],
-                                    ].map(([label, value, rawVal]) => (
+                                        [t('deviceModel'), selectedCustomer.model, null, 'deviceModel'],
+                                        [t('brand'), selectedCustomer.brand || '-', null, 'brand'],
+                                        [t('serialNumber'), selectedCustomer.serialNumber, null, 'serialNumber'],
+                                        [t('imei1'), formatIMEI(selectedCustomer.imei1), selectedCustomer.imei1, 'imei'],
+                                        [t('imei2'), formatIMEI(selectedCustomer.imei2), selectedCustomer.imei2, 'imei'],
+                                        [t('customerMeid'), selectedCustomer.meid || '-', null, 'meid'],
+                                        [t('customerColor'), selectedCustomer.color || '-', null, 'color'],
+                                        [t('customerStorageVersion'), `${selectedCustomer.capacity || '-'} / ${selectedCustomer.version || '-'}`, null, 'storageVersion'],
+                                    ].map(([label, value, rawVal, fieldKey]) => (
 
                                         <div
                                             key={label}
@@ -788,9 +790,9 @@ const Customer = () => {
                                                 copyValue={rawVal || value}
                                                 className={`
                                         font-semibold
-                                        ${label === 'MEID'
+                                        ${fieldKey === 'meid'
                                                         ? 'text-gray-900 font-mono'
-                                                        : label.includes('IMEI') || label.includes('Serial')
+                                                        : fieldKey === 'imei' || fieldKey === 'serialNumber'
                                                             ? 'text-gray-900 font-mono'
                                                             : 'text-gray-900'
                                                     }
@@ -821,7 +823,7 @@ const Customer = () => {
                             tracking-[0.14em]
                             mb-2
                         ">
-                                        Device Problem
+                                        {t('deviceProblem')}
                                     </h4>
 
                                     <div className="
@@ -851,17 +853,17 @@ const Customer = () => {
                         tracking-[0.14em]
                         mb-3
                     ">
-                                    Loan & Financial Agreement
+                                    {t('customerLoanFinancialAgreement')}
                                 </h4>
 
                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
 
                                     {[
                                         [t('inputDate'), selectedCustomer.inputDate || '-'],
-                                        ['Total Loan Amount', `$${totalLoan.toLocaleString()}`, totalLoan],
-                                        ['Monthly Installment', `$${selectedCustomer.monthlyPayment}/mo`, selectedCustomer.monthlyPayment],
-                                        ['Interest Rate', selectedCustomer.interest || '-'],
-                                        ['Duration', selectedCustomer.duration || '-'],
+                                        [t('customerTotalLoanAmount'), `$${totalLoan.toLocaleString()}`, totalLoan],
+                                        [t('monthlyPayment'), `$${selectedCustomer.monthlyPayment}${t('perMonth')}`, selectedCustomer.monthlyPayment],
+                                        [t('interestRate'), selectedCustomer.interest || '-'],
+                                        [t('duration'), selectedCustomer.duration || '-'],
                                     ].map(([label, value, rawVal]) => (
 
                                         <div
@@ -907,7 +909,7 @@ const Customer = () => {
                             uppercase
                             tracking-[0.14em]
                         ">
-                                        Complete Payment History
+                                        {t('customerCompletePaymentHistory')}
                                     </h4>
                                 </div>
 
@@ -923,7 +925,7 @@ const Customer = () => {
 
                                         <div className="p-2 bg-white border border-gray-200 rounded-[5px]">
                                             <span className="text-gray-500 text-[10px] block">
-                                                Total Loan
+                                                {t('customerTotalLoan')}
                                             </span>
 
                                             <CopyCell text={`$${totalLoan.toLocaleString()}`} copyValue={totalLoan} className="text-gray-900 font-mono font-bold text-sm" />
@@ -931,7 +933,7 @@ const Customer = () => {
 
                                         <div className="p-2 bg-white border border-gray-200 rounded-[5px]">
                                             <span className="text-gray-500 text-[10px] block">
-                                                Total Paid So Far
+                                                {t('customerTotalPaid')}
                                             </span>
 
                                             <CopyCell text={`$${totalPaidSum.toLocaleString()}`} copyValue={totalPaidSum} className="text-emerald-600 font-mono font-bold text-sm" />
@@ -939,7 +941,7 @@ const Customer = () => {
 
                                         <div className="p-2 bg-white border border-gray-200 rounded-[5px]">
                                             <span className="text-gray-500 text-[10px] block">
-                                                Remaining Balance
+                                                {t('remainingBalance')}
                                             </span>
 
                                             <CopyCell text={`$${remainingBalance.toLocaleString()}`} copyValue={remainingBalance} className="text-orange-600 font-mono font-bold text-sm" />
@@ -974,7 +976,7 @@ const Customer = () => {
                             mt-1
                         ">
                                         <span>
-                                            Repayment Progress:
+                                            {t('customerRepaymentProgress')}:
                                             <strong className="text-emerald-600 ml-1">
                                                 {repaymentPct}%
                                             </strong>
@@ -982,8 +984,8 @@ const Customer = () => {
 
                                         <span>
                                             {totalPaidSum >= totalLoan && totalLoan > 0
-                                                ? '🎉 Fully Paid'
-                                                : `Remaining: $${remainingBalance.toLocaleString()}`
+                                                ? `🎉 ${t('customerFullyPaid')}`
+                                                : `${t('remainingBalance')}: $${remainingBalance.toLocaleString()}`
                                             }
                                         </span>
                                     </div>
@@ -1012,12 +1014,12 @@ const Customer = () => {
                                 sticky top-0
                             ">
                                             <tr>
-                                                <th className="px-3 py-2 text-center">No</th>
-                                                <th className="px-3 py-2">Payment Date</th>
-                                                <th className="px-3 py-2">Amount Paid</th>
-                                                <th className="px-3 py-2">Month / Cycle</th>
-                                                <th className="px-3 py-2">Paid By</th>
-                                                <th className="px-3 py-2 text-center">Status</th>
+                                                <th className="px-3 py-2 text-center">{t('no')}</th>
+                                                <th className="px-3 py-2">{t('customerPaymentDate')}</th>
+                                                <th className="px-3 py-2">{t('amountPaid')}</th>
+                                                <th className="px-3 py-2">{t('customerMonthCycle')}</th>
+                                                <th className="px-3 py-2">{t('paidBy')}</th>
+                                                <th className="px-3 py-2 text-center">{t('status')}</th>
                                             </tr>
                                         </thead>
 
@@ -1029,7 +1031,7 @@ const Customer = () => {
                                                         colSpan={7}
                                                         className="text-center py-4 text-gray-400 italic"
                                                     >
-                                                        Loading payment transactions...
+                                                        {t('customerLoadingPayments')}
                                                     </td>
                                                 </tr>
                                             ) : customerPayments.length === 0 ? (
@@ -1038,7 +1040,7 @@ const Customer = () => {
                                                         colSpan={7}
                                                         className="text-center py-4 text-gray-400 italic"
                                                     >
-                                                        No payment records recorded yet for this customer.
+                                                        {t('customerNoPaymentRecords')}
                                                     </td>
                                                 </tr>
                                             ) : (
@@ -1070,11 +1072,11 @@ const Customer = () => {
                                                         <td className="px-3 py-2 font-medium text-gray-600">
                                                             {p.month ||
                                                                 p.cycle ||
-                                                                `Installment #${pIdx + 1}`}
+                                                                `${t('customerInstallment')} #${pIdx + 1}`}
                                                         </td>
 
                                                         <td className="px-3 py-2 text-gray-500">
-                                                            {p.paidBy || p.cashier || 'System'}
+                                                            {p.paidBy || p.cashier || t('customerSystem')}
                                                         </td>
 
                                                         <td className="px-3 py-2 text-center">
@@ -1088,7 +1090,7 @@ const Customer = () => {
                                                     text-[9px]
                                                     font-bold
                                                 ">
-                                                                ✓ Paid
+                                                                ✓ {t('paid')}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -1120,11 +1122,11 @@ const Customer = () => {
                                 uppercase
                                 tracking-wider
                             ">
-                                            Security Lock Status
+                                            {t('customerSecurityLockStatus')}
                                         </h4>
 
                                         <p className="text-[10px] text-gray-500 mt-0.5">
-                                            Device security overview
+                                            {t('customerSecurityOverview')}
                                         </p>
                                     </div>
 
@@ -1183,7 +1185,7 @@ const Customer = () => {
                                         text-gray-700
                                         truncate
                                     ">
-                                                    Phone Lock
+                                                    {t('customerPhoneLock')}
                                                 </span>
 
                                             </div>
@@ -1258,7 +1260,7 @@ const Customer = () => {
                                         text-gray-700
                                         truncate
                                     ">
-                                                    Wallpaper Lock
+                                                    {t('customerWallpaperLock')}
                                                 </span>
 
                                             </div>
@@ -1324,7 +1326,7 @@ const Customer = () => {
                                 <FaQrcode className="text-base text-emerald-600" />
 
                                 <span>
-                                    Customer Profile QR
+                                    {t('customerQrTitle')}
                                 </span>
                             </div>
 
@@ -1382,7 +1384,7 @@ const Customer = () => {
                         font-mono
                         truncate
                     ">
-                                    Contract: {qrCustomer.contractId}
+                                    {t('contract')}: {qrCustomer.contractId}
                                 </p>
                             </div>
                         </div>
@@ -1402,7 +1404,7 @@ const Customer = () => {
                             {qrDataUrl ? (
                                 <img
                                     src={qrDataUrl}
-                                    alt="Customer QR Code"
+                                    alt={t('customerQrAlt')}
                                     className="w-48 h-48 mx-auto"
                                 />
                             ) : qrError ? (
@@ -1427,8 +1429,8 @@ const Customer = () => {
                         animate-pulse
                     ">
                                     {qrLoading
-                                        ? 'Generating QR Code...'
-                                        : 'QR code unavailable'
+                                        ? t('customerQrGenerating')
+                                        : t('customerQrUnavailable')
                                     }
                                 </div>
                             )}
@@ -1442,12 +1444,7 @@ const Customer = () => {
                 leading-relaxed
                 font-khmer
             ">
-                            ស្កែន QR Code នេះជាមួយទូរស័ព្ទដៃ
-                            ដើម្បីមើល
-                            <strong className="text-emerald-600">
-                                {' '}ព័ត៌មានលម្អិតទាំងអស់របស់ភ្ញៀវ
-                            </strong>
-                            {' '}(Personal Info, Device, Financial Terms & Security Status)
+                            {t('customerQrDescription')}
                         </p>
 
 
@@ -1475,7 +1472,7 @@ const Customer = () => {
                         shadow-sm
                     "
                             >
-                                Open Profile Link ↗
+                                {t('customerOpenProfileLink')} ↗
                             </button>
 
                             {/* Close */}
@@ -1497,7 +1494,7 @@ const Customer = () => {
                         transition-all
                     "
                             >
-                                Close
+                                {t('close')}
                             </button>
 
                         </div>
@@ -1525,7 +1522,7 @@ const Customer = () => {
                             onIndexChange={setPhotoGalleryIndex}
                             onClose={closeGallery}
                             title={t('evidencePhotos')}
-                            subtitle={`${customerName}${contractId ? ` · Contract: ${contractId}` : ''}`}
+                            subtitle={`${customerName}${contractId ? ` · ${t('contract')}: ${contractId}` : ''}`}
                         />
                     );
                 }
@@ -1535,8 +1532,8 @@ const Customer = () => {
                         <div role="dialog" aria-modal="true" className="max-w-[84vw] rounded-[5px] border border-slate-700 bg-slate-900 p-6 text-center text-slate-300 shadow-2xl" onClick={event => event.stopPropagation()}>
                             <FaFileImage className="mx-auto text-4xl text-slate-500" />
                             <p className="mt-3 text-xs font-semibold">គ្មានរូបភាពភស្តុតាងដែលបានភ្ជាប់សម្រាប់អតិថិជននេះទេ</p>
-                            <p className="mt-1 text-[11px] text-slate-400">No evidence photos attached for this application.</p>
-                            <button type="button" onClick={closeGallery} className="mt-4 rounded-[5px] bg-slate-700 px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-slate-600 transition-colors">Close</button>
+                            <p className="mt-1 text-[11px] text-slate-400">{t('customerNoEvidencePhotos')}</p>
+                            <button type="button" onClick={closeGallery} className="mt-4 rounded-[5px] bg-slate-700 px-3 py-1.5 text-xs font-bold text-white cursor-pointer hover:bg-slate-600 transition-colors">{t('close')}</button>
                         </div>
                     </div>
                 );

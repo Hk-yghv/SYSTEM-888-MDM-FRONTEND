@@ -53,7 +53,7 @@ const PRESET_PAGES = [
 const COMMENTS_PER_PAGE = 10;
 
 const ControlSupportHelp = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, user } = useAuth();
 
     // Active Top-Level Tab: 'guides' or 'comments'
@@ -230,7 +230,7 @@ const ControlSupportHelp = () => {
             setFormData(prev => ({ ...prev, photos: [...prev.photos, ...imageUrls] }));
         } catch (err) {
             console.error('Support guide image upload failed:', err);
-            alert(`Image upload failed: ${err.message}`);
+            alert(`${t('imageUploadFailed')}: ${err.message}`);
         } finally {
             setUploadingPhotos(false);
         }
@@ -247,7 +247,7 @@ const ControlSupportHelp = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.title.trim()) {
-            alert('សូមបញ្ចូលចំណងជើង (Title is required)');
+            alert(t('supportGuideTitleRequired'));
             return;
         }
 
@@ -290,11 +290,11 @@ const ControlSupportHelp = () => {
                 fetchItems();
             } else {
                 const err = await res.json();
-                alert(err.message || 'ប្រតិបត្តិការមិនបានជោគជ័យ');
+                alert(err.message || t('supportOperationFailed'));
             }
         } catch (err) {
             console.error('Save support help error:', err);
-            alert('កំហុសប្រព័ន្ធក្នុងការរក្សាទុក');
+            alert(t('supportSaveSystemError'));
         } finally {
             setSubmitting(false);
         }
@@ -314,11 +314,11 @@ const ControlSupportHelp = () => {
                 setDeleteModalItem(null);
                 fetchItems();
             } else {
-                alert('មិនអាចលុបបានទេ');
+                alert(t('supportDeleteFailed'));
             }
         } catch (err) {
             console.error('Delete error:', err);
-            alert('កំហុសប្រព័ន្ធក្នុងការលុប');
+            alert(t('supportDeleteSystemError'));
         } finally {
             setDeleting(false);
         }
@@ -374,11 +374,11 @@ const ControlSupportHelp = () => {
                 setReplyingComment(null);
                 fetchComments(commentPage);
             } else {
-                alert('មិនអាចឆ្លើយតបបានទេ');
+                alert(t('supportReplyFailed'));
             }
         } catch (err) {
             console.error('Submit reply error:', err);
-            alert('កំហុសប្រព័ន្ធក្នុងការឆ្លើយតប');
+            alert(t('supportReplySystemError'));
         } finally {
             setReplySubmitting(false);
         }
@@ -444,7 +444,7 @@ const ControlSupportHelp = () => {
                                 </span>
                             </h1>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                គ្រប់គ្រងអត្ថបទណែនាំ មេឌៀ និងពិនិត្យមតិយោបល់របស់បុគ្គលិកដែលផ្ញើមកកាន់ Admin ធំ
+                                {t('controlSupportHelpDescription', lang === 'km' ? 'គ្រប់គ្រងអត្ថបទណែនាំ មេឌៀ និងពិនិត្យមតិយោបល់របស់បុគ្គលិកដែលផ្ញើមកកាន់ Admin ធំ' : 'Manage help guides and media, and review feedback submitted by staff.')}
                             </p>
                         </div>
                     </div>
@@ -457,7 +457,7 @@ const ControlSupportHelp = () => {
                                 className="h-[38px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm shadow-emerald-600/20 border border-emerald-500 transition-all cursor-pointer active:scale-95"
                             >
                                 <FaPlus size={12} />
-                                <span>{t('addSupportHelp') || '+ បន្ថែមការណែនាំថ្មី'}</span>
+                                <span>{t('addSupportHelp', lang === 'km' ? '+ បន្ថែមការណែនាំថ្មី' : '+ Add new guide')}</span>
                             </button>
                         ) : (
                             <button
@@ -466,7 +466,7 @@ const ControlSupportHelp = () => {
                                 className="h-[38px] px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer"
                             >
                                 <FaSyncAlt size={12} className={commentsLoading ? 'animate-spin text-emerald-600' : 'text-slate-500'} />
-                                <span>Refresh Comments</span>
+                                <span>{t('refreshComments')}</span>
                             </button>
                         )}
                     </div>
@@ -484,7 +484,7 @@ const ControlSupportHelp = () => {
                         }`}
                     >
                         <MdOutlineMenuBook size={15} />
-                        <span>គ្រប់គ្រងអត្ថបទណែនាំ (Guides & Media)</span>
+                        <span>{t('manageGuidesAndMedia')}</span>
                         <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                             activeTab === 'guides' ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700'
                         }`}>
@@ -502,7 +502,7 @@ const ControlSupportHelp = () => {
                         }`}
                     >
                         <FaCommentDots size={14} className={activeTab === 'comments' ? 'text-slate-900' : 'text-amber-600'} />
-                        <span>មតិយោបល់ពីបុគ្គលិក (Staff Comments)</span>
+                        <span>{t('staffComments')}</span>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                             activeTab === 'comments' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-800'
                         }`}>
@@ -525,19 +525,19 @@ const ControlSupportHelp = () => {
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="ស្វែងរកតាមចំណងជើង អត្ថបទ ឬ Page..."
+                                placeholder={t('searchSupportGuides')}
                                 className="w-full h-[38px] pl-9 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-emerald-500 transition-all"
                             />
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-slate-500 select-none">Page:</span>
+                            <span className="text-xs font-semibold text-slate-500 select-none">{t('page')}:</span>
                             <select
                                 value={selectedPage}
                                 onChange={(e) => setSelectedPage(e.target.value)}
                                 className="h-[38px] px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 focus:bg-white focus:border-emerald-500 transition-all cursor-pointer"
                             >
-                                <option value="All">ទំព័រទាំងអស់ (All Pages)</option>
+                                <option value="All">{t('allPages')}</option>
                                 {availablePages.map((p) => (
                                     <option key={p} value={p}>
                                         {p}
@@ -552,21 +552,21 @@ const ControlSupportHelp = () => {
                         {loading ? (
                             <div className="p-12 text-center text-slate-400 text-xs">
                                 <FaSyncAlt size={22} className="animate-spin text-emerald-600 mx-auto mb-2" />
-                                <span>កំពុងទាញយកទិន្នន័យ...</span>
+                                <span>{t('loading', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យ...' : 'Loading data...')}</span>
                             </div>
                         ) : items.length === 0 ? (
                             <div className="p-12 text-center space-y-3">
                                 <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                                     <MdOutlineMenuBook size={28} />
                                 </div>
-                                <p className="text-sm font-bold text-slate-700">មិនទាន់មានការណែនាំនៅឡើយទេ</p>
+                                <p className="text-sm font-bold text-slate-700">{t('supportNoGuidesYet', lang === 'km' ? 'មិនទាន់មានការណែនាំនៅឡើយទេ' : 'No guides yet')}</p>
                                 <button
                                     type="button"
                                     onClick={handleOpenCreate}
                                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-all cursor-pointer"
                                 >
                                     <FaPlus size={11} />
-                                    <span>បន្ថែមឥឡូវនេះ</span>
+                                    <span>{t('addNow', lang === 'km' ? 'បន្ថែមឥឡូវនេះ' : 'Add now')}</span>
                                 </button>
                             </div>
                         ) : (
@@ -574,13 +574,13 @@ const ControlSupportHelp = () => {
                                 <table className="w-full text-left border-collapse text-xs">
                                     <thead>
                                         <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                                            <th className="py-3 px-4 w-12 text-center">ល.រ</th>
-                                            <th className="py-3 px-4">រូបភាព</th>
-                                            <th className="py-3 px-4">ចំណងជើង & អត្ថបទ</th>
-                                            <th className="py-3 px-4">បង្ហាញនៅ Page</th>
-                                            <th className="py-3 px-4 text-center">មេឌៀ (Media)</th>
-                                            <th className="py-3 px-4 text-center">ស្ថានភាព</th>
-                                            <th className="py-3 px-4 text-right">សកម្មភាព</th>
+                                            <th className="py-3 px-4 w-12 text-center">{t('no')}</th>
+                                            <th className="py-3 px-4">{t('image', lang === 'km' ? 'រូបភាព' : 'Image')}</th>
+                                            <th className="py-3 px-4">{t('titleAndText', lang === 'km' ? 'ចំណងជើង និងអត្ថបទ' : 'Title & text')}</th>
+                                            <th className="py-3 px-4">{t('shownOnPage')}</th>
+                                            <th className="py-3 px-4 text-center">{t('media')}</th>
+                                            <th className="py-3 px-4 text-center">{t('status')}</th>
+                                            <th className="py-3 px-4 text-right">{t('actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -594,7 +594,7 @@ const ControlSupportHelp = () => {
                                                         <div
                                                             onClick={() => handleOpenImageZoom(item.photos[0], item.title)}
                                                             className="relative w-12 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                                                            title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
+                                                            title={t('clickToZoomImage')}
                                                         >
                                                             <img
                                                                 src={item.photos[0]}
@@ -616,7 +616,7 @@ const ControlSupportHelp = () => {
                                                 <td className="py-3 px-4 max-w-xs">
                                                     <p className="font-bold text-slate-800 line-clamp-1">{item.title}</p>
                                                     <p className="text-slate-500 text-[11px] line-clamp-1 mt-0.5">
-                                                        {item.text || 'គ្មានអត្ថបទពិពណ៌នា'}
+                                                        {item.text || t('noDescriptionText', lang === 'km' ? 'គ្មានអត្ថបទពិពណ៌នា' : 'No description text')}
                                                     </p>
                                                 </td>
                                                 <td className="py-3 px-4">
@@ -630,7 +630,7 @@ const ControlSupportHelp = () => {
                                                         {item.photos && item.photos.length > 0 && (
                                                             <span
                                                                 className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200"
-                                                                title={`${item.photos.length} រូបភាព`}
+                                                                title={`${item.photos.length} ${t('photos')}`}
                                                             >
                                                                 <FaImage size={10} />
                                                                 {item.photos.length}
@@ -642,10 +642,10 @@ const ControlSupportHelp = () => {
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100"
-                                                                title="Video Link"
+                                                                title={t('videoLink')}
                                                             >
                                                                 <FaVideo size={10} />
-                                                                <span>Video</span>
+                                                                <span>{t('video')}</span>
                                                             </a>
                                                         )}
                                                         {item.facebookUrl && (
@@ -654,7 +654,7 @@ const ControlSupportHelp = () => {
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100"
-                                                                title="Facebook Link"
+                                                                title={t('facebookLink')}
                                                             >
                                                                 <FaFacebook size={10} />
                                                                 <span>FB</span>
@@ -681,7 +681,7 @@ const ControlSupportHelp = () => {
                                                             type="button"
                                                             onClick={() => handleOpenEdit(item)}
                                                             className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-                                                            title="Edit"
+                                                            title={t('edit')}
                                                         >
                                                             <FaEdit size={12} />
                                                         </button>
@@ -689,7 +689,7 @@ const ControlSupportHelp = () => {
                                                             type="button"
                                                             onClick={() => setDeleteModalItem(item)}
                                                             className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-                                                            title="Delete"
+                                                            title={t('delete')}
                                                         >
                                                             <FaTrashAlt size={11} />
                                                         </button>
@@ -721,13 +721,13 @@ const ControlSupportHelp = () => {
                                     setCommentSearch(e.target.value);
                                     setCommentPage(1);
                                 }}
-                                placeholder="ស្វែងរកតាមឈ្មោះបុគ្គលិក ខ្លឹមសារ ឬ Page..."
+                                placeholder={t('searchStaffComments')}
                                 className="w-full h-[38px] pl-9 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-amber-500 transition-all"
                             />
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-slate-500 select-none">ស្ថានភាព:</span>
+                            <span className="text-xs font-semibold text-slate-500 select-none">{t('status')}:</span>
                             <select
                                 value={commentStatusFilter}
                                 onChange={(e) => {
@@ -736,9 +736,9 @@ const ControlSupportHelp = () => {
                                 }}
                                 className="h-[38px] px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 focus:bg-white focus:border-amber-500 transition-all cursor-pointer"
                             >
-                                <option value="All">ទាំងអស់ (All Status)</option>
-                                <option value="Pending">⏳ រង់ចាំការដោះស្រាយ (Pending)</option>
-                                <option value="Resolved">✓ បានដោះស្រាយ (Resolved)</option>
+                                <option value="All">{t('allStatuses')}</option>
+                                <option value="Pending">⏳ {t('pending')}</option>
+                                <option value="Resolved">✓ {t('supportStatusResolved')}</option>
                             </select>
                         </div>
                     </div>
@@ -748,16 +748,16 @@ const ControlSupportHelp = () => {
                         {commentsLoading ? (
                             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 text-xs shadow-2xs">
                                 <FaSyncAlt size={22} className="animate-spin text-amber-500 mx-auto mb-2" />
-                                <span>កំពុងទាញយកមតិយោបល់...</span>
+                                <span>{t('loadingComments', lang === 'km' ? 'កំពុងទាញយកមតិយោបល់...' : 'Loading comments...')}</span>
                             </div>
                         ) : comments.length === 0 ? (
                             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-2xs">
                                 <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
                                     <FaCommentDots size={28} />
                                 </div>
-                                <p className="text-sm font-bold text-slate-700">មិនទាន់មានមតិយោបល់ណាមួយឡើយ</p>
+                                <p className="text-sm font-bold text-slate-700">{t('supportNoCommentsYet', lang === 'km' ? 'មិនទាន់មានមតិយោបល់ណាមួយឡើយ' : 'No comments yet')}</p>
                                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                                    រាល់ពេលបុគ្គលិកសរសេរមតិ ឬសំណូមពរចេញពី Help & Support វានឹងបង្ហាញនៅទីនេះម្តង ១០ៗ សម្រាប់ Master Admin ពិនិត្យ និងឆ្លើយតប។
+                                    {t('supportCommentsDescription', lang === 'km' ? 'រាល់ពេលបុគ្គលិកសរសេរមតិ ឬសំណូមពរចេញពី Help & Support វានឹងបង្ហាញនៅទីនេះម្តង ១០ៗ សម្រាប់ Master Admin ពិនិត្យ និងឆ្លើយតប។' : 'Staff feedback submitted from Help & Support appears here 10 at a time for the Master Admin to review and reply.')}
                                 </p>
                             </div>
                         ) : (
@@ -785,7 +785,7 @@ const ControlSupportHelp = () => {
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
-                                                    <span>ប្រធានបទ: <strong className="text-slate-700">{c.subject}</strong></span>
+                                                    <span>{t('subject', lang === 'km' ? 'ប្រធានបទ:' : 'Subject:')} <strong className="text-slate-700">{c.subject}</strong></span>
                                                     <span>•</span>
                                                     <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
                                                         <FaLayerGroup size={10} />
@@ -808,24 +808,24 @@ const ControlSupportHelp = () => {
                                                         : 'bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100'
                                                 }`}
                                             >
-                                                {c.status === 'Resolved' ? '✓ បានដោះស្រាយ' : '⏳ រង់ចាំដោះស្រាយ'}
+                                                {c.status === 'Resolved' ? `✓ ${t('supportStatusResolved')}` : `⏳ ${t('pending')}`}
                                             </button>
 
                                             <button
                                                 type="button"
                                                 onClick={() => handleOpenReply(c)}
                                                 className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-                                                title="Reply"
+                                                title={t('reply')}
                                             >
                                                 <FaReply size={11} className="rotate-180 text-emerald-600" />
-                                                <span>{c.adminReply ? 'កែប្រែចម្លើយ' : 'ឆ្លើយតប'}</span>
+                                                <span>{c.adminReply ? t('editReply', lang === 'km' ? 'កែប្រែចម្លើយ' : 'Edit reply') : t('reply', lang === 'km' ? 'ឆ្លើយតប' : 'Reply')}</span>
                                             </button>
 
                                             <button
                                                 type="button"
                                                 onClick={() => setDeleteCommentModal(c)}
                                                 className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-                                                title="Delete"
+                                                title={t('delete')}
                                             >
                                                 <FaTrashAlt size={11} />
                                             </button>
@@ -842,7 +842,7 @@ const ControlSupportHelp = () => {
                                         <div
                                             onClick={() => handleOpenImageZoom(c.photoUrl, `Screenshot by ${c.senderName || c.senderUsername}`)}
                                             className="w-28 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center"
-                                            title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
+                                            title={t('clickToZoomImage')}
                                         >
                                             <img src={c.photoUrl} alt="Screenshot" className="w-full h-full object-cover" />
                                         </div>
@@ -854,7 +854,7 @@ const ControlSupportHelp = () => {
                                             <div className="flex items-center justify-between text-emerald-900 font-bold">
                                                 <div className="flex items-center gap-1.5">
                                                     <FaReply size={11} className="rotate-180 text-emerald-600" />
-                                                    <span>ចម្លើយពី Master Admin ({c.repliedBy || 'Admin'}):</span>
+                                                    <span>{t('replyFromAdmin', lang === 'km' ? 'ចម្លើយពី Master Admin' : 'Reply from Master Admin')} ({c.repliedBy || 'Admin'}):</span>
                                                 </div>
                                                 {c.repliedAt && (
                                                     <span className="text-[10px] text-emerald-700 font-normal font-mono">
@@ -876,11 +876,11 @@ const ControlSupportHelp = () => {
                     {commentsTotal > 0 && (
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-2xl text-xs select-none shadow-2xs">
                             <div className="text-slate-500 font-medium">
-                                បង្ហាញ <span className="font-bold text-slate-800">{(commentPage - 1) * COMMENTS_PER_PAGE + 1}</span> ដល់{' '}
+                                {t('showingRange', lang === 'km' ? 'បង្ហាញ' : 'Showing')} <span className="font-bold text-slate-800">{(commentPage - 1) * COMMENTS_PER_PAGE + 1}</span> {t('rangeTo', lang === 'km' ? 'ដល់' : 'to')}{' '}
                                 <span className="font-bold text-slate-800">
                                     {Math.min(commentPage * COMMENTS_PER_PAGE, commentsTotal)}
                                 </span>{' '}
-                                នៃចំនួនសរុប <span className="font-bold text-amber-700">{commentsTotal}</span> មតិយោបល់ (ម្តង ១០ៗ)
+                                {t('ofTotal', lang === 'km' ? 'នៃចំនួនសរុប' : 'of')} <span className="font-bold text-amber-700">{commentsTotal}</span> {t('commentsPerPage', lang === 'km' ? 'មតិយោបល់ (ម្តង ១០ៗ)' : 'comments (10 per page)')}
                             </div>
 
                             <div className="flex items-center gap-1.5">
@@ -891,7 +891,7 @@ const ControlSupportHelp = () => {
                                     className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-slate-700 flex items-center gap-1 cursor-pointer transition-all"
                                 >
                                     <FaChevronLeft size={10} />
-                                    <span>មុន</span>
+                                    <span>{t('previous', lang === 'km' ? 'មុន' : 'Previous')}</span>
                                 </button>
 
                                 <span className="px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold font-mono">
@@ -904,7 +904,7 @@ const ControlSupportHelp = () => {
                                     disabled={commentPage >= totalCommentPages}
                                     className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-slate-700 flex items-center gap-1 cursor-pointer transition-all"
                                 >
-                                    <span>បន្ទាប់</span>
+                                    <span>{t('next', lang === 'km' ? 'បន្ទាប់' : 'Next')}</span>
                                     <FaChevronRight size={10} />
                                 </button>
                             </div>
@@ -927,7 +927,7 @@ const ControlSupportHelp = () => {
                                     <MdSupportAgent size={20} />
                                 </div>
                                 <h3 className="text-base font-bold text-slate-800">
-                                    {editingItem ? 'កែសម្រួលការណែនាំ (Edit Guide)' : 'បន្ថែមការណែនាំថ្មី (Add Guide)'}
+                                    {editingItem ? t('editGuide', lang === 'km' ? 'កែសម្រួលការណែនាំ' : 'Edit guide') : t('addNewGuide', lang === 'km' ? 'បន្ថែមការណែនាំថ្មី' : 'Add new guide')}
                                 </h3>
                             </div>
                             <button
@@ -942,21 +942,21 @@ const ControlSupportHelp = () => {
                         <form id="support-help-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
                             <div className="space-y-1">
                                 <label className="font-bold text-slate-700">
-                                    ចំណងជើង (Title) <span className="text-rose-500">*</span>
+                                    {t('title')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    placeholder="ឧ. របៀបចាក់សោរទូរស័ព្ទ ឬ របៀបបង់ប្រាក់រំលស់..."
+                                    placeholder={t('supportGuideTitlePlaceholder')}
                                     className="w-full h-[38px] px-3.5 rounded-xl border border-slate-200 text-slate-800 focus:border-emerald-500 outline-none transition-all"
                                 />
                             </div>
 
                             <div className="space-y-1">
                                 <label className="font-bold text-slate-700">
-                                    បង្ហាញនៅ Page ណា? (Target Page) <span className="text-rose-500">*</span>
+                                    {t('targetPage', lang === 'km' ? 'បង្ហាញនៅទំព័រណា?' : 'Target page')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <select
@@ -969,7 +969,7 @@ const ControlSupportHelp = () => {
                                                 {p}
                                             </option>
                                         ))}
-                                        <option value="Custom">+ បញ្ចូលឈ្មោះ Page ថ្មី (Custom Page)...</option>
+                                        <option value="Custom">+ {t('addCustomPage')}</option>
                                     </select>
 
                                     {formData.page === 'Custom' && (
@@ -978,7 +978,7 @@ const ControlSupportHelp = () => {
                                             required
                                             value={formData.customPage}
                                             onChange={(e) => setFormData({ ...formData, customPage: e.target.value })}
-                                            placeholder="វាយបញ្ចូលឈ្មោះ Page..."
+                                            placeholder={t('pageNamePlaceholder')}
                                             className="h-[38px] px-3.5 rounded-xl border border-emerald-300 bg-emerald-50/30 text-slate-800 focus:border-emerald-500 outline-none"
                                         />
                                     )}
@@ -987,13 +987,13 @@ const ControlSupportHelp = () => {
 
                             <div className="space-y-1">
                                 <label className="font-bold text-slate-700">
-                                    អត្ថបទណែនាំ / ពិពណ៌នា (Content Text)
+                                    {t('guideContent', lang === 'km' ? 'អត្ថបទណែនាំ / ពិពណ៌នា' : 'Guide content / description')}
                                 </label>
                                 <textarea
                                     rows={5}
                                     value={formData.text}
                                     onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                                    placeholder="សរសេរការណែនាំលម្អិត ជំហានអនុវត្ត ឬព័ត៌មានជំនួយ..."
+                                    placeholder={t('supportGuideContentPlaceholder')}
                                     className="w-full p-3 rounded-xl border border-slate-200 text-slate-800 focus:border-emerald-500 outline-none transition-all resize-y"
                                 />
                             </div>
@@ -1002,7 +1002,7 @@ const ControlSupportHelp = () => {
                                 <div className="flex items-center justify-between">
                                     <label className="font-bold text-slate-700 flex items-center gap-1.5">
                                         <FaImage className="text-emerald-600" />
-                                        <span>រូបភាព (Photos)</span>
+                                        <span>{t('photos')}</span>
                                         <span className="text-[11px] font-mono font-semibold text-slate-400">
                                             ({formData.photos.length})
                                         </span>
@@ -1024,7 +1024,7 @@ const ControlSupportHelp = () => {
                                             className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-700 flex items-center gap-1 cursor-pointer"
                                         >
                                             <MdOutlineAddPhotoAlternate size={13} />
-                                            <span>{uploadingPhotos ? t('uploadingImage') : 'Upload រូបភាព'}</span>
+                                            <span>{uploadingPhotos ? t('uploadingImage') : t('uploadImage', lang === 'km' ? 'បញ្ចូលរូបភាព' : 'Upload image')}</span>
                                         </button>
                                         <button
                                             type="button"
@@ -1032,7 +1032,7 @@ const ControlSupportHelp = () => {
                                             className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-semibold hover:bg-slate-100 flex items-center gap-1 cursor-pointer"
                                         >
                                             <FaLink size={10} />
-                                            <span>Link URL</span>
+                                            <span>{t('linkUrl')}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1046,7 +1046,7 @@ const ControlSupportHelp = () => {
                                                     type="button"
                                                     onClick={() => handleRemovePhoto(pIdx)}
                                                     className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
-                                                    title="Remove Photo"
+                                                    title={t('removePhoto')}
                                                 >
                                                     <FaTrashAlt size={9} />
                                                 </button>
@@ -1054,7 +1054,7 @@ const ControlSupportHelp = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-[11px] text-slate-400 italic">មិនទាន់មានរូបភាពត្រូវបានបន្ថែមទេ</p>
+                                    <p className="text-[11px] text-slate-400 italic">{t('noImagesAdded', lang === 'km' ? 'មិនទាន់មានរូបភាពត្រូវបានបន្ថែមទេ' : 'No images added yet')}</p>
                                 )}
                             </div>
 
@@ -1062,7 +1062,7 @@ const ControlSupportHelp = () => {
                                 <div className="space-y-1">
                                     <label className="font-bold text-slate-700 flex items-center gap-1.5">
                                         <FaVideo className="text-rose-600" />
-                                        <span>Link Video (YouTube / MP4)</span>
+                                        <span>{t('linkVideoYoutubeMp4')}</span>
                                     </label>
                                     <input
                                         type="url"
@@ -1076,7 +1076,7 @@ const ControlSupportHelp = () => {
                                 <div className="space-y-1">
                                     <label className="font-bold text-slate-700 flex items-center gap-1.5">
                                         <FaFacebook className="text-indigo-600" />
-                                        <span>Link Facebook (Page / Post / Video)</span>
+                                        <span>{t('linkFacebookPagePostVideo')}</span>
                                     </label>
                                     <input
                                         type="url"
@@ -1090,7 +1090,7 @@ const ControlSupportHelp = () => {
 
                             <div className="grid grid-cols-2 gap-3 pt-1">
                                 <div className="space-y-1">
-                                    <label className="font-bold text-slate-700">លំដាប់បង្ហាញ (Order):</label>
+                                    <label className="font-bold text-slate-700">{t('displayOrder')}:</label>
                                     <input
                                         type="number"
                                         value={formData.order}
@@ -1107,7 +1107,7 @@ const ControlSupportHelp = () => {
                                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                                             className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
                                         />
-                                        <span>បង្ហាញជាសាធារណៈ (Active)</span>
+                                        <span>{t('publiclyActive')}</span>
                                     </label>
                                 </div>
                             </div>
@@ -1119,7 +1119,7 @@ const ControlSupportHelp = () => {
                                 onClick={() => setModalOpen(false)}
                                 className="h-[38px] px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 type="submit"
@@ -1128,7 +1128,7 @@ const ControlSupportHelp = () => {
                                 className="h-[38px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 border border-emerald-500 flex items-center gap-2 cursor-pointer"
                             >
                                 {submitting && <FaSyncAlt size={11} className="animate-spin" />}
-                                <span>{editingItem ? 'រក្សាទុកការកែប្រែ' : 'បង្កើតថ្មី'}</span>
+                                <span>{editingItem ? t('saveChanges', lang === 'km' ? 'រក្សាទុកការកែប្រែ' : 'Save changes') : t('createNew', lang === 'km' ? 'បង្កើតថ្មី' : 'Create new')}</span>
                             </button>
                         </div>
                     </div>
@@ -1145,7 +1145,7 @@ const ControlSupportHelp = () => {
                                     <FaReply size={14} className="rotate-180" />
                                 </div>
                                 <h3 className="text-sm font-bold text-slate-800">
-                                    ឆ្លើយតបទៅកាន់បុគ្គលិក ({replyingComment.senderName || replyingComment.senderUsername})
+                                    {t('replyToStaff', lang === 'km' ? 'ឆ្លើយតបទៅកាន់បុគ្គលិក' : 'Reply to staff')} ({replyingComment.senderName || replyingComment.senderUsername})
                                 </h3>
                             </div>
                             <button
@@ -1166,13 +1166,13 @@ const ControlSupportHelp = () => {
                         {/* Reply Form */}
                         <form onSubmit={handleSubmitReply} className="space-y-3 text-xs">
                             <div className="space-y-1">
-                                <label className="font-bold text-slate-700">ខ្លឹមសារឆ្លើយតបពី Master Admin:</label>
+                                <label className="font-bold text-slate-700">{t('replyFromMasterAdmin')}:</label>
                                 <textarea
                                     required
                                     rows={4}
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
-                                    placeholder="សរសេរការឆ្លើយតប ឬដំណោះស្រាយ..."
+                                    placeholder={t('supportReplyPlaceholder')}
                                     className="w-full p-3 rounded-xl border border-slate-200 text-slate-800 focus:border-emerald-500 outline-none"
                                 />
                             </div>
@@ -1183,7 +1183,7 @@ const ControlSupportHelp = () => {
                                     onClick={() => setReplyingComment(null)}
                                     className="h-[36px] px-4 rounded-xl border border-slate-200 text-slate-700 font-semibold"
                                 >
-                                    បោះបង់
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
@@ -1191,7 +1191,7 @@ const ControlSupportHelp = () => {
                                     className="h-[36px] px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer"
                                 >
                                     {replySubmitting && <FaSyncAlt size={11} className="animate-spin" />}
-                                    <span>ផ្ញើការឆ្លើយតប</span>
+                                    <span>{t('sendReply', lang === 'km' ? 'ផ្ញើការឆ្លើយតប' : 'Send reply')}</span>
                                 </button>
                             </div>
                         </form>
@@ -1203,7 +1203,7 @@ const ControlSupportHelp = () => {
             {showPhotoInputModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[100000] p-4">
                     <div className="bg-white rounded-2xl border border-slate-200 max-w-sm w-full p-5 shadow-2xl space-y-3">
-                        <h4 className="text-sm font-bold text-slate-800">បញ្ចូលតំណភ្ជាប់រូបភាព (Image URL)</h4>
+                        <h4 className="text-sm font-bold text-slate-800">{t('enterImageUrl')}</h4>
                         <input
                             type="url"
                             value={photoUrlInput}
@@ -1217,14 +1217,14 @@ const ControlSupportHelp = () => {
                                 onClick={() => setShowPhotoInputModal(false)}
                                 className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
                                 onClick={handleAddPhotoUrl}
                                 className="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
                             >
-                                បន្ថែម
+                                {t('add')}
                             </button>
                         </div>
                     </div>
@@ -1239,7 +1239,7 @@ const ControlSupportHelp = () => {
                             <FaTrashAlt size={20} />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="text-sm font-bold text-slate-800">តើអ្នកពិតជាចង់លុបមែនទេ?</h3>
+                            <h3 className="text-sm font-bold text-slate-800">{t('confirmDelete', lang === 'km' ? 'តើអ្នកពិតជាចង់លុបមែនទេ?' : 'Are you sure you want to delete this?')}</h3>
                             <p className="text-xs text-slate-500 line-clamp-2">
                                 "{deleteModalItem.title}"
                             </p>
@@ -1250,7 +1250,7 @@ const ControlSupportHelp = () => {
                                 onClick={() => setDeleteModalItem(null)}
                                 className="h-[36px] px-4 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100 cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -1258,7 +1258,7 @@ const ControlSupportHelp = () => {
                                 disabled={deleting}
                                 className="h-[36px] px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 cursor-pointer"
                             >
-                                {deleting ? 'កំពុងលុប...' : 'លុបចោល'}
+                                {deleting ? t('deleting', lang === 'km' ? 'កំពុងលុប...' : 'Deleting...') : t('delete')}
                             </button>
                         </div>
                     </div>
@@ -1273,7 +1273,7 @@ const ControlSupportHelp = () => {
                             <FaTrashAlt size={20} />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="text-sm font-bold text-slate-800">តើអ្នកពិតជាចង់លុបមតិយោបល់នេះមែនទេ?</h3>
+                            <h3 className="text-sm font-bold text-slate-800">{t('confirmDeleteComment', lang === 'km' ? 'តើអ្នកពិតជាចង់លុបមតិយោបល់នេះមែនទេ?' : 'Are you sure you want to delete this comment?')}</h3>
                             <p className="text-xs text-slate-500 line-clamp-2">
                                 "{deleteCommentModal.message}"
                             </p>
@@ -1284,14 +1284,14 @@ const ControlSupportHelp = () => {
                                 onClick={() => setDeleteCommentModal(null)}
                                 className="h-[36px] px-4 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100 cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
                                 onClick={handleDeleteComment}
                                 className="h-[36px] px-5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 cursor-pointer"
                             >
-                                លុបចេញ
+                                {t('remove')}
                             </button>
                         </div>
                     </div>

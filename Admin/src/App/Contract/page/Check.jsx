@@ -43,7 +43,7 @@ const Check = () => {
     useEffect(() => { fetchCheckContracts(page); }, [page]);
 
     const handleMoveToActivated = async (item) => {
-        if (!window.confirm(`Move contract "${item.customerNameEn}" back to Activated?`)) return;
+        if (!window.confirm(t('contractMoveToActivatedConfirm').replace('{customer}', item.customerNameEn))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${item._id}`, {
                 method: 'PUT',
@@ -59,7 +59,7 @@ const Check = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Delete this contract record?')) return;
+        if (!window.confirm(t('contractDeleteConfirm'))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (res.ok) fetchCheckContracts();
@@ -135,19 +135,19 @@ const Check = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
-                            <th className='px-4 py-1 text-center'>Contract</th>
+                            <th className='px-4 py-1 text-center'>{t('contract')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {contracts.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No check contracts found.</td>
+                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">{t('noCheckContracts')}</td>
                             </tr>
                         ) : (
                             contracts.map((item, idx) => (
@@ -159,7 +159,7 @@ const Check = () => {
                                         {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                     </td>
                                     <td className='px-4 py-1 text-center'>
-                                        <span className='px-3 py-1 bg-sky-50 text-sky-800 border border-sky-300 rounded-full font-bold text-[10px] uppercase'>Check</span>
+                                        <span className='px-3 py-1 bg-sky-50 text-sky-800 border border-sky-300 rounded-full font-bold text-[10px] uppercase'>{t('check')}</span>
                                     </td>
                                     <td className='px-4 py-1 text-center font-mono text-indigo-700 font-bold'>
                                         <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
@@ -175,17 +175,17 @@ const Check = () => {
                                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-[99999] p-2 space-y-1 animate-in fade-in duration-150">
                                                     {hasPermission('/contract/check', 'edit') && (
                                                         <button onClick={() => handleMoveToActivated(item)} className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer">
-                                                            <MdCheckCircle className="text-emerald-600" /> Move to Activated
+                                                            <MdCheckCircle className="text-emerald-600" /> {t('moveToActivated')}
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/check', 'edit') && (
                                                         <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdEdit className="text-amber-600" /> Edit
+                                                            <MdEdit className="text-amber-600" /> {t('edit')}
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/check', 'delete') && (
                                                         <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdDelete className="text-red-600" /> Delete
+                                                            <MdDelete className="text-red-600" /> {t('delete')}
                                                         </button>
                                                     )}
                                                 </div>
@@ -207,4 +207,3 @@ const Check = () => {
 };
 
 export default Check;
-

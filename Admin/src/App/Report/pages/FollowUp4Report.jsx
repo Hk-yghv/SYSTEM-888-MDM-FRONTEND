@@ -57,7 +57,7 @@ const getDetailValue = (row, field) => {
     return getCount(row[field]);
 };
 
-const getDailyReportText = (date, detail, rejectSubmitRows) => {
+const getDailyReportText = (date, detail, rejectSubmitRows, t, lang) => {
     const totalSubmit = getCount(detail.pageSubmit) + getCount(detail.telegramSubmit) + getCount(detail.call);
     const totalReject = getCount(detail.reject) + getCount(detail.reject2);
     const totalSuccess = getCount(detail.success1) + getCount(detail.success2);
@@ -70,21 +70,21 @@ const getDailyReportText = (date, detail, rejectSubmitRows) => {
 
     return [
         getFormattedDate(date),
-        `Total Message ${getCount(detail.message)}`,
-        `មិនឆ្លើយតប ${getCount(detail.noReply)}`,
-        `ឆ្លើយតប ${Math.max(0, getCount(detail.message) - getCount(detail.noReply))}`,
-        `សាកសួរ ${getCount(detail.inquire)}`,
-        `ដាក់ស្នើ ${totalSubmit}`,
-        `Review ${getCount(detail.review)}`,
-        `បរាជ័យ ${totalReject}`,
-        `ជោគជ័យ ${totalSuccess}`,
+        `${t('followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages')} ${getCount(detail.message)}`,
+        `${t('followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply')} ${getCount(detail.noReply)}`,
+        `${t('followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied')} ${Math.max(0, getCount(detail.message) - getCount(detail.noReply))}`,
+        `${t('followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries')} ${getCount(detail.inquire)}`,
+        `${t('followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted')} ${totalSubmit}`,
+        `${t('followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review')} ${getCount(detail.review)}`,
+        `${t('followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected')} ${totalReject}`,
+        `${t('followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful')} ${totalSuccess}`,
         ...reasons.map((reason) => `- ${reason}`)
     ].join('\n');
 };
 
 const FollowUp4Report = () => {
     const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const API_BASE = API_BASE1 || API_BASE2 || '/api';
     const today = useMemo(() => dateToInputValue(new Date()), []);
     const monthStart = useMemo(() => `${today.slice(0, 7)}-01`, [today]);
@@ -248,38 +248,38 @@ const FollowUp4Report = () => {
         setActiveReportView('text');
         setActiveReport({
             title: `${t('dailyReport') || 'របាយការណ៍ប្រចាំថ្ងៃ'} - ${getFormattedDate(row.date)}`,
-            text: getDailyReportText(row.date, row, rejectSubmitRows)
+            text: getDailyReportText(row.date, row, rejectSubmitRows, t, lang)
         });
     };
 
     const openTotalReport = () => {
         const reportDate = startDate && endDate
             ? `${getFormattedDate(startDate)} - ${getFormattedDate(endDate)}`
-            : (startDate ? `ចាប់ពី ${getFormattedDate(startDate)}` : (endDate ? `ដល់ ${getFormattedDate(endDate)}` : 'សរុបទាំងអស់'));
+            : (startDate ? `${t('from', lang === 'km' ? 'ចាប់ពី' : 'From')} ${getFormattedDate(startDate)}` : (endDate ? `${t('to', lang === 'km' ? 'ដល់' : 'To')} ${getFormattedDate(endDate)}` : t('all', lang === 'km' ? 'សរុបទាំងអស់' : 'All dates')));
         const reasons = groupedRejectSubmit.reasons
             .filter((reason) => groupedRejectSubmit.reasonTotals[reason] > 0);
         const totalReportText = [
             reportDate,
-            `Total Message ${detailTotals.message}`,
-            `មិនឆ្លើយតប ${detailTotals.noReply}`,
-            `ឆ្លើយតប ${Math.max(0, detailTotals.message - detailTotals.noReply)}`,
-            `សាកសួរ ${detailTotals.inquire}`,
-            `ដាក់ស្នើ ${detailTotals.totalSubmit}`,
-            `Review ${detailTotals.review}`,
-            `បរាជ័យ ${detailTotals.totalReject}`,
-            `ជោគជ័យ ${detailTotals.totalSuccess}`,
+            `${t('followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages')} ${detailTotals.message}`,
+            `${t('followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply')} ${detailTotals.noReply}`,
+            `${t('followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied')} ${Math.max(0, detailTotals.message - detailTotals.noReply)}`,
+            `${t('followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries')} ${detailTotals.inquire}`,
+            `${t('followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted')} ${detailTotals.totalSubmit}`,
+            `${t('followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review')} ${detailTotals.review}`,
+            `${t('followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected')} ${detailTotals.totalReject}`,
+            `${t('followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful')} ${detailTotals.totalSuccess}`,
             ...reasons.map((reason) => `- ${reason}`)
         ].join('\n');
         const rows = [
-            { label: 'Date Range', value: reportDate },
-            { label: 'Total Message', value: detailTotals.message },
-            { label: 'មិនឆ្លើយតប', value: detailTotals.noReply },
-            { label: 'ឆ្លើយតប', value: Math.max(0, detailTotals.message - detailTotals.noReply) },
-            { label: 'សាកសួរ', value: detailTotals.inquire },
-            { label: 'ដាក់ស្នើ', value: detailTotals.totalSubmit },
-            { label: 'Review', value: detailTotals.review },
-            { label: 'បរាជ័យ', value: detailTotals.totalReject },
-            { label: 'ជោគជ័យ', value: detailTotals.totalSuccess },
+            { label: t('dateRange', lang === 'km' ? 'ចន្លោះកាលបរិច្ឆេទ' : 'Date range'), value: reportDate },
+            { label: t('followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages'), value: detailTotals.message },
+            { label: t('followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply'), value: detailTotals.noReply },
+            { label: t('followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied'), value: Math.max(0, detailTotals.message - detailTotals.noReply) },
+            { label: t('followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries'), value: detailTotals.inquire },
+            { label: t('followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted'), value: detailTotals.totalSubmit },
+            { label: t('followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review'), value: detailTotals.review },
+            { label: t('followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected'), value: detailTotals.totalReject },
+            { label: t('followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful'), value: detailTotals.totalSuccess },
             ...reasons.map((reason) => ({ label: reason, value: groupedRejectSubmit.reasonTotals[reason] || 0 }))
         ];
         const numericTotal = rows.reduce((sum, row) => sum + (typeof row.value === 'number' ? row.value : 0), 0);
@@ -336,14 +336,14 @@ const FollowUp4Report = () => {
         <section className="overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
                 <h2 className={`text-sm font-black ${accent}`}>{title}</h2>
-                <span className="text-xs font-semibold text-slate-500">{table.rows.length} ថ្ងៃ</span>
+                <span className="text-xs font-semibold text-slate-500">{table.rows.length} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full min-w-max text-xs">
                     <thead className="bg-slate-100 text-[10px] font-bold uppercase text-slate-500">
                         <tr>
-                            <th className="whitespace-nowrap px-3 py-2.5 text-left">កាលបរិច្ឆេទ</th>
-                            <th className="px-3 py-2.5 text-center">សរុប</th>
+                            <th className="whitespace-nowrap px-3 py-2.5 text-left">{t('date')}</th>
+                            <th className="px-3 py-2.5 text-center">{t('total')}</th>
                             {table.reasons.map((reason) => (
                                 <th key={reason} className="whitespace-nowrap px-3 py-2.5 text-center">{reason}</th>
                             ))}
@@ -351,9 +351,9 @@ const FollowUp4Report = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan={table.reasons.length + 2} className="px-3 py-8 text-center text-slate-400">កំពុងទាញយកទិន្នន័យ...</td></tr>
+                            <tr><td colSpan={table.reasons.length + 2} className="px-3 py-8 text-center text-slate-400">{t('loading', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យ...' : 'Loading data...')}</td></tr>
                         ) : table.rows.length === 0 ? (
-                            <tr><td colSpan={table.reasons.length + 2} className="px-3 py-8 text-center text-slate-400">មិនមានទិន្នន័យ</td></tr>
+                            <tr><td colSpan={table.reasons.length + 2} className="px-3 py-8 text-center text-slate-400">{t('noData', lang === 'km' ? 'មិនមានទិន្នន័យ' : 'No data')}</td></tr>
                         ) : table.rows.map((row) => (
                             <tr key={row.date} className="hover:bg-slate-50">
                                 <td className="whitespace-nowrap px-3 py-2 font-mono font-semibold text-slate-700">{getFormattedDate(row.date)}</td>
@@ -392,13 +392,13 @@ const FollowUp4Report = () => {
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-2 rounded-[5px] border border-slate-200 bg-slate-50 px-3 py-2">
                         <FaCalendarAlt className="text-emerald-600" />
-                        <input aria-label="Start date" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
+                        <input aria-label={t('startDate')} type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
                         <span className="text-xs text-slate-400">-</span>
-                        <input aria-label="End date" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
+                        <input aria-label={t('endDate')} type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
                     </div>
                     {isMasterAdmin && (
-                        <select aria-label="Brand" value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)} className="rounded-[5px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none">
-                            <option value="">ALL BRANDS</option>
+                        <select aria-label={t('brand')} value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)} className="rounded-[5px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none">
+                            <option value="">{t('allBrands')}</option>
                             {brands.map((brand) => <option key={brand} value={brand}>{brand}</option>)}
                         </select>
                     )}
@@ -416,25 +416,25 @@ const FollowUp4Report = () => {
 
             <section className="overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
-                    <h2 className="text-sm font-black text-sky-700">DETAIL</h2>
-                    <span className="text-xs font-semibold text-slate-500">{reportRows.length} ថ្ងៃ</span>
+                    <h2 className="text-sm font-black text-sky-700">{t('detail', lang === 'km' ? 'លម្អិត' : 'DETAIL')}</h2>
+                    <span className="text-xs font-semibold text-slate-500">{reportRows.length} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-xs">
                         <thead className="bg-slate-100 text-[10px] font-bold uppercase text-slate-500">
                             <tr>
-                                <th className="whitespace-nowrap px-3 py-2.5 text-left">កាលបរិច្ឆេទ</th>
+                                <th className="whitespace-nowrap px-3 py-2.5 text-left">{t('date')}</th>
                                 {detailTableFields.map(([field, label]) => (
-                                    <th key={field} className="whitespace-nowrap px-2 py-2.5 text-center">{label}</th>
+                                    <th key={field} className="whitespace-nowrap px-2 py-2.5 text-center">{t(field, label)}</th>
                                 ))}
-                                <th className="whitespace-nowrap px-3 py-2.5 text-center">សកម្មភាព</th>
+                                <th className="whitespace-nowrap px-3 py-2.5 text-center">{t('actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan={detailTableFields.length + 2} className="px-3 py-10 text-center text-slate-400">កំពុងទាញយកទិន្នន័យ...</td></tr>
+                                <tr><td colSpan={detailTableFields.length + 2} className="px-3 py-10 text-center text-slate-400">{t('loading', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យ...' : 'Loading data...')}</td></tr>
                             ) : reportRows.length === 0 ? (
-                                <tr><td colSpan={detailTableFields.length + 2} className="px-3 py-10 text-center text-slate-400">មិនមានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ</td></tr>
+                                <tr><td colSpan={detailTableFields.length + 2} className="px-3 py-10 text-center text-slate-400">{t('noDataForDateRange', lang === 'km' ? 'មិនមានទិន្នន័យសម្រាប់ចន្លោះកាលបរិច្ឆេទនេះទេ' : 'No data for this date range')}</td></tr>
                             ) : reportRows.map((row) => (
                                 <tr key={row.date} className="hover:bg-slate-50">
                                     <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-slate-700">{getFormattedDate(row.date)}</td>
@@ -474,13 +474,13 @@ const FollowUp4Report = () => {
                     <div className={`w-full ${activeReport.rows ? 'max-w-3xl' : 'max-w-lg'} overflow-hidden rounded-[5px] bg-white shadow-2xl`}>
                         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                             <h2 className="font-black text-slate-800">{activeReport.title}</h2>
-                            <button onClick={() => setActiveReport(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Close">×</button>
+                            <button onClick={() => setActiveReport(null)} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label={t('close')}>×</button>
                         </div>
                         {activeReport.rows && (
                             <nav className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2">
                                 <div className="flex gap-2">
-                                    <button onClick={() => setActiveReportView('text')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'text' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Text Report</button>
-                                    <button onClick={() => setActiveReportView('table')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'table' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Summary Table</button>
+                                    <button onClick={() => setActiveReportView('text')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'text' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{t('textReport', 'Text Report')}</button>
+                                    <button onClick={() => setActiveReportView('table')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'table' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{t('summaryTable')}</button>
                                 </div>
                                 {activeReportView === 'table' && <ExportDropdown onExportExcel={exportTotalReportExcel} onExportPDF={exportTotalReportPdf} />}
                             </nav>
@@ -490,9 +490,9 @@ const FollowUp4Report = () => {
                                 <table className="w-full border-collapse text-sm">
                                     <thead>
                                         <tr className="bg-slate-100 text-left text-xs uppercase text-slate-600">
-                                            <th className="border border-slate-200 px-3 py-2 text-center">No</th>
-                                            <th className="border border-slate-200 px-3 py-2">Description</th>
-                                            <th className="border border-slate-200 px-3 py-2 text-right">Value</th>
+                                            <th className="border border-slate-200 px-3 py-2 text-center">{t('no')}</th>
+                                            <th className="border border-slate-200 px-3 py-2">{t('description')}</th>
+                                            <th className="border border-slate-200 px-3 py-2 text-right">{t('value', 'Value')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -517,7 +517,7 @@ const FollowUp4Report = () => {
                                         <FaCopy /> {copied ? (t('copied') || 'បាន Copy') : (t('copyText') || 'Copy Text')}
                                     </button>
                                 </>
-                            ) : <button onClick={() => setActiveReport(null)} className="ml-auto rounded-[5px] bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">Close</button>}
+                            ) : <button onClick={() => setActiveReport(null)} className="ml-auto rounded-[5px] bg-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-300">{t('close')}</button>}
                         </div>
                     </div>
                 </div>

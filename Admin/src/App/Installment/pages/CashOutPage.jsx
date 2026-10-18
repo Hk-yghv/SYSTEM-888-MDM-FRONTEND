@@ -250,7 +250,7 @@ const CashOutPage = () => {
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date', accessor: 'date' },
             { header: 'Category', accessor: 'category' },
-            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
+            { header: t('amount'), cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Amount USD Est.', cell: (r) => `$${(r.amountUSD || 0).toFixed(2)}` },
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
@@ -264,7 +264,7 @@ const CashOutPage = () => {
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Date', accessor: 'date' },
             { header: 'Category', accessor: 'category' },
-            { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
+            { header: t('amount'), cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Description', accessor: 'description' },
             { header: 'Performed By', accessor: 'performedBy' }
         ];
@@ -338,7 +338,7 @@ const CashOutPage = () => {
                                 <FaDollarSign />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total USD Expense ($)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalUsdExpense')}</p>
                                 <h3 className="text-lg font-black text-rose-700 mt-0.5">${kpi.totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -348,7 +348,7 @@ const CashOutPage = () => {
                                 ៛
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total KHR Expense (៛)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalKhrExpense')}</p>
                                 <h3 className="text-lg font-black text-amber-700 mt-0.5">{kpi.totalKHR.toLocaleString()} ៛</h3>
                             </div>
                         </div>
@@ -358,7 +358,7 @@ const CashOutPage = () => {
                                 <FaMoneyBillWave />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Est. USD Total ($)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalEstimatedUsd')}</p>
                                 <h3 className="text-lg font-black text-indigo-700 mt-0.5">${kpi.grandTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -368,7 +368,7 @@ const CashOutPage = () => {
                                 <FaListUl />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Expense Entries</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalExpenseEntries')}</p>
                                 <h3 className="text-lg font-black text-slate-900 mt-0.5">{kpi.count.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -377,11 +377,11 @@ const CashOutPage = () => {
                     {/* Line Chart - Cash Out Trend */}
                     <LineChart
                         title={t('cashOutTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួនចើញច្រង និងតម្លៃចំនួនប្រចាំថ្ងៃ/ខែ"
+                        subtitle={t('cashOutTrendSub')}
                         data={chartTrendData}
                         series={[
-                            { key: 'count', label: 'ចំនួនផ័កចើញច្រង', color: '#f43f5e', isCurrency: false },
-                            { key: 'totalUSD', label: 'តម្លៃសរុប ($)', color: '#f97316', isCurrency: true }
+                            { key: 'count', label: t('transactions'), color: '#f43f5e', isCurrency: false },
+                            { key: 'totalUSD', label: `${t('total')} ($)`, color: '#f97316', isCurrency: true }
                         ]}
                     />
                 </div>
@@ -453,7 +453,7 @@ const CashOutPage = () => {
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={8} className="text-center py-10 text-rose-600 font-semibold">Loading...</td></tr>
+                                    <tr><td colSpan={8} className="text-center py-10 text-rose-600 font-semibold">{t('loading')}</td></tr>
                                 ) : visibleDataList.length === 0 ? (
                                     <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
                                 ) : (
@@ -475,15 +475,15 @@ const CashOutPage = () => {
                                                     <button onClick={() => { setSelectedImages(getPhotoUrls(item)); setSelectedImageIndex(0); }} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
                                                         <FaImage /> <span>View{getPhotoUrls(item).length > 1 ? ` (${getPhotoUrls(item).length})` : ''}</span>
                                                     </button>
-                                                ) : <span className="text-slate-400 italic">No image</span>}
+                                                ) : <span className="text-slate-400 italic">{t('dashboardNoImage')}</span>}
                                             </td>
                                             <td className='px-4 py-1 font-bold text-slate-800'>{item.performedBy || '-'}</td>
                                             <td className='px-4 py-1 text-center'>
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <button onClick={() => handleEdit(item)} title="Edit" className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <button onClick={() => handleEdit(item)} title={t('edit')} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                         <FaEdit />
                                                     </button>
-                                                    <button onClick={() => handleDelete(item)} title="Delete" className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                                    <button onClick={() => handleDelete(item)} title={t('delete')} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
                                                         <FaTrashAlt />
                                                     </button>
                                                 </div>
@@ -551,7 +551,7 @@ const CashOutPage = () => {
                                 <label className="block text-slate-700 font-bold mb-1">{t('category')}</label>
                                 <input
                                     type="text"
-                                    placeholder="ឧទាហរណ៍៖ ទិញឧបករណ៍, បើកប្រាក់ខែ, ចំណាយទូទៅ..."
+                                    placeholder={t('cashOutCategoryPlaceholder')}
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-rose-500"
@@ -562,7 +562,7 @@ const CashOutPage = () => {
                                 <label className="block text-slate-700 font-bold mb-1">{t('description')}</label>
                                 <textarea
                                     rows="2"
-                                    placeholder="ពិពណ៌នាបន្ថែមពីចំណាយនេះ..."
+                                    placeholder={t('cashOutDescriptionPlaceholder')}
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-rose-500"
@@ -583,7 +583,7 @@ const CashOutPage = () => {
                                     {uploadingImage && <p className="text-[11px] text-rose-600 font-bold animate-pulse">🔄 {t('uploadingImage')}</p>}
                                     <textarea
                                         rows="2"
-                                        placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"
+                                        placeholder={t('imageUrlsOnePerLine')}
                                         value={formData.photoUrls.join('\n')}
                                         onChange={(e) => setFormData({ ...formData, photoUrls: [...new Set(e.target.value.split(/\r?\n/).map(url => url.trim()).filter(Boolean))] })}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-mono text-[11px] focus:outline-none focus:border-rose-500"
@@ -598,7 +598,7 @@ const CashOutPage = () => {
                                                     </button>
                                                 </div>
                                             ))}
-                                            <span className="text-[10px] text-rose-700 font-bold">{formData.photoUrls.length} រូបភាពបានបញ្ចូល</span>
+                                            <span className="text-[10px] text-rose-700 font-bold">{formData.photoUrls.length} {t('imagesUploaded')}</span>
                                         </div>
                                     )}
                                 </div>

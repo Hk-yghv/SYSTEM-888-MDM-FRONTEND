@@ -75,7 +75,7 @@ const getYouTubeEmbedUrl = (url) => {
 };
 
 const HelpSupport = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, user } = useAuth();
 
     const [items, setItems] = useState([]);
@@ -205,7 +205,7 @@ const HelpSupport = () => {
                 setCommentPhoto(await storeImageFile(file, commentPhotoStorageType, API_BASE));
             } catch (err) {
                 console.error('Comment image upload failed:', err);
-                alert(`Image upload failed: ${err.message}`);
+                alert(`${t('supportImageUploadFailed', lang === 'km' ? 'បរាជ័យក្នុងការផ្ទុករូបភាព' : 'Image upload failed')}: ${err.message}`);
             } finally {
                 setCommentPhotoUploading(false);
             }
@@ -217,7 +217,7 @@ const HelpSupport = () => {
     const handleSubmitComment = async (e) => {
         e.preventDefault();
         if (!commentMessage.trim()) {
-            alert('សូមសរសេរមតិយោបល់របស់អ្នកជាមុនសិន');
+            alert(t('supportCommentRequired', lang === 'km' ? 'សូមសរសេរមតិយោបល់របស់អ្នកជាមុនសិន' : 'Please write your comment first.'));
             return;
         }
 
@@ -250,11 +250,11 @@ const HelpSupport = () => {
                 fetchUserComments();
                 setTimeout(() => setCommentSuccess(false), 3500);
             } else {
-                alert('មិនអាចផ្ញើមតិយោបល់បានទេ');
+                alert(t('supportCommentSendFailed', lang === 'km' ? 'មិនអាចផ្ញើមតិយោបល់បានទេ' : 'Unable to send your comment.'));
             }
         } catch (err) {
             console.error('Send comment error:', err);
-            alert('កំហុសប្រព័ន្ធក្នុងការផ្ញើមតិយោបល់');
+            alert(t('supportCommentSystemError', lang === 'km' ? 'កំហុសប្រព័ន្ធក្នុងការផ្ញើមតិយោបល់' : 'System error while sending your comment.'));
         } finally {
             setCommentSending(false);
         }
@@ -270,10 +270,10 @@ const HelpSupport = () => {
                         <span>{t('supportCenter') || 'មជ្ឈមណ្ឌលជំនួយ និងការគាំទ្រ (Help & Support Center)'}</span>
                     </div>
                     <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight">
-                        តើអ្នកត្រូវការជំនួយអ្វីខ្លះថ្ងៃនេះ?
+                        {t('supportHeroTitle', lang === 'km' ? 'តើអ្នកត្រូវការជំនួយអ្វីខ្លះថ្ងៃនេះ?' : 'What can we help you with today?')}
                     </h1>
                     <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
-                        ស្វែងយល់ពីរបៀបប្រើប្រាស់ប្រព័ន្ធ វីដេអូបង្រៀន រូបភាពណែនាំ និងផ្ញើមតិយោបល់ដោយផ្ទាល់ទៅកាន់ Admin ធំ។
+                        {t('supportHeroDescription', lang === 'km' ? 'ស្វែងយល់ពីរបៀបប្រើប្រាស់ប្រព័ន្ធ វីដេអូបង្រៀន រូបភាពណែនាំ និងផ្ញើមតិយោបល់ដោយផ្ទាល់ទៅកាន់ Admin ធំ។' : 'Learn how to use the system, browse video and image guides, or send feedback directly to the administrator.')}
                     </p>
 
                     {/* Quick search input */}
@@ -287,7 +287,7 @@ const HelpSupport = () => {
                                     setSearch(e.target.value);
                                     if (activePage === '__COMMENTS__') setActivePage('All');
                                 }}
-                                placeholder="ស្វែងរកអត្ថបទណែនាំ វីដេអូ ឬប្រធានបទ..."
+                                placeholder={t('supportSearchPlaceholder', lang === 'km' ? 'ស្វែងរកអត្ថបទណែនាំ វីដេអូ ឬប្រធានបទ...' : 'Search guides, videos, or topics...')}
                                 className="w-full h-11 pl-11 pr-4 rounded-2xl bg-white text-slate-800 placeholder-slate-400 text-xs shadow-md outline-none focus:ring-2 focus:ring-emerald-300 transition-all font-medium"
                             />
                             {search && (
@@ -307,7 +307,7 @@ const HelpSupport = () => {
                             className="h-11 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
                         >
                             <FaCommentDots size={14} />
-                            <span>សរសេរ Comment ទៅ Admin ធំ</span>
+                            <span>{t('supportWriteComment', lang === 'km' ? 'សរសេរមតិយោបល់ទៅកាន់ Admin ធំ' : 'Write to the administrator')}</span>
                         </button>
                     </div>
                 </div>
@@ -324,21 +324,21 @@ const HelpSupport = () => {
                     {/* Active Filter Bar */}
                     <div className="flex items-center justify-between text-xs text-slate-600 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
                         <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-700">បង្ហាញ:</span>
+                            <span className="font-bold text-slate-700">{t('show', lang === 'km' ? 'បង្ហាញ:' : 'Showing:')}</span>
                             <span className={`px-2.5 py-0.5 rounded-full font-bold border ${
                                 activePage === '__COMMENTS__'
                                     ? 'bg-amber-100 text-amber-900 border-amber-300'
                                     : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             }`}>
                                 {activePage === '__COMMENTS__'
-                                    ? '💬 សរសេរមតិយោបល់ទៅកាន់ Admin ធំ'
+                                    ? `💬 ${t('supportWriteComment', lang === 'km' ? 'សរសេរមតិយោបល់ទៅកាន់ Admin ធំ' : 'Write to the administrator')}`
                                     : activePage === 'All'
-                                    ? 'គ្រប់ទំព័រទាំងអស់ (All Pages)'
+                                    ? t('allPages', lang === 'km' ? 'គ្រប់ទំព័រទាំងអស់' : 'All Pages')
                                     : activePage}
                             </span>
                             {activePage !== '__COMMENTS__' && (
                                 <span className="text-slate-400 font-mono">
-                                    ({filteredItems.length} ប្រធានបទ)
+                                    ({filteredItems.length} {t('topics', lang === 'km' ? 'ប្រធានបទ' : 'topics')})
                                 </span>
                             )}
                         </div>
@@ -348,7 +348,7 @@ const HelpSupport = () => {
                                 onClick={() => setActivePage('All')}
                                 className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline cursor-pointer"
                             >
-                                បង្ហាញអត្ថបទទាំងអស់
+                                {t('supportShowAllArticles', lang === 'km' ? 'បង្ហាញអត្ថបទទាំងអស់' : 'Show all articles')}
                             </button>
                         )}
                     </div>
@@ -366,10 +366,10 @@ const HelpSupport = () => {
                                     </div>
                                     <div>
                                         <h2 className="text-base sm:text-lg font-bold text-slate-800">
-                                            សរសេរមតិយោបល់ ឬ សំណូមពរទៅកាន់ Admin ធំ
+                                            {t('supportWriteCommentOrSuggestion', lang === 'km' ? 'សរសេរមតិយោបល់ ឬសំណូមពរទៅកាន់ Admin ធំ' : 'Send a comment or suggestion to the administrator')}
                                         </h2>
                                         <p className="text-xs text-slate-500 mt-0.5">
-                                            រាល់មតិយោបល់ និងសំណើររបស់អ្នកនឹងត្រូវបញ្ជូនដោយផ្ទាល់ទៅកាន់ Master Admin
+                                            {t('supportCommentDeliveryInfo', lang === 'km' ? 'មតិយោបល់ និងសំណើរបស់អ្នកនឹងត្រូវបញ្ជូនដោយផ្ទាល់ទៅកាន់ Master Admin' : 'Your comments and suggestions will be sent directly to the master administrator.')}
                                         </p>
                                     </div>
                                 </div>
@@ -391,7 +391,7 @@ const HelpSupport = () => {
                                 {commentSuccess && (
                                     <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-200">
                                         <FaCheckCircle className="text-emerald-600" size={14} />
-                                        <span>បានផ្ញើមតិយោបល់ទៅកាន់ Admin ធំដោយជោគជ័យ! សូមរង់ចាំការពិនិត្យ។</span>
+                                        <span>{t('supportCommentSent', lang === 'km' ? 'បានផ្ញើមតិយោបល់ទៅកាន់ Admin ធំដោយជោគជ័យ! សូមរង់ចាំការពិនិត្យ។' : 'Your comment was sent successfully. Please wait for it to be reviewed.')}</span>
                                     </div>
                                 )}
 
@@ -399,39 +399,39 @@ const HelpSupport = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {/* Subject / Category */}
                                         <div className="space-y-1">
-                                            <label className="font-bold text-slate-700">ប្រភេទមតិយោបល់ / ប្រធានបទ:</label>
+                                            <label className="font-bold text-slate-700">{t('supportCommentCategory', lang === 'km' ? 'ប្រភេទមតិយោបល់ / ប្រធានបទ:' : 'Comment category / subject:')}</label>
                                             <select
                                                 value={commentSubject}
                                                 onChange={(e) => setCommentSubject(e.target.value)}
                                                 className="w-full h-10 px-3 rounded-xl border border-slate-200 text-slate-800 font-medium focus:border-amber-500 outline-none"
                                             >
-                                                <option value="សំណើកែលម្អ">💡 សំណើកែលម្អប្រព័ន្ធ (Feature Suggestion)</option>
-                                                <option value="រាយការណ៍បញ្ហា">⚠️ រាយការណ៍បញ្ហា/កំហុស (Report Bug / Issue)</option>
-                                                <option value="ចម្ងល់ / សំណួរ">❓ សំណួរ / ត្រូវការជំនួយ (Questions / Help)</option>
-                                                <option value="ស្នើសុំមុខងារបន្ថែម">✨ ស្នើសុំមុខងារបន្ថែម (New Request)</option>
-                                                <option value="មតិយោបល់ទូទៅ">📝 មតិយោបល់ទូទៅ (General Feedback)</option>
+                                                <option value="សំណើកែលម្អ">💡 {t('supportFeatureSuggestion', lang === 'km' ? 'សំណើកែលម្អប្រព័ន្ធ' : 'Feature Suggestion')}</option>
+                                                <option value="រាយការណ៍បញ្ហា">⚠️ {t('supportReportBug', lang === 'km' ? 'រាយការណ៍បញ្ហា/កំហុស' : 'Report Bug / Issue')}</option>
+                                                <option value="ចម្ងល់ / សំណួរ">❓ {t('supportQuestionsHelp', lang === 'km' ? 'សំណួរ / ត្រូវការជំនួយ' : 'Questions / Help')}</option>
+                                                <option value="ស្នើសុំមុខងារបន្ថែម">✨ {t('supportNewRequest', lang === 'km' ? 'ស្នើសុំមុខងារបន្ថែម' : 'New Request')}</option>
+                                                <option value="មតិយោបល់ទូទៅ">📝 {t('supportGeneralFeedback', lang === 'km' ? 'មតិយោបល់ទូទៅ' : 'General Feedback')}</option>
                                             </select>
                                         </div>
 
                                         {/* Target Page Context */}
                                         <div className="space-y-1">
-                                            <label className="font-bold text-slate-700">ទាក់ទងនឹង Page ណា?:</label>
+                                            <label className="font-bold text-slate-700">{t('supportRelatedPage', lang === 'km' ? 'ទាក់ទងនឹង Page ណា?:' : 'Related page:')}</label>
                                             <select
                                                 value={commentPageContext}
                                                 onChange={(e) => setCommentPageContext(e.target.value)}
                                                 className="w-full h-10 px-3 rounded-xl border border-slate-200 text-slate-800 font-medium focus:border-amber-500 outline-none"
                                             >
-                                                <option value="ទូទៅ (General)">ទូទៅ (General)</option>
-                                                <option value="Dashboard">Dashboard (ទំព័រដើម)</option>
-                                                <option value="Customer">Customer (អតិថិជន)</option>
-                                                <option value="Contract">Contract (កិច្ចសន្យា)</option>
-                                                <option value="Installment">Installment (ការបង់រំលស់)</option>
-                                                <option value="Lost Phone">Lost Phone (ចាក់សោទូរស័ព្ទ)</option>
-                                                <option value="Wallpaper">Wallpaper (រូបភាព)</option>
-                                                <option value="Report">Report (របាយការណ៍)</option>
-                                                <option value="Salary">Salary (ប្រាក់ខែ)</option>
-                                                <option value="Print ID Card">Print ID Card (ព្រីនកាត)</option>
-                                                <option value="Settings">Settings (ការកំណត់)</option>
+                                                <option value="ទូទៅ (General)">{t('general', lang === 'km' ? 'ទូទៅ' : 'General')}</option>
+                                                <option value="Dashboard">{t('dashboard')}</option>
+                                                <option value="Customer">{t('customer')}</option>
+                                                <option value="Contract">{t('contract')}</option>
+                                                <option value="Installment">{t('installment')}</option>
+                                                <option value="Lost Phone">{t('lostPhone', lang === 'km' ? 'ទូរស័ព្ទបាត់' : 'Lost Phone')}</option>
+                                                <option value="Wallpaper">{t('wallpaper')}</option>
+                                                <option value="Report">{t('report', lang === 'km' ? 'របាយការណ៍' : 'Report')}</option>
+                                                <option value="Salary">{t('salary')}</option>
+                                                <option value="Print ID Card">{t('printIdCard')}</option>
+                                                <option value="Settings">{t('settings', lang === 'km' ? 'ការកំណត់' : 'Settings')}</option>
                                             </select>
                                         </div>
                                     </div>
@@ -439,14 +439,14 @@ const HelpSupport = () => {
                                     {/* Message Textarea */}
                                     <div className="space-y-1">
                                         <label className="font-bold text-slate-700">
-                                            ខ្លឹមសារមតិយោបល់ (Comment Details) <span className="text-rose-500">*</span>:
+                                            {t('supportCommentDetails', lang === 'km' ? 'ខ្លឹមសារមតិយោបល់' : 'Comment details')} <span className="text-rose-500">*</span>:
                                         </label>
                                         <textarea
                                             required
                                             rows={4}
                                             value={commentMessage}
                                             onChange={(e) => setCommentMessage(e.target.value)}
-                                            placeholder="សរសេរមតិយោបល់ បញ្ជាក់បញ្ហា ឬសំណើរបស់អ្នកយ៉ាងលម្អិត..."
+                                            placeholder={t('supportCommentPlaceholder', lang === 'km' ? 'សរសេរមតិយោបល់ បញ្ជាក់បញ្ហា ឬសំណើរបស់អ្នកយ៉ាងលម្អិត...' : 'Describe your feedback, issue, or request in detail...')}
                                             className="w-full p-3.5 rounded-2xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:border-amber-500 outline-none transition-all resize-y"
                                         />
                                     </div>
@@ -469,7 +469,7 @@ const HelpSupport = () => {
                                                 className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                                             >
                                                 <FaImage className="text-amber-600" />
-                                                <span>{commentPhoto ? 'ប្តូររូបភាព Screenshot' : '+ ភ្ជាប់រូបភាព Screenshot (Optional)'}</span>
+                                                <span>{commentPhoto ? t('changeImage', lang === 'km' ? 'ប្តូររូបភាព Screenshot' : 'Change screenshot') : `+ ${t('supportAttachScreenshot', lang === 'km' ? 'ភ្ជាប់រូបភាព Screenshot (ស្រេចចិត្ត)' : 'Attach screenshot (optional)')}`}</span>
                                             </button>
                                             {commentPhoto && (
                                                 <button
@@ -477,7 +477,7 @@ const HelpSupport = () => {
                                                     onClick={() => setCommentPhoto('')}
                                                     className="text-xs text-rose-600 hover:underline cursor-pointer"
                                                 >
-                                                    លុបរូបចេញ
+                                                    {t('removeImage', lang === 'km' ? 'លុបរូបចេញ' : 'Remove image')}
                                                 </button>
                                             )}
                                         </div>
@@ -501,11 +501,11 @@ const HelpSupport = () => {
                                             }`}
                                         >
                                             {commentSending ? (
-                                                <span>កំពុងផ្ញើ...</span>
+                                                <span>{t('sending', lang === 'km' ? 'កំពុងផ្ញើ...' : 'Sending...')}</span>
                                             ) : (
                                                 <>
                                                     <FaPaperPlane size={12} />
-                                                    <span>ផ្ញើមតិទៅកាន់ Admin ធំ</span>
+                                                    <span>{t('supportSendComment', lang === 'km' ? 'ផ្ញើមតិទៅកាន់ Admin ធំ' : 'Send comment to administrator')}</span>
                                                 </>
                                             )}
                                         </button>
@@ -517,16 +517,16 @@ const HelpSupport = () => {
                             <div className="space-y-3">
                                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                                     <FaClock className="text-slate-400" />
-                                    <span>ប្រវត្តិមតិយោបល់ដែលអ្នកបានផ្ញើ ({userComments.length})</span>
+                                    <span>{t('supportYourCommentHistory', lang === 'km' ? 'ប្រវត្តិមតិយោបល់ដែលអ្នកបានផ្ញើ' : 'Your comment history')} ({userComments.length})</span>
                                 </h3>
 
                                 {loadingComments ? (
                                     <div className="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200">
-                                        <span>កំពុងទាញយកប្រវត្តិមតិយោបល់...</span>
+                                        <span>{t('supportLoadingCommentHistory', lang === 'km' ? 'កំពុងទាញយកប្រវត្តិមតិយោបល់...' : 'Loading comment history...')}</span>
                                     </div>
                                 ) : userComments.length === 0 ? (
                                     <div className="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200">
-                                        <span>អ្នកមិនទាន់បានផ្ញើមតិយោបល់ណាមួយនៅឡើយទេ។</span>
+                                        <span>{t('supportNoCommentsYet', lang === 'km' ? 'អ្នកមិនទាន់បានផ្ញើមតិយោបល់ណាមួយនៅឡើយទេ។' : 'You have not sent any comments yet.')}</span>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
@@ -542,7 +542,7 @@ const HelpSupport = () => {
                                                                 {comment.subject}
                                                             </span>
                                                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                                                                Page: {comment.pageContext}
+                                                                {t('page')}: {comment.pageContext}
                                                             </span>
                                                         </div>
                                                         <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
@@ -567,7 +567,7 @@ const HelpSupport = () => {
                                                     <div
                                                         onClick={() => handleOpenImageZoom(comment.photoUrl, `Comment Attachment - ${comment.subject}`)}
                                                         className="w-24 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-center group"
-                                                        title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
+                                                        title={t('supportClickToZoomImage', lang === 'km' ? 'ចុចដើម្បីពង្រីករូបភាព' : 'Click to enlarge image')}
                                                     >
                                                         <img src={comment.photoUrl} alt="Attachment" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                                     </div>
@@ -601,16 +601,16 @@ const HelpSupport = () => {
                         loading ? (
                             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 text-xs shadow-2xs">
                                 <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                                <span>កំពុងទាញយកមាតិកាជំនួយ...</span>
+                                <span>{t('supportLoadingGuides', lang === 'km' ? 'កំពុងទាញយកមាតិកាជំនួយ...' : 'Loading help content...')}</span>
                             </div>
                         ) : filteredItems.length === 0 ? (
                             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-2xs">
                                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100">
                                     <FaQuestionCircle size={28} />
                                 </div>
-                                <h3 className="text-sm font-bold text-slate-700">រកមិនឃើញអត្ថបទណែនាំទេ</h3>
+                                <h3 className="text-sm font-bold text-slate-700">{t('supportNoGuidesFound', lang === 'km' ? 'រកមិនឃើញអត្ថបទណែនាំទេ' : 'No guides found')}</h3>
                                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                                    មិនមានមាតិកាជំនួយដែលត្រូវគ្នានឹងការស្វែងរករបស់អ្នកឡើយ។ សូមសាកល្បងពាក្យគន្លឹះផ្សេង ឬជ្រើសរើសទំព័រផ្សេង។
+                                    {t('supportNoGuidesMatch', lang === 'km' ? 'មិនមានមាតិកាជំនួយដែលត្រូវគ្នានឹងការស្វែងរករបស់អ្នកឡើយ។ សូមសាកល្បងពាក្យគន្លឹះផ្សេង ឬជ្រើសរើសទំព័រផ្សេង។' : 'No help content matches your search. Try another keyword or select a different page.')}
                                 </p>
                             </div>
                         ) : (
@@ -642,7 +642,7 @@ const HelpSupport = () => {
                                                         type="button"
                                                         onClick={() => handleCopyShare(item)}
                                                         className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-                                                        title="Share link"
+                                                        title={t('shareLink', lang === 'km' ? 'ចែករំលែកតំណភ្ជាប់' : 'Share link')}
                                                     >
                                                         {copiedId === item._id ? <FaCheck size={11} className="text-emerald-600" /> : <FaShareAlt size={11} />}
                                                     </button>
@@ -669,7 +669,7 @@ const HelpSupport = () => {
                                                                 key={pIdx}
                                                                 onClick={() => handleOpenImageZoom(photo, `${item.title} - Photo ${pIdx + 1}`)}
                                                                 className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video cursor-pointer hover:shadow-md transition-all flex items-center justify-center"
-                                                                title="ចុចដើម្បីពង្រីកបង្រួមរូបភាព"
+                                                                title={t('supportClickToZoomImage', lang === 'km' ? 'ចុចដើម្បីពង្រីករូបភាព' : 'Click to enlarge image')}
                                                             >
                                                                 <img
                                                                     src={photo}
@@ -691,7 +691,7 @@ const HelpSupport = () => {
                                                     <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                                                         <div className="flex items-center gap-1.5">
                                                             <FaVideo className="text-rose-600" />
-                                                            <span>វីដេអូណែនាំ (Video Tutorial):</span>
+                                                            <span>{t('supportVideoTutorial', lang === 'km' ? 'វីដេអូណែនាំ' : 'Video tutorial')}:</span>
                                                         </div>
                                                         <a
                                                             href={item.videoUrl}
@@ -699,7 +699,7 @@ const HelpSupport = () => {
                                                             rel="noopener noreferrer"
                                                             className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
                                                         >
-                                                            <span>បើកមើលលើ Web</span>
+                                                            <span>{t('openOnWeb', lang === 'km' ? 'បើកមើលលើ Web' : 'Open on web')}</span>
                                                             <FaExternalLinkAlt size={9} />
                                                         </a>
                                                     </div>
@@ -761,7 +761,7 @@ const HelpSupport = () => {
                                                         </div>
                                                     </div>
                                                     <span className="flex items-center gap-1.5 text-xs font-bold text-[#1877F2] group-hover:underline flex-shrink-0 ml-2">
-                                                        <span>ចូលមើល</span>
+                                                        <span>{t('view', lang === 'km' ? 'ចូលមើល' : 'View')}</span>
                                                         <FaExternalLinkAlt size={11} />
                                                     </span>
                                                 </a>
@@ -780,7 +780,7 @@ const HelpSupport = () => {
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                                 <FaLayerGroup className="text-emerald-600" size={13} />
-                                <span>ទំព័រដែលមានការណែនាំ (Pages)</span>
+                                <span>{t('supportPagesWithGuides', lang === 'km' ? 'ទំព័រដែលមានការណែនាំ' : 'Pages with guides')}</span>
                             </h3>
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
                                 {pageStats.length} ទំព័រ
@@ -804,9 +804,9 @@ const HelpSupport = () => {
                                 </div>
                                 <div>
                                     <p className={`text-xs font-bold ${activePage === 'All' ? 'text-emerald-900' : 'text-slate-800'}`}>
-                                        ទំព័រទាំងអស់ (All Pages)
+                                        {t('allPages', lang === 'km' ? 'ទំព័រទាំងអស់' : 'All Pages')}
                                     </p>
-                                    <p className="text-[10px] text-slate-400">បង្ហាញមាតិកាទាំងអស់</p>
+                                    <p className="text-[10px] text-slate-400">{t('supportShowAllContent', lang === 'km' ? 'បង្ហាញមាតិកាទាំងអស់' : 'Show all content')}</p>
                                 </div>
                             </div>
                             <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
@@ -833,15 +833,15 @@ const HelpSupport = () => {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="text-xs font-bold text-amber-950 flex items-center gap-1.5 truncate">
-                                        <span>សរសេរ Comment ទៅ Admin ធំ</span>
+                                        <span>{t('supportWriteComment', lang === 'km' ? 'សរសេរមតិយោបល់ទៅកាន់ Admin ធំ' : 'Write to the administrator')}</span>
                                     </p>
                                     <p className="text-[10px] text-amber-700 truncate">
-                                        មតិយោបល់ & សំណូមពរ
+                                        {t('supportCommentsAndSuggestions', lang === 'km' ? 'មតិយោបល់ និងសំណូមពរ' : 'Comments & suggestions')}
                                     </p>
                                 </div>
                             </div>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 flex-shrink-0">
-                                💬 ផ្ញើមតិ
+                                💬 {t('sendFeedback', lang === 'km' ? 'ផ្ញើមតិ' : 'Send feedback')}
                             </span>
                         </div>
 
@@ -875,17 +875,17 @@ const HelpSupport = () => {
                                                 {/* Mini media badges */}
                                                 <div className="flex items-center gap-1.5 mt-0.5 text-[9px] text-slate-400">
                                                     {pageObj.hasPhotos && (
-                                                        <span title="មានរូបភាព" className="text-blue-500 font-bold flex items-center gap-0.5">
-                                                            <FaImage size={9} /> រូប
+                                                        <span title={t('supportHasImages', lang === 'km' ? 'មានរូបភាព' : 'Has images')} className="text-blue-500 font-bold flex items-center gap-0.5">
+                                                            <FaImage size={9} /> {t('image', lang === 'km' ? 'រូប' : 'Image')}
                                                         </span>
                                                     )}
                                                     {pageObj.hasVideos && (
-                                                        <span title="មានវីដេអូ" className="text-rose-500 font-bold flex items-center gap-0.5">
-                                                            <FaVideo size={9} /> វីដេអូ
+                                                        <span title={t('supportHasVideos', lang === 'km' ? 'មានវីដេអូ' : 'Has videos')} className="text-rose-500 font-bold flex items-center gap-0.5">
+                                                            <FaVideo size={9} /> {t('video', lang === 'km' ? 'វីដេអូ' : 'Video')}
                                                         </span>
                                                     )}
                                                     {pageObj.hasFacebook && (
-                                                        <span title="មាន Facebook" className="text-indigo-500 font-bold flex items-center gap-0.5">
+                                                        <span title={t('supportHasFacebook', lang === 'km' ? 'មាន Facebook' : 'Has Facebook')} className="text-indigo-500 font-bold flex items-center gap-0.5">
                                                             <FaFacebook size={9} /> FB
                                                         </span>
                                                     )}
@@ -911,10 +911,10 @@ const HelpSupport = () => {
                     <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-4 text-white space-y-2 shadow-md">
                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
                             <FaHeadset size={14} />
-                            <span>ត្រូវការជំនួយបន្ទាន់?</span>
+                            <span>{t('supportNeedUrgentHelp', lang === 'km' ? 'ត្រូវការជំនួយបន្ទាន់?' : 'Need urgent help?')}</span>
                         </div>
                         <p className="text-[11px] text-slate-300 leading-relaxed">
-                            ប្រសិនបើអ្នកមានចម្ងល់បន្ថែម ឬប្រព័ន្ធមានបញ្ហា សូមទាក់ទងមកកាន់អ្នកគ្រប់គ្រងប្រព័ន្ធ (System Administrator)។
+                            {t('supportContactAdministrator', lang === 'km' ? 'ប្រសិនបើអ្នកមានចម្ងល់បន្ថែម ឬប្រព័ន្ធមានបញ្ហា សូមទាក់ទងមកកាន់អ្នកគ្រប់គ្រងប្រព័ន្ធ (System Administrator)។' : 'If you have questions or encounter a system problem, please contact your system administrator.')}
                         </p>
                     </div>
                 </div>

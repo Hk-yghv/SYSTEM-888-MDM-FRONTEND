@@ -113,48 +113,48 @@ const LockPhoneReport = () => {
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Lock Actions', accessor: 'totalLockActions' },
-                { header: 'Unique Locked Customers', accessor: 'uniqueCustomersCount' }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalLockActions'), accessor: 'totalLockActions' },
+                { header: t('uniqueLockedCustomers'), accessor: 'uniqueCustomersCount' }
             ];
             const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToExcel('Lock Phone — Summary Table', summaryColumns, excelData, user?.brand || '');
+            return exportToExcel(t('lockPhoneSummaryTable'), summaryColumns, excelData, user?.brand || '');
         }
 
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer', accessor: 'customerName' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date || ''} ${r.time || ''}` },
-            { header: 'Performed By', accessor: 'performedBy' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('customerName'), accessor: 'customerName' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('lastLock'), cell: (r) => r.lastLockTime || `${r.date || ''} ${r.time || ''}` },
+            { header: t('performedBy'), accessor: 'performedBy' }
         ];
-        exportToExcel('Lock Phone Report', columns, allData, user?.brand || '');
+        exportToExcel(t('lockPhoneReportTitle'), columns, allData, user?.brand || '');
     };
 
     const handleExportPDF = async (orientation = 'portrait') => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Lock Actions', accessor: 'totalLockActions' },
-                { header: 'Unique Locked Customers', accessor: 'uniqueCustomersCount' }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalLockActions'), accessor: 'totalLockActions' },
+                { header: t('uniqueLockedCustomers'), accessor: 'uniqueCustomersCount' }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
-            return exportToPDF('Lock Phone — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
+            return exportToPDF(t('lockPhoneSummaryTable'), summaryColumns, pdfData, user?.brand || '', pdfOrientation);
         }
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer', accessor: 'customerName' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Last Lock', cell: (r) => r.lastLockTime || `${r.date || ''} ${r.time || ''}` },
-            { header: 'Performed By', accessor: 'performedBy' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: t('customerName'), accessor: 'customerName' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNumber'), accessor: 'serialNumber' },
+            { header: t('lastLock'), cell: (r) => r.lastLockTime || `${r.date || ''} ${r.time || ''}` },
+            { header: t('performedBy'), accessor: 'performedBy' }
         ];
-        exportToPDF('Lock Phone Report', columns, allData, user?.brand || '', pdfOrientation);
+        exportToPDF(t('lockPhoneReportTitle'), columns, allData, user?.brand || '', pdfOrientation);
     };
 
     // Calculate Brand Summary Grouping
@@ -270,7 +270,7 @@ const LockPhoneReport = () => {
                                 <FaLock />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Lock Actions Executed</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t('totalLockActionsExecuted')}</p>
                                 <h3 className="text-2xl font-black text-rose-700 mt-0.5">{kpi.totalLockActions.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -280,7 +280,7 @@ const LockPhoneReport = () => {
                                 <FaUsers />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Unique Locked Customers</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t('uniqueLockedCustomers')}</p>
                                 <h3 className="text-2xl font-black text-indigo-700 mt-0.5">{kpi.uniqueCustomers.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -289,7 +289,7 @@ const LockPhoneReport = () => {
                     {/* Line Chart Component */}
                     <LineChart
                         title={t('lockPhoneTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួនប្រតិបត្តិការចាកសោរថ្ឞទូរសកប្រចាំថ្ងៃ/ខែ"
+                        subtitle={t('lockPhoneReportTrendDescription')}
                         data={chartTrendData}
                         series={[
                             { key: 'lockCount', label: 'Lock Phone', color: '#f43f5e', isCurrency: false }
@@ -345,19 +345,19 @@ const LockPhoneReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-1 text-center'>No</th>
-                                <th className='px-4 py-1'>Customer</th>
-                                <th className='px-4 py-1'>Model</th>
-                                <th className='px-4 py-1'>Serial Number</th>
-                                <th className='px-4 py-1'>Last Lock Date & Time</th>
-                                <th className='px-4 py-1'>Performed By</th>
+                                <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                <th className='px-4 py-1'>{t('customerLabel')}</th>
+                                <th className='px-4 py-1'>{t('model')}</th>
+                                <th className='px-4 py-1'>{t('serialNumber')}</th>
+                                <th className='px-4 py-1'>{t('lastLockDateTime')}</th>
+                                <th className='px-4 py-1'>{t('performedBy')}</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
-                                <tr><td colSpan={6} className="text-center py-10 text-rose-600 font-semibold">Loading...</td></tr>
+                                <tr><td colSpan={6} className="text-center py-10 text-rose-600 font-semibold">{t('loading')}</td></tr>
                             ) : visibleDataList.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">No lock phone records found.</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">{t('noLockPhoneRecords')}</td></tr>
                             ) : (
                                 visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-rose-50/40 transition-colors'>
@@ -389,11 +389,11 @@ const LockPhoneReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-rose-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-1 text-center'>No</th>
-                                    <th className='px-3.5 py-1'>Brand Domain</th>
-                                    <th className='px-3.5 py-1 text-center'>Total Lock Actions</th>
-                                    <th className='px-3.5 py-1 text-center'>Unique Locked Customers</th>
-                                    <th className='px-3.5 py-1 text-center'>Lock Status</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-3.5 py-1'>{t('brandDomain')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('totalLockActions')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('uniqueLockedCustomers')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('lockStatus')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
@@ -407,19 +407,19 @@ const LockPhoneReport = () => {
                                         </td>
                                         <td className="px-3.5 py-1 text-center font-bold text-rose-700">{row.totalLockActions.toLocaleString()}</td>
                                         <td className="px-3.5 py-1 text-center font-bold text-slate-900">{row.uniqueCustomersCount.toLocaleString()}</td>
-                                        <td className="px-3.5 py-1 text-center font-bold text-rose-700">Locked</td>
+                                        <td className="px-3.5 py-1 text-center font-bold text-rose-700">{t('locked')}</td>
                                     </tr>
                                 ))}
 
                                 {/* Grand Total Row */}
                                 <tr className="bg-rose-100/80 border-t-2 border-rose-400 font-black text-rose-950">
-                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">{t('totalLabel')}</td>
                                     <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-rose-950">
                                         {summaryBreakdown.grandTotal.brand}
                                     </td>
                                     <td className="px-3.5 py-3.5 text-center text-rose-950 font-black">{summaryBreakdown.grandTotal.totalLockActions.toLocaleString()}</td>
                                     <td className="px-3.5 py-3.5 text-center text-slate-900 font-black">{summaryBreakdown.grandTotal.uniqueCustomersCount.toLocaleString()}</td>
-                                    <td className="px-3.5 py-3.5 text-center font-black text-rose-950">Locked</td>
+                                    <td className="px-3.5 py-3.5 text-center font-black text-rose-950">{t('locked')}</td>
                                 </tr>
                             </tbody>
                         </table>

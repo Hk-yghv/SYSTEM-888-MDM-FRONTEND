@@ -649,7 +649,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
     };
 
     const handleRedeem = async () => {
-        if (!window.confirm(`តើអ្នកពិតជាប្រាកដថាចង់ប្តូរស្ថានភាពទៅជា Redeem សម្រាប់ "${contract?.customerNameEn || contract?.customerNameKh || ''}" មែនទេ?`)) return;
+        if (!window.confirm(t('repaymentRedeemConfirm').replace('{customer}', contract?.customerNameEn || contract?.customerNameKh || ''))) return;
 
         if (onRedeem) {
             setOpen(false);
@@ -702,7 +702,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 setOpen(false);
                 if (onSaved) onSaved();
             } else {
-                alert('រក្សាទុកតារាងមិនបានសម្រេច (Failed to save schedule)');
+                alert(t('repaymentScheduleSaveFailed', lang === 'km' ? 'រក្សាទុកតារាងមិនបានសម្រេច' : 'Failed to save schedule'));
             }
         } catch (err) {
             console.error('Save repayment schedule error:', err);
@@ -723,21 +723,21 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         <div className="flex items-center gap-3">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
-                                    <span>តារាងព័ត៌មានបង់ប្រាក់កម្ចី</span>
+                                    <span>{t('loanRepaymentScheduleTitle')}</span>
                                     <span className="px-2.5 py-0.5 text-indigo-700 bg-indigo-50 border border-indigo-300 rounded-full text-[10px] font-bold">
                                         {contract.contractId}
                                     </span>
                                     {isMasterAdmin && (
                                         <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-[9px] font-bold uppercase">
-                                            Master Admin Privilege
+                                            {t('masterAdminPrivilege')}
                                         </span>
                                     )}
                                 </h3>
                                 <p className="text-[11px] text-slate-600 mt-0.5">
-                                    ភ្ញៀវ៖ <span className="text-emerald-700 font-bold">{contract.customerNameKh || contract.customerNameEn}</span> |
-                                    ស្នើ៖ <span className="text-indigo-700 font-bold">{contract.duration || '12 Months'}</span> |
-                                    ប្រាក់កម្ចីសរុប៖ <span className="text-emerald-700 font-mono font-bold">${formatMoney(contract.amount || contract.totalAmount || 0)}</span>
-                                    {contract.interest && <span> | ការប្រាក់៖ <span className="text-violet-700 font-bold">{contract.interest}</span></span>}
+                                    {t('customer')}: <span className="text-emerald-700 font-bold">{contract.customerNameKh || contract.customerNameEn}</span> |
+                                    {t('application')}: <span className="text-indigo-700 font-bold">{contract.duration || '12 Months'}</span> |
+                                    {t('totalLoanAmount')}: <span className="text-emerald-700 font-mono font-bold">${formatMoney(contract.amount || contract.totalAmount || 0)}</span>
+                                    {contract.interest && <span> | {t('interest')}: <span className="text-violet-700 font-bold">{contract.interest}</span></span>}
                                 </p>
                             </div>
                         </div>
@@ -759,17 +759,17 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 disabled={downloadingPdf}
                                 onClick={handleDirectExportPdf}
                                 className={`px-3 py-1.5 ${downloadingPdf ? 'bg-rose-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 cursor-pointer'} text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm`}
-                                title="Download Customer Dossier & Repayment Schedule as PDF directly"
+                                title={t('downloadCustomerDossierPdf')}
                             >
                                 <FaFilePdf size={12} className={downloadingPdf ? 'animate-pulse' : ''} />
-                                <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
+                                <span>{downloadingPdf ? t('downloading') : t('exportPDF')}</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={applyLatePenaltyToAllRows}
                                 className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-xs"
                             >
-                                Auto Penalty
+                                {t('autoPenalty')}
                             </button>
                             <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold cursor-pointer transition-all flex items-center justify-center">
                                 <MdClose size={18} />
@@ -785,7 +785,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <div className="flex items-center gap-2">
                                     <FaCalendarAlt className="text-indigo-600 text-lg flex-shrink-0" />
                                     <span>
-                                        សូមកំណត់កាលបរិច្ឆេទថ្ងៃខែត្រូវបង់ និងទឹកប្រាក់សម្រាប់ខែនីមួយៗ ឬចុចប៊ូតុង <strong>t('calculateSchedule2')</strong> ដើម្បីបំពេញអូតូ រួចចុច <strong>"រក្សាទុក & Activate Contract"</strong>!
+                                        {t('scheduleSetupInstructions')}
                                     </span>
                                 </div>
                                 <button
@@ -802,19 +802,19 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                         <table className="w-full text-left text-xs whitespace-nowrap border border-slate-200 rounded-[5px] overflow-hidden">
                             <thead className="bg-slate-50 text-indigo-950 font-bold uppercase tracking-wider border-b border-slate-200">
                                 <tr>
-                                    <th className="px-3 py-1 text-center">ខែ/ថ្ងៃ</th>
-                                    <th className="px-3 py-1">ថ្ងៃខែត្រូវបង់</th>
-                                    <th className="px-3 py-1 font-mono text-emerald-700">Total loan amount</th>
-                                    <th className="px-3 py-1 text-violet-700 font-mono font-bold">ការប្រាក់</th>
-                                    <th className="px-3 py-1 text-center font-bold text-rose-600">ចំនួនថ្ងៃពិន័យ</th>
-                                    <th className="px-3 py-1 text-amber-600 font-bold">ពិន័យ</th>
-                                    <th className="px-3 py-1 text-sky-700 font-bold">ត្រូវបង់</th>
-                                    <th className="px-3 py-1 text-emerald-700 font-extrabold">Total</th>
-                                    <th className="px-3 py-1 text-emerald-800">ភ្ញៀវបានបង់</th>
-                                    <th className="px-3 py-1">Comment (Note)</th>
-                                    <th className="px-3 py-1 text-purple-700">កាលបរិច្ឆេទបានបង់</th>
-                                    <th className="px-3 py-1 text-center text-indigo-600">រូបភាព</th>
-                                    {!isReadOnly && !isSetupActivate && <th className="px-3 py-1 text-center">Action ($)</th>}
+                                    <th className="px-3 py-1 text-center">{t('monthDay')}</th>
+                                    <th className="px-3 py-1">{t('installmentDueDate')}</th>
+                                    <th className="px-3 py-1 font-mono text-emerald-700">{t('customerTotalLoanAmount')}</th>
+                                    <th className="px-3 py-1 text-violet-700 font-mono font-bold">{t('interest')}</th>
+                                    <th className="px-3 py-1 text-center font-bold text-rose-600">{t('penaltyDays')}</th>
+                                    <th className="px-3 py-1 text-amber-600 font-bold">{t('penalty')}</th>
+                                    <th className="px-3 py-1 text-sky-700 font-bold">{t('amountDue')}</th>
+                                    <th className="px-3 py-1 text-emerald-700 font-extrabold">{t('total')}</th>
+                                    <th className="px-3 py-1 text-emerald-800">{t('customerPaid')}</th>
+                                    <th className="px-3 py-1">{t('commentNote')}</th>
+                                    <th className="px-3 py-1 text-purple-700">{t('paidDate')}</th>
+                                    <th className="px-3 py-1 text-center text-indigo-600">{t('image')}</th>
+                                    {!isReadOnly && !isSetupActivate && <th className="px-3 py-1 text-center">{t('actions')} ($)</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -887,7 +887,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                             {lDays} ថ្ងៃ
                                                         </span>
                                                     ) : (
-                                                        <span className="text-slate-400 font-khmer">0 ថ្ងៃ</span>
+                                                        <span className="text-slate-400 font-khmer">0 {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
                                                     );
                                                 })()}
                                             </td>
@@ -954,7 +954,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                         type="text"
                                                         value={row.comment || ''}
                                                         onChange={(e) => handleRowChange(idx, 'comment', e.target.value)}
-                                                        placeholder="Note/comment..."
+                                                        placeholder={t('noteCommentPlaceholder')}
                                                         className="w-36 px-2 py-1 bg-white border border-slate-300 focus:border-indigo-500 rounded-lg text-slate-800 text-xs outline-none shadow-2xs"
                                                     />
                                                 )}
@@ -986,10 +986,10 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                             type="button"
                                                             onClick={() => { setLightboxImages(imgs); setLightboxIdx(0); }}
                                                             className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
-                                                            title="មើលរូបភាពភស្តុតាង"
+                                                            title={t('viewReceiptImage')}
                                                         >
                                                             <FaImage size={10} className="text-indigo-500" />
-                                                            <span>{imgs.length > 1 ? `${imgs.length}` : 'មើល'}</span>
+                                                            <span>{imgs.length > 1 ? `${imgs.length}` : t('view', lang === 'km' ? 'មើល' : 'View')}</span>
                                                         </button>
                                                     );
                                                 })()}
@@ -999,7 +999,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                             {!isReadOnly && !isSetupActivate && (
                                                 <td className="px-3 py-2.5 text-center">
                                                     {row.status === 'Settled' ? (
-                                                        <span className="text-slate-400 italic text-[10px]">Settled</span>
+                                                        <span className="text-slate-400 italic text-[10px]">{t('settled')}</span>
                                                     ) : isCurrentActive || isMasterAdmin ? (
                                                         <div className="flex items-center justify-center gap-1.5">
                                                             <div className="relative inline-block text-left">
@@ -1008,7 +1008,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                     type="button"
                                                                     onClick={() => setActiveDropdownIdx(activeDropdownIdx === idx ? null : idx)}
                                                                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-md transition-transform hover:scale-110 cursor-pointer ${row.status === 'Paid' ? 'bg-emerald-600 text-white' : row.status === 'PayOff' ? 'bg-indigo-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-gray-950'}`}
-                                                                    title="Payment Options"
+                                                                    title={t('paymentOptions')}
                                                                 >
                                                                     <FaDollarSign />
                                                                 </button>
@@ -1037,7 +1037,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             onClick={() => handleSaveRowDraft(idx)}
                                                                             className="w-full px-3 py-1.5 text-left text-xs font-bold text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                                                                         >
-                                                                            <FaSave size={11} /> Save
+                                                                            <FaSave size={11} /> {t('save')}
                                                                         </button>
 
                                                                         <button
@@ -1045,7 +1045,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             onClick={() => { handleRowChange(idx, 'status', 'Pending'); setActiveDropdownIdx(null); }}
                                                                             className="w-full px-3 py-1.5 text-left text-xs font-bold text-sky-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
                                                                         >
-                                                                            <FaEdit size={11} /> Edit
+                                                                            <FaEdit size={11} /> {t('edit')}
                                                                         </button>
 
                                                                         {!isLastMonth && row.status !== 'PayOff' && (
@@ -1054,7 +1054,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                                 onClick={() => openPayConfirm(idx, 'Paid')}
                                                                                 className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                             >
-                                                                                <FaCheckCircle size={11} /> Paid
+                                                                                <FaCheckCircle size={11} /> {t('paid')}
                                                                             </button>
                                                                         )}
 
@@ -1065,7 +1065,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                                 onClick={handleRedeem}
                                                                                 className="w-full px-3 py-1.5 text-left text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                             >
-                                                                                <MdSwapHoriz size={13} /> Redeem
+                                                                                <MdSwapHoriz size={13} /> {t('redeem')}
                                                                             </button>
                                                                         )}
 
@@ -1074,7 +1074,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             onClick={() => openPayConfirm(idx, 'PayOff')}
                                                                             className="w-full px-3 py-1.5 text-left text-xs font-bold text-indigo-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                         >
-                                                                            <FaLock size={11} /> Pay Off
+                                                                            <FaLock size={11} /> {t('payOff')}
                                                                         </button>
 
                                                                         {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (
@@ -1107,7 +1107,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                         });
                                                                     }}
                                                                     className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-300 shadow-sm transition-transform hover:scale-110 cursor-pointer"
-                                                                    title="Wave Penalty (កំណត់តម្លៃពិន័យ)"
+                                                                    title={t('wavePenaltyTooltip')}
                                                                 >
                                                                     <MdMoneyOff size={13} />
                                                                 </button>
@@ -1144,7 +1144,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold shadow-md shadow-purple-600/30 cursor-pointer flex items-center gap-1.5 transition-all"
                             >
                                 <MdSwapHoriz size={16} />
-                                <span>Redeem</span>
+                                <span>{t('redeem')}</span>
                             </button>
                         )}
 
@@ -1159,9 +1159,9 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <FaSave size={14} />
                                 <span>
                                     {submitting
-                                        ? 'កំពុងរក្សាទុក...'
+                                        ? t('saving', lang === 'km' ? 'កំពុងរក្សាទុក...' : 'Saving...')
                                         : isSetupActivate
-                                            ? 'រក្សាទុក & Activate Contract'
+                                            ? t('saveAndActivateContract', lang === 'km' ? 'រក្សាទុក និងដំណើរការកិច្ចសន្យា' : 'Save & Activate Contract')
                                             : t('saveSchedule')}
                                 </span>
                             </button>
@@ -1178,7 +1178,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                     index={lightboxIdx}
                     onIndexChange={setLightboxIdx}
                     onClose={() => setLightboxImages([])}
-                    title="Payment proof"
+                    title={t('paymentProof')}
                 />
             )}
 
@@ -1234,7 +1234,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                     onChange={e => setPayConfirm(prev => ({ ...prev, paidBy: e.target.value }))}
                                     className="w-full h-10 px-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-[5px] text-slate-800 text-xs font-semibold outline-none shadow-sm cursor-pointer"
                                 >
-                                    <option value="">-- ជ្រើសរើសវិធីបង់ប្រាក់ --</option>
+                                    <option value="">{t('selectPaymentMethod', lang === 'km' ? '-- ជ្រើសរើសវិធីបង់ប្រាក់ --' : '-- Select payment method --')}</option>
                                     {paymentMethods.map(m => (
                                         <option key={m} value={m}>{m}</option>
                                     ))}
@@ -1248,7 +1248,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                     type="text"
                                     value={payConfirm.description}
                                     onChange={e => setPayConfirm(prev => ({ ...prev, description: e.target.value }))}
-                                    placeholder="Comment or transaction note..."
+                                    placeholder={t('commentOrTransactionNote')}
                                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-[5px] text-slate-800 text-xs outline-none shadow-sm"
                                 />
                             </div>
@@ -1330,7 +1330,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                             {/* Upload note */}
                             {payConfirm.imageItems?.length > 0 && (
                                 <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                                    🔄 រូបភាពនឹងត្រូវបំលែងទៅជា Base64 នៅពេល Submit
+                                    🔄 {t('paymentImagesConvertedOnSubmit', lang === 'km' ? 'រូបភាពនឹងត្រូវបំលែងទៅជា Base64 នៅពេល Submit' : 'Images will be converted to Base64 when submitted.')}
                                 </p>
                             )}
                         </div>
@@ -1376,32 +1376,32 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 <span className="p-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-200">
                                     <MdMoneyOff size={16} />
                                 </span>
-                                <span>Wave Penalty</span>
+                                <span>{t('wavePenalty')}</span>
                             </h3>
                         </div>
 
                         <div className="rounded-lg bg-slate-50 p-3 space-y-1.5 text-xs border border-slate-200">
                             <div className="flex justify-between">
-                                <span className="text-slate-500 font-medium">ខែ/ថ្ងៃ៖</span>
+                                <span className="text-slate-500 font-medium">{t('monthDay')}:</span>
                                 <span className="font-bold text-slate-800">{waivePenaltyModal.monthLabel}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500 font-medium">ថ្ងៃត្រូវបង់៖</span>
+                                <span className="text-slate-500 font-medium">{t('installmentDueDate')}:</span>
                                 <span className="font-mono font-bold text-slate-800">{waivePenaltyModal.dueDate || '—'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500 font-medium">ចំនួនថ្ងៃពិន័យ៖</span>
-                                <span className="font-khmer font-bold text-rose-600">{waivePenaltyModal.lateDays} ថ្ងៃ</span>
+                                <span className="text-slate-500 font-medium">{t('penaltyDays')}:</span>
+                                <span className="font-khmer font-bold text-rose-600">{waivePenaltyModal.lateDays} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500 font-medium">ពិន័យបច្ចុប្បន្ន៖</span>
+                                <span className="text-slate-500 font-medium">{t('currentPenalty')}:</span>
                                 <span className="font-mono font-bold text-amber-600">${formatMoney(waivePenaltyModal.currentPenalty)}</span>
                             </div>
                         </div>
 
                         <div>
                             <label className="block text-xs font-bold text-slate-700 mb-1">
-                                តម្លៃពិន័យថ្មី ($) <span className="text-rose-500">*</span>
+                                {t('newPenaltyAmount', lang === 'km' ? 'តម្លៃពិន័យថ្មី ($)' : 'New penalty amount ($)')} <span className="text-rose-500">*</span>
                             </label>
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
@@ -1451,7 +1451,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                 }}
                                 className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-md shadow-rose-600/30 cursor-pointer transition-colors"
                             >
-                                Submit
+                                {t('submit')}
                             </button>
                         </div>
                     </div>

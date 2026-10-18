@@ -47,7 +47,7 @@ const BlackList = () => {
     useEffect(() => { fetchBlackListContracts(page, searchTerm); }, [page, searchTerm, API_BASE1, user]);
 
     const handleRestoreToActivated = async (item) => {
-        if (!window.confirm(`តើអ្នកពិតជាចង់ផ្លាស់ប្តូរស្ថានភាពកុងត្រារបស់ "${item.customerNameEn || item.customerNameKh}" ត្រឡប់ទៅ Activated វិញមែនទេ?`)) return;
+        if (!window.confirm(t('blacklistMoveActivatedConfirm').replace('{customer}', item.customerNameEn || item.customerNameKh))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${item._id}`, {
                 method: 'PUT',
@@ -65,7 +65,7 @@ const BlackList = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Delete this blacklist record?')) return;
+        if (!window.confirm(t('deleteBlacklistConfirm'))) return;
         try {
             const res = await fetch(`${API_BASE1}/contracts/${id}`, { method: 'DELETE' });
             if (res.ok) fetchBlackListContracts();
@@ -145,7 +145,7 @@ const BlackList = () => {
                             } : {})
                         }}
                         value={searchTerm}
-                        placeholder="Search customer, model, serial..."
+                        placeholder={t('searchCustomerModelSerial')}
                         onChange={(value) => {
                             setSelectedSearchRecord(null);
                             setPage(1);
@@ -169,19 +169,19 @@ const BlackList = () => {
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
-                            <th className='px-4 py-1 text-center'>No</th>
+                            <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
-                            <th className='px-4 py-1 text-center'>Contract</th>
+                            <th className='px-4 py-1 text-center'>{t('contract')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
-                            <th className='px-4 py-1 text-center'>Actions</th>
+                            <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {visibleContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">No blacklist contracts found.</td>
+                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">{t('noBlacklistContracts')}</td>
                             </tr>
                         ) : (
                             visibleContracts.map((item, idx) => (
@@ -193,7 +193,7 @@ const BlackList = () => {
                                         {item.customerNameKh && <CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs font-semibold' />}
                                     </td>
                                     <td className='px-4 py-1 text-center'>
-                                        <span className='px-3 py-1 bg-red-50 text-red-700 border border-red-300 rounded-full font-bold text-[10px] uppercase'>Blacklist</span>
+                                        <span className='px-3 py-1 bg-red-50 text-red-700 border border-red-300 rounded-full font-bold text-[10px] uppercase'>{t('blacklist')}</span>
                                     </td>
                                     <td className='px-4 py-1 text-center font-mono text-indigo-700 font-bold'>
                                         <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
@@ -212,16 +212,16 @@ const BlackList = () => {
                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
                                                     >
                                                         <MdSwapHoriz className="text-emerald-600 text-base" />
-                                                        <span>Move to Activated</span>
+                                                        <span>{t('moveToActivated')}</span>
                                                     </button>
                                                     {hasPermission('/contract/blacklist', 'edit') && (
                                                         <button onClick={() => { setEditData(item); setOpenEditModal(true); setOpenMenuId(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdEdit className="text-amber-600" /> Edit
+                                                            <MdEdit className="text-amber-600" /> {t('edit')}
                                                         </button>
                                                     )}
                                                     {hasPermission('/contract/blacklist', 'delete') && (
                                                         <button onClick={() => handleDelete(item._id)} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 rounded-[5px] flex items-center gap-2">
-                                                            <MdDelete className="text-red-600" /> Delete
+                                                            <MdDelete className="text-red-600" /> {t('delete')}
                                                         </button>
                                                     )}
                                                 </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ExportDropdown from '../../../components/ExportDropdown';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
@@ -73,10 +74,11 @@ const getImages = (row) => [...new Set([
 
 const InstallmentHistory = ({ mode = 'history' }) => {
     const { API_BASE1, user, hasPermission } = useAuth();
+    const { t } = useLanguage();
     const [searchParams] = useSearchParams();
     const initialSearch = searchParams.get('search') || '';
     const isHistoryPage = mode === 'history';
-    const pageTitle = isHistoryPage ? 'Installment History' : 'Installment Pad';
+    const pageTitle = t(isHistoryPage ? 'installmentHistory' : 'installmentPad');
     const pagePath = isHistoryPage ? '/installment/history' : '/installment/pad';
     const isMasterAdmin = user?.username === '@hakyonghouv' ||
         user?.username === 'hakyonghouv' ||
@@ -384,7 +386,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                     index={viewImageIndex}
                     onIndexChange={setViewImageIndex}
                     onClose={() => setViewImages([])}
-                    title="Payment proof"
+                    title={t('paymentProof')}
                 />
             )}
 
@@ -400,66 +402,66 @@ const InstallmentHistory = ({ mode = 'history' }) => {
 
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
                     <div className="border-l-4 border-emerald-500 bg-emerald-50 px-3 py-2">
-                        <div className="text-[10px] font-bold uppercase text-emerald-800">ភ្ញៀវសរុប</div>
+                        <div className="text-[10px] font-bold uppercase text-emerald-800">{t('totalCustomers')}</div>
                         <div className="text-lg font-black text-slate-900">{customerCount.toLocaleString()}</div>
                     </div>
                     <div className="border-l-4 border-indigo-500 bg-indigo-50 px-3 py-2">
-                        <div className="text-[10px] font-bold uppercase text-indigo-800">ការប្រាក់សរុប</div>
+                        <div className="text-[10px] font-bold uppercase text-indigo-800">{t('total')} {t('interest')}</div>
                         <div className="text-lg font-black text-slate-900">${interestTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div className="border-l-4 border-sky-500 bg-sky-50 px-3 py-2">
-                        <div className="text-[10px] font-bold uppercase text-sky-800">បានបង់សរុប</div>
+                        <div className="text-[10px] font-bold uppercase text-sky-800">{t('total')} {t('paid')}</div>
                         <div className="text-lg font-black text-slate-900">${paidTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div className="border-l-4 border-amber-500 bg-amber-50 px-3 py-2">
-                        <div className="text-[10px] font-bold uppercase text-amber-800">ពិន័យសរុប</div>
+                        <div className="text-[10px] font-bold uppercase text-amber-800">{t('total')} {t('penalty')}</div>
                         <div className="text-lg font-black text-slate-900">${penaltyTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     <div className="border-l-4 border-rose-500 bg-rose-50 px-3 py-2">
-                        <div className="text-[10px] font-bold uppercase text-rose-800">មិនទាន់បានបង់ · {unpaidCount} installments</div>
+                        <div className="text-[10px] font-bold uppercase text-rose-800">{t('unpaidInstallmentsLabel')} · {unpaidCount}</div>
                         <div className="text-lg font-black text-slate-900">${unpaidTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                 </div>
 
                 <div className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-3">
                     <div>
-                        <div className="mb-1 text-[10px] font-bold text-slate-500">{isHistoryPage ? 'Payment date' : 'Due date'}</div>
-                        <div className="inline-flex flex-wrap rounded-[5px] border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label="Due period">
+                        <div className="mb-1 text-[10px] font-bold text-slate-500">{isHistoryPage ? t('customerPaymentDate') : t('dueDateLabel')}</div>
+                        <div className="inline-flex flex-wrap rounded-[5px] border border-slate-300 bg-slate-100 p-0.5" role="group" aria-label={t('duePeriod')}>
                             {presetOptions.map(option => (
                                 <button key={option} onClick={() => setPeriod(option)} className={`rounded-[4px] px-3 py-2 text-xs font-semibold ${period === option ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white'}`}>
-                                    {option}
+                                    {t(({ '7 days': 'sevenDays', '1 month': 'oneMonth', '3 months': 'threeMonths', Custom: 'custom' })[option] || 'today')}
                                 </button>
                             ))}
                         </div>
                     </div>
                     {period === 'Custom' && <>
-                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">From<input type="date" value={customFrom} onChange={event => setCustomFrom(event.target.value)} className="h-9 rounded-[5px] border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
-                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">To<input type="date" value={customTo} onChange={event => setCustomTo(event.target.value)} className="h-9 rounded-[5px] border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
+                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">{t('from')}<input type="date" value={customFrom} onChange={event => setCustomFrom(event.target.value)} className="h-9 rounded-[5px] border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
+                        <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">{t('to')}<input type="date" value={customTo} onChange={event => setCustomTo(event.target.value)} className="h-9 rounded-[5px] border border-slate-300 px-2 text-xs font-mono text-slate-800" /></label>
                     </>}
                     <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
-                        Search
-                        <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Customer, contract, serial..." className="h-9 w-56 rounded-[5px] border border-slate-300 px-2 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500" />
+                        {t('search')}
+                        <input value={search} onChange={event => setSearch(event.target.value)} placeholder={t('searchCustomerContractSerial')} className="h-9 w-56 rounded-[5px] border border-slate-300 px-2 text-xs font-medium text-slate-800 outline-none focus:border-emerald-500" />
                     </label>
                     <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
-                        ប្រភេទបង់ (Type)
+                        {t('paymentType')}
                         <select
                             value={paymentTypeFilter}
                             onChange={event => setPaymentTypeFilter(event.target.value)}
                             className="h-9 min-w-44 rounded-[5px] border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-800 outline-none focus:border-emerald-500 cursor-pointer"
                         >
-                            <option value="all">ទាំងអស់ (All)</option>
-                            <option value="regular">បង់ធម្មតា (Regular)</option>
-                            <option value="redeem">បង់ផ្តាច់ (Redeem)</option>
+                            <option value="all">{t('all')}</option>
+                            <option value="regular">{t('regularPayment')}</option>
+                            <option value="redeem">{t('redeem')}</option>
                         </select>
                     </label>
                     {isMasterAdmin && <label className="flex flex-col gap-1 text-[10px] font-bold text-slate-500">
-                        Brand
+                        {t('brand')}
                         <select value={selectedBrand} onChange={event => setSelectedBrand(event.target.value)} className="h-9 min-w-40 rounded-[5px] border border-slate-300 bg-white px-2 text-xs text-slate-800">
-                            <option value="">All brands</option>
+                            <option value="">{t('allBrands')}</option>
                             {brands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
                         </select>
                     </label>}
-                    <div className="ml-auto self-center text-[11px] font-mono text-slate-500">{dateRange.from || 'Any date'} → {dateRange.to || 'Any date'}</div>
+                    <div className="ml-auto self-center text-[11px] font-mono text-slate-500">{dateRange.from || t('anyDate')} → {dateRange.to || t('anyDate')}</div>
                 </div>
             </header>
 
@@ -467,34 +469,34 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 <table className="w-full min-w-[1650px] border-collapse text-left text-xs">
                     <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-slate-700">
                         <tr>
-                            <th className="px-3 py-1 text-center">No.</th>
-                            <th className="px-3 py-1">Loan date</th>
-                            <th className="px-3 py-1">Customer / Contract</th>
-                            <th className="px-3 py-1">Brand</th>
-                            <th className="px-3 py-1">Model / Serial</th>
-                            <th className="px-3 py-1">Installment</th>
-                            <th className="px-3 py-1">Due date</th>
-                            <th className="px-3 py-1">Paid date</th>
-                            <th className="px-3 py-1">Due status</th>
-                            <th className="px-3 py-1 text-right">Amount due</th>
-                            <th className="px-3 py-1 text-right font-mono text-indigo-700">ការប្រាក់</th>
-                            <th className="px-3 py-1 text-right">Penalty</th>
-                            <th className="px-3 py-1 text-right">Paid</th>
-                            <th className="px-3 py-1 text-right">Unpaid</th>
-                            <th className="px-3 py-1 text-center">Image</th>
-                            <th className="px-3 py-1">Pad / Payoff / Redeem</th>
-                            {!isHistoryPage && <th className="px-3 py-1 text-center">Action</th>}
+                            <th className="px-3 py-1 text-center">{t('no')}.</th>
+                            <th className="px-3 py-1">{t('inputDate')}</th>
+                            <th className="px-3 py-1">{t('customerName')} / {t('contract')}</th>
+                            <th className="px-3 py-1">{t('brand')}</th>
+                            <th className="px-3 py-1">{t('model')} / {t('serialNumber')}</th>
+                            <th className="px-3 py-1">{t('installment')}</th>
+                            <th className="px-3 py-1">{t('dueDateLabel')}</th>
+                            <th className="px-3 py-1">{t('paidDate')}</th>
+                            <th className="px-3 py-1">{t('dueStatusLabel')}</th>
+                            <th className="px-3 py-1 text-right">{t('amountDueLabel')}</th>
+                            <th className="px-3 py-1 text-right font-mono text-indigo-700">{t('interest')}</th>
+                            <th className="px-3 py-1 text-right">{t('penalty')}</th>
+                            <th className="px-3 py-1 text-right">{t('paid')}</th>
+                            <th className="px-3 py-1 text-right">{t('unpaid')}</th>
+                            <th className="px-3 py-1 text-center">{t('images')}</th>
+                            <th className="px-3 py-1">{t('installmentPad')} / {t('payOff')} / {t('redeem')}</th>
+                            {!isHistoryPage && <th className="px-3 py-1 text-center">{t('actions')}</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {loading ? <tr><td colSpan={isHistoryPage ? 16 : 17} className="py-12 text-center font-semibold text-emerald-700">Loading installment schedule...</td></tr>
-                            : visibleRows.length === 0 ? <tr><td colSpan={isHistoryPage ? 16 : 17} className="py-12 text-center italic text-slate-500">{isHistoryPage ? 'No paid installments in this period.' : 'No installments due in this period.'}</td></tr>
+                        {loading ? <tr><td colSpan={isHistoryPage ? 16 : 17} className="py-12 text-center font-semibold text-emerald-700">{t('loadingInstallmentSchedule')}</td></tr>
+                            : visibleRows.length === 0 ? <tr><td colSpan={isHistoryPage ? 16 : 17} className="py-12 text-center italic text-slate-500">{isHistoryPage ? t('noPaidInstallmentsInPeriod') : t('noInstallmentsDueInPeriod')}</td></tr>
                                 : visibleRows.map((row, index) => {
                                     const images = getImages(row);
-                                    const statusText = row.isPaid ? 'បានបង់រួច'
-                                        : row.daysUntilDue < 0 ? `ហួស ${Math.abs(row.daysUntilDue)} ថ្ងៃ`
-                                            : row.daysUntilDue === 0 ? 'ដល់ថ្ងៃបង់'
-                                                : `នៅសល់ ${row.daysUntilDue} ថ្ងៃ`;
+                                    const statusText = row.isPaid ? t('paid')
+                                        : row.daysUntilDue < 0 ? t('overdueDays').replace('{days}', Math.abs(row.daysUntilDue))
+                                            : row.daysUntilDue === 0 ? t('dueToday')
+                                                : t('remainingDays').replace('{days}', row.daysUntilDue);
                                     const statusClass = row.isPaid ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                                         : row.daysUntilDue < 0 ? 'border-rose-300 bg-rose-50 text-rose-800'
                                             : row.daysUntilDue === 0 ? 'border-amber-300 bg-amber-50 text-amber-900'
@@ -508,7 +510,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         <td className="px-3 py-1"><div className="font-bold text-slate-900">{row.customerName}</div><div className="font-mono text-[10px] text-slate-500">{row.contractIid || '—'}</div></td>
                                         <td className="px-3 py-1">{row.brand || '—'}</td>
                                         <td className="px-3 py-1"><div className="font-semibold text-slate-800">{row.model || '—'}</div><div className="font-mono text-[10px] text-slate-500">{row.serialNumber || '—'}</div></td>
-                                        <td className="px-3 py-1 font-semibold text-slate-700">{row.labelName || row.monthLabel || `Month ${row.monthIndex || ''}`}</td>
+                                        <td className="px-3 py-1 font-semibold text-slate-700">{row.labelName || row.monthLabel || `${t('month')} ${row.monthIndex || ''}`}</td>
                                         <td className="whitespace-nowrap px-3 py-1 font-mono font-bold text-slate-900">{row.dueDate}</td>
                                         <td className="whitespace-nowrap px-3 py-1 font-mono font-semibold text-purple-700">{row.paidDate || '—'}</td>
                                         <td className="px-3 py-1"><span className={`whitespace-nowrap rounded-[4px] border px-2 py-1 font-bold ${statusClass}`}>{statusText}</span></td>
@@ -517,29 +519,29 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-semibold text-amber-700">${row.penalty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-emerald-700">${row.paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                         <td className="whitespace-nowrap px-3 py-1 text-right font-mono font-bold text-rose-700">${row.unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-1 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> View{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
-                                        <td className="px-3 py-1">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type}</span> : <span className="text-slate-300">—</span>}</td>
+                                        <td className="px-3 py-1 text-center">{images.length ? <button onClick={() => openImageGallery(row)} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800"><FaImage /> {t('view')}{images.length > 1 ? ` (${images.length})` : ''}</button> : <span className="text-slate-300">—</span>}</td>
+                                        <td className="px-3 py-1">{row.type ? <span className={`inline-flex rounded-[4px] border px-2 py-1 font-bold ${typeClass}`}>{row.type === 'Redeem' ? t('redeem') : row.type === 'Payoff' ? t('payOff') : t('regularPayment')}</span> : <span className="text-slate-300">—</span>}</td>
                                         {!isHistoryPage && <td className="px-3 py-1 text-center">
                                             {!row.isPaid ? (
                                                 <div className="flex items-center justify-center gap-1.5">
                                                     {(row.isRedeem || row.isLastMonth || row.isLastActiveRow) ? (
                                                         <button
                                                             onClick={() => openScheduleForRow(row)}
-                                                            title="Open Redeem actions"
+                                                            title={t('openRedeemActions')}
                                                             className="inline-flex items-center gap-1 rounded-[5px] border border-purple-300 bg-purple-100 px-2.5 py-1 font-bold text-purple-800 hover:bg-purple-200 transition-colors shadow-2xs cursor-pointer"
                                                         >
-                                                            <FaDollarSign /> Redeem
+                                                            <FaDollarSign /> {t('redeem')}
                                                         </button>
                                                     ) : (
                                                         <button
                                                             onClick={() => openScheduleForRow(row)}
-                                                            title="Open Paid actions"
+                                                            title={t('openPaidActions')}
                                                             className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-300 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs cursor-pointer"
                                                         >
-                                                            <FaDollarSign /> Paid
+                                                            <FaDollarSign /> {t('paid')}
                                                         </button>
                                                     )}
-                                                    <button onClick={() => setSelectedQrContract(row.contract)} title="Open QR payment" className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
+                                                    <button onClick={() => setSelectedQrContract(row.contract)} title={t('openQrPayment')} className="inline-flex items-center gap-1 rounded-[5px] border border-sky-300 bg-sky-50 px-2 py-1 font-bold text-sky-800">
                                                         <MdQrCode2 /> QR
                                                     </button>
                                                 </div>
@@ -581,9 +583,9 @@ const InstallmentHistory = ({ mode = 'history' }) => {
             <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
                 <span>{filteredRows.length.toLocaleString()} installments · {dateRange.from || 'Any date'} → {dateRange.to || 'Any date'}</span>
                 <div className="flex items-center gap-2">
-                    <button disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))} className="rounded border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40">Previous</button>
+                    <button disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))} className="rounded border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40">{t('previousPage')}</button>
                     <span>Page {page} / {totalPages}</span>
-                    <button disabled={page >= totalPages} onClick={() => setPage(value => Math.min(totalPages, value + 1))} className="rounded border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40">Next</button>
+                    <button disabled={page >= totalPages} onClick={() => setPage(value => Math.min(totalPages, value + 1))} className="rounded border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40">{t('nextPage')}</button>
                 </div>
             </div>
         </div>

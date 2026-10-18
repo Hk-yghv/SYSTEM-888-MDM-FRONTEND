@@ -261,10 +261,10 @@ const FollowUp4 = () => {
                 fetchSubmitData();
             } else {
                 const errData = await res.json();
-                alert(`Error: ${errData.message || 'Failed to save'}`);
+                alert(`${t('error')}: ${errData.message || t('failedToSave')}`);
             }
         } catch (err) {
-            alert(`Network Error: ${err.message}`);
+            alert(`${t('networkError')}: ${err.message}`);
         } finally {
             setSubmitFormSaving(false);
         }
@@ -375,10 +375,10 @@ const FollowUp4 = () => {
                 setDeleteModalItem(null);
                 fetchSubmitData();
             } else {
-                alert('Failed to delete item');
+                alert(t('failedToDeleteItem'));
             }
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            alert(`${t('error')}: ${err.message}`);
         }
     };
 
@@ -502,14 +502,14 @@ const FollowUp4 = () => {
             });
 
             if (res.ok) {
-                alert('✅ បានរក្សាទុកទិន្នន័យ REJECT SUBMIT រួចរាល់!');
+                alert(t('rejectSubmitDataSaved'));
                 setIsRejectSubmitModalOpen(false);
                 fetchRejectSubmitData();
             } else {
-                alert('❌ បរាជ័យក្នុងការរក្សាទុក');
+                alert(t('failedToSave'));
             }
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            alert(`${t('error')}: ${err.message}`);
         } finally {
             setRejectSubmitSaving(false);
         }
@@ -645,14 +645,14 @@ const FollowUp4 = () => {
             });
 
             if (res.ok) {
-                alert('✅ បានរក្សាទុកទិន្នន័យ REJECT CS រួចរាល់!');
+                alert(t('rejectCsDataSaved'));
                 setIsRejectCsModalOpen(false);
                 fetchRejectCsData();
             } else {
-                alert('❌ បរាជ័យក្នុងការរក្សាទុក');
+                alert(t('failedToSave'));
             }
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            alert(`${t('error')}: ${err.message}`);
         } finally {
             setRejectCsSaving(false);
         }
@@ -942,14 +942,14 @@ const FollowUp4 = () => {
             });
 
             if (res.ok) {
-                alert('✅ បានរក្សាទុកទិន្នន័យ DETAIL រួចរាល់!');
+                alert(t('detailDataSaved'));
                 setIsDetailModalOpen(false);
                 fetchDetailData();
             } else {
-                alert('❌ បរាជ័យក្នុងការរក្សាទុក');
+                alert(t('failedToSave'));
             }
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            alert(`${t('error')}: ${err.message}`);
         } finally {
             setDetailSaving(false);
         }
@@ -969,27 +969,27 @@ const FollowUp4 = () => {
         if (activeTab === 'submit') {
             const exportData = submitList.map((item, idx) => ({
                 '#': idx + 1,
-                'កាលបរិច្ឆេទ': item.date,
+                [t('date')]: item.date,
                 'NAME': item.name,
                 'USER NAME': item.userName,
                 'PHONE NUMBER': item.phone,
                 'NAME TELEGRAM': item.nameTelegram,
-                'មកពី': item.fromSource,
+                [t('source')]: item.fromSource,
                 'PG/TL From': item.namePgTlFrom,
-                'ទាក់ទង': item.contactType,
+                [t('contactType')]: item.contactType,
                 'PG/TL Contact': item.namePgTlContact,
-                'វាយតម្លៃ': item.appraisal,
-                'បានស្នើ': item.requested,
-                'ប្រភេទទ្រព្យ': item.assetType,
+                [t('evaluation')]: item.appraisal,
+                [t('requested')]: item.requested,
+                [t('collateral')]: item.assetType,
                 'MODEL': item.model,
                 'STATUS': item.status,
-                'បរិយាយ': item.description,
+                [t('description')]: item.description,
                 'BRAND': item.brand
             }));
             downloadReport(exportData, `FollowUp4_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectSubmit') {
             const exportData = groupedRejectSubmit.map((item, idx) => {
-                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, [t('total')]: item.total };
+                const row = { '#': idx + 1, [t('date')]: item.date, [t('brand')]: item.brand, [t('total')]: item.total };
                 rejectSubmitDisplayReasons.forEach(r => {
                     row[r] = item.reasons[r] || 0;
                 });
@@ -997,8 +997,8 @@ const FollowUp4 = () => {
             });
             if (groupedRejectSubmit.length > 0) {
                 const totalRow = {
-                    '#': 'សរុប',
-                    'កាលបរិច្ឆេទ': `GRAND TOTAL (${groupedRejectSubmit.length} ថ្ងៃ)`,
+                    '#': t('total'),
+                    [t('date')]: `${t('grandTotal')} (${groupedRejectSubmit.length} ${t('days')})`,
                     'BRAND': selectedBrand || user?.brand || '888MDM',
                     [t('total')]: grandRejectSubmitTotals.grandTotal
                 };
@@ -1010,7 +1010,7 @@ const FollowUp4 = () => {
             downloadReport(exportData, `FollowUp4_Reject_Submit_${new Date().toISOString().split('T')[0]}`);
         } else if (activeTab === 'rejectCs') {
             const exportData = groupedRejectCs.map((item, idx) => {
-                const row = { '#': idx + 1, 'កាលបរិច្ឆេទ': item.date, 'BRAND': item.brand, [t('total')]: item.total };
+                const row = { '#': idx + 1, [t('date')]: item.date, [t('brand')]: item.brand, [t('total')]: item.total };
                 rejectCsDisplayReasons.forEach(r => {
                     row[r] = item.reasons[r] || 0;
                 });
@@ -1018,8 +1018,8 @@ const FollowUp4 = () => {
             });
             if (groupedRejectCs.length > 0) {
                 const totalRow = {
-                    '#': 'សរុប',
-                    'កាលបរិច្ឆេទ': `GRAND TOTAL (${groupedRejectCs.length} ថ្ងៃ)`,
+                    '#': t('total'),
+                    [t('date')]: `${t('grandTotal')} (${groupedRejectCs.length} ${t('days')})`,
                     'BRAND': selectedBrand || user?.brand || '888MDM',
                     [t('total')]: grandRejectCsTotals.grandTotal
                 };
@@ -1038,7 +1038,7 @@ const FollowUp4 = () => {
                 const totalSuccess = (item.success1 || 0) + (item.success2 || 0);
                 return {
                     '#': idx + 1,
-                    'កាលបរិច្ឆេទ': item.date,
+                    [t('date')]: item.date,
                     'BRAND': item.brand,
                     'TOTAL INQUIRIES': message,
                     'PAGE': item.page || 0,
@@ -1079,13 +1079,13 @@ const FollowUp4 = () => {
                     {isMasterAdmin && (
                         <div className="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-[5px] border border-slate-700 shadow-inner">
                             <FaBuilding className="text-emerald-400 text-sm" />
-                            <span className="text-xs text-slate-300 font-semibold">Brand:</span>
+                            <span className="text-xs text-slate-300 font-semibold">{t('brand')}:</span>
                             <select
                                 value={selectedBrand}
                                 onChange={(e) => setSelectedBrand(e.target.value)}
                                 className="bg-transparent text-emerald-400 font-bold text-xs outline-none cursor-pointer"
                             >
-                                <option value="" className="bg-slate-800 text-slate-200">ALL BRANDS</option>
+                                <option value="" className="bg-slate-800 text-slate-200">{t('allBrands')}</option>
                                 {brandsList.map(b => (
                                     <option key={b} value={b} className="bg-slate-800 text-slate-200">{b}</option>
                                 ))}
@@ -1114,7 +1114,7 @@ const FollowUp4 = () => {
                         }`}
                 >
                     <FaListUl />
-                    <span>FOLLOW UP SUBMIT</span>
+                    <span>{t('followUpSubmit')}</span>
                 </button>
 
                 <button
@@ -1125,7 +1125,7 @@ const FollowUp4 = () => {
                         }`}
                 >
                     <FaBan />
-                    <span>REJECT SUBMIT</span>
+                    <span>{t('rejectSubmit')}</span>
                 </button>
 
                 <button
@@ -1136,7 +1136,7 @@ const FollowUp4 = () => {
                         }`}
                 >
                     <FaBan />
-                    <span>REJECT CS</span>
+                    <span>{t('rejectCs')}</span>
                 </button>
 
                 <button
@@ -1147,7 +1147,7 @@ const FollowUp4 = () => {
                         }`}
                 >
                     <FaCalculator />
-                    <span>DETAIL</span>
+                    <span>{t('detailMetrics')}</span>
                 </button>
             </div>
 
@@ -1164,7 +1164,7 @@ const FollowUp4 = () => {
                                 <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                                 <input
                                     type="text"
-                                    placeholder="ស្វែងរក Name, Phone, Username..."
+                                    placeholder={t('searchNamePhoneUsername')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full bg-slate-900/90 text-xs text-black pl-9 pr-3 py-2 rounded-lg border border-slate-700 outline-none focus:border-emerald-500"
@@ -1174,7 +1174,7 @@ const FollowUp4 = () => {
                             <DateRangeDropdown
                                 from={submitStartDate}
                                 to={submitEndDate}
-                                label="ថ្ងៃដាក់ស្នើ"
+                                label={t('submissionDate')}
                                 onApplyRange={(from, to) => {
                                     setSubmitStartDate(from);
                                     setSubmitEndDate(to);
@@ -1201,22 +1201,22 @@ const FollowUp4 = () => {
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
                                     <tr>
                                         <th className="py-1 px-3 text-center w-10">#</th>
-                                        <th className="py-1 px-3">ថ្ងៃខែឆ្នាំ</th>
-                                        <th className="py-1 px-3">NAME</th>
-                                        <th className="py-1 px-3">USER NAME</th>
-                                        <th className="py-1 px-3">PHONE NUMBER</th>
-                                        <th className="py-1 px-3">NAME TELEGRAM</th>
-                                        <th className="py-1 px-3">មកពី</th>
-                                        <th className="py-1 px-3">PG/TL From</th>
-                                        <th className="py-1 px-3">ទាក់ទង</th>
-                                        <th className="py-1 px-3">PG/TL Contact</th>
-                                        <th className="py-1 px-3">វាយតម្លៃ</th>
-                                        <th className="py-1 px-3">បានស្នើ</th>
-                                        <th className="py-1 px-3">ប្រភេទទ្រព្យ</th>
-                                        <th className="py-1 px-3">MODEL</th>
-                                        <th className="py-1 px-3">STATUS</th>
-                                        <th className="py-1 px-3">បរិយាយ</th>
-                                        <th className="py-1 px-3 text-center">សកម្មភាព</th>
+                                        <th className="py-1 px-3">{t('date')}</th>
+                                        <th className="py-1 px-3">{t('customerName')}</th>
+                                        <th className="py-1 px-3">{t('username')}</th>
+                                        <th className="py-1 px-3">{t('phone')}</th>
+                                        <th className="py-1 px-3">{t('telegramName')}</th>
+                                        <th className="py-1 px-3">{t('source')}</th>
+                                        <th className="py-1 px-3">{t('pgTlSourceName')}</th>
+                                        <th className="py-1 px-3">{t('contactType')}</th>
+                                        <th className="py-1 px-3">{t('pgTlContactName')}</th>
+                                        <th className="py-1 px-3">{t('evaluation')}</th>
+                                        <th className="py-1 px-3">{t('requested')}</th>
+                                        <th className="py-1 px-3">{t('collateral')}</th>
+                                        <th className="py-1 px-3">{t('model')}</th>
+                                        <th className="py-1 px-3">{t('status')}</th>
+                                        <th className="py-1 px-3">{t('description')}</th>
+                                        <th className="py-1 px-3 text-center">{t('actionLabel')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
@@ -1224,13 +1224,13 @@ const FollowUp4 = () => {
                                         <tr>
                                             <td colSpan="17" className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-emerald-400" />
-                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                                <p>{t('loading')}</p>
                                             </td>
                                         </tr>
                                     ) : submitList.length === 0 ? (
                                         <tr>
                                             <td colSpan="17" className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានទិន្នន័យ Follow Up Submit នៅឡើយទេ
+                                                {t('noData')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -1273,7 +1273,7 @@ const FollowUp4 = () => {
                                                                             <button
                                                                                 onClick={() => handleOpenEditSubmitForm(item)}
                                                                                 className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
-                                                                                title="កែប្រែ"
+                                                                                title={t('edit')}
                                                                             >
                                                                                 <FaEdit size={14} />
                                                                             </button>
@@ -1282,7 +1282,7 @@ const FollowUp4 = () => {
                                                                             <button
                                                                                 onClick={() => setDeleteModalItem(item)}
                                                                                 className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
-                                                                                title="លុប"
+                                                                                title={t('delete')}
                                                                             >
                                                                                 <FaTrashAlt size={13} />
                                                                             </button>
@@ -1297,9 +1297,9 @@ const FollowUp4 = () => {
                                                     <tr className="bg-slate-800/90 border-b-2 border-emerald-500/30 text-xs font-semibold">
                                                         <td colSpan="10" className="py-2.5 px-3 text-emerald-300 font-bold">
                                                             <div className="flex items-center gap-2">
-                                                                <span>សរុបប្រចាំថ្ងៃ ({group.date}):</span>
+                                                                <span>{t('dailyTotal')} ({group.date}):</span>
                                                                 <span className="bg-slate-900 text-slate-300 text-[11px] px-2 py-0.5 rounded border border-slate-700">
-                                                                    {group.count} កំណត់ត្រា
+                                                                    {group.count} {t('records')}
                                                                 </span>
                                                             </div>
                                                         </td>
@@ -1313,7 +1313,7 @@ const FollowUp4 = () => {
                                                         <td className="py-2.5 px-3 text-slate-400 text-center">-</td>
                                                         <td className="py-2.5 px-3">
                                                             <div className="flex flex-col gap-0.5 text-[10px] font-mono">
-                                                                <span className="text-emerald-400">ជោគជ័យ: {group.successCount}</span>
+                                                                <span className="text-emerald-400">{t('success')}: {group.successCount}</span>
                                                                 <span className="text-rose-400">REJECT: {group.rejectCount}</span>
                                                                 {group.reviewCount > 0 && <span className="text-amber-400">REVIEW: {group.reviewCount}</span>}
                                                             </div>
@@ -1333,7 +1333,7 @@ const FollowUp4 = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span>{t('grandTotal')}:</span>
                                                     <span className="bg-emerald-950 text-emerald-300 text-[11px] px-2.5 py-0.5 rounded border border-emerald-500/40 font-bold">
-                                                        {submitTotals.count} កំណត់ត្រា {groupedSubmitByDate.length > 1 ? `(${groupedSubmitByDate.length} ថ្ងៃ)` : ''}
+                                                        {submitTotals.count} {t('records')} {groupedSubmitByDate.length > 1 ? `(${groupedSubmitByDate.length} ${t('days')})` : ''}
                                                     </span>
                                                 </div>
                                             </td>
@@ -1347,7 +1347,7 @@ const FollowUp4 = () => {
                                             <td className="py-3.5 px-3 text-slate-400 text-center">-</td>
                                             <td className="py-3.5 px-3">
                                                 <div className="flex flex-col gap-0.5 text-[10px] font-mono font-bold">
-                                                    <span className="text-emerald-400">ជោគជ័យ: {submitTotals.successCount}</span>
+                                                    <span className="text-emerald-400">{t('success')}: {submitTotals.successCount}</span>
                                                     <span className="text-rose-400">REJECT: {submitTotals.rejectCount}</span>
                                                     {submitTotals.reviewCount > 0 && <span className="text-amber-400">REVIEW: {submitTotals.reviewCount}</span>}
                                                 </div>
@@ -1371,10 +1371,10 @@ const FollowUp4 = () => {
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-rose-400 flex items-center gap-2">
-                                <FaBan /> <span>REJECT SUBMIT SUMMARY</span>
+                                <FaBan /> <span>{t('rejectSubmitSummary')}</span>
                             </h2>
                             <p className="text-xs text-slate-400 mt-0.5">
-                                កំណត់ត្រា Reject Submit តាមថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
+                                {t('rejectSubmitRecordsByDayForBrand')} <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
                             </p>
                         </div>
 
@@ -1405,8 +1405,8 @@ const FollowUp4 = () => {
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
                         <div className="p-2 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT SUBMIT តាមកាលបរិច្ឆេទ</span>
-                            <span className="text-xs text-rose-400 font-mono font-semibold">{groupedRejectSubmit.length} ថ្ងៃបានកត់ត្រា</span>
+                            <span className="text-xs font-bold text-slate-200">{t('rejectSubmitHistoryByDate')}</span>
+                            <span className="text-xs text-rose-400 font-mono font-semibold">{groupedRejectSubmit.length} {t('daysRecorded')}</span>
                         </div>
 
                         <div className="overflow-x-auto">
@@ -1414,12 +1414,12 @@ const FollowUp4 = () => {
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
                                     <tr className='text-white'>
                                         <th className="py-1 px-3 text-center w-10">#</th>
-                                        <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-1 px-3">{t('date')}</th>
                                         <th className="py-1 px-3 text-center font-bold text-rose-400">{t('total')}</th>
                                         {rejectSubmitDisplayReasons.map((reason, rIdx) => (
                                             <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
-                                        <th className="py-1 px-3 text-center">សកម្មភាព</th>
+                                        <th className="py-1 px-3 text-center">{t('actionLabel')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y text-white divide-slate-700/50">
@@ -1427,13 +1427,13 @@ const FollowUp4 = () => {
                                         <tr>
                                             <td colSpan={4 + rejectSubmitDisplayReasons.length} className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-rose-400" />
-                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                                <p>{t('loading')}</p>
                                             </td>
                                         </tr>
                                     ) : groupedRejectSubmit.length === 0 ? (
                                         <tr>
                                             <td colSpan={4 + rejectSubmitDisplayReasons.length} className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានកំណត់ត្រា Reject Submit នៅឡើយទេ សូមចុច &quot;{t('addRejectSubmit')}&quot; ដើម្បីបញ្ចូល
+                                                {t('noRejectSubmitHistoryAddPrompt')} {t('addRejectSubmit')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -1454,7 +1454,7 @@ const FollowUp4 = () => {
                                                         onClick={() => handleOpenCreateRejectSubmit(group.date)}
                                                         className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-rose-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                                                     >
-                                                        <FaEdit className="inline mr-1" /> កែប្រែ
+                                                        <FaEdit className="inline mr-1" /> {t('edit')}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -1469,7 +1469,7 @@ const FollowUp4 = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span>{t('grandTotal')}:</span>
                                                     <span className="bg-rose-950 text-rose-300 text-[11px] px-2.5 py-0.5 rounded border border-rose-500/40 font-bold">
-                                                        {groupedRejectSubmit.length} ថ្ងៃ
+                                                        {groupedRejectSubmit.length} {t('days')}
                                                     </span>
                                                 </div>
                                             </td>
@@ -1500,10 +1500,10 @@ const FollowUp4 = () => {
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
-                                <FaBan /> <span>REJECT CS SUMMARY</span>
+                                <FaBan /> <span>{t('rejectCsSummary')}</span>
                             </h2>
                             <p className="text-xs text-slate-400 mt-0.5">
-                                កំណត់ត្រា Reject CS តាមថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
+                                {t('rejectCsRecordsByDayForBrand')} <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
                             </p>
                         </div>
 
@@ -1534,8 +1534,8 @@ const FollowUp4 = () => {
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
                         <div className="p-2 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-200">ប្រវត្តិទិន្នន័យ REJECT CS តាមកាលបរិច្ឆេទ</span>
-                            <span className="text-xs text-amber-400 font-mono font-semibold">{groupedRejectCs.length} ថ្ងៃបានកត់ត្រា</span>
+                            <span className="text-xs font-bold text-slate-200">{t('rejectCsHistoryByDate')}</span>
+                            <span className="text-xs text-amber-400 font-mono font-semibold">{groupedRejectCs.length} {t('daysRecorded')}</span>
                         </div>
 
                         <div className="overflow-x-auto">
@@ -1543,12 +1543,12 @@ const FollowUp4 = () => {
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-700">
                                     <tr>
                                         <th className="py-1 px-3 text-center w-10">#</th>
-                                        <th className="py-1 px-3">កាលបរិច្ឆេទ</th>
+                                        <th className="py-1 px-3">{t('date')}</th>
                                         <th className="py-1 px-3 text-center font-bold text-amber-400">{t('total')}</th>
                                         {rejectCsDisplayReasons.map((reason, rIdx) => (
                                             <th key={rIdx} className="py-1 px-3 text-center">{reason}</th>
                                         ))}
-                                        <th className="py-1 px-3 text-center">សកម្មភាព</th>
+                                        <th className="py-1 px-3 text-center">{t('actionLabel')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
@@ -1556,13 +1556,13 @@ const FollowUp4 = () => {
                                         <tr>
                                             <td colSpan={4 + rejectCsDisplayReasons.length} className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-amber-400" />
-                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                                <p>{t('loading')}</p>
                                             </td>
                                         </tr>
                                     ) : groupedRejectCs.length === 0 ? (
                                         <tr>
                                             <td colSpan={4 + rejectCsDisplayReasons.length} className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានកំណត់ត្រា Reject CS នៅឡើយទេ សូមចុច &quot;{t('addRejectCs')}&quot; ដើម្បីបញ្ចូល
+                                                {t('noRejectCsHistoryAddPrompt')} {t('addRejectCs')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -1583,7 +1583,7 @@ const FollowUp4 = () => {
                                                         onClick={() => handleOpenCreateRejectCs(group.date)}
                                                         className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                                                     >
-                                                        <FaEdit className="inline mr-1" /> កែប្រែ
+                                                        <FaEdit className="inline mr-1" /> {t('edit')}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -1598,7 +1598,7 @@ const FollowUp4 = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span>{t('grandTotal')}:</span>
                                                     <span className="bg-amber-950 text-amber-300 text-[11px] px-2.5 py-0.5 rounded border border-amber-500/40 font-bold">
-                                                        {groupedRejectCs.length} ថ្ងៃ
+                                                        {groupedRejectCs.length} {t('days')}
                                                     </span>
                                                 </div>
                                             </td>
@@ -1629,10 +1629,10 @@ const FollowUp4 = () => {
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
                         <div>
                             <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
-                                <FaCalculator /> <span>DETAIL METRICS & AUTOMATED FORMULAS</span>
+                                <FaCalculator /> <span>{t('detailMetricsAndAutomatedFormulas')}</span>
                             </h2>
                             <p className="text-xs text-slate-400 mt-0.5">
-                                គណនារូបមន្តស្វ័យប្រវត្តិសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
+                                {t('calculateAutomaticFormulasForBrand')} <span className="text-emerald-400 font-bold bg-slate-900 px-2 py-0.5 rounded">{selectedBrand || user?.brand || '888MDM'}</span>
                             </p>
                         </div>
 
@@ -1663,34 +1663,34 @@ const FollowUp4 = () => {
                     {/* History Table */}
                     <div className="bg-slate-800/70 border border-slate-700/60 rounded-[5px] overflow-hidden shadow-xl">
                         <div className="p-2 border-b border-slate-700 bg-slate-900/70 flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-200">ប្រវត្តិ DETAIL METRICS តាមកាលបរិច្ឆេទ</span>
-                            <span className="text-xs text-sky-400 font-mono font-semibold">{detailHistoryList.length} ថ្ងៃបានកត់ត្រា</span>
+                            <span className="text-xs font-bold text-slate-200">{t('detailMetricsHistoryByDate')}</span>
+                            <span className="text-xs text-sky-400 font-mono font-semibold">{detailHistoryList.length} {t('daysRecorded')}</span>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-xs text-left text-slate-200">
                                 <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-700">
                                     <tr>
-                                        <th className="py-2.5 px-3">កាលបរិច្ឆេទ</th>
-                                        <th className="py-2.5 px-2 text-center text-indigo-300 font-bold bg-indigo-950/30">MESSAGE</th>
-                                        <th className="py-2.5 px-2 text-center">PAGE</th>
-                                        <th className="py-2.5 px-2 text-center">TG</th>
-                                        <th className="py-2.5 px-2 text-center">NO REPLY</th>
-                                        <th className="py-2.5 px-2 text-center">INQUIRE</th>
-                                        <th className="py-2.5 px-2 text-center text-rose-400">REJECT CS</th>
-                                        <th className="py-2.5 px-2 text-center">MORE</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-400">PAGE SUB</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-400">TG SUB</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-400 font-bold">CALL</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-blue-200 border-x border-emerald-600/50 shadow-inner">TOTAL SUBMIT</th>
-                                        <th className="py-2.5 px-2 text-center text-amber-400">REVIEW</th>
-                                        <th className="py-2.5 px-2 text-center text-rose-400">REJECT1</th>
-                                        <th className="py-2.5 px-2 text-center text-rose-300">REJECT2</th>
-                                        <th className="py-2.5 px-2 text-center text-rose-200 font-black bg-rose-950/30">TOTAL</th>
-                                        <th className="py-2.5 px-2 text-center text-teal-400">SUCC 1</th>
-                                        <th className="py-2.5 px-2 text-center text-emerald-300">SUCC 2</th>
-                                        <th className="py-2.5 px-2 text-center text-teal-200 font-black bg-green-300 border-x border-teal-600/50 shadow-inner">TOTAL SUCCESS</th>
-                                        <th className="py-2.5 px-2 text-center">សកម្មភាព</th>
+                                        <th className="py-2.5 px-3">{t('date')}</th>
+                                        <th className="py-2.5 px-2 text-center text-indigo-300 font-bold bg-indigo-950/30">{t('totalMessages')}</th>
+                                        <th className="py-2.5 px-2 text-center">{t('facebookPage')}</th>
+                                        <th className="py-2.5 px-2 text-center">{t('telegramShort')}</th>
+                                        <th className="py-2.5 px-2 text-center">{t('noReply')}</th>
+                                        <th className="py-2.5 px-2 text-center">{t('inquire')}</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-400">{t('rejectCs')}</th>
+                                        <th className="py-2.5 px-2 text-center">{t('more')}</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-400">{t('pageSubmit')}</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-400">{t('telegramSubmit')}</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-400 font-bold">{t('call')}</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-200 font-black bg-blue-200 border-x border-emerald-600/50 shadow-inner">{t('totalSubmits')}</th>
+                                        <th className="py-2.5 px-2 text-center text-amber-400">{t('inReview')}</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-400">{t('reject')} 1</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-300">{t('reject')} 2</th>
+                                        <th className="py-2.5 px-2 text-center text-rose-200 font-black bg-rose-950/30">{t('totalLabel')}</th>
+                                        <th className="py-2.5 px-2 text-center text-teal-400">{t('success')} 1</th>
+                                        <th className="py-2.5 px-2 text-center text-emerald-300">{t('success')} 2</th>
+                                        <th className="py-2.5 px-2 text-center text-teal-200 font-black bg-green-300 border-x border-teal-600/50 shadow-inner">{t('totalSuccess')}</th>
+                                        <th className="py-2.5 px-2 text-center">{t('actionLabel')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700/50">
@@ -1698,13 +1698,13 @@ const FollowUp4 = () => {
                                         <tr>
                                             <td colSpan="20" className="text-center py-8 text-slate-400">
                                                 <MdOutlineSync className="animate-spin inline-block text-2xl mb-1 text-sky-400" />
-                                                <p>កំពុងទាញយកទិន្នន័យ...</p>
+                                                <p>{t('loading')}</p>
                                             </td>
                                         </tr>
                                     ) : detailHistoryList.length === 0 ? (
                                         <tr>
                                             <td colSpan="20" className="text-center py-8 text-slate-500 font-medium">
-                                                មិនទាន់មានទិន្នន័យ Detail Metrics នៅឡើយទេ សូមចុច &quot;{t('addDetailMetrics')}&quot; ដើម្បីបញ្ចូល
+                                                {t('noDetailMetricsDataAddPrompt')} {t('addDetailMetrics')}
                                             </td>
                                         </tr>
                                     ) : (
@@ -1742,7 +1742,7 @@ const FollowUp4 = () => {
                                                         onClick={() => handleOpenCreateDetail(row.date)}
                                                         className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-sky-300 rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                                                     >
-                                                        <FaEdit className="inline mr-1" /> កែប្រែ
+                                                        <FaEdit className="inline mr-1" /> {t('edit')}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -1855,22 +1855,22 @@ const FollowUp4 = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs">
                     <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl p-6 max-w-sm w-full text-center">
                         <FaTrashAlt className="text-rose-500 text-3xl mx-auto mb-3" />
-                        <h4 className="text-base font-bold text-slate-100 mb-1">តើអ្នកប្រាកដជាចង់លុប?</h4>
+                        <h4 className="text-base font-bold text-slate-100 mb-1">{t('confirmDelete')}</h4>
                         <p className="text-xs text-slate-400 mb-6">
-                            ទិន្នន័យ &quot;<span className="text-emerald-400 font-semibold">{deleteModalItem.name}</span>&quot; នឹងត្រូវលុបចេញពីប្រព័ន្ធ។
+                            {t('dataWillBeDeleted')}: &quot;<span className="text-emerald-400 font-semibold">{deleteModalItem.name}</span>&quot;
                         </p>
                         <div className="flex items-center justify-center gap-3">
                             <button
                                 onClick={() => setDeleteModalItem(null)}
                                 className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2 rounded-[5px] transition-all cursor-pointer"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={handleDeleteSubmit}
                                 className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold px-4 py-2 rounded-[5px] transition-all shadow-md cursor-pointer"
                             >
-                                លុបចេញ
+                                {t('delete')}
                             </button>
                         </div>
                     </div>

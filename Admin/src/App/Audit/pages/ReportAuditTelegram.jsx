@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import {
     FaTelegramPlane, FaClipboardList, FaSync, FaSearch,
     FaTimes, FaCalendarAlt, FaChartBar, FaSpinner,
@@ -25,6 +26,7 @@ const getTodayStr = () => {
 // ─── component ───────────────────────────────────────────────────────────────
 const ReportAuditTelegram = () => {
     const { API_BASE } = useAuth();
+    const { t } = useLanguage();
 
     const [days, setDays] = useState(7);
     const [searchDate, setSearchDate] = useState('');
@@ -44,7 +46,7 @@ const ReportAuditTelegram = () => {
             const res = await fetch(`${base}/telegram-audit/report?days=${numDays}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
-            if (!json.success) throw new Error(json.error || 'Server error');
+            if (!json.success) throw new Error(json.error || 'auditServerError');
             setData(json);
             setLastFetched(new Date());
         } catch (err) {
@@ -109,14 +111,14 @@ const ReportAuditTelegram = () => {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
-                                Report Audit Telegram
+                                {t('reportAuditTelegram')}
                             </h1>
                             <span className="px-2 py-0.5 rounded-[5px] text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300 flex items-center gap-1">
-                                <FaTelegramPlane />Pivot
+                                <FaTelegramPlane />{t('auditPivotReport')}
                             </span>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                            របាយការណ៍សវនកម្ម Telegram បូករួមតាមថ្ងៃ
+                            {t('auditReportDescription')}
                         </p>
                     </div>
                 </div>
@@ -126,15 +128,15 @@ const ReportAuditTelegram = () => {
                     {/* Days Filter */}
                     <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-[5px] border border-slate-300">
                         <FaCalendarAlt className="text-blue-600 text-sm" />
-                        <span className="text-xs font-bold text-slate-600">ថ្ងៃ:</span>
+                        <span className="text-xs font-bold text-slate-600">{t('auditDays')}:</span>
                         <select
                             value={days}
                             onChange={e => setDays(Number(e.target.value))}
                             className="text-xs font-bold text-slate-800 bg-transparent border-0 focus:outline-none cursor-pointer"
                         >
-                            <option value={7}>7 ថ្ងៃចុងក្រោយ</option>
-                            <option value={14}>14 ថ្ងៃចុងក្រោយ</option>
-                            <option value={30}>30 ថ្ងៃចុងក្រោយ</option>
+                            <option value={7}>{t('auditLast7Days')}</option>
+                            <option value={14}>{t('auditLast14Days')}</option>
+                            <option value={30}>{t('auditLast30Days')}</option>
                         </select>
                     </div>
 
@@ -143,7 +145,7 @@ const ReportAuditTelegram = () => {
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                         <input
                             type="text"
-                            placeholder="ស្វែងរកថ្ងៃ..."
+                            placeholder={t('auditSearchDatePlaceholder')}
                             value={searchDate}
                             onChange={e => setSearchDate(e.target.value)}
                             className="pl-8 pr-8 py-1.5 text-xs font-medium rounded-[5px] border border-slate-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all w-44"
@@ -159,7 +161,7 @@ const ReportAuditTelegram = () => {
                     <button
                         onClick={() => fetchReport(days)}
                         disabled={loading}
-                        title="ផ្ទុកឡើងវិញ"
+                        title={t('reload')}
                         className="p-2.5 rounded-[5px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs cursor-pointer transition-colors"
                     >
                         <FaSync className={`text-sm ${loading ? 'animate-spin text-blue-600' : ''}`} />
@@ -170,19 +172,19 @@ const ReportAuditTelegram = () => {
             {/* ── Summary Cards ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
-                    <p className="text-xs font-bold text-slate-500">ចំនួនថ្ងៃបង្ហាញ</p>
+                    <p className="text-xs font-bold text-slate-500">{t('auditVisibleDays')}</p>
                     <p className="text-xl font-black text-slate-800 mt-1">{filteredDates.length}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-emerald-200 shadow-2xs bg-emerald-50/25">
-                    <p className="text-xs font-bold text-emerald-600">Total Audited (filter)</p>
+                    <p className="text-xs font-bold text-emerald-600">{t('auditTotalAuditedFiltered')}</p>
                     <p className="text-xl font-black text-emerald-700 mt-1">{colTotals.totalAudited}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-blue-200 shadow-2xs bg-blue-50/25">
-                    <p className="text-xs font-bold text-blue-600">Status Account (ប្រភេទ)</p>
+                    <p className="text-xs font-bold text-blue-600">{t('auditStatusAccountTypes')}</p>
                     <p className="text-xl font-black text-blue-700 mt-1">{allStatusKeys.length}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-violet-200 shadow-2xs bg-violet-50/25">
-                    <p className="text-xs font-bold text-violet-600">Activity / Note (ប្រភេទ)</p>
+                    <p className="text-xs font-bold text-violet-600">{t('auditActivityNoteTypes')}</p>
                     <p className="text-xl font-black text-violet-700 mt-1">{allActivityKeys.length + allNoteKeys.length}</p>
                 </div>
             </div>
@@ -190,7 +192,7 @@ const ReportAuditTelegram = () => {
             {/* ── Error ── */}
             {error && (
                 <div className="bg-rose-50 border border-rose-300 text-rose-700 px-4 py-3 rounded-[5px] text-sm font-medium">
-                    ⚠️ {error}
+                    ⚠️ {error === 'auditServerError' ? t(error) : error}
                 </div>
             )}
 
@@ -199,12 +201,12 @@ const ReportAuditTelegram = () => {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400">
                         <FaSpinner className="animate-spin text-3xl text-blue-500" />
-                        <span className="text-sm font-medium">កំពុងទាញទិន្នន័យ...</span>
+                        <span className="text-sm font-medium">{t('loading')}</span>
                     </div>
                 ) : filteredDates.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-3 py-20 text-slate-400">
                         <FaChartBar className="text-4xl" />
-                        <span className="text-sm font-medium">មិនមានទិន្នន័យ</span>
+                        <span className="text-sm font-medium">{t('noData')}</span>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -217,14 +219,14 @@ const ReportAuditTelegram = () => {
                                         rowSpan={2}
                                         className="sticky left-0 z-20 px-3 py-2.5 bg-slate-800 text-white font-black text-center border border-slate-700 min-w-[110px] whitespace-nowrap"
                                     >
-                                        ថ្ងៃខែឆ្នាំ
+                                        {t('date')}
                                     </th>
                                     {/* Total Status Audit */}
                                     <th
                                         rowSpan={2}
                                         className="px-3 py-2.5 bg-emerald-600 text-white font-black text-center border border-emerald-700 min-w-[90px] whitespace-nowrap"
                                     >
-                                        Total<br />Status Audit
+                                        {t('auditTotalStatus')}
                                     </th>
                                     {/* Status Account section */}
                                     {allStatusKeys.length > 0 && (
@@ -232,7 +234,7 @@ const ReportAuditTelegram = () => {
                                             colSpan={allStatusKeys.length}
                                             className="px-3 py-2 bg-gray-600 text-white font-black text-center border border-blue-700 whitespace-nowrap"
                                         >
-                                            Status Account
+                                            {t('auditStatusAccount')}
                                         </th>
                                     )}
                                     {/* Account Activity section */}
@@ -241,7 +243,7 @@ const ReportAuditTelegram = () => {
                                             colSpan={allActivityKeys.length}
                                             className="px-3 py-2 bg-pink-600 text-white font-black text-center border border-pink-700 whitespace-nowrap"
                                         >
-                                            Account Activity
+                                            {t('auditAccountActivity')}
                                         </th>
                                     )}
                                     {/* Note Audit section */}
@@ -250,7 +252,7 @@ const ReportAuditTelegram = () => {
                                             colSpan={allNoteKeys.length}
                                             className="px-3 py-2 bg-amber-500 text-white font-black text-center border border-amber-600 whitespace-nowrap"
                                         >
-                                            Note Audit
+                                            {t('auditNote')}
                                         </th>
                                     )}
                                 </tr>
@@ -299,7 +301,7 @@ const ReportAuditTelegram = () => {
                                                         {fmtDate(d)}
                                                     </span>
                                                     {isToday && (
-                                                        <span className="text-[9px] font-bold px-1 py-0.5 bg-blue-500 text-white rounded">Today</span>
+                                                        <span className="text-[9px] font-bold px-1 py-0.5 bg-blue-500 text-white rounded">{t('today')}</span>
                                                     )}
                                                 </div>
                                             </td>
@@ -363,7 +365,7 @@ const ReportAuditTelegram = () => {
                                 {/* ── Total Row (bottom) ── */}
                                 <tr className="bg-slate-800 text-white font-black">
                                     <td className="sticky left-0 z-10 px-3 py-3 border border-slate-600 bg-slate-800 whitespace-nowrap text-sm">
-                                        សរុប (Total)
+                                        {t('total')}
                                     </td>
                                     {/* Total audited sum */}
                                     <td className="px-3 py-3 border border-emerald-500 text-center text-emerald-300 text-sm">
@@ -397,7 +399,7 @@ const ReportAuditTelegram = () => {
             {/* Last fetched */}
             {lastFetched && !loading && (
                 <p className="text-[11px] text-slate-400 text-right font-medium">
-                    ទាញទិន្នន័យចុងក្រោយ: {lastFetched.toLocaleTimeString()}
+                    {t('dashboardLastUpdated')}: {lastFetched.toLocaleTimeString()}
                 </p>
             )}
         </div>

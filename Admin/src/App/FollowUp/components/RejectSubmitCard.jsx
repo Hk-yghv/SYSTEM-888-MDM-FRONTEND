@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../../context/LanguageContext';
 import { FaBan, FaRegCalendarAlt, FaSave, FaExclamationTriangle } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
 
@@ -18,6 +19,8 @@ const RejectSubmitCard = ({
     saving = false,
     loading = false
 }) => {
+    const { t } = useLanguage();
+
     const handleCountChange = (reason, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
         setCounts(prev => ({
@@ -48,10 +51,10 @@ const RejectSubmitCard = ({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-700">
                 <div>
                     <h2 className="text-lg font-bold text-rose-400 flex items-center gap-2">
-                        <FaBan /> <span>REJECT SUBMIT</span>
+                        <FaBan /> <span>{t('rejectSubmit')}</span>
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                        បញ្ចូលចំនួន Reject Submit ប្រចាំថ្ងៃសម្រាប់ Brand: <span className="text-emerald-400 font-bold bg-slate-900/80 px-2 py-0.5 rounded">{brand || '888MDM'}</span>
+                        {t('enterDailyRejectCounts')} <span className="text-emerald-400 font-bold bg-slate-900/80 px-2 py-0.5 rounded">{brand || '888MDM'}</span>
                     </p>
                 </div>
 
@@ -69,9 +72,9 @@ const RejectSubmitCard = ({
 
             {/* Total summary badge */}
             <div className="flex items-center justify-between bg-rose-950/40 border border-rose-800/40 p-2 rounded-[5px] mb-4 text-xs">
-                <span className="text-rose-300 font-semibold">សរុប REJECT SUBMIT ប្រចាំថ្ងៃ ({date})៖</span>
+                <span className="text-rose-300 font-semibold">{t('dailyTotal')} REJECT SUBMIT ({date}):</span>
                 <span className="text-rose-400 font-mono font-bold text-base bg-rose-900/60 px-3 py-0.5 rounded-lg">
-                    {totalCount} ករណី
+                    {totalCount} {t('cases')}
                 </span>
             </div>
 
@@ -79,13 +82,13 @@ const RejectSubmitCard = ({
             {loading ? (
                 <div className="text-center py-10 text-slate-400">
                     <MdOutlineSync className="animate-spin inline-block text-3xl mb-2 text-rose-400" />
-                    <p className="text-xs font-semibold">កំពុងទាញយកទិន្នន័យ...</p>
+                    <p className="text-xs font-semibold">{t('loading')}</p>
                 </div>
             ) : reasons.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-2">
                     <FaExclamationTriangle className="text-amber-400 text-2xl mx-auto mb-2" />
-                    <p className="text-xs font-semibold">មិនទាន់មានបញ្ជីមូលហេតុ REJECT SUBMIT នៅក្នុង Control System នៅឡើយទេ</p>
-                    <p className="text-[11px] text-slate-500 mt-1">សូមចូលទៅកាន់ Settings &gt; Control System &gt; Droplists &gt; &quot;Reject Submit Reasons&quot; ដើម្បីបន្ថែម</p>
+                    <p className="text-xs font-semibold">{t('noRejectSubmitReasonsConfigured')}</p>
+                    <p className="text-[11px] text-slate-500 mt-1">{t('rejectSubmitReasonsDroplistSetupInstructions')}</p>
                 </div>
             ) : (
                 <div className="space-y-2.5 mb-6">
@@ -136,7 +139,7 @@ const RejectSubmitCard = ({
                 className="w-full flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm py-1 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {saving ? <MdOutlineSync className="animate-spin text-lg" /> : <FaSave size={15} />}
-                <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ REJECT SUBMIT'}</span>
+                <span>{saving ? t('saving') : t('saveRejectSubmitData')}</span>
             </button>
         </div>
     );

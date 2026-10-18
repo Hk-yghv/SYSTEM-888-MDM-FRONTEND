@@ -14,7 +14,7 @@ const isStandaloneApp = () => (
 );
 
 const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar, onHideHeader }) => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { user, API_BASE, API_BASE1, hasPermission } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -242,8 +242,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                         background: isSidebarOpen ? '#ecfdf5' : '#f8fafc',
                         borderColor: isSidebarOpen ? '#6ee7b7' : '#e2e8f0'
                     }}
-                    aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
-                    title={isSidebarOpen ? 'បិទ Menu' : 'បើក Menu'}
+                    aria-label={isSidebarOpen ? t('headerCloseNavigation', lang === 'km' ? 'បិទម៉ឺនុយរុករក' : 'Close navigation menu') : t('headerOpenNavigation', lang === 'km' ? 'បើកម៉ឺនុយរុករក' : 'Open navigation menu')}
+                    title={isSidebarOpen ? t('headerCloseMenu', lang === 'km' ? 'បិទម៉ឺនុយ' : 'Close menu') : t('headerOpenMenu', lang === 'km' ? 'បើកម៉ឺនុយ' : 'Open menu')}
                 >
                     <div className='relative w-5 h-5 flex items-center justify-center'>
                         <FaBars className={`absolute text-slate-600 transition-all duration-300 transform ${isSidebarOpen ? 'rotate-90 opacity-0 scale-50' : 'rotate-0 opacity-100 scale-100'}`} />
@@ -265,7 +265,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                         <h1 className='text-sm font-black tracking-widest leading-none text-slate-800 group-hover:text-emerald-700 transition-colors'>
                             {brandName}
                         </h1>
-                        <p className='text-[9px] text-slate-400 font-semibold tracking-[0.15em] uppercase leading-none mt-0.5'>Management System</p>
+                        <p className='text-[9px] text-slate-400 font-semibold tracking-[0.15em] uppercase leading-none mt-0.5'>{t('headerManagementSystem', lang === 'km' ? 'ប្រព័ន្ធគ្រប់គ្រង' : 'Management System')}</p>
                     </div>
                 </Link>
 
@@ -365,7 +365,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                             borderColor: location.pathname === '/telegram' ? '#7dd3fc' : '#e2e8f0',
                         }}
                         title={t('telegram') || 'Telegram Web'}
-                        aria-label='Telegram Web'
+                        aria-label={t('telegram') || 'Telegram Web'}
                     >
                         <FaTelegramPlane className={`text-sm ${location.pathname === '/telegram' ? 'text-sky-500' : 'text-slate-500'}`} />
                     </Link>
@@ -380,10 +380,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                                 ? 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100'
                                 : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                         }`}
-                        title={isAppInstalled ? 'Open installed SYSTEM MDM app' : 'Install SYSTEM MDM'}
+                        title={isAppInstalled ? t('headerOpenInstalledApp', lang === 'km' ? 'បើកកម្មវិធី SYSTEM MDM ដែលបានដំឡើង' : 'Open the installed SYSTEM MDM app') : t('headerInstallApp', lang === 'km' ? 'ដំឡើង SYSTEM MDM' : 'Install SYSTEM MDM')}
                     >
                         {isAppInstalled ? <FaExternalLinkAlt size={12} /> : <FaDownload size={12} />}
-                        <span className='hidden sm:inline'>{isAppInstalled ? 'Open App' : 'Install App'}</span>
+                        <span className='hidden sm:inline'>{isAppInstalled ? t('headerOpenApp', lang === 'km' ? 'បើកកម្មវិធី' : 'Open App') : t('headerInstallAppLabel', lang === 'km' ? 'ដំឡើងកម្មវិធី' : 'Install App')}</span>
                     </button>
                 )}
             </div>
@@ -398,8 +398,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                                     <FaDownload />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-slate-900">កម្មវិធី SYSTEM MDM (App)</h3>
-                                    <p className="text-[11px] text-slate-500">ដំឡើង ឬដំណើរការជាផ្ទាំង App ផ្ទាល់</p>
+                                    <h3 className="text-base font-bold text-slate-900">{t('headerSystemMdmApp', lang === 'km' ? 'កម្មវិធី SYSTEM MDM' : 'SYSTEM MDM App')}</h3>
+                                    <p className="text-[11px] text-slate-500">{t('headerInstallOrLaunchApp', lang === 'km' ? 'ដំឡើង ឬបើកជាផ្ទាំងកម្មវិធីដាច់ដោយឡែក' : 'Install or launch in a dedicated app window')}</p>
                                 </div>
                             </div>
                             <button
@@ -414,8 +414,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                         {/* Quick 1-Click Action: Open in Dedicated App Window */}
                         <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-xl flex items-center justify-between gap-3 shadow-xs">
                             <div className="space-y-0.5">
-                                <div className="text-xs font-bold text-emerald-950">បើកដំណើរការជាផ្ទាំង App ផ្ទាល់</div>
-                                <div className="text-[11px] text-emerald-800 leading-tight">បើកក្នុងផ្ទាំងដាច់ដោយឡែកភ្លាមៗ ដោយគ្មានរបារ Browser</div>
+                                <div className="text-xs font-bold text-emerald-950">{t('headerLaunchStandalone', lang === 'km' ? 'បើកជាផ្ទាំងកម្មវិធីដាច់ដោយឡែក' : 'Launch in a standalone app window')}</div>
+                                <div className="text-[11px] text-emerald-800 leading-tight">{t('headerStandaloneDescription', lang === 'km' ? 'បើកភ្លាមៗក្នុងផ្ទាំងដាច់ដោយឡែក ដោយគ្មានរបារកម្មវិធីរុករក' : 'Open immediately in a separate window without browser controls')}</div>
                             </div>
                             <button
                                 type="button"
@@ -423,23 +423,23 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                                 className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer whitespace-nowrap active:scale-95"
                             >
                                 <FaExternalLinkAlt size={11} />
-                                <span>បើកជា App</span>
+                                <span>{t('headerOpenAsApp', lang === 'km' ? 'បើកជាកម្មវិធី' : 'Open as App')}</span>
                             </button>
                         </div>
 
                         {/* Step by step browser guides */}
                         <div className="space-y-2 text-xs text-slate-700">
-                            <div className="font-bold text-slate-900 text-xs">របៀបដំឡើង (Install App) តាម Browser ៖</div>
+                            <div className="font-bold text-slate-900 text-xs">{t('headerInstallGuideTitle', lang === 'km' ? 'របៀបដំឡើងកម្មវិធីតាមកម្មវិធីរុករក៖' : 'How to install the app from your browser:')}</div>
 
                             {/* Desktop Chrome / Edge */}
                             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
                                 <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-                                    លើកុំព្យូទ័រ (Google Chrome / Microsoft Edge) ៖
+                                    {t('headerInstallDesktop', lang === 'km' ? 'លើកុំព្យូទ័រ (Google Chrome / Microsoft Edge)៖' : 'On desktop (Google Chrome / Microsoft Edge):')}
                                 </div>
                                 <p className="text-[11px] text-slate-600 pl-3.5 leading-relaxed">
-                                    • ក្រឡេកមើលទៅខាងស្តាំនៃរបារអាសយដ្ឋាន (URL Bar) ចុចលើរូបតំណាង <strong>[ 💻 Install ]</strong> ឬ <strong>[ ⊕ ]</strong> រួចចុច <strong>Install</strong>។<br />
-                                    • ឬចុច <strong>Menu (⋮)</strong> នៅជ្រុងលើស្តាំ &gt; <strong>Save and share</strong> &gt; <strong>Install SYSTEM MDM...</strong>
+                                    • {t('headerInstallDesktopStep1', lang === 'km' ? 'នៅខាងស្តាំរបារអាសយដ្ឋាន (URL Bar) ចុចរូបតំណាង [ 💻 Install ] ឬ [ ⊕ ] បន្ទាប់មកចុច Install។' : 'On the right side of the address bar (URL Bar), select [ 💻 Install ] or [ ⊕ ], then select Install.')}<br />
+                                    • {t('headerInstallDesktopStep2', lang === 'km' ? 'ឬចុច Menu (⋮) នៅជ្រុងខាងលើស្តាំ > Save and share > Install SYSTEM MDM...' : 'Or select Menu (⋮) in the upper-right corner > Save and share > Install SYSTEM MDM...')}
                                 </p>
                             </div>
 
@@ -447,10 +447,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
                                 <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
-                                    លើទូរស័ព្ទ iPhone / iPad (Safari) ៖
+                                    {t('headerInstallIos', lang === 'km' ? 'លើទូរស័ព្ទ iPhone / iPad (Safari)៖' : 'On iPhone / iPad (Safari):')}
                                 </div>
                                 <p className="text-[11px] text-slate-600 pl-3.5 leading-relaxed">
-                                    • ចុចប៊ូតុង <strong>Share (⎋)</strong> នៅរបារខាងក្រោមអេក្រង់ Safari &gt; អូសចុះក្រោមហើយជ្រើសរើស <strong>"Add to Home Screen" (➕)</strong>។
+                                    • {t('headerInstallIosStep', lang === 'km' ? 'ចុច Share (⎋) នៅរបារខាងក្រោម Safari អូសចុះក្រោម រួចជ្រើសរើស "Add to Home Screen" (➕)។' : 'Tap Share (⎋) at the bottom of Safari, scroll down, then choose "Add to Home Screen" (➕).')}
                                 </p>
                             </div>
 
@@ -458,10 +458,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
                                 <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
-                                    លើទូរស័ព្ទ Android (Chrome) ៖
+                                    {t('headerInstallAndroid', lang === 'km' ? 'លើទូរស័ព្ទ Android (Chrome)៖' : 'On Android (Chrome):')}
                                 </div>
                                 <p className="text-[11px] text-slate-600 pl-3.5 leading-relaxed">
-                                    • ចុច <strong>Menu (⋮)</strong> នៅជ្រុងខាងលើស្តាំ &gt; ជ្រើសរើស <strong>"Install app"</strong> ឬ <strong>"Add to Home screen"</strong>។
+                                    • {t('headerInstallAndroidStep', lang === 'km' ? 'ចុច Menu (⋮) នៅជ្រុងខាងលើស្តាំ រួចជ្រើសរើស "Install app" ឬ "Add to Home screen"។' : 'Tap Menu (⋮) in the upper-right corner, then choose "Install app" or "Add to Home screen".')}
                                 </p>
                             </div>
                         </div>
@@ -472,9 +472,9 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                                 type="button"
                                 onClick={handleResetInstallState}
                                 className="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
-                                title="កំណត់ស្ថានភាពដំឡើងឡើងវិញ"
+                                title={t('headerResetInstallStatus', lang === 'km' ? 'កំណត់ស្ថានភាពដំឡើងឡើងវិញ' : 'Reset installation status')}
                             >
-                                កំណត់ឡើងវិញ (Reset Status)
+                                {t('headerResetStatus', lang === 'km' ? 'កំណត់ឡើងវិញ' : 'Reset Status')}
                             </button>
                             <button
                                 type="button"

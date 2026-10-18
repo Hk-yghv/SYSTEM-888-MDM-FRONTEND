@@ -55,7 +55,7 @@ const PhoneAppPage = () => {
 
     // Manual Disconnect
     const handleDisconnect = async () => {
-        if (!window.confirm('Are you sure you want to disconnect this device?')) return;
+        if (!window.confirm(t('confirmDisconnectDevice'))) return;
         setActionLoading(true);
         setActionMsg('');
         try {
@@ -284,7 +284,7 @@ const PhoneAppPage = () => {
             <header className="p-2 border border-slate-200 bg-white rounded-[5px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
                 <div>
                     <h1 className="text-xl font-extrabold text-indigo-400 flex items-center gap-2">
-                        <span>Phone App Connection Settings</span>
+                        <span>{t('phoneAppConnectionSettings')}</span>
                     </h1>
                 </div>
 
@@ -297,9 +297,9 @@ const PhoneAppPage = () => {
                             ? 'bg-amber-950 border-amber-700 text-amber-400 animate-pulse'
                             : 'bg-red-950 border-red-800 text-red-400'
                     }`}>
-                        {deviceData?.isConnected ? <><FaPlug /> 🟢 Connected</>
-                            : deviceData?.isPending ? <><FaHourglass className="animate-spin" /> ⏳ Pending Approval</>
-                            : <><FaTimesCircle /> 🔴 Disconnected</>}
+                        {deviceData?.isConnected ? <><FaPlug /> 🟢 {t('connected')}</>
+                            : deviceData?.isPending ? <><FaHourglass className="animate-spin" /> ⏳ {t('pendingApproval')}</>
+                            : <><FaTimesCircle /> 🔴 {t('disconnected')}</>}
                     </span>
 
                     {/* APPROVE CONNECT Button (when device is Pending) */}
@@ -310,7 +310,7 @@ const PhoneAppPage = () => {
                             className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg shadow-emerald-600/30 animate-pulse font-khmer"
                         >
                             <FaPlug />
-                            <span>{actionLoading ? 'កំពុងភ្ជាប់...' : '✅ {t('connectDevice')}'}</span>
+                            <span>{actionLoading ? t('connectingDevice') : `✅ ${t('connectDevice')}`}</span>
                         </button>
                     )}
 
@@ -322,7 +322,7 @@ const PhoneAppPage = () => {
                             className="px-3.5 py-2 bg-red-900 hover:bg-red-800 text-red-200 border border-red-700 rounded-[5px] text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-lg font-khmer"
                         >
                             <FaUnlink />
-                            <span>{actionLoading ? 'កំពុងផ្តាច់...' : '⛔ {t('disconnectDevice')}'}</span>
+                            <span>{actionLoading ? t('disconnectingDevice') : `⛔ ${t('disconnectDevice')}`}</span>
                         </button>
                     )}
 
@@ -346,7 +346,7 @@ const PhoneAppPage = () => {
                             }`}
                         >
                             <FaQrcode className="text-base" />
-                            <span>QR Code Connect</span>
+                            <span>{t('qrCodeConnect')}</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('wifi')}
@@ -357,7 +357,7 @@ const PhoneAppPage = () => {
                             }`}
                         >
                             <FaWifi className="text-base" />
-                            <span>Wi-Fi Network</span>
+                            <span>{t('wifiNetwork')}</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('hotspot')}
@@ -368,7 +368,7 @@ const PhoneAppPage = () => {
                             }`}
                         >
                             <FaBroadcastTower className="text-base" />
-                            <span>Hotspot AP</span>
+                            <span>{t('hotspotAccessPoint')}</span>
                         </button>
                     </div>
 
@@ -394,16 +394,16 @@ const PhoneAppPage = () => {
 
                                 <div className="space-y-3 text-left">
                                     <span className="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-700 text-[10px] font-bold uppercase rounded-full">
-                                        Recommended Method
+                                        {t('recommendedMethod')}
                                     </span>
                                     <h3 className="text-base font-bold text-slate-100 font-khmer">
                                         {t('scanQrConnect')}
                                     </h3>
                                     <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside font-khmer">
-                                        <li>Open Phone App on your Android device</li>
-                                        <li>Select Brand and Login</li>
-                                        <li>Tap <strong className="text-indigo-400">Scan QR Connect</strong> on App</li>
-                                        <li>Point camera at the QR Code on the left</li>
+                                        <li>{t('openPhoneAppOnAndroid')}</li>
+                                        <li>{t('selectBrandAndLogin')}</li>
+                                        <li>{t('tapScanQrConnect')} <strong className="text-indigo-400">{t('scanQrConnect')}</strong> {t('inTheApp')}</li>
+                                        <li>{t('pointCameraAtQrCode')}</li>
                                     </ol>
                                 </div>
                             </div>
@@ -415,12 +415,12 @@ const PhoneAppPage = () => {
                                     <FaWifi className="text-emerald-400" /> {t('localWifiConnect')}
                                 </h3>
                                 <p className="text-xs text-slate-300 font-khmer">
-                                    Ensure Computer and Phone are on the same Wi-Fi network:
+                                    {t('sameWifiNetworkInstruction')}
                                 </p>
                                 <div className="p-2 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
-                                    <div className="flex justify-between"><span className="text-slate-400">Server Host IP:</span><span className="text-indigo-400 font-bold">192.168.1.100</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">Pairing Port:</span><span className="text-emerald-400 font-bold">5000</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">Pairing PIN Code:</span><span className="text-amber-400 font-bold">882910</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">{t('serverHostIp')}:</span><span className="text-indigo-400 font-bold">192.168.1.100</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">{t('pairingPort')}:</span><span className="text-emerald-400 font-bold">5000</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">{t('pairingPinCode')}:</span><span className="text-amber-400 font-bold">882910</span></div>
                                 </div>
                             </div>
                         )}
@@ -431,11 +431,11 @@ const PhoneAppPage = () => {
                                     <FaBroadcastTower className="text-amber-400" /> {t('mobileHotspotConnect')}
                                 </h3>
                                 <p className="text-xs text-slate-300 font-khmer">
-                                    Turn on Mobile Hotspot on phone and connect computer to it:
+                                    {t('mobileHotspotInstruction')}
                                 </p>
                                 <div className="p-2 bg-slate-900 border border-slate-800 rounded-[5px] space-y-2 font-mono text-xs">
-                                    <div className="flex justify-between"><span className="text-slate-400">Hotspot AP Name:</span><span className="text-amber-400 font-bold">SYSTEM_MDM_AP</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-400">Gateway IP:</span><span className="text-indigo-400 font-bold">192.168.43.1</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">{t('hotspotAccessPointName')}:</span><span className="text-amber-400 font-bold">SYSTEM_MDM_AP</span></div>
+                                    <div className="flex justify-between"><span className="text-slate-400">{t('gatewayIp')}:</span><span className="text-indigo-400 font-bold">192.168.43.1</span></div>
                                 </div>
                             </div>
                         )}
@@ -489,29 +489,29 @@ const PhoneAppPage = () => {
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                             <div className="p-2 bg-slate-900/80 rounded-[5px] border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold">Device Model</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">{t('deviceModel')}</span>
                                 <span className="font-bold text-white">{deviceData?.model || '—'}</span>
                             </div>
                             <div className="p-2 bg-slate-900/80 rounded-[5px] border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold">IMEI 1</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">{t('imei1')}</span>
                                 <span className="font-mono text-indigo-300">{deviceData?.imei1 || '—'}</span>
                             </div>
                             <div className="p-2 bg-slate-900/80 rounded-[5px] border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold">IMEI 2</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">{t('imei2')}</span>
                                 <span className="font-mono text-indigo-300">{deviceData?.imei2 || '—'}</span>
                             </div>
                             <div className="p-2 bg-slate-900/80 rounded-[5px] border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold">Battery & Charging</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">{t('batteryAndCharging')}</span>
                                 <span className="font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                                    <FaBatteryThreeQuarters /> {deviceData?.batteryLevel}% {deviceData?.isCharging ? '(Charging)' : ''}
+                                    <FaBatteryThreeQuarters /> {deviceData?.batteryLevel}% {deviceData?.isCharging ? `(${t('charging')})` : ''}
                                 </span>
                             </div>
                             <div className="p-2 bg-slate-900/80 rounded-[5px] border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold">RAM & Storage</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">{t('ramAndStorage')}</span>
                                 <span className="text-slate-200">{deviceData?.ram} • {deviceData?.storage}</span>
                             </div>
                             <div className="p-2 bg-slate-900/80 rounded-[5px] border border-slate-800">
-                                <span className="text-slate-400 block text-[10px] font-semibold">IP Address & Network</span>
+                                <span className="text-slate-400 block text-[10px] font-semibold">{t('ipAddressAndNetwork')}</span>
                                 <span className="font-mono text-sky-400">{deviceData?.ip} ({deviceData?.carrier})</span>
                             </div>
                         </div>
@@ -519,7 +519,7 @@ const PhoneAppPage = () => {
                         {/* Recent SMS Preview */}
                         <div className="pt-2 border-t border-gray-800">
                             <h4 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5">
-                                <FaSms className="text-indigo-400" /> Recent Phone SMS Messages ({deviceData?.smsCount || 0} Total)
+                                <FaSms className="text-indigo-400" /> {t('recentPhoneSmsMessages')} ({deviceData?.smsCount || 0} {t('total')})
                             </h4>
                             <div className="space-y-2">
                                 {deviceData?.recentSms?.map((sms, i) => (
@@ -541,14 +541,14 @@ const PhoneAppPage = () => {
                     <div className="w-full flex items-center justify-between border-b border-gray-800 pb-3">
                         <div>
                             <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                                <span>3D Interactive Device Model</span>
+                                <span>{t('interactive3dDeviceModel')}</span>
                             </h3>
                             <p className="text-[10px] text-slate-400 font-khmer">
                                 {t('drag3dPhone')}
                             </p>
                         </div>
                         <span className="px-2 py-0.5 bg-emerald-950 border border-emerald-700 text-emerald-400 text-[9px] font-bold rounded-full">
-                            Interactive WebGL 3D
+                            {t('interactiveWebgl3d')}
                         </span>
                     </div>
 

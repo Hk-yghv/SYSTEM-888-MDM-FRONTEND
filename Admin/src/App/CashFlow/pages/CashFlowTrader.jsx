@@ -27,17 +27,18 @@ const formatPriceDollar = (num) => {
     return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const getDayNameKhmer = (dateStr) => {
+const getDayNameKhmer = (dateStr, lang) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return '';
-    const days = ['ថ្ងៃអាទិត្យ', 'ថ្ងៃច័ន្ទ', 'ថ្ងៃអង្គារ', 'ថ្ងៃពុធ', 'ថ្ងៃព្រហស្បតិ៍', 'ថ្ងៃសុក្រ', 'ថ្ងៃសៅរ៍'];
-    return days[d.getDay()] || '';
+    return new Intl.DateTimeFormat(lang === 'km' ? 'km-KH' : 'en-US', { weekday: 'long' })
+        .format(d)
+        .replace(/^ថ្ងៃ/, '');
 };
 
 const CashFlowTrader = () => {
     const { user, API_BASE } = useAuth();
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
 
     const todayStr = useMemo(() => formatDateToYMD(new Date()), []);
     const [selectedPeriod, setSelectedPeriod] = useState('30D'); // 7D | 14D | 30D | 90D | All
@@ -141,7 +142,7 @@ const CashFlowTrader = () => {
                 setHighlightedDate(null);
             }, 3500);
         } else {
-            alert(`មិនមានទិន្នន័យប្រតិបត្តិការសម្រាប់ថ្ងៃ ${normalized} នៅក្នុងបញ្ជីបច្ចុប្បន្នទេ!`);
+            alert(t('cashFlowNoTransactionsForDate', lang === 'km' ? `មិនមានទិន្នន័យប្រតិបត្តិការសម្រាប់ថ្ងៃ ${normalized} នៅក្នុងបញ្ជីបច្ចុប្បន្នទេ!` : `No transactions found for ${normalized} in the current list.`));
         }
     };
 
@@ -440,15 +441,15 @@ const CashFlowTrader = () => {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-lg sm:text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-                                    CASH FLOW TRADER
+                                    {t('cashFlowTrader')}
                                 </h1>
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[5px] text-[10px] font-mono font-bold bg-emerald-50 border border-emerald-300 text-emerald-700">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                                    LIVE MARKET
+                                    {t('cashFlowLiveMarket', lang === 'km' ? 'ទីផ្សារបន្តផ្ទាល់' : 'LIVE MARKET')}
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 font-medium">
-                                តាមដានលំហូរសាច់ប្រាក់ចេញ-ចូលប្រចាំថ្ងៃ ដូចក្រាហ្វិកទីផ្សារហិរញ្ញវត្ថុ & Day-over-Day Change
+                                {t('cashFlowTraderSubtitle', lang === 'km' ? 'តាមដានលំហូរសាច់ប្រាក់ចេញ-ចូលប្រចាំថ្ងៃ ដូចក្រាហ្វិកទីផ្សារហិរញ្ញវត្ថុ និងការប្រែប្រួលពីមួយថ្ងៃទៅមួយថ្ងៃ' : 'Track daily cash inflows and outflows with financial-market-style charts and day-over-day changes.')}
                             </p>
                         </div>
                     </div>
@@ -467,7 +468,7 @@ const CashFlowTrader = () => {
                                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                     }`}
                                 >
-                                    {period}
+                                    {period === 'All' ? t('all', lang === 'km' ? 'ទាំងអស់' : 'All') : period}
                                 </button>
                             ))}
                         </div>
@@ -480,7 +481,7 @@ const CashFlowTrader = () => {
                                     chartMode === 'dual' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                 }`}
                             >
-                                In/Out Bar
+                                {t('cashFlowInOutBar', lang === 'km' ? 'ក្រាហ្វិកប្រាក់ចូល/ចេញ' : 'In/Out Bar')}
                             </button>
                             <button
                                 onClick={() => setChartMode('net')}
@@ -488,7 +489,7 @@ const CashFlowTrader = () => {
                                     chartMode === 'net' ? 'bg-amber-600 text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                 }`}
                             >
-                                Net Flow
+                                {t('cashFlowNetFlow', lang === 'km' ? 'លំហូរសុទ្ធ' : 'Net Flow')}
                             </button>
                         </div>
 
@@ -496,7 +497,7 @@ const CashFlowTrader = () => {
                         <button
                             onClick={fetchTraderMetrics}
                             disabled={reloading}
-                            title="Refresh Data"
+                            title={t('refresh', lang === 'km' ? 'ធ្វើឱ្យទិន្នន័យថ្មី' : 'Refresh data')}
                             className="p-2 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer transition-colors shadow-2xs"
                         >
                             <FaSync className={`text-xs ${reloading ? 'animate-spin text-emerald-600' : ''}`} />
@@ -509,28 +510,28 @@ const CashFlowTrader = () => {
                     {/* Cash In Ticker */}
                     <div className="bg-emerald-50/70 p-3 rounded-[5px] border border-emerald-200 shadow-2xs">
                         <div className="flex items-center justify-between text-[11px] text-emerald-800 font-bold">
-                            <span>TOTAL CASH IN (ចូល)</span>
+                            <span>{t('cashFlowTotalCashIn', lang === 'km' ? 'សាច់ប្រាក់ចូលសរុប' : 'TOTAL CASH IN')}</span>
                             <FaMoneyBillWave className="text-emerald-600" />
                         </div>
                         <p className="text-lg font-black font-mono text-emerald-700 mt-0.5">
                             {formatCurrency(summary.totalCashIn)}
                         </p>
                         <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                            ពីការបង់ប្រាក់កុងត្រា & ប្រាក់ចូល
+                            {t('cashFlowCashInSources', lang === 'km' ? 'ពីការបង់ប្រាក់កុងត្រា និងប្រាក់ចូល' : 'From contract payments and cash-in records')}
                         </p>
                     </div>
 
                     {/* Cash Out Ticker */}
                     <div className="bg-rose-50/70 p-3 rounded-[5px] border border-rose-200 shadow-2xs">
                         <div className="flex items-center justify-between text-[11px] text-rose-800 font-bold">
-                            <span>TOTAL CASH OUT (ចេញ)</span>
+                            <span>{t('cashFlowTotalCashOut', lang === 'km' ? 'សាច់ប្រាក់ចេញសរុប' : 'TOTAL CASH OUT')}</span>
                             <FaCoins className="text-rose-600" />
                         </div>
                         <p className="text-lg font-black font-mono text-rose-700 mt-0.5">
                             {formatCurrency(summary.totalCashOut)}
                         </p>
                         <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                            ចំណាយសាច់ប្រាក់ចេញសរុប
+                            {t('cashFlowCashOutSummary', lang === 'km' ? 'ចំណាយសាច់ប្រាក់ចេញសរុប' : 'Total cash out expenses')}
                         </p>
                     </div>
 
@@ -540,7 +541,7 @@ const CashFlowTrader = () => {
                     }`}>
                         <div className="flex items-center justify-between text-[11px] font-bold">
                             <span className={summary.totalNetFlow >= 0 ? 'text-teal-800' : 'text-rose-800'}>
-                                NET CASH FLOW (សល់សុទ្ធ)
+                                {t('cashFlowNetCashFlow', lang === 'km' ? 'លំហូរសាច់ប្រាក់សុទ្ធ' : 'NET CASH FLOW')}
                             </span>
                             <FaExchangeAlt className={summary.totalNetFlow >= 0 ? 'text-teal-600' : 'text-rose-600'} />
                         </div>
@@ -550,14 +551,16 @@ const CashFlowTrader = () => {
                             {summary.totalNetFlow >= 0 ? '+' : ''}{formatCurrency(summary.totalNetFlow)}
                         </p>
                         <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                            {summary.totalNetFlow >= 0 ? '🟢 លើសចំណូល (Surplus)' : '🔴 ឱនភាពសាច់ប្រាក់ (Deficit)'}
+                            {summary.totalNetFlow >= 0
+                                ? `🟢 ${t('cashFlowSurplus', lang === 'km' ? 'សាច់ប្រាក់លើស' : 'Surplus')}`
+                                : `🔴 ${t('cashFlowDeficit', lang === 'km' ? 'ឱនភាពសាច់ប្រាក់' : 'Cash deficit')}`}
                         </p>
                     </div>
 
                     {/* Today DoD Ticker */}
                     <div className="bg-slate-50 p-3 rounded-[5px] border border-slate-200 shadow-2xs">
                         <div className="flex items-center justify-between text-[11px] text-slate-700 font-bold">
-                            <span>TODAY VS YESTERDAY</span>
+                            <span>{t('cashFlowTodayVsYesterday', lang === 'km' ? 'ថ្ងៃនេះធៀបនឹងម្សិលមិញ' : 'TODAY VS YESTERDAY')}</span>
                             <FaFire className="text-amber-500" />
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -576,7 +579,11 @@ const CashFlowTrader = () => {
                             )}
                         </div>
                         <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                            {summary.todayStats?.inDiff > 0 ? 'ចូលច្រើនជាងម្សិលមិញ' : (summary.todayStats?.inDiff < 0 ? 'ចូលតិចជាងម្សិលមិញ' : 'ទិន្នន័យស្មើម្សិលមិញ')}
+                            {summary.todayStats?.inDiff > 0
+                                ? t('cashFlowInflowMoreThanYesterday', lang === 'km' ? 'ប្រាក់ចូលច្រើនជាងម្សិលមិញ' : 'Cash inflow higher than yesterday')
+                                : (summary.todayStats?.inDiff < 0
+                                    ? t('cashFlowInflowLessThanYesterday', lang === 'km' ? 'ប្រាក់ចូលតិចជាងម្សិលមិញ' : 'Cash inflow lower than yesterday')
+                                    : t('cashFlowDataUnchanged', lang === 'km' ? 'ទិន្នន័យស្មើម្សិលមិញ' : 'Same as yesterday'))}
                         </p>
                     </div>
                 </div>
@@ -592,7 +599,7 @@ const CashFlowTrader = () => {
                         {/* Primary Flow Selection: [ 🟢 ប្រាក់ចូល ] [ 🔴 ប្រាក់ចេញ ] [ ⚖️ ទាំងពីរ ] [ 📊 លំហូរសុទ្ធ ] */}
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="text-xs font-bold text-slate-700 font-sans">
-                                ជ្រើសរើសមើល:
+                                {t('cashFlowSelectView', lang === 'km' ? 'ជ្រើសរើសមើល:' : 'Select view:')}
                             </span>
                             <div className="flex flex-wrap items-center bg-slate-100 p-0.5 rounded-[5px] border border-slate-200 text-xs font-sans font-bold">
                                 <button
@@ -604,7 +611,7 @@ const CashFlowTrader = () => {
                                     }`}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-emerald-300"></span>
-                                    <span>🟢 ប្រាក់ចូល (Cash In)</span>
+                                    <span>🟢 {t('cashFlowTotalCashIn', lang === 'km' ? 'ប្រាក់ចូល' : 'Cash in')}</span>
                                 </button>
                                 <button
                                     onClick={() => setFlowFocus('out')}
@@ -615,7 +622,7 @@ const CashFlowTrader = () => {
                                     }`}
                                 >
                                     <span className="w-2 h-2 rounded-full bg-rose-300"></span>
-                                    <span>🔴 ប្រាក់ចេញ (Cash Out)</span>
+                                    <span>🔴 {t('cashFlowTotalCashOut', lang === 'km' ? 'ប្រាក់ចេញ' : 'Cash out')}</span>
                                 </button>
                                 <button
                                     onClick={() => setFlowFocus('both')}
@@ -625,7 +632,7 @@ const CashFlowTrader = () => {
                                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                     }`}
                                 >
-                                    <span>⚖️ ទាំងពីរ (ចេញ & ចូល)</span>
+                                    <span>⚖️ {t('cashFlowBothFlows', lang === 'km' ? 'ប្រាក់ចូល និងប្រាក់ចេញ' : 'Inflow & outflow')}</span>
                                 </button>
                                 <button
                                     onClick={() => setFlowFocus('net')}
@@ -635,7 +642,7 @@ const CashFlowTrader = () => {
                                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                     }`}
                                 >
-                                    <span>📊 លំហូរសុទ្ធ</span>
+                                    <span>📊 {t('cashFlowNetFlow', lang === 'km' ? 'លំហូរសុទ្ធ' : 'Net flow')}</span>
                                 </button>
                             </div>
                         </div>
@@ -646,7 +653,7 @@ const CashFlowTrader = () => {
                         <div className="flex items-center bg-slate-100 p-0.5 rounded-[5px] border border-slate-200">
                             <button
                                 onClick={handleZoomOut}
-                                title="បង្រួម (Zoom Out)"
+                                title={t('cashFlowZoomOut', lang === 'km' ? 'បង្រួម' : 'Zoom out')}
                                 className="px-2 py-0.5 rounded-[4px] font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer transition-colors"
                             >
                                 🔍 −
@@ -656,14 +663,14 @@ const CashFlowTrader = () => {
                             </span>
                             <button
                                 onClick={handleZoomIn}
-                                title="ព្រងីក (Zoom In)"
+                                title={t('cashFlowZoomIn', lang === 'km' ? 'ពង្រីក' : 'Zoom in')}
                                 className="px-2 py-0.5 rounded-[4px] font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer transition-colors"
                             >
                                 🔍 +
                             </button>
                             <button
                                 onClick={handleResetZoom}
-                                title="Reset Zoom to 100%"
+                                title={t('cashFlowResetZoom', lang === 'km' ? 'កំណត់ការពង្រីកឡើងវិញទៅ ១០០%' : 'Reset zoom to 100%')}
                                 className="px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-200 cursor-pointer"
                             >
                                 ⟲ Reset
@@ -689,21 +696,21 @@ const CashFlowTrader = () => {
                         <div className="flex items-center bg-slate-100 p-0.5 rounded-[5px] border border-slate-200">
                             <button
                                 onClick={handleScrollLeft}
-                                title="Scroll ទៅឆ្វេង (អតីតកាល)"
+                                title={t('cashFlowScrollPast', lang === 'km' ? 'រំកិលទៅខាងឆ្វេង (អតីតកាល)' : 'Scroll left (past)')}
                                 className="px-2 py-0.5 rounded-[4px] text-xs font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
                             >
                                 ◀ ឆ្វេង
                             </button>
                             <button
                                 onClick={handleScrollRight}
-                                title="Scroll ទៅស្តាំ (បច្ចុប្បន្ន)"
+                                title={t('cashFlowScrollCurrent', lang === 'km' ? 'រំកិលទៅខាងស្តាំ (បច្ចុប្បន្ន)' : 'Scroll right (present)')}
                                 className="px-2 py-0.5 rounded-[4px] text-xs font-bold text-slate-700 hover:bg-slate-200 hover:text-slate-900 cursor-pointer"
                             >
                                 ស្តាំ ▶
                             </button>
                             <button
                                 onClick={handleScrollToLatest}
-                                title="Jump to Latest Candle"
+                                title={t('cashFlowJumpLatest', lang === 'km' ? 'ទៅកាន់ទិន្នន័យថ្មីបំផុត' : 'Jump to latest candle')}
                                 className="px-2 py-0.5 rounded-[4px] text-xs font-bold bg-white text-emerald-700 hover:bg-emerald-50 border border-slate-200 cursor-pointer shadow-2xs"
                             >
                                 ⏭ ចុងក្រោយ
@@ -752,7 +759,7 @@ const CashFlowTrader = () => {
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                 }`}
                             >
-                                <span>🕯️ Candles</span>
+                                <span>🕯️ {t('cashFlowCandles', lang === 'km' ? 'ក្រាហ្វិកទៀន' : 'Candles')}</span>
                             </button>
                             <button
                                 onClick={() => setChartMode('net')}
@@ -762,17 +769,17 @@ const CashFlowTrader = () => {
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                                 }`}
                             >
-                                <span>Net Area</span>
+                                <span>{t('cashFlowNetArea', lang === 'km' ? 'តំបន់លំហូរសុទ្ធ' : 'Net Area')}</span>
                             </button>
                         </div>
                     </div>
 
                     {/* Status / Focus Badge */}
                     <div className="text-[11px] font-sans font-medium">
-                        {flowFocus === 'in' && <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-200 font-bold">● កំពុងតាមដាន: ប្រាក់ចូលពិតប្រាកដ (Cash In Dollars)</span>}
-                        {flowFocus === 'out' && <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-[4px] border border-rose-200 font-bold">● កំពុងតាមដាន: ប្រាក់ចេញពិតប្រាកដ (Cash Out Dollars)</span>}
-                        {flowFocus === 'both' && <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-[4px] border border-slate-200 font-bold">● កំពុងតាមដាន: ប្រៀបធៀបប្រាក់ចេញ និង ប្រាក់ចូល</span>}
-                        {flowFocus === 'net' && <span className="text-teal-700 bg-teal-50 px-2 py-0.5 rounded-[4px] border border-teal-200 font-bold">● កំពុងតាមដាន: លំហូរសុទ្ធ (Net Balance)</span>}
+                        {flowFocus === 'in' && <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-200 font-bold">● {t('cashFlowTrackingInflow', lang === 'km' ? 'កំពុងតាមដាន៖ ប្រាក់ចូល' : 'Tracking: cash inflow')}</span>}
+                        {flowFocus === 'out' && <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-[4px] border border-rose-200 font-bold">● {t('cashFlowTrackingOutflow', lang === 'km' ? 'កំពុងតាមដាន៖ ប្រាក់ចេញ' : 'Tracking: cash outflow')}</span>}
+                        {flowFocus === 'both' && <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-[4px] border border-slate-200 font-bold">● {t('cashFlowTrackingBoth', lang === 'km' ? 'កំពុងប្រៀបធៀបប្រាក់ចេញ និងប្រាក់ចូល' : 'Comparing cash inflow and outflow')}</span>}
+                        {flowFocus === 'net' && <span className="text-teal-700 bg-teal-50 px-2 py-0.5 rounded-[4px] border border-teal-200 font-bold">● {t('cashFlowTrackingNet', lang === 'km' ? 'កំពុងតាមដាន៖ លំហូរសុទ្ធ' : 'Tracking: net cash flow')}</span>}
                     </div>
                 </div>
             </div>
@@ -781,7 +788,7 @@ const CashFlowTrader = () => {
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-2 py-1 text-[11px] font-mono text-slate-700 bg-slate-50/80 rounded-[4px] mb-2 border border-slate-200">
                 {(() => {
                     const activeCandle = hoveredPoint || latestCandle;
-                    if (!activeCandle) return <span>កំពុងរៀបចំទិន្នន័យ...</span>;
+                    if (!activeCandle) return <span>{t('preparingData', lang === 'km' ? 'កំពុងរៀបចំទិន្នន័យ...' : 'Preparing data...')}</span>;
                     const diff = activeCandle.close - activeCandle.open;
                     const pct = ((diff / (activeCandle.open || 1)) * 100).toFixed(2);
                     const isUp = diff >= 0;
@@ -800,17 +807,17 @@ const CashFlowTrader = () => {
                             </span>
                             <span className="hidden lg:inline text-slate-300">|</span>
                             <span className="hidden lg:inline text-slate-600">
-                                ចូល (In): <b className="text-emerald-700 font-bold">${activeCandle.cashIn.toLocaleString()}</b>
+                                {t('cashFlowInLabel', lang === 'km' ? 'ចូល (In):' : 'In:')} <b className="text-emerald-700 font-bold">${activeCandle.cashIn.toLocaleString()}</b>
                             </span>
                             <span className="hidden lg:inline text-slate-600">
-                                ចេញ (Out): <b className="text-rose-700 font-bold">${activeCandle.cashOut.toLocaleString()}</b>
+                                {t('cashFlowOutLabel', lang === 'km' ? 'ចេញ (Out):' : 'Out:')} <b className="text-rose-700 font-bold">${activeCandle.cashOut.toLocaleString()}</b>
                             </span>
                         </div>
                     );
                 })()}
 
                 <span className="text-[10px] text-slate-500 italic hidden sm:inline">
-                    💡 អូស Scroll ឆ្វេង-ស្តាំ ឬចុចលើ Candle ដើម្បី Scroll ទៅរកកាលបរិច្ឆេទនោះ
+                    💡 {t('cashFlowChartNavigationHelp', lang === 'km' ? 'អូស Scroll ឆ្វេង-ស្តាំ ឬចុចលើ Candle ដើម្បី Scroll ទៅរកកាលបរិច្ឆេទនោះ' : 'Drag left or right, or click a candle to scroll to that date.')}
                 </span>
             </div>
 
@@ -827,11 +834,11 @@ const CashFlowTrader = () => {
                     {loading ? (
                         <div className="h-[360px] flex flex-col items-center justify-center gap-2 text-slate-500 text-xs font-mono">
                             <FaSpinner className="animate-spin text-2xl text-emerald-600" />
-                            <span>កំពុងទាញយកទិន្នន័យក្រាហ្វិក...</span>
+                            <span>{t('loadingChartData', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យក្រាហ្វិក...' : 'Loading chart data...')}</span>
                         </div>
                     ) : candlePoints.length === 0 ? (
                         <div className="h-[360px] flex items-center justify-center text-slate-400 text-xs font-mono">
-                            មិនទាន់មានទិន្នន័យប្រតិបត្តិការក្នុងចន្លោះពេលនេះឡើយ
+                            {t('cashFlowNoTransactionsInRange', lang === 'km' ? 'មិនទាន់មានទិន្នន័យប្រតិបត្តិការក្នុងចន្លោះពេលនេះឡើយ' : 'No transactions in this date range yet.')}
                         </div>
                     ) : (
                             <svg
@@ -973,7 +980,7 @@ const CashFlowTrader = () => {
                                             fontFamily="sans-serif"
                                             textAnchor="middle"
                                         >
-                                            {candleTimeframe === 'D1' ? getDayNameKhmer(pt.date).replace('ថ្ងៃ', '') : `Vol: $${(pt.cashIn + pt.cashOut).toLocaleString()}`}
+                                            {candleTimeframe === 'D1' ? getDayNameKhmer(pt.date, lang) : `Vol: $${(pt.cashIn + pt.cashOut).toLocaleString()}`}
                                         </text>
                                     </g>
                                 ))}
@@ -1065,20 +1072,20 @@ const CashFlowTrader = () => {
                                     📅 {hoveredPoint.timeLabel} ({hoveredPoint.date})
                                 </p>
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-slate-700">
-                                    <span>Open: <b>{formatPriceDollar(hoveredPoint.open)}</b></span>
-                                    <span>High: <b>{formatPriceDollar(hoveredPoint.high)}</b></span>
-                                    <span>Low: <b>{formatPriceDollar(hoveredPoint.low)}</b></span>
-                                    <span>Close: <b className={hoveredPoint.isGreen ? 'text-emerald-700' : 'text-rose-700'}>{formatPriceDollar(hoveredPoint.close)}</b></span>
+                                    <span>{t('cashFlowOpen', lang === 'km' ? 'បើក' : 'Open')}: <b>{formatPriceDollar(hoveredPoint.open)}</b></span>
+                                    <span>{t('cashFlowHigh', lang === 'km' ? 'ខ្ពស់' : 'High')}: <b>{formatPriceDollar(hoveredPoint.high)}</b></span>
+                                    <span>{t('cashFlowLow', lang === 'km' ? 'ទាប' : 'Low')}: <b>{formatPriceDollar(hoveredPoint.low)}</b></span>
+                                    <span>{t('cashFlowClose', lang === 'km' ? 'បិទ' : 'Close')}: <b className={hoveredPoint.isGreen ? 'text-emerald-700' : 'text-rose-700'}>{formatPriceDollar(hoveredPoint.close)}</b></span>
                                 </div>
                                 <div className="border-t border-slate-100 pt-1 mt-1">
                                     <p className="text-emerald-700 font-bold">
-                                        ចូល (Inflow): ${hoveredPoint.cashIn.toLocaleString()}
+                                        {t('cashFlowInflowLabel', lang === 'km' ? 'ចូល (Inflow):' : 'Inflow:')} ${hoveredPoint.cashIn.toLocaleString()}
                                     </p>
                                     <p className="text-rose-700 font-bold">
-                                        ចេញ (Outflow): ${hoveredPoint.cashOut.toLocaleString()}
+                                        {t('cashFlowOutflowLabel', lang === 'km' ? 'ចេញ (Outflow):' : 'Outflow:')} ${hoveredPoint.cashOut.toLocaleString()}
                                     </p>
                                     <p className={hoveredPoint.netFlow >= 0 ? 'text-teal-700 font-black' : 'text-rose-700 font-black'}>
-                                        សល់ (Net): {hoveredPoint.netFlow >= 0 ? '+' : ''}${hoveredPoint.netFlow.toLocaleString()}
+                                        {t('cashFlowNetLabel', lang === 'km' ? 'សល់ (Net):' : 'Net:')} {hoveredPoint.netFlow >= 0 ? '+' : ''}${hoveredPoint.netFlow.toLocaleString()}
                                     </p>
                                 </div>
                             </div>
@@ -1192,7 +1199,7 @@ const CashFlowTrader = () => {
                     {/* Date Search Input */}
                     <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-[5px] border border-slate-300 text-xs">
                         <FaSearch className="text-emerald-600 text-xs" />
-                        <span className="font-bold text-slate-700">ស្វែងរកកាលបរិច្ឆេទ:</span>
+                        <span className="font-bold text-slate-700">{t('searchDate', lang === 'km' ? 'ស្វែងរកកាលបរិច្ឆេទ:' : 'Search date:')}</span>
                         <input
                             type="date"
                             value={searchDate}
@@ -1218,7 +1225,7 @@ const CashFlowTrader = () => {
                         onClick={() => handleScrollToDate(todayStr)}
                         className="px-2.5 py-1.5 rounded-[5px] text-xs font-bold font-mono bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors cursor-pointer"
                     >
-                        🎯 ទៅកាន់ថ្ងៃនេះ
+                        🎯 {t('goToToday', lang === 'km' ? 'ទៅកាន់ថ្ងៃនេះ' : 'Go to today')}
                     </button>
 
                     <button
@@ -1229,23 +1236,23 @@ const CashFlowTrader = () => {
                         }}
                         className="px-2.5 py-1.5 rounded-[5px] text-xs font-bold font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors cursor-pointer"
                     >
-                        ម្សិលមិញ
+                        {t('yesterday', lang === 'km' ? 'ម្សិលមិញ' : 'Yesterday')}
                     </button>
                 </div>
 
                 {/* Filter Flow Type */}
                 <div className="flex items-center gap-2 text-xs font-semibold">
-                    <span className="text-slate-600">តម្រង:</span>
+                    <span className="text-slate-600">{t('filter', lang === 'km' ? 'តម្រង:' : 'Filter:')}</span>
                     <select
                         value={filterFlowType}
                         onChange={(e) => setFilterFlowType(e.target.value)}
                         className="bg-slate-50 text-slate-800 border border-slate-300 rounded-[5px] px-2.5 py-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer font-mono"
                     >
-                        <option value="All">ថ្ងៃទាំងអស់ ({dailyRecords.length})</option>
-                        <option value="Surplus">ថ្ងៃចំណេញសល់ (Surplus)</option>
-                        <option value="Deficit">ថ្ងៃឱនភាព (Deficit)</option>
-                        <option value="InflowOnly">ថ្ងៃមានប្រាក់ចូល</option>
-                        <option value="OutflowOnly">ថ្ងៃមានប្រាក់ចេញ</option>
+                        <option value="All">{t('cashFlowAllDays', lang === 'km' ? 'ថ្ងៃទាំងអស់' : 'All days')} ({dailyRecords.length})</option>
+                        <option value="Surplus">{t('cashFlowSurplusDays', lang === 'km' ? 'ថ្ងៃមានសាច់ប្រាក់លើស' : 'Surplus days')}</option>
+                        <option value="Deficit">{t('cashFlowDeficitDays', lang === 'km' ? 'ថ្ងៃមានឱនភាព' : 'Deficit days')}</option>
+                        <option value="InflowOnly">{t('cashFlowDaysWithInflow', lang === 'km' ? 'ថ្ងៃមានប្រាក់ចូល' : 'Days with inflow')}</option>
+                        <option value="OutflowOnly">{t('cashFlowDaysWithOutflow', lang === 'km' ? 'ថ្ងៃមានប្រាក់ចេញ' : 'Days with outflow')}</option>
                     </select>
                 </div>
             </div>
@@ -1256,9 +1263,9 @@ const CashFlowTrader = () => {
             <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-semibold">
                     <span className="font-bold font-mono text-slate-700">
-                        📋 កំណត់ត្រាហិរញ្ញវត្ថុប្រចាំថ្ងៃ (DAY-OVER-DAY ANALYSIS)
+                        📋 {t('cashFlowDailyRecordsAnalysis', lang === 'km' ? 'កំណត់ត្រាហិរញ្ញវត្ថុប្រចាំថ្ងៃ (វិភាគប្រៀបធៀបពីមួយថ្ងៃទៅមួយថ្ងៃ)' : 'Daily financial records (day-over-day analysis)')}
                     </span>
-                    <span>បង្ហាញ {filteredRecords.length} ថ្ងៃ</span>
+                    <span>{t('showing', lang === 'km' ? 'បង្ហាញ' : 'Showing')} {filteredRecords.length} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
                 </div>
 
                 {filteredRecords.length === 0 ? (
@@ -1272,7 +1279,7 @@ const CashFlowTrader = () => {
                         const isExpanded = Boolean(expandedDays[day.date]);
 
                         const isSurplus = day.netFlow >= 0;
-                        const dayNameKh = getDayNameKhmer(day.date);
+                        const dayNameKh = getDayNameKhmer(day.date, lang);
 
                         return (
                             <div
@@ -1325,7 +1332,7 @@ const CashFlowTrader = () => {
                                             onClick={() => toggleExpandDay(day.date)}
                                             className="px-2 py-1 rounded-[5px] text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-colors flex items-center gap-1 cursor-pointer"
                                         >
-                                            <span>{day.inflowCount + day.outflowCount} ប្រតិបត្តិការ</span>
+                                            <span>{day.inflowCount + day.outflowCount} {t('cashFlowTransactions', lang === 'km' ? 'ប្រតិបត្តិការ' : 'transactions')}</span>
                                             {isExpanded ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
                                         </button>
                                     </div>
@@ -1336,9 +1343,9 @@ const CashFlowTrader = () => {
                                     {/* 1. Cash In Box */}
                                     <div className="bg-emerald-50/70 p-3 rounded-[5px] border border-emerald-200/80">
                                         <div className="flex items-center justify-between text-xs text-emerald-800 font-bold mb-1">
-                                            <span>📥 CASH IN (ប្រាក់ចូល)</span>
+                                            <span>📥 {t('cashFlowTotalCashIn', lang === 'km' ? 'ប្រាក់ចូល' : 'CASH IN')}</span>
                                             <span className="text-[10px] font-mono font-normal text-slate-500">
-                                                {day.inflowCount} ប្រតិបត្តិការ
+                                                {day.inflowCount} {t('cashFlowTransactions', lang === 'km' ? 'ប្រតិបត្តិការ' : 'transactions')}
                                             </span>
                                         </div>
                                         <p className="text-base sm:text-lg font-black font-mono text-emerald-700">
@@ -1350,16 +1357,16 @@ const CashFlowTrader = () => {
                                             {day.inDiff > 0 ? (
                                                 <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                                                     <FaArrowUp className="text-[9px]" />
-                                                    ច្រើនជាងម្សិលមិញ +{formatCurrency(day.inDiff)} (+{day.inPct}%)
+                                                    {t('cashFlowMoreThanYesterday', lang === 'km' ? 'ច្រើនជាងម្សិលមិញ' : 'More than yesterday')} +{formatCurrency(day.inDiff)} (+{day.inPct}%)
                                                 </span>
                                             ) : day.inDiff < 0 ? (
                                                 <span className="text-rose-700 font-bold flex items-center gap-0.5">
                                                     <FaArrowDown className="text-[9px]" />
-                                                    តិចជាងម្សិលមិញ -{formatCurrency(Math.abs(day.inDiff))} ({day.inPct}%)
+                                                    {t('cashFlowLessThanYesterday', lang === 'km' ? 'តិចជាងម្សិលមិញ' : 'Less than yesterday')} -{formatCurrency(Math.abs(day.inDiff))} ({day.inPct}%)
                                                 </span>
                                             ) : (
                                                 <span className="text-slate-500">
-                                                    = ស្មើនឹងម្សិលមិញ (0.0%)
+                                                    = {t('cashFlowSameAsYesterday', lang === 'km' ? 'ស្មើនឹងម្សិលមិញ' : 'Same as yesterday')} (0.0%)
                                                 </span>
                                             )}
                                         </div>
@@ -1368,9 +1375,9 @@ const CashFlowTrader = () => {
                                     {/* 2. Cash Out Box */}
                                     <div className="bg-rose-50/70 p-3 rounded-[5px] border border-rose-200/80">
                                         <div className="flex items-center justify-between text-xs text-rose-800 font-bold mb-1">
-                                            <span>📤 CASH OUT (ប្រាក់ចេញ)</span>
+                                            <span>📤 {t('cashFlowTotalCashOut', lang === 'km' ? 'ប្រាក់ចេញ' : 'CASH OUT')}</span>
                                             <span className="text-[10px] font-mono font-normal text-slate-500">
-                                                {day.outflowCount} ប្រតិបត្តិការ
+                                                {day.outflowCount} {t('cashFlowTransactions', lang === 'km' ? 'ប្រតិបត្តិការ' : 'transactions')}
                                             </span>
                                         </div>
                                         <p className="text-base sm:text-lg font-black font-mono text-rose-700">
@@ -1382,16 +1389,16 @@ const CashFlowTrader = () => {
                                             {day.outDiff > 0 ? (
                                                 <span className="text-rose-700 font-bold flex items-center gap-0.5">
                                                     <FaArrowUp className="text-[9px]" />
-                                                    ចេញច្រើនជាងម្សិលមិញ +{formatCurrency(day.outDiff)} (+{day.outPct}%)
+                                                    {t('cashFlowOutflowMoreThanYesterday', lang === 'km' ? 'ចេញច្រើនជាងម្សិលមិញ' : 'Outflow higher than yesterday')} +{formatCurrency(day.outDiff)} (+{day.outPct}%)
                                                 </span>
                                             ) : day.outDiff < 0 ? (
                                                 <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                                                     <FaArrowDown className="text-[9px]" />
-                                                    ចេញតិចជាងម្សិលមិញ -{formatCurrency(Math.abs(day.outDiff))} ({day.outPct}%)
+                                                    {t('cashFlowOutflowLessThanYesterday', lang === 'km' ? 'ចេញតិចជាងម្សិលមិញ' : 'Outflow lower than yesterday')} -{formatCurrency(Math.abs(day.outDiff))} ({day.outPct}%)
                                                 </span>
                                             ) : (
                                                 <span className="text-slate-500">
-                                                    = ចំណាយស្មើម្សិលមិញ
+                                                    = {t('cashFlowExpenseSameAsYesterday', lang === 'km' ? 'ចំណាយស្មើម្សិលមិញ' : 'Same expenses as yesterday')}
                                                 </span>
                                             )}
                                         </div>
@@ -1405,10 +1412,10 @@ const CashFlowTrader = () => {
                                     }`}>
                                         <div className="flex items-center justify-between text-xs font-bold mb-1">
                                             <span className={isSurplus ? 'text-teal-800' : 'text-rose-800'}>
-                                                ⚖️ NET CASH FLOW (សល់សុទ្ធ)
+                                                ⚖️ {t('cashFlowNetCashFlow', lang === 'km' ? 'លំហូរសាច់ប្រាក់សុទ្ធ' : 'NET CASH FLOW')}
                                             </span>
                                             <span className="text-[10px] font-mono text-slate-500">
-                                                Inflow vs Outflow
+                                                {t('cashFlowInflowVsOutflow', lang === 'km' ? 'ប្រាក់ចូលធៀបនឹងប្រាក់ចេញ' : 'Inflow vs Outflow')}
                                             </span>
                                         </div>
                                         <p className={`text-base sm:text-lg font-black font-mono ${
@@ -1421,15 +1428,15 @@ const CashFlowTrader = () => {
                                         <div className="mt-1.5 pt-1.5 border-t border-slate-200 text-[11px] font-mono flex items-center gap-1">
                                             {day.netDiff > 0 ? (
                                                 <span className="text-emerald-700 font-bold">
-                                                    ▲ ចំណេញជាងម្សិលមិញ +{formatCurrency(day.netDiff)}
+                                                    ▲ {t('cashFlowNetHigherThanYesterday', lang === 'km' ? 'សល់សុទ្ធច្រើនជាងម្សិលមិញ' : 'Net flow higher than yesterday')} +{formatCurrency(day.netDiff)}
                                                 </span>
                                             ) : day.netDiff < 0 ? (
                                                 <span className="text-rose-700 font-bold">
-                                                    ▼ ធ្លាក់ចុះជាងម្សិលមិញ -{formatCurrency(Math.abs(day.netDiff))}
+                                                    ▼ {t('cashFlowNetLowerThanYesterday', lang === 'km' ? 'សល់សុទ្ធតិចជាងម្សិលមិញ' : 'Net flow lower than yesterday')} -{formatCurrency(Math.abs(day.netDiff))}
                                                 </span>
                                             ) : (
                                                 <span className="text-slate-500">
-                                                    = ស្មើសុទ្ធនឹងម្សិលមិញ
+                                                    = {t('cashFlowNetSameAsYesterday', lang === 'km' ? 'ស្មើនឹងម្សិលមិញ' : 'Same net flow as yesterday')}
                                                 </span>
                                             )}
                                         </div>
@@ -1439,7 +1446,7 @@ const CashFlowTrader = () => {
                                 {/* Flow Proportion Bar */}
                                 <div className="mt-2.5 pt-2 border-t border-slate-100">
                                     <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-                                        <span>សមាមាត្រលំហូរសាច់ប្រាក់:</span>
+                                        <span>{t('cashFlowProportion', lang === 'km' ? 'សមាមាត្រលំហូរសាច់ប្រាក់:' : 'Cash flow proportion:')}</span>
                                         <span>
                                             In: {day.cashIn + day.cashOut > 0 ? ((day.cashIn / (day.cashIn + day.cashOut)) * 100).toFixed(1) : 0}% | Out: {day.cashIn + day.cashOut > 0 ? ((day.cashOut / (day.cashIn + day.cashOut)) * 100).toFixed(1) : 0}%
                                         </span>
@@ -1460,14 +1467,14 @@ const CashFlowTrader = () => {
                                 {isExpanded && (
                                     <div className="mt-3 pt-3 border-t border-slate-100 space-y-2 animate-in fade-in duration-200">
                                         <p className="text-xs font-bold text-slate-800 font-mono">
-                                            🧾 បញ្ជីប្រតិបត្តិការលម្អិតសម្រាប់ថ្ងៃ {day.date}:
+                                            🧾 {t('cashFlowTransactionsForDate', lang === 'km' ? `បញ្ជីប្រតិបត្តិការលម្អិតសម្រាប់ថ្ងៃ ${day.date}:` : `Transactions for ${day.date}:`)}
                                         </p>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                             {/* Inflow List */}
                                             <div className="bg-emerald-50/40 p-2.5 rounded-[5px] border border-emerald-200 text-xs font-mono">
                                                 <p className="font-bold text-emerald-800 mb-1.5 pb-1 border-b border-emerald-200">
-                                                    📥 ប្រាក់ចូល ({day.inflowItems?.length || 0})
+                                                    📥 {t('cashFlowTotalCashIn', lang === 'km' ? 'ប្រាក់ចូល' : 'Cash in')} ({day.inflowItems?.length || 0})
                                                 </p>
                                                 {day.inflowItems && day.inflowItems.length > 0 ? (
                                                     <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
@@ -1484,14 +1491,14 @@ const CashFlowTrader = () => {
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <p className="text-slate-400 text-[11px] italic">មិនមានប្រតិបត្តិការប្រាក់ចូលទេ</p>
+                                                    <p className="text-slate-400 text-[11px] italic">{t('cashFlowNoInflowTransactions', lang === 'km' ? 'មិនមានប្រតិបត្តិការប្រាក់ចូលទេ' : 'No cash-in transactions')}</p>
                                                 )}
                                             </div>
 
                                             {/* Outflow List */}
                                             <div className="bg-rose-50/40 p-2.5 rounded-[5px] border border-rose-200 text-xs font-mono">
                                                 <p className="font-bold text-rose-800 mb-1.5 pb-1 border-b border-rose-200">
-                                                    📤 ប្រាក់ចេញ ({day.outflowItems?.length || 0})
+                                                    📤 {t('cashFlowTotalCashOut', lang === 'km' ? 'ប្រាក់ចេញ' : 'Cash out')} ({day.outflowItems?.length || 0})
                                                 </p>
                                                 {day.outflowItems && day.outflowItems.length > 0 ? (
                                                     <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
@@ -1508,7 +1515,7 @@ const CashFlowTrader = () => {
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <p className="text-slate-400 text-[11px] italic">មិនមានប្រតិបត្តិការប្រាក់ចេញទេ</p>
+                                                    <p className="text-slate-400 text-[11px] italic">{t('cashFlowNoOutflowTransactions', lang === 'km' ? 'មិនមានប្រតិបត្តិការប្រាក់ចេញទេ' : 'No cash-out transactions')}</p>
                                                 )}
                                             </div>
                                         </div>

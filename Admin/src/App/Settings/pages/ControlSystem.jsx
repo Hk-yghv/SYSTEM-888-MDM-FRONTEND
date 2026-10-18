@@ -26,7 +26,7 @@ const isFollowUpDroplist = (category) => category.startsWith('Follow Up 4 ') || 
 
 
 const ControlSystem = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, user, hasPermission } = useAuth();
 
     const isMasterAdmin = Boolean(
@@ -95,28 +95,28 @@ const ControlSystem = () => {
 
     const explorerFolders = [
         {
-            name: 'DEVICE & SECURITY',
-            files: [{ id: 'lock-screen', label: 'Lock screen & hotline', icon: <FaPhoneAlt />, color: 'text-rose-400' }]
+            name: t('deviceAndSecurity'),
+            files: [{ id: 'lock-screen', label: t('lockScreenAndHotline'), icon: <FaPhoneAlt />, color: 'text-rose-400' }]
         },
         {
-            name: 'FINANCE',
-            files: [{ id: 'penalties', label: 'Late penalty rules', icon: <FaDollarSign />, color: 'text-amber-400' }]
+            name: t('finance'),
+            files: [{ id: 'penalties', label: t('latePenaltyRules'), icon: <FaDollarSign />, color: 'text-amber-400' }]
         },
         {
-            name: 'ACCESS CONTROL',
-            files: [{ id: 'roles', label: 'User roles', icon: <FaUserShield />, color: 'text-sky-400' }]
+            name: t('accessControl'),
+            files: [{ id: 'roles', label: t('userRoles'), icon: <FaUserShield />, color: 'text-sky-400' }]
         },
         {
-            name: 'WORKFLOWS',
-            files: [{ id: 'follow-up', label: 'Follow Up 4', icon: <FaList />, color: 'text-orange-400' }]
+            name: t('workflows'),
+            files: [{ id: 'follow-up', label: t('followUp4'), icon: <FaList />, color: 'text-orange-400' }]
         },
         {
-            name: 'SYSTEM DATA',
-            files: [{ id: 'dropdowns', label: 'Dropdown lists', icon: <FaLayerGroup />, color: 'text-emerald-400' }]
+            name: t('systemData'),
+            files: [{ id: 'dropdowns', label: t('dropdownLists'), icon: <FaLayerGroup />, color: 'text-emerald-400' }]
         },
         ...(user?.role === 'Administrator' && selectedBrand === '' ? [{
-            name: 'ORGANIZATION',
-            files: [{ id: 'brands', label: 'Brand directory', icon: <FaGlobeAmericas />, color: 'text-violet-400' }]
+            name: t('organization'),
+            files: [{ id: 'brands', label: t('brandDirectory'), icon: <FaGlobeAmericas />, color: 'text-violet-400' }]
         }] : [])
     ];
     const canAccessSection = (sectionId) => {
@@ -146,14 +146,14 @@ const ControlSystem = () => {
 
     const handleRestoreFromFirebase = async () => {
         if (user?.role !== 'Administrator' || !hasPermission(CONTROL_SYSTEM_PATH, 'edit')) {
-            alert('You do not have permission to restore Control System data.');
+            alert(t('noRestoreControlSystemPermission'));
             return;
         }
         const isConfirmed = window.confirm(
             t('restoreNotice') + ':\n\n' +
-            'តើអ្នកពិតជាចង់ផ្ទេរទិន្នន័យពី Firebase មក MongoDB វិញមែនទេ?\n' +
-            'សកម្មភាពនេះនឹងសម្អាតទិន្នន័យ MongoDB ដែលខូច ហើយទាញយកច្បាប់ចម្លងទិន្នន័យចុងក្រោយទាំងអស់ពី Firebase មកវិញ។\n' +
-            'ទិន្នន័យនៅក្នុង Firebase នឹងមិនបាត់បង់ឡើយ!'
+            t('confirmRestoreFirebaseData') + '\n' +
+            t('restoreClearsMongoDbData') + '\n' +
+            t('firebaseDataWillRemain')
         );
         if (!isConfirmed) return;
 
@@ -169,7 +169,7 @@ const ControlSystem = () => {
             });
             const data = await res.json();
             if (res.ok && data.result?.success) {
-                alert(`✅ ជោគជ័យ! បានផ្ទេរទិន្នន័យពី Firebase មក MongoDB រួចរាល់:\n\n` +
+                alert(`${t('firebaseRestoreSucceeded')}:\n\n` +
                     `• Contracts: ${data.result.counts?.contracts || 0}\n` +
                     `• Users: ${data.result.counts?.users || 0}\n` +
                     `• Payments: ${data.result.counts?.payments || 0}\n` +
@@ -179,10 +179,10 @@ const ControlSystem = () => {
                 );
                 fetchControlSystemConfigs();
             } else {
-                alert(`❌ បរាជ័យក្នុងការ Restore: ${data.error || data.message || 'Unknown error'}`);
+                alert(`${t('firebaseRestoreFailed')}: ${data.error || data.message || t('unknownError')}`);
             }
         } catch (err) {
-            alert(`❌ Error connecting to server: ${err.message}`);
+            alert(`${t('serverConnectionError')}: ${err.message}`);
         } finally {
             setRestoring(false);
         }
@@ -319,7 +319,7 @@ const ControlSystem = () => {
         })[key];
         const section = CONTROL_SYSTEM_SECTIONS.find(entry => entry.id === mappedSectionId);
         if (!section || !hasPermission(section.path, permissionAction)) {
-            alert(`You do not have ${permissionAction} permission for this Control System section.`);
+            alert(`${t('missingControlSystemSectionPermission')}: ${permissionAction}`);
             return;
         }
         setSaving(true);
@@ -334,26 +334,26 @@ const ControlSystem = () => {
             const data = await res.json().catch(() => ({}));
             setSaving(false);
             if (res.ok) {
-                setMessage(`Control System '${key}' configuration updated for brand '${selectedBrand || 'Global'}' in MongoDB successfully!`);
+                setMessage(`${t('controlSystemConfigurationUpdated')} '${key}' ${t('forBrand')} '${selectedBrand || t('global')}'`);
                 setTimeout(() => setMessage(''), 3000);
                 // Mark this field as private after successful save (only for brand-specific saves)
                 if (selectedBrand) {
                     setFieldOrigins(prev => ({ ...prev, [key]: 'private' }));
                 }
             } else {
-                alert(`Failed to save configuration: ${data.error || res.statusText || 'Server Error'}`);
+                alert(`${t('failedToSaveConfiguration')}: ${data.error || res.statusText || t('serverError')}`);
             }
         } catch (err) {
             setSaving(false);
             console.error('Save config error:', err);
-            alert(`រក្សាទុកបរាជ័យ: Network Error (${err.message})`);
+            alert(`${t('failedToSaveConfiguration')}: ${t('networkError')} (${err.message})`);
         }
     };
 
     const addLockphoneTelegramChatId = () => {
         const chatId = newLockphoneTelegramChatId.trim();
         if (!/^-?\d+$/.test(chatId)) {
-            alert('Please enter a numeric Telegram account/chat ID.');
+            alert(t('enterNumericTelegramAccountChatId'));
             return;
         }
         if (!lockphoneTelegramChatIds.includes(chatId)) {
@@ -364,7 +364,7 @@ const ControlSystem = () => {
 
     const saveLockphoneConfig = async () => {
         if (!canEditSection('lock-screen')) {
-            alert('You do not have edit permission for Device & Security.');
+            alert(t('noEditDeviceSecurityPermission'));
             return;
         }
         setSaving(true);
@@ -383,8 +383,8 @@ const ControlSystem = () => {
                 })
             });
             const result = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(result.error || response.statusText || 'Server Error');
-            setMessage(`Lock Phone configuration updated for ${selectedBrand || 'Global'} successfully!`);
+            if (!response.ok) throw new Error(result.error || response.statusText || t('serverError'));
+            setMessage(`${t('lockPhoneConfigurationUpdated')} ${selectedBrand || t('global')}!`);
             setTimeout(() => setMessage(''), 3000);
             if (selectedBrand) {
                 setFieldOrigins((origins) => ({
@@ -396,7 +396,7 @@ const ControlSystem = () => {
             }
         } catch (err) {
             console.error('Save Lock Phone config error:', err);
-            alert(`រក្សាទុកបរាជ័យ: ${err.message}`);
+            alert(`${t('failedToSaveConfiguration')}: ${err.message}`);
         } finally {
             setSaving(false);
         }
@@ -414,7 +414,7 @@ const ControlSystem = () => {
     const handleDeleteRole = (index) => {
         if (!canDeleteSection('roles')) return;
         if (roles[index] === 'Administrator') {
-            alert('Administrator role cannot be removed!');
+            alert(t('administratorRoleCannotBeRemoved'));
             return;
         }
         const updated = roles.filter((_, idx) => idx !== index);
@@ -429,7 +429,7 @@ const ControlSystem = () => {
         if (!selectedCategory) return;
         // Brand addition is strictly reserved for Master Admin
         if (selectedCategory.category === 'Brands' && !isMasterAdmin) {
-            alert('ការបន្ថែម Brand ថ្មីត្រូវបានអនុញ្ញាតសម្រាប់តែ Administrator ប៉ុណ្ណោះ!');
+            alert(t('onlyAdministratorCanAddBrand'));
             return;
         }
         const updated = droplists.map(category => category.category === selectedCategory.category
@@ -446,7 +446,7 @@ const ControlSystem = () => {
         if (!selectedCategory) return;
         // Strict protection: regular users can NEVER delete Brands items
         if (selectedCategory.category === 'Brands' && !isMasterAdmin) {
-            alert('លោកអ្នកគ្មានសិទ្ធិលុប Brand ទេ! មុខងារនេះសម្រាប់តែ Administrator ប៉ុណ្ណោះ។');
+            alert(t('onlyAdministratorCanDeleteBrand'));
             return;
         }
         const updated = droplists.map(category => category.category === selectedCategory.category
@@ -483,13 +483,13 @@ const ControlSystem = () => {
     // --- Brand Management (Global Config only) ---
     const handleAddBrand = async () => {
         if (!canEditSection('brands') || user?.role !== 'Administrator' || selectedBrand !== '') {
-            alert('You do not have edit permission for Organization settings.');
+            alert(t('noEditOrganizationSettingsPermission'));
             return;
         }
         const name = newBrandInput.trim();
         if (!name) return;
         if (brandsList.includes(name)) {
-            setMessage(`Brand '${name}' already exists!`);
+            setMessage(`${t('brandAlreadyExists')}: '${name}'`);
             setTimeout(() => setMessage(''), 3000);
             return;
         }
@@ -532,7 +532,7 @@ const ControlSystem = () => {
             });
 
             setSaving(false);
-            setMessage(`Brand '${name}' ត្រូវបានបង្កើត និងចម្លងរាល់ការកំណត់ពី Global ដោយស្វ័យប្រវត្តិកុំឱ្យទទេ! `);
+            setMessage(`${t('brandCreatedAndGlobalConfigCloned')}: '${name}'`);
             setTimeout(() => setMessage(''), 4500);
         } catch (err) {
             setSaving(false);
@@ -542,7 +542,7 @@ const ControlSystem = () => {
 
     const handleAddSubBrand = async (brandName) => {
         if (!canEditSection('brands')) {
-            alert('You do not have edit permission for Organization settings.');
+            alert(t('noEditOrganizationSettingsPermission'));
             return;
         }
         const subName = (newSubBrandInputs[brandName] || '').trim();
@@ -560,10 +560,10 @@ const ControlSystem = () => {
             if (res.ok) {
                 setBrandSubbrands(data.brand_subbrands || {});
                 setNewSubBrandInputs(prev => ({ ...prev, [brandName]: '' }));
-                setMessage(`បានបន្ថែម Sub Brand '${subName}' សម្រាប់ Brand '${brandName}' និងភ្ជាប់ទិន្នន័យចាស់ដោយស្វ័យប្រវត្តិ!`);
+                setMessage(`${t('subBrandAddedForBrand')}: '${subName}' — '${brandName}'`);
                 setTimeout(() => setMessage(''), 4500);
             } else {
-                alert(data.error || 'Failed to add sub brand');
+                alert(data.error || t('failedToAddSubBrand'));
             }
         } catch (err) {
             setSaving(false);
@@ -573,10 +573,10 @@ const ControlSystem = () => {
 
     const handleDeleteSubBrand = async (brandName, subName) => {
         if (!canDeleteSection('brands')) {
-            alert('You do not have delete permission for Organization settings.');
+            alert(t('noDeleteOrganizationSettingsPermission'));
             return;
         }
-        if (!window.confirm(`តើអ្នកពិតជាចង់លុប Sub Brand '${subName}' ពី Brand '${brandName}' ដែរឬទេ?`)) return;
+        if (!window.confirm(`${t('confirmDeleteSubBrand')} '${subName}' ${t('fromBrand')} '${brandName}'?`)) return;
         setSaving(true);
         try {
             const res = await fetch(`${API_BASE}/controlsystem/subbrands`, {
@@ -588,7 +588,7 @@ const ControlSystem = () => {
             setSaving(false);
             if (res.ok) {
                 setBrandSubbrands(data.brand_subbrands || {});
-                setMessage(`បានលុប Sub Brand '${subName}' ដោយជោគជ័យ។`);
+                setMessage(`${t('subBrandDeleted')}: '${subName}'`);
                 setTimeout(() => setMessage(''), 3000);
             }
         } catch (err) {
@@ -599,11 +599,11 @@ const ControlSystem = () => {
 
     const handleCloneFromGlobal = async () => {
         if (!hasPermission(CONTROL_SYSTEM_PATH, 'edit')) {
-            alert('Clone from Global requires full Control System edit permission.');
+            alert(t('cloneFromGlobalRequiresFullEditPermission'));
             return;
         }
         if (!selectedBrand) return;
-        if (!window.confirm(`តើអ្នកពិតជាចង់ចម្លងរាល់ការកំណត់ពី Global មកជំនួសការកំណត់របស់ Brand '${selectedBrand}' ដែរឬទេ?`)) return;
+        if (!window.confirm(`${t('confirmCloneGlobalConfigurations')} '${selectedBrand}'?`)) return;
         setSaving(true);
         setMessage('');
         try {
@@ -614,7 +614,7 @@ const ControlSystem = () => {
             });
             setSaving(false);
             if (res.ok) {
-                setMessage(`បានចម្លងការកំណត់ពី Global មក Brand '${selectedBrand}' ដោយជោគជ័យ!`);
+                setMessage(`${t('globalConfigurationsCopiedToBrand')}: '${selectedBrand}'`);
                 fetchControlSystemConfigs();
                 setTimeout(() => setMessage(''), 4000);
             }
@@ -629,7 +629,7 @@ const ControlSystem = () => {
 
     const handleDeleteBrandClick = (brandName) => {
         if (!canDeleteSection('brands')) {
-            alert('You do not have delete permission for Organization settings.');
+            alert(t('noDeleteOrganizationSettingsPermission'));
             return;
         }
         setDeleteBrandModal({ open: true, brandName });
@@ -637,7 +637,7 @@ const ControlSystem = () => {
 
     const handleConfirmDeleteBrand = async () => {
         if (!canDeleteSection('brands')) {
-            alert('You do not have delete permission for Organization settings.');
+            alert(t('noDeleteOrganizationSettingsPermission'));
             return;
         }
         const brandName = deleteBrandModal.brandName;
@@ -655,11 +655,11 @@ const ControlSystem = () => {
             setDeleteBrandModal({ open: false, brandName: '' });
             if (res.ok) {
                 const data = await res.json();
-                setMessage(data.message || `Brand '${brandName}' and all associated data purged successfully!`);
+                setMessage(data.message || `${t('brandAndAssociatedDataDeleted')}: '${brandName}'`);
                 fetchControlSystemConfigs();
                 setTimeout(() => setMessage(''), 4000);
             } else {
-                alert('Failed to delete brand');
+                alert(t('failedToDeleteBrand'));
             }
         } catch (err) {
             setSaving(false);
@@ -670,7 +670,7 @@ const ControlSystem = () => {
 
     const handleSaveAllConfigs = async () => {
         if (!hasPermission(CONTROL_SYSTEM_PATH, 'edit')) {
-            alert('Save All requires full Control System edit permission.');
+            alert(t('saveAllRequiresFullEditPermission'));
             return;
         }
         setSaving(true);
@@ -694,7 +694,7 @@ const ControlSystem = () => {
             setSaving(false);
 
             if (res.ok) {
-                setMessage(`ការកំណត់ទាំងអស់សម្រាប់ Brand '${selectedBrand || 'Global'}' ត្រូវបានរក្សាទុកដោយជោគជ័យ! (All configurations saved successfully!)`);
+                setMessage(`${t('allConfigurationsSavedForBrand')} '${selectedBrand || t('global')}'`);
                 setTimeout(() => setMessage(''), 4000);
                 // Mark all saved keys as private after bulk save
                 if (selectedBrand) {
@@ -709,12 +709,12 @@ const ControlSystem = () => {
                     }));
                 }
             } else {
-                alert(`រក្សាទុកបរាជ័យ (Failed to save configurations): ${data.error || res.statusText || 'Server Error'}`);
+                alert(`${t('failedToSaveConfigurations')}: ${data.error || res.statusText || t('serverError')}`);
             }
         } catch (err) {
             setSaving(false);
             console.error('Save all configs error:', err);
-            alert(`រក្សាទុកបរាជ័យ: Network Error (${err.message})`);
+            alert(`${t('failedToSaveConfigurations')}: ${t('networkError')} (${err.message})`);
         }
     };
 
@@ -742,7 +742,7 @@ const ControlSystem = () => {
                 <div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-800 flex items-center gap-2'>
-                            {t('controlSystem')} Dynamic Configurations
+                            {t('controlSystem')} {t('dynamicConfigurations')}
                         </h1>
                     </div>
                 </div>
@@ -754,10 +754,10 @@ const ControlSystem = () => {
                             onClick={handleRestoreFromFirebase}
                             disabled={restoring}
                             className='flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-md shadow-orange-600/20 transition-all border border-amber-400/30'
-                            title="Restore and synchronize MongoDB from latest Firebase Backup"
+                            title={t('restoreAndSyncLatestFirebaseBackup')}
                         >
                             <MdOutlineSettingsBackupRestore size={16} className={restoring ? 'spin-reload' : ''} />
-                            <span>{restoring ? 'កំពុង Restore...' : 'Restore from Firebase'}</span>
+                            <span>{restoring ? t('restoring') : t('restoreFromFirebase')}</span>
                         </button>
                     )}
                     {hasPermission(CONTROL_SYSTEM_PATH, 'edit') && (
@@ -767,7 +767,7 @@ const ControlSystem = () => {
                             className='flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold cursor-pointer shadow-lg shadow-emerald-600/20 transition-all'
                         >
                             <MdSave size={16} />
-                            <span>{saving ? 'រក្សាទុក...' : 'Save All Settings'}</span>
+                            <span>{saving ? t('saving') : t('saveAllSettings')}</span>
                         </button>
                     )}
                 </div>
@@ -778,7 +778,7 @@ const ControlSystem = () => {
                     <div className="flex items-center gap-2">
                         <FaGlobeAmericas className="text-indigo-400 text-sm" />
                         <span className="font-bold text-slate-700">
-                            Select Brand to Configure (កំណត់ការកំណត់តាម Brand):
+                            {t('selectBrandToConfigure')}
                         </span>
                     </div>
                     <div className="flex items-center gap-2.5 flex-wrap">
@@ -787,9 +787,9 @@ const ControlSystem = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-800 font-semibold cursor-pointer outline-none focus:border-sky-500"
                         >
-                            <option value="">🌐 Global Config (Master Default Template)</option>
+                            <option value="">🌐 {t('globalConfigMasterTemplate')}</option>
                             {brandsList.map((br, idx) => (
-                                <option key={idx} value={br}>🏷️ {br} Settings</option>
+                                <option key={idx} value={br}>🏷️ {br} {t('settings')}</option>
                             ))}
                         </select>
 
@@ -800,7 +800,7 @@ const ControlSystem = () => {
                                     onClick={handleCloneFromGlobal}
                                     disabled={saving}
                                     className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-md text-xs font-bold transition-all border border-sky-200 flex items-center gap-1.5 cursor-pointer"
-                                    title="Copy all current Global configurations into this brand"
+                                    title={t('copyGlobalConfigurationsToBrand')}
                                 >
                                     <MdOutlineSettingsBackupRestore className="text-sm" />
                                     <span>{t('syncFromGlobal')}</span>
@@ -811,7 +811,7 @@ const ControlSystem = () => {
                 </div>
             ) : (
                 <div className="p-2 bg-white border border-slate-300 rounded-md flex items-center justify-between text-xs text-sky-700 font-semibold">
-                    <span>Configuring tenant settings for brand: <span className="font-bold text-slate-900">{selectedBrand || 'Global'}</span></span>
+                    <span>{t('configuringBrandTenantSettings')}: <span className="font-bold text-slate-900">{selectedBrand || 'Global'}</span></span>
                 </div>
             )}
 
@@ -825,29 +825,29 @@ const ControlSystem = () => {
             <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-md">
                 <div className="flex items-center gap-2 border-b border-slate-300 bg-[#f3f3f3] px-3 py-2 text-xs text-slate-700">
                     <FaFolderOpen className="text-sky-700" />
-                    <span className="font-semibold">System MDM - Registry Editor</span>
+                    <span className="font-semibold">{t('systemMdmRegistryEditor')}</span>
                 </div>
-                <div role="menubar" aria-label="Registry menu" className="flex gap-1 border-b border-slate-300 bg-white px-2 py-1 text-xs text-slate-700">
-                    {['File', 'Edit', 'View', 'Favorites', 'Help'].map(menu => (
-                        <span key={menu} role="menuitem" className="cursor-default px-2 py-1 hover:bg-sky-100">{menu}</span>
+                <div role="menubar" aria-label={t('registryMenu')} className="flex gap-1 border-b border-slate-300 bg-white px-2 py-1 text-xs text-slate-700">
+                    {[['File', 'fileMenu'], ['Edit', 'editMenu'], ['View', 'viewMenu'], ['Favorites', 'favoritesMenu'], ['Help', 'helpMenu']].map(([menu, key]) => (
+                        <span key={menu} role="menuitem" className="cursor-default px-2 py-1 hover:bg-sky-100">{t(key)}</span>
                     ))}
                 </div>
                 <div className="flex min-h-9 items-center gap-2 border-b border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700">
                     <FaGlobeAmericas className="text-sky-700" />
-                    <span>Computer</span><span className="text-slate-400">›</span>
-                    <span>System MDM</span><span className="text-slate-400">›</span>
+                    <span>{t('computer')}</span><span className="text-slate-400">›</span>
+                    <span>{t('systemTitle')}</span><span className="text-slate-400">›</span>
                     <span className="truncate font-semibold">{activeExplorerFile.label}</span>
                 </div>
 
                 <div className="grid min-h-[620px] grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
                     <aside className="border-b border-slate-300 bg-white p-2 md:border-b-0 md:border-r">
                         <div className="mb-3 flex items-center gap-2 px-2 text-xs font-semibold text-slate-600">
-                            <FaShieldAlt className="text-sky-700" /> Registry tree
+                            <FaShieldAlt className="text-sky-700" /> {t('registryTree')}
                         </div>
                         <div className="mb-2 flex items-center gap-2 rounded-sm px-2.5 py-1.5 text-xs font-semibold text-slate-800">
-                            <FaFolderOpen className="text-sky-700" /> Computer
+                            <FaFolderOpen className="text-sky-700" /> {t('computer')}
                         </div>
-                        <nav aria-label="Control system folders" className="space-y-2 pl-4">
+                        <nav aria-label={t('controlSystemFolders', lang === 'km' ? 'ថតឯកសារប្រព័ន្ធគ្រប់គ្រង' : 'Control system folders')} className="space-y-2 pl-4">
                             {accessibleExplorerFolders.map(folder => {
                                 const folderIsOpen = folder.files.some(file => file.id === activeExplorerFile.id);
                                 return (
@@ -884,11 +884,11 @@ const ControlSystem = () => {
                         )}
                         {activeExplorerFile && <>
                         <div className="grid grid-cols-[minmax(120px,1fr)_minmax(110px,.8fr)_minmax(100px,1fr)] border-b border-slate-300 bg-[#f3f3f3] px-3 py-2 text-xs font-semibold text-slate-700">
-                            <span>Name</span><span>Type</span><span>Data</span>
+                            <span>{t('name')}</span><span>{t('type')}</span><span>{t('data')}</span>
                         </div>
                         <div className="grid grid-cols-[minmax(120px,1fr)_minmax(110px,.8fr)_minmax(100px,1fr)] items-center border-b border-slate-200 px-3 py-2 text-xs text-slate-700">
                             <span className="flex min-w-0 items-center gap-2 truncate"><FaFolder className="shrink-0 text-amber-500" />{activeExplorerFile.label}</span>
-                            <span>Configuration file</span>
+                            <span>{t('configurationFile')}</span>
                             <span className="truncate">{selectedBrand || 'Global'} settings</span>
                         </div>
                         <div className="p-2 sm:p-2">
@@ -906,21 +906,21 @@ const ControlSystem = () => {
 
                     <div className="space-y-3 text-xs">
                         <div>
-                            <label className="block text-gray-400 font-semibold mb-1">Lock Screen Display Text (Khmer/EN Message)</label>
+                            <label className="block text-gray-400 font-semibold mb-1">{t('lockScreenDisplayTextKhmerEnglish')}</label>
                             <input
                                 type="text"
                                 value={lockphoneDisplayText}
                                 onChange={(e) => setLockphoneDisplayText(e.target.value)}
                                 disabled={!canEditSection('lock-screen')}
                                 className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-khmer"
-                                placeholder="e.g. ទូរស័ព្ទរបស់ {{customerName}} ត្រូវបានចាក់សោ"
+                                placeholder={t('lockScreenDisplayTextExample')}
                             />
                             <p className="mt-1.5 text-[10px] text-amber-400/80 font-mono leading-relaxed">
                                 💡 Use <span className="bg-amber-950/60 border border-amber-600/40 px-1.5 py-0.5 rounded text-amber-300 font-bold">{'{{customerName}}'}</span> — it will be replaced automatically with the customer's name when locking the phone.
                             </p>
                         </div>
                         <div>
-                            <label className="block text-gray-400 font-semibold mb-1">Hotline Phone Number to Call</label>
+                            <label className="block text-gray-400 font-semibold mb-1">{t('hotlinePhoneNumberToCall')}</label>
                             <input
                                 type="text"
                                 value={lockphonePhoneNumber}
@@ -931,7 +931,7 @@ const ControlSystem = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-gray-400 font-semibold mb-1">Telegram account/chat IDs to notify on lock</label>
+                            <label className="block text-gray-400 font-semibold mb-1">{t('telegramChatIdsForLockNotifications')}</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
@@ -946,7 +946,7 @@ const ControlSystem = () => {
                                         }
                                     }}
                                     className="h-10 min-w-0 flex-1 rounded-[5px] border border-gray-700 bg-gray-900 px-3 font-mono text-gray-100"
-                                    placeholder="Telegram account/chat ID"
+                                    placeholder={t('telegramAccountChatIdPlaceholder')}
                                 />
                                 <button
                                     type="button"
@@ -1009,21 +1009,21 @@ const ControlSystem = () => {
                     <div className="space-y-3 text-xs">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
-                                <label className="block text-gray-400 font-semibold mb-1">Brand</label>
+                                <label className="block text-gray-400 font-semibold mb-1">{t('brand')}</label>
                                 <select
                                     value={newPenaltyBrand}
                                     onChange={(e) => setNewPenaltyBrand(e.target.value)}
                                     disabled={!canEditSection('penalties')}
                                     className="w-full h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold"
                                 >
-                                    <option value="">Global</option>
+                                    <option value="">{t('global')}</option>
                                     {brandsList.map((b, idx) => (
                                         <option key={idx} value={b}>{b}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-gray-400 font-semibold mb-1">After Days</label>
+                                <label className="block text-gray-400 font-semibold mb-1">{t('afterDays')}</label>
                                 <input
                                     type="number"
                                     min="0"
@@ -1158,7 +1158,7 @@ const ControlSystem = () => {
                                 value={newRoleInput}
                                 onChange={(e) => setNewRoleInput(e.target.value)}
                                 disabled={!canEditSection('roles')}
-                                placeholder="Add new role (e.g. Supervisor)"
+                                placeholder={t('newRolePlaceholder')}
                                 className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                             />
                             <button
@@ -1190,22 +1190,22 @@ const ControlSystem = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-800">
                         <div className="flex items-center gap-2 text-rose-400 text-sm font-bold uppercase">
                             <FaList className="text-rose-400" />
-                            <span>⚡ ការកំណត់ប្រព័ន្ធ FOLLOW UP 4 (Reject Submit & Reject CS Private Reasons)</span>
+                            <span>⚡ {t('followUp4PrivateReasonSettings')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-[11px] bg-slate-800 px-2.5 py-1 rounded-lg text-slate-300 font-semibold border border-slate-700">
-                                Brand កំពុងកំណត់: <strong className="text-emerald-400 font-mono">{selectedBrand || '🌐 Global Template'}</strong>
+                                {t('configuredBrand', lang === 'km' ? 'Brand កំពុងកំណត់:' : 'Configured brand:')} <strong className="text-emerald-400 font-mono">{selectedBrand || '🌐 Global Template'}</strong>
                             </span>
                             <OriginBadge fieldKey="droplists" />
                         </div>
                     </div>
 
                     <p className="text-xs text-slate-400">
-                        កំណត់បញ្ជីមូលហេតុ (Reasons) និងជម្រើស Droplists សម្រាប់ទំព័រ <strong className="text-rose-400 font-semibold">Reject Submit</strong> និង <strong className="text-amber-400 font-semibold">Reject CS</strong> ដោយឡែកពីគ្នា។ ទិន្នន័យដែលបានបញ្ចូលនៅទីនេះ នឹងបង្ហាញជាប្រអប់បំពេញលេខនៅក្នុង Modal នៃទំព័រ Follow Up 4 តាម Brand នីមួយៗភ្លាមៗ។
+                        {t('followUpReasonOptionsHelp', lang === 'km' ? 'កំណត់បញ្ជីមូលហេតុ (Reasons) និងជម្រើស Droplists សម្រាប់ទំព័រ' : 'Configure reason lists and dropdown options separately for')} <strong className="text-rose-400 font-semibold">{t('rejectSubmit')}</strong> {t('and', lang === 'km' ? 'និង' : 'and')} <strong className="text-amber-400 font-semibold">{t('rejectCs')}</strong>. {t('followUpReasonOptionsHelpSuffix', lang === 'km' ? 'ទិន្នន័យដែលបានបញ្ចូលនៅទីនេះ នឹងបង្ហាញជាប្រអប់បំពេញលេខនៅក្នុង Modal នៃទំព័រ Follow Up 4 តាម Brand នីមួយៗភ្លាមៗ។' : 'Options entered here appear immediately in the Follow Up 4 modal for each brand.')}
                     </p>
 
                     <div className="rounded-[5px] border border-sky-600/30 bg-slate-900/80 p-3 space-y-3">
-                        <h4 className="text-xs font-bold text-sky-300">FOLLOW UP 4 DROPDOWN OPTIONS</h4>
+                        <h4 className="text-xs font-bold text-sky-300">{t('followUp4DropdownOptions')}</h4>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <select
                                 value={selectedWorkflowCategory}
@@ -1220,7 +1220,7 @@ const ControlSystem = () => {
                                 value={newWorkflowOption}
                                 onChange={(event) => setNewWorkflowOption(event.target.value)}
                                 onKeyDown={(event) => event.key === 'Enter' && handleAddSpecificReason(selectedWorkflowCategory, newWorkflowOption, setNewWorkflowOption)}
-                                placeholder="បញ្ចូលជម្រើសថ្មី (អាចបន្ថែមបានច្រើន)"
+                                placeholder={t('newDropdownOptionPlaceholder')}
                                 disabled={!canEditSection('follow-up')}
                                 className="h-9 min-w-0 flex-1 rounded-[5px] border border-slate-700 bg-slate-950 px-3 text-xs text-slate-100"
                             />
@@ -1230,7 +1230,7 @@ const ControlSystem = () => {
                                 disabled={!canEditSection('follow-up') || !newWorkflowOption.trim()}
                                 className="h-9 rounded-[5px] bg-sky-600 px-3 text-xs font-bold text-white disabled:opacity-40"
                             >
-                                <MdAddCircle className="inline mr-1" /> បន្ថែម
+                                <MdAddCircle className="inline mr-1" /> {t('add')}
                             </button>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -1260,7 +1260,7 @@ const ControlSystem = () => {
                                     <span>🛑</span> Reject Submit Reasons
                                 </h4>
                                 <span className="text-[10px] bg-rose-950/80 text-rose-300 px-2 py-0.5 rounded-full border border-rose-800/40 font-mono">
-                                    {(droplists.find(d => d.category === 'Reject Submit Reasons')?.items || []).length} ជម្រើស
+                                    {(droplists.find(d => d.category === 'Reject Submit Reasons')?.items || []).length} {t('options', lang === 'km' ? 'ជម្រើស' : 'options')}
                                 </span>
                             </div>
 
@@ -1271,7 +1271,7 @@ const ControlSystem = () => {
                                     onChange={(e) => setNewRejectSubmitInput(e.target.value)}
                                     disabled={!canEditSection('follow-up')}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject Submit Reasons', newRejectSubmitInput, setNewRejectSubmitInput)}
-                                    placeholder="បញ្ចូលមូលហេតុ Reject Submit ថ្មី (ឧ. ភ្ញៀវមិនឆ្លើយតប)..."
+                                    placeholder={t('newRejectSubmitReasonPlaceholder')}
                                     className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-[5px] text-slate-100 text-xs focus:border-rose-500 outline-none"
                                 />
                                 <button
@@ -1280,7 +1280,7 @@ const ControlSystem = () => {
                                     disabled={!canEditSection('follow-up') || !newRejectSubmitInput.trim()}
                                     className="px-3.5 h-9 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-rose-600/20"
                                 >
-                                    <MdAddCircle size={15} /> <span>បន្ថែម</span>
+                                    <MdAddCircle size={15} /> <span>{t('add')}</span>
                                 </button>
                             </div>
 
@@ -1302,7 +1302,7 @@ const ControlSystem = () => {
                                                 type="button"
                                                 onClick={() => handleDeleteSpecificReason('Reject Submit Reasons', rIdx)}
                                                 className="text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 p-2 rounded-lg cursor-pointer transition-colors"
-                                                title="លុបមូលហេតុនេះ"
+                                                title={t('deleteThisReason')}
                                             >
                                                 <MdDelete size={15} />
                                             </button>
@@ -1319,7 +1319,7 @@ const ControlSystem = () => {
                                     <span>⚠️</span> Reject CS Reasons
                                 </h4>
                                 <span className="text-[10px] bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800/40 font-mono">
-                                    {(droplists.find(d => d.category === 'Reject CS Reasons')?.items || []).length} ជម្រើស
+                                    {(droplists.find(d => d.category === 'Reject CS Reasons')?.items || []).length} {t('options', lang === 'km' ? 'ជម្រើស' : 'options')}
                                 </span>
                             </div>
 
@@ -1330,7 +1330,7 @@ const ControlSystem = () => {
                                     onChange={(e) => setNewRejectCsInput(e.target.value)}
                                     disabled={!canEditSection('follow-up')}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddSpecificReason('Reject CS Reasons', newRejectCsInput, setNewRejectCsInput)}
-                                    placeholder="បញ្ចូលមូលហេតុ Reject CS ថ្មី (ឧ. តម្លៃមិនព្រម, គ្មានលទ្ធភាព)..."
+                                    placeholder={t('newRejectCsReasonPlaceholder')}
                                     className="flex-1 h-9 px-3 bg-slate-950 border border-slate-700 rounded-[5px] text-slate-100 text-xs focus:border-amber-500 outline-none"
                                 />
                                 <button
@@ -1339,7 +1339,7 @@ const ControlSystem = () => {
                                     disabled={!canEditSection('follow-up') || !newRejectCsInput.trim()}
                                     className="px-3.5 h-9 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-amber-600/20"
                                 >
-                                    <MdAddCircle size={15} /> <span>បន្ថែម</span>
+                                    <MdAddCircle size={15} /> <span>{t('add')}</span>
                                 </button>
                             </div>
 
@@ -1361,7 +1361,7 @@ const ControlSystem = () => {
                                                 type="button"
                                                 onClick={() => handleDeleteSpecificReason('Reject CS Reasons', rIdx)}
                                                 className="text-amber-400 hover:text-amber-300 hover:bg-amber-950/60 p-2 rounded-lg cursor-pointer transition-colors"
-                                                title="លុបមូលហេតុនេះ"
+                                                title={t('deleteThisReason')}
                                             >
                                                 <MdDelete size={15} />
                                             </button>
@@ -1384,7 +1384,7 @@ const ControlSystem = () => {
 
                     <div className="space-y-4 text-xs">
                         <div className="flex items-center gap-3">
-                            <label className="text-gray-300 font-semibold">Select Droplist Category:</label>
+                            <label className="text-gray-300 font-semibold">{t('selectDroplistCategory')}:</label>
                             <select
                                 value={selectedCategoryIdx}
                                 onChange={(e) => setSelectedCategoryIdx(Number(e.target.value))}
@@ -1401,7 +1401,7 @@ const ControlSystem = () => {
                                 type="text"
                                 value={newItemInput}
                                 onChange={(e) => setNewItemInput(e.target.value)}
-                                placeholder={`Add item to ${systemDroplists[selectedCategoryIdx]?.category}...`}
+                                placeholder={`${t('addItemTo')} ${systemDroplists[selectedCategoryIdx]?.category}...`}
                                 disabled={!canEditSection('dropdowns')}
                                 className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                             />
@@ -1428,7 +1428,7 @@ const ControlSystem = () => {
                                         <div className="flex items-center justify-between border-b border-gray-800 pb-1.5">
                                             <h4 className="font-bold text-gray-200">{cat.category}</h4>
                                             {isBrandCat && !isMasterAdmin && (
-                                                <span className="text-[10px] text-amber-400 font-semibold">(Your Brand)</span>
+                                                <span className="text-[10px] text-amber-400 font-semibold">({t('yourBrand')})</span>
                                             )}
                                         </div>
                                         <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
@@ -1445,7 +1445,7 @@ const ControlSystem = () => {
                                                                 type="button"
                                                                 onClick={() => handleDeleteItemFromCategory(catIdx, originalIndex)}
                                                                 className="text-red-400 hover:text-red-300 cursor-pointer"
-                                                                title="Delete item"
+                                                                title={t('deleteItem')}
                                                             >
                                                                 <MdDelete size={14} />
                                                             </button>
@@ -1472,7 +1472,7 @@ const ControlSystem = () => {
                     </div>
 
                     <p className="text-[11px] text-gray-400">
-                        គ្រប់គ្រង Brand និង <strong className="text-amber-300">Sub Brands (អនុម៉ាក)</strong> របស់ប្រព័ន្ធ។ នៅក្នុង Brand មួយអាចបង្កើត Sub Brand បានលើសពីពីរ។ ពេលបង្កើត Sub Brand ដំបូង រាល់ទិន្នន័យដែលមានស្រាប់ក្នុង Brand នោះ នឹងត្រូវរត់ចូល Sub Brand ដំបូងដោយស្វ័យប្រវត្តិ។
+                        {t('brandSubBrandManagementDescription')}
                     </p>
 
                     {/* Create Brand Input */}
@@ -1483,7 +1483,7 @@ const ControlSystem = () => {
                             onChange={(e) => setNewBrandInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddBrand()}
                             disabled={!canEditSection('brands')}
-                            placeholder="New brand name (e.g. SuperTech)"
+                            placeholder={t('newBrandNamePlaceholder')}
                             className="flex-1 h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 focus:border-amber-500 outline-none"
                         />
                         <button
@@ -1498,7 +1498,7 @@ const ControlSystem = () => {
                     {/* Brands with Sub Brands Cards */}
                     <div className="space-y-4 pt-1">
                         {(!Array.isArray(brandsList) || brandsList.length === 0) && (
-                            <p className="text-gray-500 text-xs italic">No brands defined yet.</p>
+                            <p className="text-gray-500 text-xs italic">{t('noBrandsDefined')}</p>
                         )}
                         {(Array.isArray(brandsList) ? brandsList : []).map((br, brIdx) => {
                             const rawSubs = brandSubbrands?.[br];
@@ -1530,7 +1530,7 @@ const ControlSystem = () => {
                                                 title={`Remove brand '${br}'`}
                                             >
                                                 <MdDelete size={14} />
-                                                <span>Delete Brand</span>
+                                                <span>{t('deleteBrand')}</span>
                                             </button>
                                         )}
                                     </div>
@@ -1539,10 +1539,10 @@ const ControlSystem = () => {
                                     <div className="space-y-2 pl-2">
                                         <div className="flex items-center justify-between">
                                             <span className="text-[11px] font-bold text-gray-300">
-                                                Sub Brands (អនុម៉ាក) — អាចបង្កើតលើសពី ២ បាន:
+                                                {t('subBrandsMoreThanTwo', lang === 'km' ? 'Sub Brands (អនុម៉ាក) — អាចបង្កើតលើសពី ២ បាន:' : 'Sub-brands (you can create more than two):')}
                                             </span>
                                             <span className="text-[10px] text-amber-400/80 italic">
-                                                💡 ទិន្នន័យចាស់រត់ចូល Sub Brand ដំបូងបង្អស់
+                                                💡 {t('subBrandLegacyDataNote', lang === 'km' ? 'ទិន្នន័យចាស់រត់ចូល Sub Brand ដំបូងបង្អស់' : 'Existing data is assigned to the first sub-brand')}
                                             </span>
                                         </div>
 
@@ -1550,7 +1550,7 @@ const ControlSystem = () => {
                                         <div className="flex flex-wrap gap-2 min-h-[30px] items-center">
                                             {currentSubBrands.length === 0 ? (
                                                 <span className="text-gray-500 text-xs italic">
-                                                    មិនទាន់មាន Sub Brand នៅឡើយ (សូមបង្កើតខាងក្រោម)
+                                                    {t('noSubBrandsYet', lang === 'km' ? 'មិនទាន់មាន Sub Brand នៅឡើយ (សូមបង្កើតខាងក្រោម)' : 'No sub-brands yet (create one below)')}
                                                 </span>
                                             ) : (
                                                 currentSubBrands.map((sb, sbIdx) => (
@@ -1586,7 +1586,7 @@ const ControlSystem = () => {
                                                 }}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleAddSubBrand(br)}
                                                 disabled={!canEditSection('brands')}
-                                                placeholder={`បញ្ចូល Sub Brand ថ្មីសម្រាប់ ${br}...`}
+                                                placeholder={`${t('enterNewSubBrandFor', lang === 'km' ? 'បញ្ចូល Sub Brand ថ្មីសម្រាប់' : 'Enter a new sub-brand for')} ${br}...`}
                                                 className="flex-1 h-8 px-3 bg-gray-950 border border-gray-700 rounded-[5px] text-gray-200 text-xs focus:border-sky-500 outline-none"
                                             />
                                             <button
@@ -1595,7 +1595,7 @@ const ControlSystem = () => {
                                                 disabled={saving || !canEditSection('brands') || !(newSubBrandInputs[br] || '').trim()}
                                                 className="px-3 h-8 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-[5px] text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
                                             >
-                                                <MdAddCircle size={14} /> Add Sub Brand
+                                                <MdAddCircle size={14} /> {t('addSubBrand', lang === 'km' ? 'បន្ថែម Sub Brand' : 'Add sub-brand')}
                                             </button>
                                         </div>
                                     </div>
@@ -1625,20 +1625,20 @@ const ControlSystem = () => {
 
                         <div className="space-y-3 text-xs text-gray-200">
                             <p className="font-bold text-sm text-white">
-                                តើអ្នកពិតជាចង់លុប Brand <span className="text-amber-400 font-mono">"{deleteBrandModal.brandName}"</span> នេះមែនទេ?
+                                {t('confirmDeleteBrand', lang === 'km' ? 'តើអ្នកពិតជាចង់លុប Brand' : 'Are you sure you want to delete brand')} <span className="text-amber-400 font-mono">"{deleteBrandModal.brandName}"</span> {t('confirmDeleteBrandSuffix', lang === 'km' ? 'នេះមែនទេ?' : '?')}
                             </p>
                             <div className="p-2 bg-red-950/50 border border-red-800/80 rounded-[5px] space-y-1.5 text-red-200">
                                 <p className="font-bold uppercase text-[10px] text-red-400 tracking-wider">{t('deleteBrandWarning')}:</p>
                                 <p className="text-[11px] leading-relaxed">
-                                    នៅពេលលុប Brand នេះ ព័ត៌មាន និងទិន្នន័យទាំងអស់ដែលពាក់ព័ន្ធនឹង Brand <span className="font-mono font-bold text-amber-300">"{deleteBrandModal.brandName}"</span> រួមមាន៖
+                                    {t('deleteBrandWarning', lang === 'km' ? 'នៅពេលលុប Brand នេះ ព័ត៌មាន និងទិន្នន័យទាំងអស់ដែលពាក់ព័ន្ធនឹង Brand' : 'Deleting this brand also removes all information and data associated with')} <span className="font-mono font-bold text-amber-300">"{deleteBrandModal.brandName}"</span> {t('including', lang === 'km' ? 'រួមមាន៖' : 'including:')}
                                 </p>
                                 <ul className="list-disc list-inside text-[11px] space-y-0.5 text-red-300 font-medium">
                                     <li>{t('contract')} (Contracts)</li>
-                                    <li>System Users</li>
-                                    <li>Device Action Logs</li>
+                                    <li>{t('systemUsers')}</li>
+                                    <li>{t('deviceActionLogs')}</li>
                                 </ul>
                                 <p className="text-[11px] font-bold text-red-400 pt-1">
-                                    ទិន្នន័យទាំងនេះនឹងត្រូវបានលុបចេញពីប្រព័ន្ធ MongoDB ទាំងស្រុង ដោយមិនអាចទាញយកមកវិញបានឡើយ!
+                                    {t('deleteBrandIrreversible', lang === 'km' ? 'ទិន្នន័យទាំងនេះនឹងត្រូវបានលុបចេញពីប្រព័ន្ធ MongoDB ទាំងស្រុង ដោយមិនអាចទាញយកមកវិញបានឡើយ!' : 'This data will be permanently deleted from MongoDB and cannot be recovered!')}
                                 </p>
                             </div>
                         </div>
@@ -1657,7 +1657,7 @@ const ControlSystem = () => {
                                 disabled={saving}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-red-600/30 cursor-pointer flex items-center gap-1.5"
                             >
-                                <MdDelete size={16} /> {saving ? 'Purging Data...' : 'លុប Brand និងទិន្នន័យទាំងអស់'}
+                                <MdDelete size={16} /> {saving ? t('purgingData', lang === 'km' ? 'កំពុងលុបទិន្នន័យ...' : 'Purging data...') : t('deleteBrandAndAllData', lang === 'km' ? 'លុប Brand និងទិន្នន័យទាំងអស់' : 'Delete brand and all data')}
                             </button>
                         </div>
                     </div>

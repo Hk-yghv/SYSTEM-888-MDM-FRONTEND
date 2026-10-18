@@ -103,9 +103,69 @@ const ALL_SYSTEM_PAGES = [
     }))
 ];
 
+const PERMISSION_CATEGORY_KEYS = {
+    'Main Systems': 'permissionCategory_mainSystems',
+    'Contract Management': 'permissionCategory_contractManagement',
+    'Calculation & Tools': 'permissionCategory_calculationTools',
+    'Installment & Payment': 'permissionCategory_installmentPayment',
+    'Lost Phone Control': 'permissionCategory_lostPhoneControl',
+    'Wallpaper Control': 'permissionCategory_wallpaperControl',
+    'Reports & Analytics': 'permissionCategory_reportsAnalytics',
+    'Audit & History Logs': 'permissionCategory_auditHistoryLogs',
+    'Follow Up System': 'permissionCategory_followUpSystem',
+    'Salary System': 'permissionCategory_salarySystem',
+    'Tools & Utilities': 'permissionCategory_toolsUtilities',
+    'Audit System': 'permissionCategory_auditSystem',
+    'Print System': 'permissionCategory_printSystem',
+    'Support & Help': 'permissionCategory_supportHelp',
+    'Media Management': 'permissionCategory_mediaManagement',
+    'Settings & Profile': 'permissionCategory_settingsProfile',
+    'Control System': 'controlSystem'
+};
+
+const PERMISSION_ACTION_KEYS = {
+    read: 'permissionAction_read',
+    export: 'export',
+    create: 'create',
+    edit: 'edit',
+    delete: 'delete',
+    seePhoto: 'seePhoto',
+    detail: 'permissionAction_detail',
+    qrcode: 'permissionAction_qrcode',
+    information: 'information',
+    deviceAction: 'permissionAction_deviceAction',
+    activate: 'permissionAction_activate',
+    openFacebook: 'openFacebook',
+    history: 'history',
+    comment: 'permissionAction_comment',
+    lockDevice: 'permissionAction_lockDevice',
+    setWallpaper: 'permissionAction_setWallpaper',
+    check: 'check',
+    blacklist: 'blacklist',
+    unlockPhone: 'unlockPhone',
+    unlockWallpaper: 'permissionAction_unlockWallpaper',
+    print: 'print'
+};
+
 const AllAccount = () => {
     const { t } = useLanguage();
     const { API_BASE, hasPermission } = useAuth();
+    const getPermissionPageLabel = (page) => {
+        const key = `permissionPage_${page.path.replace(/^\/+/, '').replace(/[/-]/g, '_')}`;
+        const label = t(key);
+        return label === key ? page.label : label;
+    };
+    const getPermissionCategoryLabel = (category) => {
+        const key = PERMISSION_CATEGORY_KEYS[category];
+        if (!key) return category;
+        const label = t(key);
+        return label === key ? category : label;
+    };
+    const getPermissionActionLabel = (action) => {
+        const key = PERMISSION_ACTION_KEYS[action] || `permissionAction_${action}`;
+        const label = t(key);
+        return label === key ? action : label;
+    };
 
     const [users, setUsers] = useState([]);
     const [roles, setRoles] = useState(['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']);
@@ -133,8 +193,8 @@ const AllAccount = () => {
         title: '',
         message: '',
         type: 'confirm', // 'confirm' | 'alert' | 'danger'
-        confirmText: 'យល់ព្រម',
-        cancelText: 'បោះបង់',
+        confirmText: t('confirmAction'),
+        cancelText: t('cancel'),
         onConfirm: null
     });
 
@@ -144,8 +204,8 @@ const AllAccount = () => {
             title,
             message,
             type,
-            confirmText: type === 'danger' ? 'លុបចេញ' : 'យល់ព្រម',
-            cancelText: 'បោះបង់',
+            confirmText: type === 'danger' ? t('delete') : t('confirmAction'),
+            cancelText: t('cancel'),
             onConfirm: () => {
                 setCustomDialog(prev => ({ ...prev, isOpen: false }));
                 if (onConfirm) onConfirm();
@@ -159,7 +219,7 @@ const AllAccount = () => {
             title,
             message,
             type,
-            confirmText: 'យល់ព្រម',
+            confirmText: t('confirmAction'),
             cancelText: '',
             onConfirm: () => setCustomDialog(prev => ({ ...prev, isOpen: false }))
         });
@@ -234,7 +294,7 @@ const AllAccount = () => {
 
     const handleOpenEditUserModal = (userObj) => {
         if (userObj.isImmutable || userObj.username === '@hakyonghouv') {
-            showAlert('ការពារសុវត្ថិភាព', 'គណនី Master Admin (@hakyonghouv) ត្រូវបានការពារដាច់ខាត មិនអាចកែប្រែបានឡើយ!', 'danger');
+            showAlert(t('protectedMasterAdmin'), t('protectedMasterAdminEditMessage'), 'danger');
             return;
         }
         const isSalary = userObj.role?.toLowerCase() === 'salary';
@@ -397,14 +457,14 @@ const AllAccount = () => {
                 setOpenCreateModal(false);
                 setModalStep(1);
                 fetchUsers();
-                showAlert('ជោគជ័យ', `បានបង្កើតគណនីថ្មី "${formData.username}" ដោយជោគជ័យ!`, 'alert');
+                showAlert(t('success'), `${t('userAccountCreated')}: "${formData.username}"`, 'alert');
             } else {
                 const data = await res.json();
-                showAlert('បរាជ័យ', data.error || 'មិនអាចបង្កើតគណនីបានទេ', 'danger');
+                showAlert(t('failed'), data.error || t('userAccountCreateFailed'), 'danger');
             }
         } catch (err) {
             console.error('Create user error:', err);
-            showAlert('កំហុស', err.message || 'Error creating user', 'danger');
+            showAlert(t('error'), err.message || t('userAccountCreateFailed'), 'danger');
         }
     };
 
@@ -427,35 +487,35 @@ const AllAccount = () => {
                 setEditingUser(null);
                 setModalStep(1);
                 fetchUsers();
-                showAlert('រក្សាទុកជោគជ័យ', `បានធ្វើបច្ចុប្បន្នភាពគណនី "${formData.username}"។ ប្រព័ន្ធបានកំណត់សិទ្ធិជា (⏳ Pending) — នៅពេល User បើកប្រើ ប្រព័ន្ធនឹង sync សិទ្ធិថ្មីនេះភ្លាមៗ!`, 'alert');
+                showAlert(t('accountSavedSuccessfully'), `${t('userAccountUpdated')}: "${formData.username}" — ${t('permissionsWillSyncOnLogin')}`, 'alert');
             } else {
                 const data = await res.json();
-                showAlert('បរាជ័យ', data.error || 'មិនអាចធ្វើបច្ចុប្បន្នភាពគណនីបានទេ', 'danger');
+                showAlert(t('failed'), data.error || t('userAccountUpdateFailed'), 'danger');
             }
         } catch (err) {
             console.error('Update user error:', err);
-            showAlert('កំហុស', err.message || 'Error updating user', 'danger');
+            showAlert(t('error'), err.message || t('userAccountUpdateFailed'), 'danger');
         }
     };
 
     const handleDeleteUser = (userObj) => {
         if (userObj.isImmutable || userObj.username === '@hakyonghouv') {
-            showAlert('ការពារសុវត្ថិភាព', 'គណនី Master Admin (@hakyonghouv) ត្រូវបានការពារដាច់ខាត មិនអាចលុបបានឡើយ!', 'danger');
+            showAlert(t('protectedMasterAdmin'), t('protectedMasterAdminDeleteMessage'), 'danger');
             return;
         }
 
         showConfirm(
-            'លុបគណនី',
-            `តើអ្នកពិតជាចង់លុបគណនី "${userObj.username}" (${userObj.name || ''}) នេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+            t('deleteAccount'),
+            `${t('confirmDeleteUserMessage')} "${userObj.username}" (${userObj.name || ''})? ${t('cannotUndoAction')}`,
             async () => {
                 try {
                     const res = await fetch(`${API_BASE}/users/${userObj._id}`, { method: 'DELETE' });
                     if (res.ok) {
                         fetchUsers();
-                        showAlert('ជោគជ័យ', `បានលុបគណនី ${userObj.username} រួចរាល់`, 'alert');
+                        showAlert(t('success'), `${t('userAccountDeleted')}: ${userObj.username}`, 'alert');
                     } else {
                         const data = await res.json();
-                        showAlert('បរាជ័យ', data.error || 'Delete failed', 'danger');
+                        showAlert(t('failed'), data.error || t('deleteFailed'), 'danger');
                     }
                 } catch (err) {
                     console.error('Delete user error:', err);
@@ -467,10 +527,10 @@ const AllAccount = () => {
 
     const handleToggleBlock = (userObj) => {
         const willBlock = !userObj.isBlocked;
-        const title = willBlock ? 'ចាក់សោគណនី (Block)' : 'ដោះសោគណនី (Unblock)';
+        const title = willBlock ? t('blockAccount') : t('unblockAccount');
         const msg = willBlock
-            ? `តើអ្នកចង់ចាក់សោគណនី "${userObj.username}" មែនទេ? អ្នកប្រើប្រាស់នឹងត្រូវ Log out ចេញភ្លាមៗ!`
-            : `តើអ្នកចង់ដោះសោគណនី "${userObj.username}" មែនទេ? អ្នកប្រើប្រាស់នឹងអាច Log in ចូលប្រើប្រាស់ឡើងវិញបានភ្លាមៗ!`;
+            ? `${t('confirmBlockAccountMessage')} "${userObj.username}"? ${t('accountWillLogOutImmediately')}`
+            : `${t('confirmUnblockAccountMessage')} "${userObj.username}"? ${t('accountCanLogInAgain')}`;
 
         showConfirm(title, msg, async () => {
             try {
@@ -483,7 +543,7 @@ const AllAccount = () => {
                     fetchUsers();
                 } else {
                     const data = await res.json();
-                    showAlert('បរាជ័យ', data.error || 'Block action failed', 'danger');
+                    showAlert(t('failed'), data.error || t('blockActionFailed'), 'danger');
                 }
             } catch (err) {
                 console.error('Block toggle error:', err);
@@ -503,7 +563,7 @@ const AllAccount = () => {
             <header className='p-2.5 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
                     <h1 className='text-lg font-bold text-slate-900 flex items-center gap-2'>
-                        {t('allAccount')} & Role-Based Permissions (RBAC)
+                        {t('accountRoleBasedPermissions')}
                     </h1>
                 </div>
 
@@ -515,7 +575,7 @@ const AllAccount = () => {
                             className='flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all'
                         >
                             <FaUserPlus size={14} />
-                            <span>{t('create')} Account</span>
+                            <span>{t('createAccount')}</span>
                         </button>
                     )}
                 </div>
@@ -525,7 +585,7 @@ const AllAccount = () => {
             {!selectedAccount ? (
                 <div className='w-full'>
                     {loading ? (
-                        <div className='flex items-center justify-center py-20 text-slate-400 italic text-sm'>កំពុងទាញយកទិន្នន័យ...</div>
+                        <div className='flex items-center justify-center py-20 text-slate-400 italic text-sm'>{t('loading')}</div>
                     ) : (
                         <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
                             {users.map((item, idx) => {
@@ -544,17 +604,17 @@ const AllAccount = () => {
                                         {/* Status badges */}
                                         <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
                                             {isPendingSync && (
-                                                <span className='text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 flex items-center gap-1 animate-pulse' title="រង់ចាំ User ទទួលការកំណត់សិទ្ធិ">
-                                                    ⏳ Pending
+                                                <span className='text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 flex items-center gap-1 animate-pulse' title={t('pendingPermissionSyncTitle')}>
+                                                    ⏳ {t('pending')}
                                                 </span>
                                             )}
                                             {isMaster && (
                                                 <span className='text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-300 flex items-center gap-1'>
-                                                    <FaLock size={8} /> Master
+                                                    <FaLock size={8} /> {t('masterAdmin')}
                                                 </span>
                                             )}
                                             {isBlocked && !isMaster && (
-                                                <span className='text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300'>Blocked</span>
+                                                <span className='text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300'>{t('blocked')}</span>
                                             )}
                                         </div>
 
@@ -578,11 +638,11 @@ const AllAccount = () => {
                                             </span>
                                             <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] border
                                                 ${isSalary ? 'bg-purple-50 text-purple-700 border-purple-200' : item.brand ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                                {isSalary ? 'No Brand' : item.brand || 'All Brands'}
+                                                {isSalary ? t('noBrand') : item.brand || t('allBrands')}
                                             </span>
                                             {item.subBrands && item.subBrands.length > 0 && (
                                                 <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-sky-50 text-sky-700 border border-sky-200">
-                                                    {item.subBrands.length} Sub Brands
+                                                    {item.subBrands.length} {t('subBrands')}
                                                 </span>
                                             )}
                                         </div>
@@ -591,7 +651,7 @@ const AllAccount = () => {
                                         <div className='flex items-center justify-between text-[11px] pt-1 border-t border-slate-100'>
                                             <span className={`flex items-center gap-1.5 font-bold ${item.status === 'Online' ? 'text-emerald-600' : 'text-slate-400'}`}>
                                                 <span className={`w-2 h-2 rounded-full ${item.status === 'Online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
-                                                {item.status === 'Online' ? 'Online' : 'Offline'}
+                                                {item.status === 'Online' ? t('online') : t('offline')}
                                             </span>
                                             <span className='text-slate-400 font-mono text-[10px]'>ID: {item.userId || '—'}</span>
                                         </div>
@@ -612,7 +672,7 @@ const AllAccount = () => {
                                 onClick={() => setSelectedAccount(null)}
                                 className='flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 text-slate-600 hover:text-slate-900 rounded-[5px] text-xs font-bold cursor-pointer shadow-xs transition-all'
                             >
-                                ← ត្រឡប់ (Back)
+                                ← {t('back')}
                             </button>
                             <div className={`w-10 h-10 rounded-[5px] flex items-center justify-center text-lg font-black text-white shadow-md
                                 ${selectedAccount.isImmutable ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
@@ -623,19 +683,19 @@ const AllAccount = () => {
                                     <p className='text-sm font-black text-slate-900'>{selectedAccount.name}</p>
                                     {(selectedAccount.syncStatus === 'Pending' || selectedAccount.permissionPending) ? (
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 flex items-center gap-1">
-                                            ⏳ Pending Live Sync
+                                            ⏳ {t('pending')} {t('liveSync')}
                                         </span>
                                     ) : (
                                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center gap-1">
-                                            <FaCheck className="text-[9px]" /> Synced (ជោគជ័យ)
+                                            <FaCheck className="text-[9px]" /> {t('synced')}
                                         </span>
                                     )}
                                 </div>
                                 <p className='text-[11px] text-emerald-600 font-mono'>
-                                    {selectedAccount.username} &bull; {selectedAccount.role} &bull; {selectedAccount.brand || 'No Brand'}
+                                    {selectedAccount.username} &bull; {selectedAccount.role} &bull; {selectedAccount.brand || t('noBrand')}
                                     {selectedAccount.subBrands && selectedAccount.subBrands.length > 0 && (
                                         <span className="ml-2 text-sky-600 font-semibold font-sans">
-                                            &bull; Sub Brands: [{selectedAccount.subBrands.join(', ')}]
+                                            &bull; {t('subBrands')}: [{selectedAccount.subBrands.join(', ')}]
                                         </span>
                                     )}
                                 </p>
@@ -652,7 +712,7 @@ const AllAccount = () => {
                                             onClick={() => handleOpenEditUserModal(selectedAccount)}
                                             className='flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all'
                                         >
-                                            <MdEdit size={14} /> Edit
+                                            <MdEdit size={14} /> {t('edit')}
                                         </button>
                                     )}
                                     {hasPermission('/settings/all-account', 'edit') && (
@@ -662,7 +722,7 @@ const AllAccount = () => {
                                             className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-[5px] text-xs font-bold cursor-pointer transition-all
                                                 ${selectedAccount.isBlocked ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-orange-50 border-orange-300 text-orange-700'}`}
                                         >
-                                            {selectedAccount.isBlocked ? <><FaUnlock size={11} /> Unblock</> : <><FaBan size={11} /> Block</>}
+                                            {selectedAccount.isBlocked ? <><FaUnlock size={11} /> {t('unblock')}</> : <><FaBan size={11} /> {t('block')}</>}
                                         </button>
                                     )}
                                     {hasPermission('/settings/all-account', 'delete') && (
@@ -671,7 +731,7 @@ const AllAccount = () => {
                                             onClick={() => handleDeleteUser(selectedAccount)}
                                             className='flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 rounded-[5px] text-xs font-bold cursor-pointer transition-all'
                                         >
-                                            <MdDelete size={14} /> Delete
+                                            <MdDelete size={14} /> {t('delete')}
                                         </button>
                                     )}
                                 </>
@@ -691,15 +751,15 @@ const AllAccount = () => {
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3 shrink-0">
                             <h3 className='text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2'>
                                 <FaShieldAlt className="text-emerald-600" />
-                                <span>Page & Action Permissions (សិទ្ធិប្រើប្រាស់តាមផ្នែក)</span>
+                                <span>{t('pageAndActionPermissions')}</span>
                             </h3>
                             <span className="text-[11px] font-bold text-slate-500">
-                                បានបើកសិទ្ធិ: {Object.keys(selectedAccount.permissions || {}).length} ទំព័រ
+                                {t('enabledPermissions')}: {Object.keys(selectedAccount.permissions || {}).length} {t('pagesCountLabel')}
                             </span>
                         </div>
 
                         {(!selectedAccount.permissions || Object.keys(selectedAccount.permissions).length === 0) ? (
-                            <p className="text-slate-400 italic py-4">ពុំមានការកំណត់សិទ្ធិជាក់លាក់ (Disabled all pages)</p>
+                            <p className="text-slate-400 italic py-4">{t('allPagesDisabled')}</p>
                         ) : (
                             <div className="flex-1 overflow-y-auto pr-1.5 space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -717,22 +777,22 @@ const AllAccount = () => {
                                     ).map(([category, pages]) => (
                                         <div key={category} className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2">
                                             <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
-                                                <span className="font-bold text-slate-800 text-xs">{category}</span>
+                                                <span className="font-bold text-slate-800 text-xs">{getPermissionCategoryLabel(category)}</span>
                                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                                                    {pages.length} Pages
+                                                    {pages.length} {t('pagesCountLabel')}
                                                 </span>
                                             </div>
                                             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                                                 {pages.map((pg) => (
                                                     <div key={pg.path} className="p-1.5 rounded bg-white border border-slate-200/80 space-y-1">
                                                         <div className="flex items-center justify-between">
-                                                            <span className="font-semibold text-slate-800 text-[11px] truncate">{pg.label}</span>
+                                                            <span className="font-semibold text-slate-800 text-[11px] truncate">{getPermissionPageLabel(pg)}</span>
                                                             <span className="text-[9px] font-mono text-slate-400">{pg.path}</span>
                                                         </div>
                                                         <div className="flex flex-wrap gap-1">
                                                             {pg.granted.map((act) => (
                                                                 <span key={act} className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">
-                                                                    ✓ {act}
+                                                                    ✓ {getPermissionActionLabel(act)}
                                                                 </span>
                                                             ))}
                                                         </div>
@@ -790,7 +850,7 @@ const AllAccount = () => {
                         {historyModalTab === 'online' && (
                             <div className="max-h-72 overflow-y-auto space-y-2 pr-1 text-xs">
                                 {(!selectedHistoryUser.onlineHistory || selectedHistoryUser.onlineHistory.length === 0) ? (
-                                    <div className="text-center py-8 text-slate-500 italic">No active online session history recorded yet.</div>
+                                    <div className="text-center py-8 text-slate-500 italic">{t('noActiveOnlineSessionHistory')}</div>
                                 ) : (
                                     selectedHistoryUser.onlineHistory.map((sess, sIdx) => {
                                         const isCurrent = !sess.logoutTime && selectedHistoryUser.status === 'Online';
@@ -799,21 +859,21 @@ const AllAccount = () => {
                                                 <div className="flex items-center justify-between text-[11px]">
                                                     <span className="text-slate-300 font-bold flex items-center gap-1.5">
                                                         <span className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></span>
-                                                        {isCurrent ? '🟢 Currently Online' : '⚪ Completed Session'}
+                                                        {isCurrent ? `🟢 ${t('currentlyOnline')}` : `⚪ ${t('completedSession')}`}
                                                     </span>
                                                     <span className="text-indigo-400 font-bold bg-indigo-950/60 border border-indigo-800/60 px-2 py-0.5 rounded-md">
-                                                        Duration: {formatDuration(sess.durationSeconds)}
+                                                        {t('duration')}: {formatDuration(sess.durationSeconds)}
                                                     </span>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2 pt-1 text-[11px] text-slate-400">
                                                     <div>
-                                                        <span className="text-slate-500 block">Login Time:</span>
+                                                        <span className="text-slate-500 block">{t('loginTime')}:</span>
                                                         <span className="text-slate-200">{new Date(sess.loginTime).toLocaleString('en-GB')}</span>
                                                     </div>
                                                     <div>
                                                         <span className="text-slate-500 block">{t('lastActive')}:</span>
                                                         <span className="text-slate-200">
-                                                            {sess.logoutTime ? new Date(sess.logoutTime).toLocaleString('en-GB') : 'Active'}
+                                                            {sess.logoutTime ? new Date(sess.logoutTime).toLocaleString('en-GB') : t('active')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -826,7 +886,7 @@ const AllAccount = () => {
 
                         <div className="text-right pt-2 border-t border-slate-800">
                             <button type="button" onClick={() => setSelectedHistoryUser(null)} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[5px] text-xs font-bold transition-all cursor-pointer">
-                                Close
+                                {t('close')}
                             </button>
                         </div>
                     </div>
@@ -848,12 +908,14 @@ const AllAccount = () => {
                                     </span>
                                     <div>
                                         <h2 className="text-sm font-bold text-white">
-                                            {editingUser ? `កែសម្រួលគណនី: ${editingUser.username}` : 'បង្កើតគណនី & កំណត់សិទ្ធិប្រើប្រាស់ (Create User)'}
+                                            {editingUser
+                                                ? `${t('editAccount')}: ${editingUser.username}`
+                                                : t('createAccountAndSetPermissions')}
                                         </h2>
                                         <p className="text-[11px] text-slate-400">
-                                            {modalStep === 1 && 'ជំហានទី ១: បំពេញព័ត៌មានគណនីទូទៅ (Account Information)'}
-                                            {modalStep === 2 && 'ជំហានទី ២: កំណត់សិទ្ធិប្រើប្រាស់ទំព័រ (Permissions & Action Matrix)'}
-                                            {modalStep === 3 && 'ជំហានទី ៣: ផ្ទាំង Preview សាកល្បង & បញ្ជាក់ (Interactive Preview & Test)'}
+                                            {modalStep === 1 && `${t('stepLabel')} 1: ${t('wizardStepAccountInformation')}`}
+                                            {modalStep === 2 && `${t('stepLabel')} 2: ${t('wizardStepPermissions')}`}
+                                            {modalStep === 3 && `${t('stepLabel')} 3: ${t('wizardStepPreviewTest')}`}
                                         </p>
                                     </div>
                                 </div>
@@ -869,9 +931,9 @@ const AllAccount = () => {
                             {/* Multi-step progress bar */}
                             <div className="flex items-center justify-between max-w-lg mx-auto w-full pt-1">
                                 {[
-                                    { num: 1, label: '១. ព័ត៌មានគណនី' },
-                                    { num: 2, label: '២. កំណត់សិទ្ធិ' },
-                                    { num: 3, label: '៣. Preview & Test' }
+                                    { num: 1, label: t('wizardStepAccountInformation') },
+                                    { num: 2, label: t('wizardStepPermissions') },
+                                    { num: 3, label: t('wizardStepPreviewTest') }
                                 ].map((st, i) => (
                                     <React.Fragment key={st.num}>
                                         <div
@@ -915,62 +977,62 @@ const AllAccount = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-slate-300 font-bold mb-1.5">
-                                            ឈ្មោះពេញ (Full Name) <span className="text-rose-400">*</span>
+                                            {t('fullName')} <span className="text-rose-400">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             required
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            placeholder="ឧ. សុខ ចាន់ដារា"
+                                            placeholder={t('fullNamePlaceholder')}
                                             className="w-full h-10 px-3 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 outline-none focus:border-emerald-500"
                                         />
                                     </div>
 
                                     <div>
                                         <label className="block text-slate-300 font-bold mb-1.5">
-                                            ឈ្មោះគណនី (Username) <span className="text-rose-400">*</span>
+                                            {t('username')} <span className="text-rose-400">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             required
                                             value={formData.username}
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                            placeholder="ឧ. @dara_staff"
+                                            placeholder={t('usernamePlaceholder')}
                                             className="w-full h-10 px-3 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 font-mono outline-none focus:border-emerald-500"
                                         />
                                     </div>
 
                                     <div>
                                         <label className="block text-slate-300 font-bold mb-1.5">
-                                            អ៊ីមែល (Email Address)
+                                            {t('emailAddress')}
                                         </label>
                                         <input
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            placeholder="ឧ. dara@example.com"
+                                            placeholder={t('emailPlaceholder')}
                                             className="w-full h-10 px-3 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 outline-none focus:border-emerald-500"
                                         />
                                     </div>
 
                                     <div>
                                         <label className="block text-slate-300 font-bold mb-1.5">
-                                            ពាក្យសម្ងាត់ (Password) {editingUser && <span className="text-[10px] text-slate-400 font-normal">(ទុកទំនេរដើម្បីរក្សាពាក្យសម្ងាត់ចាស់)</span>}
+                                            {t('password')} {editingUser && <span className="text-[10px] text-slate-400 font-normal">({t('leaveBlankToKeepCurrentPassword')})</span>}
                                         </label>
                                         <input
                                             type="password"
                                             required={!editingUser}
                                             value={formData.password}
                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            placeholder={editingUser ? 'បញ្ចូលពាក្យសម្ងាត់ថ្មី (ជម្រើស)' : 'បញ្ចូលពាក្យសម្ងាត់'}
+                                            placeholder={editingUser ? t('newPasswordOptionalPlaceholder') : t('passwordPlaceholder')}
                                             className="w-full h-10 px-3 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 outline-none focus:border-emerald-500"
                                         />
                                     </div>
 
                                     <div>
                                         <label className="block text-slate-300 font-bold mb-1.5">
-                                            តួនាទីក្នុងប្រព័ន្ធ (System Role)
+                                            {t('systemRole')}
                                         </label>
                                         <select
                                             value={formData.role}
@@ -985,7 +1047,7 @@ const AllAccount = () => {
 
                                     <div>
                                         <label className="block text-slate-300 font-bold mb-1.5">
-                                            ម៉ាកដែលកាន់កាប់ (Assigned Brand)
+                                            {t('assignedBrand')}
                                         </label>
                                         <select
                                             value={formData.role?.toLowerCase() === 'salary' ? '' : formData.brand}
@@ -1001,7 +1063,7 @@ const AllAccount = () => {
                                                 <option value="">{t('allBrands')} (No Brand)</option>
                                             ) : (
                                                 <>
-                                                    <option value="">All Brands (គ្រប់ម៉ាកទាំងអស់)</option>
+                                                    <option value="">{t('allBrands')}</option>
                                                     {brandsList.map((b, bIdx) => (
                                                         <option key={bIdx} value={b}>{b}</option>
                                                     ))}
@@ -1022,7 +1084,7 @@ const AllAccount = () => {
                                             <div className="sm:col-span-2 p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl space-y-2.5">
                                                 <div className="flex items-center justify-between">
                                                     <label className="text-slate-200 font-bold flex items-center gap-1.5 text-xs">
-                                                        <span>🏷️</span> អនុម៉ាកដែលអនុញ្ញាត (Assigned Sub Brands) — អាចជ្រើសរើសលើសពី ២ បាន:
+                                                        <span>🏷️ {t('assignedSubBrands')}</span>
                                                     </label>
                                                     <button
                                                         type="button"
@@ -1036,12 +1098,12 @@ const AllAccount = () => {
                                                         className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer underline"
                                                     >
                                                         {availableSubBrands.every(sb => (formData.subBrands || []).includes(sb))
-                                                            ? 'ដកការជ្រើសរើសទាំងអស់ (Deselect All)'
-                                                            : 'ជ្រើសរើសទាំងអស់ (Select All)'}
+                                                            ? t('deselectAll')
+                                                            : t('selectAll')}
                                                     </button>
                                                 </div>
                                                 <p className="text-[10px] text-slate-400">
-                                                    ជ្រើសរើស Sub Brands ដែលគណនីនេះត្រូវបានអនុញ្ញាតឱ្យមើល និងគ្រប់គ្រងទិន្នន័យ (គណនីមួយអាចប្រើប្រាស់ និងបង្ហាញទិន្នន័យ Sub Brand ច្រើនជាង ២ បាន)។
+                                                    {t('assignedSubBrandsHelp')}
                                                 </p>
                                                 <div className="flex flex-wrap gap-2 pt-1">
                                                     {availableSubBrands.map((sb, sbIdx) => {
@@ -1088,10 +1150,10 @@ const AllAccount = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                                     <div>
                                         <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-2">
-                                            <FaShieldAlt /> កំណត់សិទ្ធិប្រើប្រាស់ទំព័រនីមួយៗ (iOS Phone Switch Style)
+                                            <FaShieldAlt /> {t('permissionMatrixHeading')}
                                         </h3>
                                         <p className="text-[11px] text-slate-400">
-                                            ប្រើប៊ូតុងអូសបិទ/បើក (Switch) ដើម្បីបើកឬបិទសិទ្ធិចូលទំព័រ។ ពេលបើក អ្នកអាចជ្រើសរើសសកម្មភាពលម្អិតបាន (Read, Create, Edit, Delete, Export)។
+                                            {t('permissionMatrixDescription')}
                                         </p>
                                     </div>
 
@@ -1102,14 +1164,14 @@ const AllAccount = () => {
                                                 onClick={handleGrantAllPermissions}
                                                 className="px-2.5 py-1 bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-600 rounded-md font-bold text-[10px]"
                                             >
-                                                ⭐ បើកទាំងអស់ (Grant All)
+                                                ⭐ {t('grantAllPermissions')}
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={handleClearAllPermissions}
                                                 className="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-600 rounded-md font-bold text-[10px]"
                                             >
-                                                ✕ បិទទាំងអស់ (Clear All)
+                                                ✕ {t('clearAllPermissions')}
                                             </button>
                                         </div>
                                     )}
@@ -1130,8 +1192,8 @@ const AllAccount = () => {
                                     ).map(([category, pages]) => (
                                         <div key={category} className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 space-y-2">
                                             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                                                <span className="font-bold text-emerald-400 text-xs">{category}</span>
-                                                <span className="text-[10px] text-slate-400 font-mono">({pages.length} Pages)</span>
+                                                <span className="font-bold text-emerald-400 text-xs">{getPermissionCategoryLabel(category)}</span>
+                                                <span className="text-[10px] text-slate-400 font-mono">({pages.length} {t('pagesCountLabel')})</span>
                                             </div>
 
                                             <div className="space-y-2">
@@ -1151,7 +1213,7 @@ const AllAccount = () => {
                                                         >
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <div>
-                                                                    <span className="font-bold text-slate-200 text-xs">{pg.label}</span>
+                                                                    <span className="font-bold text-slate-200 text-xs">{getPermissionPageLabel(pg)}</span>
                                                                     <span className="text-[10px] text-slate-400 font-mono ml-2">({pg.path})</span>
                                                                 </div>
 
@@ -1176,7 +1238,7 @@ const AllAccount = () => {
                                                             {/* Granular Action Pills when switch is ON */}
                                                             {isPageEnabled && (
                                                                 <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-                                                                    <span className="text-[10px] text-slate-400 font-semibold uppercase">សិទ្ធិអនុញ្ញាត:</span>
+                                                                    <span className="text-[10px] text-slate-400 font-semibold uppercase">{t('permissions')}:</span>
                                                                     {availableActions.map(act => {
                                                                         const isChecked = !!pState[act];
                                                                         return (
@@ -1194,7 +1256,7 @@ const AllAccount = () => {
                                                                                     onChange={() => handleActionToggle(pg.path, act)}
                                                                                     className="h-3 w-3 accent-emerald-500"
                                                                                 />
-                                                                                <span>{act}</span>
+                                                                                <span>{getPermissionActionLabel(act)}</span>
                                                                             </label>
                                                                         );
                                                                     })}
@@ -1215,10 +1277,10 @@ const AllAccount = () => {
                             <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
                                 <div className="border-b border-slate-800 pb-3">
                                     <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                                        <FaDesktop /> ផ្ទាំង Preview & Sandbox Test (តេស្តមើលសិទ្ធិជាក់ស្តែងរបស់ User)
+                                        <FaDesktop /> {t('permissionPreviewHeading')}
                                     </h3>
                                     <p className="text-[11px] text-slate-400">
-                                        ខាងក្រោមនេះជាទិដ្ឋភាពដែល user នេះនឹងមើលឃើញ និងមុខងារដែលអាចប្រើប្រាស់បានជាក់ស្តែងពេល log in ចូលប្រព័ន្ធ។
+                                        {t('permissionPreviewDescription')}
                                     </p>
                                 </div>
 
@@ -1229,21 +1291,21 @@ const AllAccount = () => {
                                             {(formData.name || formData.username || '?')[0].toUpperCase()}
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-white text-sm">{formData.name || 'ឈ្មោះអ្នកប្រើប្រាស់'}</h4>
+                                            <h4 className="font-bold text-white text-sm">{formData.name || t('defaultUserName')}</h4>
                                             <p className="text-[11px] text-emerald-400 font-mono">{formData.username}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-bold">
-                                                    Role: {formData.role}
+                                                    {t('role')}: {formData.role}
                                                 </span>
                                                 <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
-                                                    Brand: {formData.brand || 'All Brands'}
+                                                    {t('brand')}: {formData.brand || t('allBrandsShort')}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="text-right">
-                                        <span className="text-[11px] text-slate-400 block">ទំព័រដែលបានបើកសិទ្ធិ:</span>
+                                        <span className="text-[11px] text-slate-400 block">{t('enabledPages')}:</span>
                                         <span className="text-xl font-black text-emerald-400">{grantedPages.length}</span>
                                         <span className="text-slate-500 text-xs"> / {ALL_SYSTEM_PAGES.length}</span>
                                     </div>
@@ -1254,12 +1316,12 @@ const AllAccount = () => {
                                     {/* Simulated Sidebar Menu */}
                                     <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-2">
                                         <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                                            <span className="font-bold text-slate-300 text-xs">ម៉ឺនុយដែល User នឹងឃើញ (Simulated Sidebar):</span>
-                                            <span className="text-[10px] text-emerald-400 font-bold">{grantedPages.length} Visible</span>
+                                            <span className="font-bold text-slate-300 text-xs">{t('simulatedUserSidebar')}</span>
+                                            <span className="text-[10px] text-emerald-400 font-bold">{grantedPages.length} {t('visible')}</span>
                                         </div>
                                         <div className="max-h-56 overflow-y-auto space-y-1 pr-1 font-medium">
                                             {grantedPages.length === 0 ? (
-                                                <p className="text-slate-500 italic py-6 text-center">គ្មានទំព័រណាត្រូវបានបើកឡើយ (Menu will be empty)</p>
+                                                <p className="text-slate-500 italic py-6 text-center">{t('noPagesEnabled')}</p>
                                             ) : (
                                                 grantedPages.map(pg => (
                                                     <div
@@ -1271,7 +1333,7 @@ const AllAccount = () => {
                                                                 : 'bg-slate-900/60 hover:bg-slate-900 text-slate-300 border border-transparent'
                                                         }`}
                                                     >
-                                                        <span className="text-xs truncate">{pg.label}</span>
+                                                        <span className="text-xs truncate">{getPermissionPageLabel(pg)}</span>
                                                         <span className="text-[10px] font-mono text-slate-400">{pg.path}</span>
                                                     </div>
                                                 ))
@@ -1282,7 +1344,7 @@ const AllAccount = () => {
                                     {/* Permission Inspector Card */}
                                     <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-3">
                                         <div className="border-b border-slate-800 pb-2">
-                                            <span className="font-bold text-slate-300 text-xs">តេស្តសិទ្ធិលើទំព័រ:</span>
+                                            <span className="font-bold text-slate-300 text-xs">{t('testPagePermissions')}:</span>
                                             <p className="text-[11px] text-emerald-400 font-mono mt-0.5">{previewSelectedPage}</p>
                                         </div>
 
@@ -1293,7 +1355,7 @@ const AllAccount = () => {
 
                                             return (
                                                 <div className="space-y-2">
-                                                    <p className="text-xs text-slate-300 font-semibold">{curPage?.label || 'ទំព័រទូទៅ'}</p>
+                                                    <p className="text-xs text-slate-300 font-semibold">{curPage ? getPermissionPageLabel(curPage) : t('generalPage')}</p>
                                                     <div className="grid grid-cols-2 gap-2 pt-1">
                                                         {availableActions.map(act => {
                                                             const isGranted = !!pState[act];
@@ -1306,8 +1368,8 @@ const AllAccount = () => {
                                                                             : 'bg-rose-950/20 border-rose-900/50 text-rose-400'
                                                                     }`}
                                                                 >
-                                                                    <span>{act}</span>
-                                                                    <span>{isGranted ? '✅ អនុញ្ញាត' : '❌ បិទសិទ្ធិ'}</span>
+                                                                    <span>{getPermissionActionLabel(act)}</span>
+                                                                    <span>{isGranted ? `✅ ${t('allowed')}` : `❌ ${t('permissionDisabled')}`}</span>
                                                                 </div>
                                                             );
                                                         })}
@@ -1329,7 +1391,7 @@ const AllAccount = () => {
                                         onClick={() => setModalStep(s => s - 1)}
                                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-700 bg-slate-800 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors"
                                     >
-                                        <FaArrowLeft /> ថយក្រោយ
+                                        <FaArrowLeft /> {t('back')}
                                     </button>
                                 )}
                             </div>
@@ -1340,7 +1402,7 @@ const AllAccount = () => {
                                     onClick={() => { setOpenCreateModal(false); setEditingUser(null); }}
                                     className="px-4 py-2 rounded-lg border border-slate-700 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
                                 >
-                                    បោះបង់
+                                    {t('cancel')}
                                 </button>
 
                                 {modalStep < 3 ? (
@@ -1349,11 +1411,11 @@ const AllAccount = () => {
                                         onClick={() => {
                                             if (modalStep === 1) {
                                                 if (!formData.name.trim() || !formData.username.trim()) {
-                                                    showAlert('សូមបំពេញព័ត៌មាន', 'សូមបញ្ចូលឈ្មោះពេញ (Full Name) និងឈ្មោះគណនី (Username)!', 'danger');
+                                                    showAlert(t('completeRequiredInformation'), t('enterFullNameAndUsername'), 'danger');
                                                     return;
                                                 }
                                                 if (!editingUser && !formData.password.trim()) {
-                                                    showAlert('សូមបំពេញព័ត៌មាន', 'សូមបញ្ចូលពាក្យសម្ងាត់សម្រាប់គណនីថ្មី!', 'danger');
+                                                    showAlert(t('completeRequiredInformation'), t('enterPasswordForNewAccount'), 'danger');
                                                     return;
                                                 }
                                             }
@@ -1361,7 +1423,7 @@ const AllAccount = () => {
                                         }}
                                         className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-emerald-600 text-xs font-bold text-white shadow-md hover:bg-emerald-500 transition-all"
                                     >
-                                        <span>បន្តទៅមុខ</span> <FaArrowRight />
+                                        <span>{t('continue')}</span> <FaArrowRight />
                                     </button>
                                 ) : (
                                     <button
@@ -1369,7 +1431,7 @@ const AllAccount = () => {
                                         onClick={editingUser ? handleUpdateUser : handleCreateUser}
                                         className="inline-flex items-center gap-1.5 px-6 py-2 rounded-lg bg-emerald-600 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500 transition-all cursor-pointer"
                                     >
-                                        <FaCheck /> <span>{editingUser ? 'រក្សាទុកការកែប្រែ' : '✓ បញ្ជាក់ & បង្កើតគណនី'}</span>
+                                        <FaCheck /> <span>{editingUser ? t('saveChanges') : `✓ ${t('confirmAndCreateAccount')}`}</span>
                                     </button>
                                 )}
                             </div>

@@ -270,7 +270,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {hasPermission(json.cashFlowTrader || '/cashflow/monitor', 'read') && (
                     <Link to={json.cashFlowTrader || '/cashflow/monitor'} className={navItemClass(json.cashFlowTrader || '/cashflow/monitor')} style={navItemStyle(json.cashFlowTrader || '/cashflow/monitor')}>
                         <MdOutlineBarChart size={18} className={isActive(json.cashFlowTrader || '/cashflow/monitor') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
-                        {t('cashFlowTrader') || 'Cash Flow Trader'}
+                        {t('cashFlowTrader')}
                         {isActive(json.cashFlowTrader || '/cashflow/monitor') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
                 )}
@@ -527,14 +527,14 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <Link to={json.report.installment} className={subItemClass(json.report.installment)} style={subItemStyle(json.report.installment)}>{t('installmentReport')}</Link>
                                 )}
                                 {(hasPermission(json.report?.followUpReport || '/report/follow-up', 'read') || hasPermission('/follow-up/report', 'read')) && (
-                                    <Link to={json.report?.followUpReport || '/report/follow-up'} className={subItemClass(json.report?.followUpReport || '/report/follow-up')} style={subItemStyle(json.report?.followUpReport || '/report/follow-up')}>{t('followUpReport') || 'Follow Up Report'}</Link>
+                                    <Link to={json.report?.followUpReport || '/report/follow-up'} className={subItemClass(json.report?.followUpReport || '/report/follow-up')} style={subItemStyle(json.report?.followUpReport || '/report/follow-up')}>{t('followUpReport')}</Link>
                                 )}
                                 {hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read') && (
-                                    <Link to={json.report?.followUp4Report || '/report/follow-up-4'} className={subItemClass(json.report?.followUp4Report || '/report/follow-up-4')} style={subItemStyle(json.report?.followUp4Report || '/report/follow-up-4')}>{t('followUp4Report') || 'Follow Up 4 Report'}</Link>
+                                    <Link to={json.report?.followUp4Report || '/report/follow-up-4'} className={subItemClass(json.report?.followUp4Report || '/report/follow-up-4')} style={subItemStyle(json.report?.followUp4Report || '/report/follow-up-4')}>{t('followUp4Report')}</Link>
                                 )}
                                 {(hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') || hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
                                     <Link to={json.report?.reportTelegram || json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.report?.reportTelegram || '/audit/telegram/report')} style={subItemStyle(json.report?.reportTelegram || '/audit/telegram/report')}>
-                                        {t('reportAuditTelegram') || 'Report Audit Telegram'}
+                                        {t('reportAuditTelegram')}
                                     </Link>
                                 )}
                             </div>
@@ -574,30 +574,30 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <div onClick={() => toggleMenu("followUp")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("followUp")}>
                                 <span className="flex items-center gap-3">
                                     <FaClipboardCheck size={16} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
-                                    <span>{t('followUp') || 'Follow up'}</span>
+                                    <span>{t('followUp')}</span>
                                 </span>
                                 <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["followUp"] ? "rotate-180 text-emerald-600" : ""}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ${openMenus["followUp"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') && (
                                     <Link to={json.followUp?.followUp1 || '/follow-up/follow-up-1'} className={subItemClass(json.followUp?.followUp1 || '/follow-up/follow-up-1')} style={subItemStyle(json.followUp?.followUp1 || '/follow-up/follow-up-1')}>
-                                        {t('followUp1') || 'Follow up 1'}
+                                        {t('followUp1')}
                                     </Link>
                                 )}
                                 {hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') && (
                                     <Link to={json.followUp?.followUp2 || '/follow-up/follow-up-2'} className={subItemClass(json.followUp?.followUp2 || '/follow-up/follow-up-2')} style={subItemStyle(json.followUp?.followUp2 || '/follow-up/follow-up-2')}>
-                                        {t('followUp2') || 'Follow up 2'}
+                                        {t('followUp2')}
                                     </Link>
                                 )}
                                 {(hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
                                     hasPermission('/follow-up/sen-sok', 'read')) && (
                                         <Link to={json.followUp?.followUp3 || '/follow-up/follow-up-3'} className={subItemClass(json.followUp?.followUp3 || '/follow-up/follow-up-3')} style={subItemStyle(json.followUp?.followUp3 || '/follow-up/follow-up-3')}>
-                                            {t('followUp3') || 'Follow up 3'}
+                                            {t('followUp3')}
                                         </Link>
                                     )}
                                 {hasPermission(json.followUp?.followUp4 || '/follow-up/follow-up-4', 'read') && (
                                     <Link to={json.followUp?.followUp4 || '/follow-up/follow-up-4'} className={subItemClass(json.followUp?.followUp4 || '/follow-up/follow-up-4')} style={subItemStyle(json.followUp?.followUp4 || '/follow-up/follow-up-4')}>
-                                        {t('followUp4') || 'Follow up 4'}
+                                        {t('followUp4')}
                                     </Link>
                                 )}
                             </div>
@@ -608,7 +608,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {hasPermission(json.salary || '/salary', 'read') && (
                     <Link to={json.salary || '/salary'} className={navItemClass(json.salary || '/salary')} style={navItemStyle(json.salary || '/salary')}>
                         <FaMoneyBillWave size={16} className={isActive(json.salary || '/salary') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
-                        {t('salary') || 'Salary'}
+                        {t('salary')}
                         {isActive(json.salary || '/salary') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
                 )}
@@ -617,7 +617,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {hasPermission(json.allPicture || '/all-picture', 'read') && (
                     <Link to={json.allPicture || '/all-picture'} className={navItemClass(json.allPicture || '/all-picture')} style={navItemStyle(json.allPicture || '/all-picture')}>
                         <MdOutlinePhotoLibrary size={18} className={isActive(json.allPicture || '/all-picture') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
-                        All Picture
+                        {t('allPicture')}
                         {isActive(json.allPicture || '/all-picture') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
                 )}
@@ -626,7 +626,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {hasPermission(json.saveUrl || '/save-url', 'read') && (
                     <Link to={json.saveUrl || '/save-url'} className={navItemClass(json.saveUrl || '/save-url')} style={navItemStyle(json.saveUrl || '/save-url')}>
                         <FaBookmark size={15} className={isActive(json.saveUrl || '/save-url') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
-                        {t('saveUrl') || 'Save URL'}
+                        {t('saveUrl')}
                         {isActive(json.saveUrl || '/save-url') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
                 )}
@@ -637,7 +637,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div onClick={() => toggleMenu("audit")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("audit")}>
                             <span className="flex items-center gap-3">
                                 <FaTasks size={16} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
-                                {t('audit') || 'Audit'}
+                                {t('audit')}
                             </span>
                             <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenus["audit"] ? "rotate-180 text-emerald-400" : ""}`} />
                         </div>
@@ -645,7 +645,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
                                 <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')} style={subItemStyle(json.audit?.telegram || '/audit/telegram')}>
                                     <FaFileAlt size={12} />
-                                    {t('auditTelegram') || 'Audit Telegram'}
+                                    {t('auditTelegram')}
                                 </Link>
                             )}
                         </div>
@@ -658,7 +658,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                         <div onClick={() => toggleMenu("print")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("print")}>
                             <span className="flex items-center gap-3">
                                 <FaPrint size={15} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
-                                <span>{t('print') || 'Print'}</span>
+                                <span>{t('print')}</span>
                             </span>
                             <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-500 ${openMenus["print"] ? "rotate-180 text-emerald-400" : ""}`} />
                         </div>
@@ -666,7 +666,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             {hasPermission(json.print?.idCard || '/print/id-card', 'read') && (
                                 <Link to={json.print?.idCard || '/print/id-card'} className={subItemClass(json.print?.idCard || '/print/id-card')} style={subItemStyle(json.print?.idCard || '/print/id-card')}>
                                     <FaIdCard size={12} />
-                                    {t('printIdCard') || 'Print id card'}
+                                    {t('printIdCard')}
                                 </Link>
                             )}
                         </div>
@@ -677,7 +677,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {hasHelpSupportPermission && (
                     <Link to={json.helpSupport || '/help-support'} className={navItemClass(json.helpSupport || '/help-support')} style={navItemStyle(json.helpSupport || '/help-support')}>
                         <FaQuestionCircle size={16} className={isActive(json.helpSupport || '/help-support') ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
-                        {t('helpSupport') || 'Help & Support'}
+                        {t('helpSupport')}
                         {isActive(json.helpSupport || '/help-support') && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
                     </Link>
                 )}
@@ -706,7 +706,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 {hasControlSupportHelpPermission && (
                                     <Link to={json.settings?.controlSupportHelp || '/settings/control-support-help'} className={subItemClass(json.settings?.controlSupportHelp || '/settings/control-support-help')} style={subItemStyle(json.settings?.controlSupportHelp || '/settings/control-support-help')}>
                                         <FaShieldAlt size={10} className="opacity-60" />
-                                        {t('controlSupportHelp') || 'Control Support & Help'}
+                                        {t('controlSupportHelp')}
                                     </Link>
                                 )}
                                 {hasPermission(json.settings.systemLogs, 'read') && (
@@ -741,7 +741,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <p className="text-[10px] text-emerald-600 font-mono mt-0.5 truncate">{user?.email || 'yonghouvh@gmail.com'}</p>
                                     <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1"
                                         style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #86efac' }}>
-                                        {user?.role || 'Administrator'}
+                                        {user?.role || t('admin')}
                                     </span>
                                 </div>
                             </div>
@@ -771,7 +771,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             >
                                 <div className="flex items-center gap-2.5">
                                     {isFullscreen ? <FaCompress className="text-sm text-emerald-600" /> : <FaExpand className="text-sm text-emerald-600" />}
-                                    <span>{isFullscreen ? (t('exitFullscreen') || 'Exit Fullscreen') : (t('fullscreen') || 'Fullscreen')}</span>
+                                    <span>{isFullscreen ? t('exitFullscreen') : t('fullscreen')}</span>
                                 </div>
                                 <span className="text-[10px] text-slate-400 font-mono">F11</span>
                             </button>
@@ -788,7 +788,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 >
                                     <div className="flex items-center gap-2.5">
                                         <FaGlobe className="text-sm text-emerald-600" />
-                                        <span>{t('selectLanguage') || 'ភាសា / Language'}</span>
+                                        <span>{t('selectLanguage')}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-sm">{currentLangObj.flag}</span>
@@ -806,7 +806,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                         }}
                                     >
                                         <p className="text-[9px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider border-b border-slate-100 mb-1">
-                                            {t('selectLanguage') || 'ជ្រើសរើសភាសា'}
+                                            {t('selectLanguage')}
                                         </p>
                                         {LANGUAGES.map((l) => (
                                             <button
@@ -855,13 +855,13 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     ) : (
                                         <FaEye className="text-sm text-emerald-600" />
                                     )}
-                                    <span>{isHeaderOpen ? (t('hideHeader') || 'លាក់ Header') : (t('showHeader') || 'បង្ហាញ Header')}</span>
+                                    <span>{isHeaderOpen ? t('hideHeader') : t('showHeader')}</span>
                                 </div>
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{
                                     background: isHeaderOpen ? '#f1f5f9' : '#dcfce7',
                                     color: isHeaderOpen ? '#64748b' : '#16a34a'
                                 }}>
-                                    {isHeaderOpen ? (t('hide') || 'លាក់') : (t('show') || 'បង្ហាញ')}
+                                    {isHeaderOpen ? t('hide') : t('show')}
                                 </span>
                             </button>
 
@@ -901,7 +901,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             e.currentTarget.style.borderColor = '#e2e8f0';
                         }
                     }}
-                    title={user?.name || 'User Account'}
+                    title={user?.name || t('userAccount', lang === 'km' ? 'គណនីអ្នកប្រើប្រាស់' : 'User Account')}
                 >
                     <div
                         className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"

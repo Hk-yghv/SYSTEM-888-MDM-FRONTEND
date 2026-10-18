@@ -211,7 +211,7 @@ const VoiceNotePlayer = ({ audioUrl, duration, isMe }) => {
             <FaMicrophone className="text-[9px]" />
             <span>{formatDuration(isPlaying ? currentTime : totalDuration)}</span>
           </span>
-          <span>Voice</span>
+          <span>{t('telegramVoice', lang === 'km' ? 'សម្លេង' : 'Voice')}</span>
         </div>
       </div>
     </div>
@@ -219,7 +219,7 @@ const VoiceNotePlayer = ({ audioUrl, duration, isMe }) => {
 };
 
 const TelegramPage = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
   const pollingRef = useRef(null);
@@ -778,7 +778,7 @@ const TelegramPage = () => {
         headers: getAuthHeaders()
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Could not load Telegram conversations");
+      if (!response.ok) throw new Error(data.error || t('telegramLoadConversationsFailed', lang === 'km' ? 'មិនអាចផ្ទុកសន្ទនា Telegram បានទេ' : 'Could not load Telegram conversations'));
       const chatsWithMedia = data.chats || [];
       setAccounts((previous) => previous.map((item) => {
         if (item.id !== account.id) return item;
@@ -811,7 +811,7 @@ const TelegramPage = () => {
       }
       setSyncError(null);
     } catch (err) {
-      setSyncError(err.message || "Could not sync Telegram account");
+      setSyncError(err.message || t('telegramSyncAccountFailed', lang === 'km' ? 'មិនអាចធ្វើសមកាលកម្មគណនី Telegram បានទេ' : 'Could not sync Telegram account'));
     }
   }, [API_BASE, activeAccountId, activeChatId, resolveUserMessageMedia, user?.username]);
 
@@ -851,7 +851,7 @@ const TelegramPage = () => {
           headers: getAuthHeaders()
         });
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || "Could not load Telegram messages");
+        if (!response.ok) throw new Error(data.error || t('telegramLoadMessagesFailed', lang === 'km' ? 'មិនអាចផ្ទុកសាររបស់ Telegram បានទេ' : 'Could not load Telegram messages'));
         if (cancelled) return;
         const messages = await resolveUserMessageMedia(activeAccount.id, activeChatId, data.messages || []);
         if (cancelled) return;
@@ -860,7 +860,7 @@ const TelegramPage = () => {
           chats: item.chats.map((chat) => chat.id === activeChatId ? { ...chat, messages } : chat)
         })));
       } catch (err) {
-        if (!cancelled) setSyncError(err.message || "Could not load Telegram messages");
+        if (!cancelled) setSyncError(err.message || t('telegramLoadMessagesFailed', lang === 'km' ? 'មិនអាចផ្ទុកសាររបស់ Telegram បានទេ' : 'Could not load Telegram messages'));
       }
     };
     loadUserMessages();
@@ -885,7 +885,7 @@ const TelegramPage = () => {
   const handleVerifyToken = async (tokenToVerify) => {
     const token = (tokenToVerify || modalBotToken).trim();
     if (!token) {
-      setVerifyError("សូមបញ្ចូល Telegram Bot Token");
+      setVerifyError(t('telegramEnterBotToken', lang === 'km' ? 'សូមបញ្ចូល Telegram Bot Token' : 'Please enter a Telegram bot token.'));
       return null;
     }
 
@@ -907,11 +907,11 @@ const TelegramPage = () => {
         }
         return data.result;
       } else {
-        setVerifyError(data.description || "Token មិនត្រឹមត្រូវ សូមពិនិត្យម្តងទៀត");
+        setVerifyError(data.description || t('telegramInvalidToken', lang === 'km' ? 'Token មិនត្រឹមត្រូវ សូមពិនិត្យម្តងទៀត' : 'Invalid token. Please check it and try again.'));
         return null;
       }
     } catch (err) {
-      setVerifyError("មិនអាចភ្ជាប់ទៅកាន់ Telegram Server បានទេ សូមពិនិត្យមើល Internet");
+      setVerifyError(t('telegramVerifyConnectionError', lang === 'km' ? 'មិនអាចភ្ជាប់ទៅកាន់ Telegram Server បានទេ សូមពិនិត្យមើលអ៊ីនធឺណិត' : 'Unable to connect to the Telegram server. Please check your internet connection.'));
       return null;
     } finally {
       setVerifyingToken(false);
@@ -927,7 +927,7 @@ const TelegramPage = () => {
       setCopiedVerifiedBotUsername(true);
       window.setTimeout(() => setCopiedVerifiedBotUsername(false), 1600);
     } catch {
-      setVerifyError("មិនអាច Copy Username បានទេ សូមអនុញ្ញាត Clipboard ក្នុង Browser");
+      setVerifyError(t('telegramCopyUsernameFailed', lang === 'km' ? 'មិនអាចចម្លងឈ្មោះអ្នកប្រើប្រាស់បានទេ សូមអនុញ្ញាត Clipboard ក្នុងកម្មវិធីរុករក' : 'Could not copy username. Allow clipboard access in your browser.'));
     }
   };
 
@@ -935,7 +935,7 @@ const TelegramPage = () => {
   const handleSaveAccount = async (e) => {
     e.preventDefault();
     if (!editingAccountId && botAccountCount >= 5) {
-      alert("អ្នកអាចភ្ជាប់ Telegram Bot បានអតិបរមា 5 គណនី។");
+      alert(t('telegramBotLimit', lang === 'km' ? 'អ្នកអាចភ្ជាប់ Telegram Bot បានអតិបរមា ៥ គណនី។' : 'You can connect a maximum of 5 Telegram bots.'));
       return;
     }
     const token = modalBotToken.trim();
@@ -986,11 +986,11 @@ const TelegramPage = () => {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setVerifyError(err.error || "រក្សាទុកបានបរាជ័យ");
+        setVerifyError(err.error || t('telegramSaveAccountFailed', lang === 'km' ? 'បរាជ័យក្នុងការរក្សាទុកគណនី' : 'Failed to save account.'));
         return;
       }
     } catch {
-      setVerifyError("មិនអាចភ្ជាប់ Server បានទេ");
+      setVerifyError(t('telegramServerConnectionError', lang === 'km' ? 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ' : 'Unable to connect to the server.'));
       return;
     }
 
@@ -1010,7 +1010,7 @@ const TelegramPage = () => {
   const openUserLoginModal = () => {
     setIsAccountDropdownOpen(false);
     if (userAccountCount >= 5) {
-      alert("អ្នកអាចភ្ជាប់ Telegram Account ពិតបានអតិបរមា 5 គណនី។");
+      alert(t('telegramAccountLimit', lang === 'km' ? 'អ្នកអាចភ្ជាប់ Telegram Account ពិតបានអតិបរមា ៥ គណនី។' : 'You can connect a maximum of 5 Telegram accounts.'));
       return;
     }
     setUserLoginStep("details");
@@ -1048,12 +1048,12 @@ const TelegramPage = () => {
         })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "មិនអាចផ្ញើលេខកូដបានទេ");
+      if (!response.ok) throw new Error(data.error || t('telegramSendCodeFailed', lang === 'km' ? 'មិនអាចផ្ញើលេខកូដបានទេ' : 'Unable to send the code.'));
       setUserLoginChallengeId(data.challengeId);
       setUserCodeViaApp(Boolean(data.codeSentViaApp));
       setUserLoginStep("verify");
     } catch (err) {
-      setUserLoginError(err.message || "មិនអាចភ្ជាប់ Telegram បានទេ");
+      setUserLoginError(err.message || t('telegramUserConnectionError', lang === 'km' ? 'មិនអាចភ្ជាប់ Telegram បានទេ' : 'Unable to connect to Telegram.'));
     } finally {
       setUserLoginBusy(false);
     }
@@ -1074,18 +1074,18 @@ const TelegramPage = () => {
         })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "ការផ្ទៀងផ្ទាត់មិនជោគជ័យ");
+      if (!response.ok) throw new Error(data.error || t('telegramUserVerificationFailed', lang === 'km' ? 'ការផ្ទៀងផ្ទាត់មិនជោគជ័យ' : 'Verification failed.'));
       if (data.requiresPassword) {
         setUserNeedsPassword(true);
-        setUserLoginError("គណនីនេះបានបើក Two-Step Verification។ សូមបញ្ចូល password Telegram របស់អ្នក។");
+        setUserLoginError(t('telegramTwoStepPasswordRequired', lang === 'km' ? 'គណនីនេះបានបើកការផ្ទៀងផ្ទាត់ពីរជំហាន។ សូមបញ្ចូលពាក្យសម្ងាត់ Telegram របស់អ្នក។' : 'Two-Step Verification is enabled for this account. Enter your Telegram password.'));
         return;
       }
-      if (!data.account) throw new Error("មិនអាចរក្សាទុក Telegram Account បានទេ");
+      if (!data.account) throw new Error(t('telegramAccountSaveFailed', lang === 'km' ? 'មិនអាចរក្សាទុក Telegram Account បានទេ' : 'Unable to save the Telegram account.'));
       setAccounts((previous) => [...previous, data.account]);
       setActiveAccountId(data.account.id);
       closeUserLoginModal();
     } catch (err) {
-      setUserLoginError(err.message || "ការផ្ទៀងផ្ទាត់មិនជោគជ័យ");
+      setUserLoginError(err.message || t('telegramUserVerificationFailed', lang === 'km' ? 'ការផ្ទៀងផ្ទាត់មិនជោគជ័យ' : 'Verification failed.'));
     } finally {
       setUserLoginBusy(false);
     }
@@ -1094,7 +1094,7 @@ const TelegramPage = () => {
   // Delete Account
   const handleDeleteAccount = async (accId, e) => {
     e?.stopPropagation();
-    if (!window.confirm("តើលោកអ្នកពិតជាចង់លុបគណនី Telegram នេះចេញពីប្រព័ន្ធមែនទេ?")) return;
+    if (!window.confirm(t('telegramConfirmDeleteAccount', lang === 'km' ? 'តើអ្នកពិតជាចង់លុបគណនី Telegram នេះចេញពីប្រព័ន្ធមែនទេ?' : 'Are you sure you want to remove this Telegram account?'))) return;
 
     // Remove from DB
     try {
@@ -1131,7 +1131,7 @@ const TelegramPage = () => {
   const openAddAccountModal = () => {
     setIsAccountDropdownOpen(false);
     if (botAccountCount >= 5) {
-      alert("អ្នកអាចភ្ជាប់ Telegram Bot បានអតិបរមា 5 គណនី។");
+      alert(t('telegramBotLimit', lang === 'km' ? 'អ្នកអាចភ្ជាប់ Telegram Bot បានអតិបរមា ៥ គណនី។' : 'You can connect a maximum of 5 Telegram bots.'));
       return;
     }
     setEditingAccountId(null);
@@ -1255,11 +1255,11 @@ const TelegramPage = () => {
           })
         );
       } else {
-        alert(`ផ្ញើសារមិនជោគជ័យ៖ ${data.description || "Telegram API Error"}`);
+        alert(`${t('telegramMessageSendFailed', lang === 'km' ? 'ផ្ញើសារមិនជោគជ័យ' : 'Failed to send message')}: ${data.description || t('telegramApiError', lang === 'km' ? 'កំហុស Telegram API' : 'Telegram API error')}`);
       }
     } catch (err) {
       console.error("Failed to send telegram message:", err);
-      alert(`ផ្ញើសារមិនជោគជ័យ៖ ${err.message || "មិនអាចភ្ជាប់ទៅកាន់ Telegram Server"}`);
+      alert(`${t('telegramMessageSendFailed', lang === 'km' ? 'ផ្ញើសារមិនជោគជ័យ' : 'Failed to send message')}: ${err.message || t('telegramServerConnectionError', lang === 'km' ? 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេ Telegram បានទេ' : 'Unable to connect to the Telegram server')}`);
     }
   };
 
@@ -1267,7 +1267,7 @@ const TelegramPage = () => {
   const uploadTelegramFile = async (file, requestedMediaType = null) => {
     if (!file || !activeChat || (activeAccount?.type !== "user" && !activeAccount?.botToken)) return;
     if (activeAccount.type === "user" && file.size > 50 * 1024 * 1024) {
-      alert("ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារមិនលើស 50 MB។");
+      alert(t('telegramFileTooLarge', lang === 'km' ? 'ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារដែលមានទំហំមិនលើស ៥០ MB។' : 'File is too large. Please choose a file no larger than 50 MB.'));
       return;
     }
 
@@ -1433,7 +1433,7 @@ const TelegramPage = () => {
           messages: chat.messages.map((item) => item.id === tempMsgId ? { ...item, status: "error" } : item)
         }))
       })));
-      alert(`ផ្ញើ File មិនជោគជ័យ៖ ${err.message || "មិនអាចភ្ជាប់ទៅកាន់ Telegram Server"}`);
+      alert(`${t('telegramFileSendFailed', lang === 'km' ? 'ផ្ញើឯកសារមិនជោគជ័យ' : 'Failed to send file')}: ${err.message || t('telegramServerConnectionError', lang === 'km' ? 'មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេ Telegram បានទេ' : 'Unable to connect to the Telegram server')}`);
     } finally {
       setIsUploadingFile(false);
     }
@@ -1474,7 +1474,7 @@ const TelegramPage = () => {
       recorder.start();
       setIsRecordingVoice(true);
     } catch (err) {
-      alert(`មិនអាចថតសម្លេងបាន៖ ${err.message || "សូមអនុញ្ញាតឲ្យប្រើមីក្រូហ្វូន"}`);
+      alert(`${t('telegramVoiceRecordingFailed', lang === 'km' ? 'មិនអាចថតសម្លេងបាន' : 'Unable to record voice')}: ${err.message || t('telegramAllowMicrophone', lang === 'km' ? 'សូមអនុញ្ញាតឱ្យប្រើមីក្រូហ្វូន' : 'Please allow microphone access')}`);
     }
   };
 
@@ -1490,11 +1490,11 @@ const TelegramPage = () => {
     const userAccount = accounts.find((account) => account.id === topicUserAccountId)
       || accounts.find((account) => account.type === "user");
     if (!groupId) {
-      setNewChatError("សូមបញ្ចូល Group ID ជាមុនសិន");
+      setNewChatError(t('telegramEnterGroupId', lang === 'km' ? 'សូមបញ្ចូល Group ID ជាមុនសិន' : 'Enter the group ID first.'));
       return;
     }
     if (!userAccount) {
-      setNewChatError("សូមភ្ជាប់ Telegram User Account ដែលបានចូលក្នុង Group នេះជាមុនសិន");
+      setNewChatError(t('telegramConnectGroupAccountFirst', lang === 'km' ? 'សូមភ្ជាប់ Telegram User Account ដែលបានចូលក្នុង Group នេះជាមុនសិន' : 'Connect a Telegram user account that has joined this group first.'));
       return;
     }
 
@@ -1508,11 +1508,11 @@ const TelegramPage = () => {
         { headers: getAuthHeaders() }
       );
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "មិនអាចទាញ Topic បានទេ");
+      if (!response.ok) throw new Error(data.error || t('telegramLoadTopicFailed', lang === 'km' ? 'មិនអាចទាញ Topic បានទេ' : 'Could not load the topic.'));
       setForumTopics(data.topics || []);
-      if (!data.topics?.length) setNewChatError("រកមិនឃើញ Topic ក្នុង Group នេះទេ");
+      if (!data.topics?.length) setNewChatError(t('telegramNoGroupTopics', lang === 'km' ? 'រកមិនឃើញ Topic ក្នុង Group នេះទេ' : 'No topics found in this group.'));
     } catch (error) {
-      setNewChatError(error.message || "មិនអាចទាញ Topic បានទេ");
+      setNewChatError(error.message || t('telegramLoadTopicFailed', lang === 'km' ? 'មិនអាចទាញ Topic បានទេ' : 'Could not load the topic.'));
     } finally {
       setIsLoadingForumTopics(false);
     }
@@ -1523,7 +1523,7 @@ const TelegramPage = () => {
     const userAccount = accounts.find((account) => account.id === topicUserAccountId)
       || accounts.find((account) => account.type === "user");
     if (!userAccount) {
-      setSyncError("សូមភ្ជាប់ User Account ដែលបានចូលក្នុង Group នេះ ដើម្បីទាញ Topics។");
+      setSyncError(t('telegramConnectGroupAccountForTopics', lang === 'km' ? 'សូមភ្ជាប់ User Account ដែលបានចូលក្នុង Group នេះ ដើម្បីទាញ Topics។' : 'Connect a user account that has joined this group to load its topics.'));
       return;
     }
 
@@ -1536,11 +1536,11 @@ const TelegramPage = () => {
         { headers: getAuthHeaders() }
       );
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "មិនអាចទាញ Topics បានទេ");
+      if (!response.ok) throw new Error(data.error || t('telegramLoadTopicsFailed', lang === 'km' ? 'មិនអាចទាញ Topics បានទេ' : 'Could not load topics.'));
       setActiveChatForumTopics(data.topics || []);
-      if (!data.topics?.length) setSyncError("រកមិនឃើញ Topics ក្នុង Group នេះទេ។");
+      if (!data.topics?.length) setSyncError(t('telegramNoTopicsFound', lang === 'km' ? 'រកមិនឃើញ Topics ក្នុង Group នេះទេ។' : 'No topics were found in this group.'));
     } catch (error) {
-      setSyncError(error.message || "មិនអាចទាញ Topics បានទេ");
+      setSyncError(error.message || t('telegramLoadTopicsFailed', lang === 'km' ? 'មិនអាចទាញ Topics បានទេ' : 'Unable to load topics.'));
     } finally {
       setIsLoadingActiveChatTopics(false);
     }
@@ -1579,7 +1579,7 @@ const TelegramPage = () => {
   const handleLeaveGroup = async () => {
     if (!activeAccount?.botToken || activeChat?.type !== "group") return;
     const groupId = String(activeChat.telegramChatId || activeChat.id);
-    if (!window.confirm(`តើអ្នកប្រាកដថាចង់ឱ្យ Bot ចេញពី Group "${activeChat.parentGroupName || activeChat.name}" មែនទេ?`)) return;
+    if (!window.confirm(t('telegramConfirmLeaveGroup', lang === 'km' ? `តើអ្នកប្រាកដថាចង់ឱ្យ Bot ចេញពី Group "${activeChat.parentGroupName || activeChat.name}" មែនទេ?` : `Are you sure you want the bot to leave the group "${activeChat.parentGroupName || activeChat.name}"?`))) return;
 
     setIsLeavingGroup(true);
     try {
@@ -1590,7 +1590,7 @@ const TelegramPage = () => {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) {
-        throw new Error(data.description || "Telegram មិនអាចឱ្យ Bot ចេញពី Group បានទេ");
+        throw new Error(data.description || t('telegramCannotRemoveBotFromGroup', lang === 'km' ? 'Telegram មិនអាចឱ្យ Bot ចេញពី Group បានទេ' : 'Telegram could not remove the bot from the group.'));
       }
 
       setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
@@ -1599,7 +1599,7 @@ const TelegramPage = () => {
       })));
       setActiveChatForumTopics([]);
     } catch (error) {
-      alert(`Bot ចេញពី Group មិនបានទេ៖ ${error.message}`);
+      alert(`${t('telegramBotLeaveFailed', lang === 'km' ? 'Bot មិនអាចចេញពី Group បានទេ' : 'Bot could not leave the group')}: ${error.message}`);
     } finally {
       setIsLeavingGroup(false);
     }
@@ -1610,11 +1610,11 @@ const TelegramPage = () => {
     e.preventDefault();
     const targetChatId = newChatTargetId.trim();
     if (!targetChatId || !activeAccount?.botToken) {
-      setNewChatError("សូមបញ្ចូល Telegram Chat ID ឬ Username");
+      setNewChatError(t('telegramEnterChatIdOrUsername', lang === 'km' ? 'សូមបញ្ចូល Telegram Chat ID ឬ Username' : 'Enter a Telegram Chat ID or username.'));
       return;
     }
     if (newChatType === "group" && newChatGroupMode === "topic" && !selectedForumTopicId) {
-      setNewChatError("សូមទាញ និងជ្រើស Topic មួយជាមុនសិន");
+      setNewChatError(t('telegramSelectTopicFirst', lang === 'km' ? 'សូមទាញ និងជ្រើស Topic មួយជាមុនសិន' : 'Load and select a topic first.'));
       return;
     }
 
@@ -1714,11 +1714,11 @@ const TelegramPage = () => {
             `bot_cant_initiate:${botUser || ""}`
           );
         } else {
-          setNewChatError(desc || "មិនអាចផ្ញើសារបានទេ សូមពិនិត្យមើល Chat ID ម្តងទៀត។");
+          setNewChatError(desc || t('telegramSendNewChatFailed', lang === 'km' ? 'មិនអាចផ្ញើសារបានទេ សូមពិនិត្យមើល Chat ID ម្តងទៀត។' : 'Unable to send the message. Check the chat ID and try again.'));
         }
       }
     } catch (err) {
-      setNewChatError("បរាជ័យក្នុងការភ្ជាប់ទៅកាន់ Telegram Server");
+      setNewChatError(t('telegramServerConnectionError', lang === 'km' ? 'បរាជ័យក្នុងការភ្ជាប់ទៅកាន់ Telegram Server' : 'Failed to connect to the Telegram server.'));
     } finally {
       setIsSendingNewChat(false);
     }
@@ -1736,7 +1736,7 @@ const TelegramPage = () => {
   };
 
   const handleDeleteChat = (chat) => {
-    if (!window.confirm(`លុប "${chat.name}" ចេញពីបញ្ជី Chat ក្នុងកម្មវិធីនេះ?`)) return;
+    if (!window.confirm(t('telegramConfirmRemoveChat', lang === 'km' ? `លុប "${chat.name}" ចេញពីបញ្ជី Chat ក្នុងកម្មវិធីនេះ?` : `Remove "${chat.name}" from this app's chat list?`))) return;
     setAccounts((previous) => previous.map((account) => account.id !== activeAccountId ? account : ({
       ...account,
       chats: account.chats.filter((item) => item.id !== chat.id)
@@ -1772,7 +1772,7 @@ const TelegramPage = () => {
               Telegram Messenger
             </span>
             {activeAccount && (
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Online / Active"></span>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title={t('online', lang === 'km' ? 'នៅលើបណ្តាញ' : 'Online')} />
             )}
             <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">
               ({botAccountCount}/5 Bot • {userAccountCount}/5 Account)
@@ -1823,7 +1823,7 @@ const TelegramPage = () => {
                         className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 disabled:opacity-40 cursor-pointer flex items-center gap-1"
                       >
                         <FaUser className="text-[9px]" />
-                        <span>Login</span>
+                        <span>{t('login', lang === 'km' ? 'ចូលគណនី' : 'Login')}</span>
                       </button>
                       <button
                         onClick={openAddAccountModal}
@@ -1877,7 +1877,7 @@ const TelegramPage = () => {
                             )}
                             {acc.type !== "user" && (
                               <button
-                                title="កែសម្រួលគណនី Bot"
+                                title={t('telegramEditBotAccount', lang === 'km' ? 'កែសម្រួលគណនី Bot' : 'Edit bot account')}
                                 onClick={(e) => openEditAccountModal(acc, e)}
                                 className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
                               >
@@ -1885,7 +1885,7 @@ const TelegramPage = () => {
                               </button>
                             )}
                             <button
-                              title="លុប Telegram account"
+                              title={t('telegramDeleteAccount', lang === 'km' ? 'លុបគណនី Telegram' : 'Delete Telegram account')}
                               onClick={(e) => handleDeleteAccount(acc.id, e)}
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
                             >
@@ -1907,7 +1907,7 @@ const TelegramPage = () => {
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 border border-dashed border-emerald-300 hover:bg-emerald-100 transition-all cursor-pointer disabled:opacity-50"
               >
                 <FaUser className="text-[10px]" />
-                <span>Login Account</span>
+                <span>{t('telegramLoginAccount', lang === 'km' ? 'ចូលគណនី Telegram' : 'Login Account')}</span>
               </button>
               <button
                 onClick={openAddAccountModal}
@@ -1915,7 +1915,7 @@ const TelegramPage = () => {
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-dashed border-sky-300 hover:bg-sky-100 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
               >
                 <FaPlus className="text-[10px]" />
-                <span>ភ្ជាប់ Bot</span>
+                <span>{t('telegramConnectBot', lang === 'km' ? 'ភ្ជាប់ Bot' : 'Connect bot')}</span>
               </button>
             </div>
           )}
@@ -1929,7 +1929,7 @@ const TelegramPage = () => {
                 setCopiedId(true);
                 setTimeout(() => setCopiedId(false), 2500);
               }}
-              title="ចម្លង Link Bot ដើម្បីផ្ញើឱ្យ User ចុច START"
+              title={t('telegramCopyBotStartLink', lang === 'km' ? 'ចម្លង Link Bot ដើម្បីផ្ញើឱ្យ User ចុច START' : 'Copy the bot link and ask the user to press START')}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all border border-sky-200 cursor-pointer shadow-2xs"
             >
               <FaExternalLinkAlt className="text-[9px]" />
@@ -1944,22 +1944,22 @@ const TelegramPage = () => {
             <button
               onClick={handleManualSync}
               disabled={isSyncing}
-              title="ទាញយកសារថ្មីៗពី Telegram"
+              title={t('telegramFetchRecentMessages', lang === 'km' ? 'ទាញយកសារថ្មីៗពី Telegram' : 'Fetch recent Telegram messages')}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200 cursor-pointer shadow-2xs"
             >
               <FaSyncAlt className={`text-xs ${isSyncing ? "animate-spin text-emerald-600" : ""}`} />
-              <span className="hidden sm:inline">Sync</span>
+              <span className="hidden sm:inline">{t('sync', lang === 'km' ? 'ធ្វើសមកាលកម្ម' : 'Sync')}</span>
             </button>
           )}
           {activeAccount?.botToken && (
             <button
               onClick={handleManualSync}
               disabled={isSyncing}
-              title="ទាញយកសារថ្មីៗពី Telegram Server"
+              title={t('telegramFetchRecentMessagesServer', lang === 'km' ? 'ទាញយកសារថ្មីៗពី Telegram Server' : 'Fetch recent messages from the Telegram server')}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200 cursor-pointer shadow-2xs"
             >
               <FaSyncAlt className={`text-xs ${isSyncing ? "animate-spin text-sky-600" : ""}`} />
-              <span className="hidden sm:inline">Sync</span>
+              <span className="hidden sm:inline">{t('sync', lang === 'km' ? 'ធ្វើសមកាលកម្ម' : 'Sync')}</span>
             </button>
           )}
         </div>
@@ -1972,9 +1972,9 @@ const TelegramPage = () => {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center text-3xl mb-3 shadow-xl shadow-sky-500/25">
             <FaTelegramPlane />
           </div>
-          <h2 className="text-base font-black text-slate-900 mb-1">ភ្ជាប់ Telegram Account</h2>
+          <h2 className="text-base font-black text-slate-900 mb-1">{t('telegramConnectAccount', lang === 'km' ? 'ភ្ជាប់ Telegram Account' : 'Connect a Telegram account')}</h2>
           <p className="text-xs text-slate-600 max-w-lg mb-4 leading-relaxed">
-            អ្នកអាចភ្ជាប់បានអតិបរមា <strong>5 Bots</strong> និង <strong>5 គណនី Telegram ពិត</strong>។ គណនីនីមួយៗត្រូវបានរក្សាដាច់ដោយឡែកតាម user។
+            {t('telegramConnectAccountDescription', lang === 'km' ? 'អ្នកអាចភ្ជាប់បានអតិបរមា' : 'You can connect up to')} <strong>5 {t('telegramBots', lang === 'km' ? 'Bot' : 'Bots')}</strong> {t('and', lang === 'km' ? 'និង' : 'and')} <strong>5 {t('telegramUserAccounts', lang === 'km' ? 'គណនី Telegram ពិត' : 'Telegram user accounts')}</strong>. {t('telegramAccountsIsolatedByUser', lang === 'km' ? 'គណនីនីមួយៗត្រូវបានរក្សាដាច់ដោយឡែកតាម user។' : 'Each account is kept separate for each system user.')}
           </p>
 
           <div className="flex flex-wrap justify-center gap-2">
@@ -1983,14 +1983,14 @@ const TelegramPage = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-lg shadow-emerald-700/20 transition-all cursor-pointer"
             >
               <FaUser />
-              <span>Login Telegram Account</span>
+              <span>{t('telegramLoginAccount', lang === 'km' ? 'ចូលគណនី Telegram' : 'Login Telegram Account')}</span>
             </button>
             <button
               onClick={openAddAccountModal}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs shadow-lg shadow-sky-700/20 transition-all cursor-pointer"
             >
               <FaPlus />
-              <span>ភ្ជាប់ Telegram Bot</span>
+              <span>{t('telegramConnectBot', lang === 'km' ? 'ភ្ជាប់ Telegram Bot' : 'Connect Telegram Bot')}</span>
             </button>
           </div>
         </div>
@@ -2003,10 +2003,10 @@ const TelegramPage = () => {
             {/* 1. Category Filter Tabs AT THE TOP */}
             <div className="flex items-center justify-between p-1.5 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-700 gap-1 flex-shrink-0">
               {[
-                { id: "all", label: "ទាំងអស់" },
-                { id: "personal", label: "ឯកជន" },
-                { id: "group", label: "ក្រុម" },
-                { id: "channel", label: "ប៉ុស្តិ៍" },
+                { id: "all", label: t('all', lang === 'km' ? 'ទាំងអស់' : 'All') },
+                { id: "personal", label: t('personal', lang === 'km' ? 'ឯកជន' : 'Personal') },
+                { id: "group", label: t('group', lang === 'km' ? 'ក្រុម' : 'Group') },
+                { id: "channel", label: t('channel', lang === 'km' ? 'ប៉ុស្តិ៍' : 'Channel') },
                 { id: "bot", label: "Bots" }
               ].map((cat) => (
                 <button
@@ -2029,7 +2029,7 @@ const TelegramPage = () => {
                 <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 <input
                   type="text"
-                  placeholder="ស្វែងរកសារ ឬឈ្មោះ..."
+                  placeholder={t('telegramSearchMessagesOrNames', lang === 'km' ? 'ស្វែងរកសារ ឬឈ្មោះ...' : 'Search messages or names...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-7 pr-6 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-medium"
@@ -2046,7 +2046,7 @@ const TelegramPage = () => {
               {activeAccount?.type !== "user" && (
                 <button
                   onClick={() => setIsNewChatModalOpen(true)}
-                  title="ផ្ញើសារទៅកាន់ Telegram Chat ID ថ្មី"
+                  title={t('telegramSendToNewChatId', lang === 'km' ? 'ផ្ញើសារទៅកាន់ Telegram Chat ID ថ្មី' : 'Send a message to a new Telegram chat ID')}
                   className="p-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all shadow-xs cursor-pointer flex-shrink-0"
                 >
                   <FaPlus className="text-xs" />
@@ -2081,7 +2081,7 @@ const TelegramPage = () => {
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 transition-all cursor-pointer"
                     >
                       <FaPlus className="text-[9px]" />
-                      <span>+ ចាប់ផ្តើមឆាតថ្មី</span>
+                      <span>+ {t('telegramStartNewChat', lang === 'km' ? 'ចាប់ផ្តើមឆាតថ្មី' : 'Start a new chat')}</span>
                     </button>
                   )}
                 </div>
@@ -2150,7 +2150,7 @@ const TelegramPage = () => {
                                   type="button"
                                   onClick={(event) => { event.stopPropagation(); handleRenameChat(chat); }}
                                   className="p-1 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded cursor-pointer"
-                                  title="កែឈ្មោះ Chat"
+                                  title={t('telegramEditChatName', lang === 'km' ? 'កែឈ្មោះ Chat' : 'Edit chat name')}
                                   aria-label={`កែឈ្មោះ ${chat.name}`}
                                 >
                                   <FaEdit className="text-[10px]" />
@@ -2159,7 +2159,7 @@ const TelegramPage = () => {
                                   type="button"
                                   onClick={(event) => { event.stopPropagation(); handleDeleteChat(chat); }}
                                   className="p-1 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded cursor-pointer"
-                                  title="លុប Chat ចេញពីបញ្ជី"
+                                  title={t('telegramRemoveChatFromList', lang === 'km' ? 'លុប Chat ចេញពីបញ្ជី' : 'Remove chat from list')}
                                   aria-label={`លុប ${chat.name} ចេញពីបញ្ជី`}
                                 >
                                   <FaTrash className="text-[10px]" />
@@ -2174,12 +2174,12 @@ const TelegramPage = () => {
                             {lastMsg ? (
                               <>
                                 {lastMsg.sender === "me" && (
-                                  <span className="text-sky-600 font-bold mr-1">អ្នក៖</span>
+                                  <span className="text-sky-600 font-bold mr-1">{t('you', lang === 'km' ? 'អ្នក៖' : 'You:')}</span>
                                 )}
                                 {lastMsg.text}
                               </>
                             ) : (
-                              <span className="italic text-slate-400">គ្មានសារ</span>
+                              <span className="italic text-slate-400">{t('telegramNoMessages', lang === 'km' ? 'គ្មានសារ' : 'No messages')}</span>
                             )}
                           </p>
 
@@ -2224,7 +2224,7 @@ const TelegramPage = () => {
                       </span>
                     </div>
                     <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1 mt-0.2 truncate">
-                      <span>Chat ID:</span>
+                      <span>{t('chatId', lang === 'km' ? 'លេខសម្គាល់ Chat:' : 'Chat ID:')}</span>
                       <code className="text-sky-700 font-bold bg-sky-50 px-1 py-0.2 rounded font-mono">{activeChat.telegramChatId || activeChat.id}</code>
                       {activeChat.messageThreadId && <span>• Topic ID: {activeChat.messageThreadId}</span>}
                       {activeChat.username && <span>• {activeChat.username}</span>}
@@ -2241,18 +2241,18 @@ const TelegramPage = () => {
                         onClick={loadActiveChatTopics}
                         disabled={isLoadingActiveChatTopics}
                         className="px-2 py-1 text-[10px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-md disabled:opacity-50 cursor-pointer"
-                        title="ទាញ Topics របស់ Group"
+                        title={t('telegramLoadGroupTopics', lang === 'km' ? 'ទាញ Topics របស់ Group' : 'Load group topics')}
                       >
-                        {isLoadingActiveChatTopics ? "កំពុងទាញ..." : "ទាញ Topics"}
+                        {isLoadingActiveChatTopics ? t('loading', lang === 'km' ? 'កំពុងទាញ...' : 'Loading...') : t('telegramLoadTopics', lang === 'km' ? 'ទាញ Topics' : 'Load topics')}
                       </button>
                       {activeChatForumTopics.length > 0 && (
                         <select
                           value={activeChat.messageThreadId || ""}
                           onChange={openActiveChatTopic}
                           className="max-w-32 px-1.5 py-1 text-[10px] bg-white border border-slate-200 rounded-md"
-                          aria-label="ជ្រើស Telegram topic"
+                          aria-label={t('telegramSelectTopic', lang === 'km' ? 'ជ្រើស Telegram topic' : 'Select Telegram topic')}
                         >
-                          <option value="">ជ្រើស Topic</option>
+                          <option value="">{t('telegramSelectTopic', lang === 'km' ? 'ជ្រើស Topic' : 'Select topic')}</option>
                           {activeChatForumTopics.map((topic) => (
                             <option key={topic.id} value={topic.id} disabled={topic.closed}>
                               {topic.name}{topic.closed ? " (បិទ)" : ""}
@@ -2268,8 +2268,8 @@ const TelegramPage = () => {
                       onClick={handleLeaveGroup}
                       disabled={isLeavingGroup}
                       className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md disabled:opacity-50 cursor-pointer"
-                      title="ឱ្យ Bot ចេញពី Group"
-                      aria-label="ឱ្យ Bot ចេញពី Group"
+                      title={t('telegramRemoveBotFromGroup', lang === 'km' ? 'ឱ្យ Bot ចេញពី Group' : 'Remove bot from group')}
+                      aria-label={t('telegramRemoveBotFromGroup', lang === 'km' ? 'ឱ្យ Bot ចេញពី Group' : 'Remove bot from group')}
                     >
                       <FaSignOutAlt className="text-sm" />
                     </button>
@@ -2277,7 +2277,7 @@ const TelegramPage = () => {
                   <button
                     onClick={() => setShowChatInfo(!showChatInfo)}
                     className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
-                    title="ព័ត៌មានលម្អិត Chat"
+                    title={t('telegramChatInfo', lang === 'km' ? 'ព័ត៌មានលម្អិត Chat' : 'Chat details')}
                   >
                     <FaInfoCircle className="text-sm" />
                   </button>
@@ -2288,7 +2288,9 @@ const TelegramPage = () => {
               <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-2.5 bg-[#e5ebee]/40 min-h-0 flex flex-col justify-start">
                 {activeAccount?.type !== "user" && activeChat.type === "group" && (
                   <div className="max-w-2xl mx-auto p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900">
-                    ដើម្បីឱ្យ Bot មើលឃើញសារធម្មតាទាំងអស់ក្នុង Group សូមបិទ Group Privacy តាម @BotFather (`/setprivacy` → Disable) រួចដក Bot ចេញ ហើយ Add វាចូលវិញ ឬដាក់ Bot ជា Admin។ ប្រព័ន្ធអាចបង្ហាញតែសារថ្មីៗដែល Telegram ផ្ញើមកប៉ុណ្ណោះ។
+                    {t('telegramGroupPrivacyHelp', lang === 'km'
+                      ? 'ដើម្បីឱ្យ Bot មើលឃើញសារធម្មតាទាំងអស់ក្នុង Group សូមបិទ Group Privacy តាម @BotFather (/setprivacy → Disable) រួចដក Bot ចេញ ហើយ Add វាចូលវិញ ឬដាក់ Bot ជា Admin។ ប្រព័ន្ធអាចបង្ហាញតែសារថ្មីៗដែល Telegram ផ្ញើមកប៉ុណ្ណោះ។'
+                      : 'To let the bot see all regular group messages, disable Group Privacy via @BotFather (/setprivacy → Disable), then remove and re-add the bot or make it an admin. The system can only display new messages sent by Telegram.')}
                   </div>
                 )}
                 {activeChat.messages?.length === 0 ? (
@@ -2296,9 +2298,9 @@ const TelegramPage = () => {
                     <div className="w-12 h-12 rounded-2xl bg-white text-sky-500 flex items-center justify-center shadow-sm mb-2.5 text-xl">
                       <FaTelegramPlane />
                     </div>
-                    <div className="text-xs font-bold text-slate-800">ចាប់ផ្តើមការសន្ទនាផ្ទាល់</div>
+                    <div className="text-xs font-bold text-slate-800">{t('telegramStartConversation', lang === 'km' ? 'ចាប់ផ្តើមការសន្ទនាផ្ទាល់' : 'Start a direct conversation')}</div>
                     <div className="text-[11px] text-slate-500 mt-1 max-w-xs leading-relaxed">
-                      សារទាំងអស់ត្រូវបានផ្ញើ និងទទួលផ្ទាល់ពី Telegram របស់ភាគីម្ខាងទៀត។
+                      {t('telegramDirectMessageInfo', lang === 'km' ? 'សារទាំងអស់ត្រូវបានផ្ញើ និងទទួលផ្ទាល់ពី Telegram របស់ភាគីម្ខាងទៀត។' : 'All messages are sent and received directly through the other party’s Telegram.')}
                     </div>
                   </div>
                 ) : (
@@ -2336,7 +2338,7 @@ const TelegramPage = () => {
                               ) : (
                                 <div className="p-4 bg-slate-100 text-slate-600 text-center rounded-xl flex items-center justify-center gap-2">
                                   <FaImage className="text-base" />
-                                  <span>កំពុងទាញយករូបភាព...</span>
+                                  <span>{t('telegramLoadingImage', lang === 'km' ? 'កំពុងទាញយករូបភាព...' : 'Loading image...')}</span>
                                 </div>
                               )}
                             </div>
@@ -2386,7 +2388,7 @@ const TelegramPage = () => {
                               ) : (
                                 <div className="p-4 bg-slate-100 text-slate-600 text-center rounded-xl flex items-center justify-center gap-2">
                                   <FaVideo className="text-base" />
-                                  <span>កំពុងទាញយកវីដេអូ...</span>
+                                  <span>{t('telegramLoadingVideo', lang === 'km' ? 'កំពុងទាញយកវីដេអូ...' : 'Loading video...')}</span>
                                 </div>
                               )}
                             </div>
@@ -2413,7 +2415,7 @@ const TelegramPage = () => {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className={`p-2 rounded-lg transition-colors cursor-pointer ${isMe ? "bg-white text-sky-600 hover:bg-sky-50" : "bg-sky-600 text-white hover:bg-sky-700"}`}
-                                  title="ទាញយកឯកសារ"
+                                  title={t('downloadFile', lang === 'km' ? 'ទាញយកឯកសារ' : 'Download file')}
                                 >
                                   <FaDownload className="text-xs" />
                                 </a>
@@ -2487,7 +2489,7 @@ const TelegramPage = () => {
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                  title="Emoji"
+                  title={t('emoji', lang === 'km' ? 'រូបសញ្ញាអារម្មណ៍' : 'Emoji')}
                 >
                   <FaSmile className="text-lg" />
                 </button>
@@ -2502,7 +2504,9 @@ const TelegramPage = () => {
                         ? "text-white bg-rose-600 hover:bg-rose-700"
                         : "text-slate-500 hover:text-sky-600 hover:bg-slate-100"
                     }`}
-                    title={isRecordingVoice ? "បញ្ឈប់ថតសម្លេង" : "ថតសារជាសម្លេង"}
+                    title={isRecordingVoice
+                      ? t('telegramStopVoiceRecording', lang === 'km' ? 'បញ្ឈប់ថតសម្លេង' : 'Stop voice recording')
+                      : t('telegramRecordVoiceMessage', lang === 'km' ? 'ថតសារជាសម្លេង' : 'Record voice message')}
                     aria-label={isRecordingVoice ? "Stop voice recording" : "Record voice message"}
                   >
                     {isRecordingVoice ? <FaStop className="text-base" /> : <FaMicrophone className="text-base" />}
@@ -2515,14 +2519,14 @@ const TelegramPage = () => {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingFile || isRecordingVoice}
                   className="p-2 text-slate-500 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex-shrink-0 disabled:opacity-40"
-                  title="ភ្ជាប់រូបភាព ឬឯកសារ (Attach File/Photo/Audio)"
+                  title={t('telegramAttachFile', lang === 'km' ? 'ភ្ជាប់រូបភាព ឬឯកសារ' : 'Attach file, photo, or audio')}
                 >
                   <MdAttachFile className="text-xl transform rotate-45" />
                 </button>
 
                 <input
                   type="text"
-                  placeholder={`ផ្ញើសារ Telegram ទៅកាន់ ${activeChat.name}...`}
+                  placeholder={`${t('telegramSendMessageTo', lang === 'km' ? 'ផ្ញើសារ Telegram ទៅកាន់' : 'Send a Telegram message to')} ${activeChat.name}...`}
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   className="flex-1 px-3.5 py-2 text-xs md:text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all font-medium"
@@ -2534,7 +2538,7 @@ const TelegramPage = () => {
                   className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs md:text-sm font-bold rounded-lg transition-all shadow-md shadow-sky-600/20 cursor-pointer flex-shrink-0"
                 >
                   <MdOutlineSend className="text-base" />
-                  <span className="hidden sm:inline">ផ្ញើ</span>
+                  <span className="hidden sm:inline">{t('send')}</span>
                 </button>
               </form>
             </div>
@@ -2543,9 +2547,9 @@ const TelegramPage = () => {
               <div className="w-14 h-14 rounded-2xl bg-white text-sky-500 flex items-center justify-center text-3xl shadow-sm mb-2.5">
                 <FaTelegramPlane />
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">សូមជ្រើសរើសការសន្ទនា</h3>
+              <h3 className="text-sm font-bold text-slate-900 mb-1">{t('telegramSelectConversation', lang === 'km' ? 'សូមជ្រើសរើសការសន្ទនា' : 'Select a conversation')}</h3>
               <p className="text-xs text-slate-500">
-                ជ្រើសរើស Chat ពីបញ្ជីខាងឆ្វេង ឬបង្កើត Chat ថ្មីដើម្បីចាប់ផ្តើមឆាត។
+                {t('telegramSelectOrCreateConversation', lang === 'km' ? 'ជ្រើសរើស Chat ពីបញ្ជីខាងឆ្វេង ឬបង្កើត Chat ថ្មីដើម្បីចាប់ផ្តើមឆាត។' : 'Select a chat from the list or create a new one to start messaging.')}
               </p>
             </div>
           )}
@@ -2555,7 +2559,7 @@ const TelegramPage = () => {
             <div className="w-72 bg-white border-l border-slate-200 p-4 flex flex-col justify-between overflow-y-auto shadow-2xs z-20">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                  <h4 className="text-xs font-bold text-slate-900">ព័ត៌មាន Chat</h4>
+                  <h4 className="text-xs font-bold text-slate-900">{t('telegramChatInfo', lang === 'km' ? 'ព័ត៌មាន Chat' : 'Chat information')}</h4>
                   <button
                     onClick={() => setShowChatInfo(false)}
                     className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
@@ -2581,21 +2585,21 @@ const TelegramPage = () => {
 
                 <div className="space-y-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
                   <div>
-                    <span className="text-[10px] text-slate-500 font-bold block">Telegram Chat ID:</span>
+                    <span className="text-[10px] text-slate-500 font-bold block">Telegram {t('chatId', lang === 'km' ? 'លេខសម្គាល់ Chat' : 'Chat ID')}:</span>
                     <span className="font-mono text-slate-900 select-all font-bold text-[11px]">
                       {activeChat.id}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-bold block">ប្រភេទ Chat:</span>
+                    <span className="text-[10px] text-slate-500 font-bold block">{t('telegramChatType', lang === 'km' ? 'ប្រភេទ Chat:' : 'Chat type:')}</span>
                     <span className="text-slate-900 font-bold uppercase text-[10px] bg-slate-200/70 px-1.5 py-0.5 rounded">
                       {activeChat.type}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-bold block">ចំនួនសារសរុប:</span>
+                    <span className="text-[10px] text-slate-500 font-bold block">{t('telegramTotalMessages', lang === 'km' ? 'ចំនួនសារសរុប:' : 'Total messages:')}</span>
                     <span className="text-slate-900 font-bold">
-                      {activeChat.messages?.length || 0} សារ
+                      {activeChat.messages?.length || 0} {t('messages', lang === 'km' ? 'សារ' : 'messages')}
                     </span>
                   </div>
                 </div>
@@ -2603,7 +2607,7 @@ const TelegramPage = () => {
 
               <button
                 onClick={() => {
-                  if (window.confirm("តើលោកអ្នកចង់សម្អាតសារក្នុង Chat នេះមែនទេ?")) {
+                  if (window.confirm(t('telegramConfirmClearChat', lang === 'km' ? 'តើអ្នកចង់សម្អាតសារក្នុង Chat នេះមែនទេ?' : 'Are you sure you want to clear this chat?'))) {
                     setAccounts((prev) =>
                       prev.map((acc) => {
                         if (acc.id === activeAccountId) {
@@ -2622,7 +2626,7 @@ const TelegramPage = () => {
                 className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <FaTrash className="text-[11px]" />
-                <span>សម្អាតប្រវត្តិសារ</span>
+                <span>{t('telegramClearMessageHistory', lang === 'km' ? 'សម្អាតប្រវត្តិសារ' : 'Clear message history')}</span>
               </button>
             </div>
           )}
@@ -2648,7 +2652,7 @@ const TelegramPage = () => {
                 className="text-white hover:text-sky-300 p-2 text-base transition-colors flex items-center gap-1.5 bg-white/10 rounded-lg backdrop-blur-md"
               >
                 <FaDownload className="text-xs" />
-                <span className="text-xs font-bold">ទាញយក</span>
+                <span className="text-xs font-bold">{t('download')}</span>
               </a>
               <button
                 onClick={() => setPreviewImage(null)}
@@ -2675,8 +2679,8 @@ const TelegramPage = () => {
                   <FaUser className="text-xs" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black text-slate-900">Login Telegram Account ពិត</h3>
-                  <p className="text-[10px] text-slate-500">គណនីនេះភ្ជាប់ផ្តាច់ដោយឡែកតាម user របស់ប្រព័ន្ធ</p>
+                  <h3 className="text-xs font-black text-slate-900">{t('telegramLoginRealAccount', lang === 'km' ? 'ចូលគណនី Telegram ពិត' : 'Log in to a real Telegram account')}</h3>
+                  <p className="text-[10px] text-slate-500">{t('telegramAccountIsolationDescription', lang === 'km' ? 'គណនីនេះភ្ជាប់ដោយឡែកតាមអ្នកប្រើប្រាស់ប្រព័ន្ធ' : 'This account is linked separately to the system user.')}</p>
                 </div>
               </div>
               <button onClick={closeUserLoginModal} className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-white cursor-pointer">
@@ -2687,8 +2691,8 @@ const TelegramPage = () => {
             {userLoginStep === "details" ? (
               <form onSubmit={handleRequestUserCode} className="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">Environment</span>
-                  <div className="inline-flex p-1 bg-slate-100 rounded-lg" role="group" aria-label="Telegram environment">
+                  <span className="text-xs font-bold text-slate-900">{t('telegramEnvironment', lang === 'km' ? 'បរិស្ថាន' : 'Environment')}</span>
+                  <div className="inline-flex p-1 bg-slate-100 rounded-lg" role="group" aria-label={t('telegramEnvironment', lang === 'km' ? 'បរិស្ថាន Telegram' : 'Telegram environment')}>
                     {["production", "test"].map((environment) => (
                       <button
                         key={environment}
@@ -2696,7 +2700,7 @@ const TelegramPage = () => {
                         onClick={() => setUserEnvironment(environment)}
                         className={`px-3 py-1.5 text-[11px] font-bold rounded-md transition-colors ${userEnvironment === environment ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
                       >
-                        {environment === "production" ? "Production" : "Test"}
+                        {environment === "production" ? t('telegramProduction', lang === 'km' ? 'ប្រើប្រាស់ពិត' : 'Production') : t('telegramTestEnvironment', lang === 'km' ? 'សាកល្បង' : 'Test')}
                       </button>
                     ))}
                   </div>
@@ -2761,13 +2765,13 @@ const TelegramPage = () => {
                 </label>
 
                 <p className="text-[10px] text-slate-500 leading-relaxed">
-                  api_id និង api_hash យកពី <strong>my.telegram.org</strong>។ Test environment ត្រូវប្រើលេខទូរស័ព្ទ និង login code សាកល្បងដែល Telegram ផ្តល់ឱ្យ។
+                  {t('telegramApiCredentialsHelp', lang === 'km' ? 'យក api_id និង api_hash ពី' : 'Get api_id and api_hash from')} <strong>my.telegram.org</strong>. {t('telegramTestEnvironmentHelp', lang === 'km' ? 'បរិស្ថានសាកល្បងត្រូវប្រើលេខទូរស័ព្ទ និងលេខកូដចូលសាកល្បងដែល Telegram ផ្តល់ឱ្យ។' : 'For the test environment, use the test phone number and login code provided by Telegram.')}
                 </p>
 
                 {userLoginError && <p className="p-2.5 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded-lg">{userLoginError}</p>}
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                  <button type="button" onClick={closeUserLoginModal} className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">បោះបង់</button>
+                  <button type="button" onClick={closeUserLoginModal} className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">{t('cancel')}</button>
                   <button type="submit" disabled={userLoginBusy} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg disabled:opacity-50 cursor-pointer">
                     {userLoginBusy ? "កំពុងភ្ជាប់..." : "ផ្ញើ login code"}
                   </button>
@@ -2805,7 +2809,7 @@ const TelegramPage = () => {
                 )}
                 {userLoginError && <p className="p-2.5 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded-lg">{userLoginError}</p>}
                 <div className="flex justify-between gap-2 pt-2 border-t border-slate-100">
-                  <button type="button" onClick={() => { setUserLoginStep("details"); setUserLoginError(""); }} className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">ត្រឡប់</button>
+                  <button type="button" onClick={() => { setUserLoginStep("details"); setUserLoginError(""); }} className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">{t('back', lang === 'km' ? 'ត្រឡប់' : 'Back')}</button>
                   <button type="submit" disabled={userLoginBusy} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg disabled:opacity-50 cursor-pointer">
                     {userLoginBusy ? "កំពុងផ្ទៀងផ្ទាត់..." : "ផ្ទៀងផ្ទាត់ និង Login"}
                   </button>
@@ -2829,10 +2833,10 @@ const TelegramPage = () => {
                 </div>
                 <div>
                   <h3 className="text-xs font-black text-slate-900">
-                    {editingAccountId ? "កែសម្រួលគណនី Bot" : "ភ្ជាប់ Telegram Bot ថ្មី"}
+                    {editingAccountId ? t('telegramEditBotAccount', lang === 'km' ? 'កែសម្រួលគណនី Bot' : 'Edit bot account') : t('telegramConnectNewBot', lang === 'km' ? 'ភ្ជាប់ Telegram Bot ថ្មី' : 'Connect a new Telegram bot')}
                   </h3>
                   <p className="text-[10px] text-slate-500">
-                    កំណត់ Token, Username, និងឈ្មោះ Bot តាមចិត្ត
+                    {t('telegramBotAccountInstructions', lang === 'km' ? 'កំណត់ Token, Username និងឈ្មោះ Bot តាមចិត្ត' : 'Set the Token, username, and preferred bot name')}
                   </p>
                 </div>
               </div>
@@ -2855,7 +2859,7 @@ const TelegramPage = () => {
                   <div className="relative flex-1">
                     <input
                       type={showTokenPassword ? "text" : "password"}
-                      placeholder="ឧ. 7123456789:AAHKlQp9..."
+                      placeholder={`${t('example', lang === 'km' ? 'ឧ.' : 'e.g.')} 7123456789:AAHKlQp9...`}
                       value={modalBotToken}
                       onChange={(e) => setModalBotToken(e.target.value)}
                       required
@@ -2876,11 +2880,11 @@ const TelegramPage = () => {
                     className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs rounded-lg transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
                   >
                     <FaSyncAlt className={`text-[10px] ${verifyingToken ? "animate-spin text-sky-600" : ""}`} />
-                    <span>{verifyingToken ? "កំពុងពិនិត្យ..." : "ពិនិត្យ Token"}</span>
+                    <span>{verifyingToken ? t('checking', lang === 'km' ? 'កំពុងពិនិត្យ...' : 'Checking...') : t('telegramVerifyToken', lang === 'km' ? 'ផ្ទៀងផ្ទាត់ Token' : 'Verify Token')}</span>
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  យក Token ពី <strong>@BotFather</strong> ក្នុង Telegram
+                  {t('telegramBotTokenHelp', lang === 'km' ? 'យក Token ពី' : 'Get a token from')} <strong>@BotFather</strong> {t('inTelegram', lang === 'km' ? 'ក្នុង Telegram' : 'in Telegram')}
                 </p>
               </div>
 
@@ -2889,17 +2893,17 @@ const TelegramPage = () => {
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-start gap-2">
                   <FaCheck className="text-emerald-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="font-black text-emerald-900">បានផ្ទៀងផ្ទាត់ដោយជោគជ័យ!</div>
+                    <div className="font-black text-emerald-900">{t('telegramTokenVerified', lang === 'km' ? 'បានផ្ទៀងផ្ទាត់ដោយជោគជ័យ!' : 'Verified successfully!')}</div>
                     <div className="text-[11px] text-emerald-800">
                       Bot: <strong>{verifiedBotInfo.first_name}</strong> • Username:{" "}
                       <button
                         type="button"
                         onClick={handleCopyVerifiedBotUsername}
                         className="font-bold underline decoration-dotted underline-offset-2 cursor-pointer"
-                        title="ចុចដើម្បី Copy Username"
-                        aria-label={`Copy @${verifiedBotInfo.username}`}
+                        title={t('telegramCopyUsername', lang === 'km' ? 'ចុចដើម្បីចម្លងឈ្មោះអ្នកប្រើប្រាស់' : 'Click to copy username')}
+                        aria-label={`${t('telegramCopyUsername', lang === 'km' ? 'ចម្លងឈ្មោះអ្នកប្រើប្រាស់' : 'Copy username')} @${verifiedBotInfo.username}`}
                       >
-                        {copiedVerifiedBotUsername ? "បាន Copy!" : `@${verifiedBotInfo.username}`}
+                        {copiedVerifiedBotUsername ? t('copied', lang === 'km' ? 'បានចម្លង!' : 'Copied!') : `@${verifiedBotInfo.username}`}
                       </button>
                     </div>
                   </div>
@@ -2921,7 +2925,7 @@ const TelegramPage = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="ឧ. @my_mdm_system_bot"
+                  placeholder={`${t('example', lang === 'km' ? 'ឧ.' : 'e.g.')} @my_mdm_system_bot`}
                   value={modalBotUsername}
                   onChange={(e) => setModalBotUsername(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
@@ -2935,7 +2939,7 @@ const TelegramPage = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="ឧ. Bot ជំនួយការលក់, MDM System Bot, Bot សាខាទី១..."
+                  placeholder={t('telegramBotDisplayNameExample', lang === 'km' ? 'ឧ. Bot ជំនួយការលក់, MDM System Bot, Bot សាខាទី១...' : 'e.g. Sales assistant bot, MDM System Bot, Branch 1 bot...')}
                   value={modalAccountName}
                   onChange={(e) => setModalAccountName(e.target.value)}
                   required
@@ -2970,14 +2974,14 @@ const TelegramPage = () => {
                   onClick={closeAccountModal}
                   className="px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                 >
-                  បោះបង់
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={verifyingToken}
                   className="px-5 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-sky-600/25 cursor-pointer"
                 >
-                  {editingAccountId ? "រក្សាទុកការកែប្រែ" : "រក្សាទុក & ភ្ជាប់ Bot"}
+                  {editingAccountId ? t('saveChanges', lang === 'km' ? 'រក្សាទុកការផ្លាស់ប្តូរ' : 'Save changes') : t('telegramSaveAndConnectBot', lang === 'km' ? 'រក្សាទុក និងភ្ជាប់ Bot' : 'Save & connect bot')}
                 </button>
               </div>
             </form>
@@ -2993,7 +2997,7 @@ const TelegramPage = () => {
               <div className="flex items-center gap-2">
                 <FaPaperPlane className="text-sky-600 text-sm" />
                 <h3 className="text-xs font-black text-slate-900">
-                  ចាប់ផ្តើមឆាតទៅកាន់ Telegram ថ្មី
+                  {t('telegramStartNewChat', lang === 'km' ? 'ចាប់ផ្តើមឆាតទៅកាន់ Telegram ថ្មី' : 'Start a new Telegram chat')}
                 </h3>
               </div>
               <button
@@ -3007,11 +3011,11 @@ const TelegramPage = () => {
             <form onSubmit={handleCreateNewChat} className="p-4 space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1">
-                  Telegram Chat ID ឬ Username <span className="text-rose-600">*</span>
+                  {t('telegramChatIdOrUsername', lang === 'km' ? 'Telegram Chat ID ឬ Username' : 'Telegram Chat ID or username')} <span className="text-rose-600">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="ឧ. 123456789 ឬ -100123456789 ឬ @username"
+                  placeholder={t('telegramChatIdExample', lang === 'km' ? 'ឧ. 123456789 ឬ -100123456789 ឬ @username' : 'e.g. 123456789, -100123456789, or @username')}
                   value={newChatTargetId}
                   onChange={(e) => {
                     setNewChatTargetId(e.target.value);
@@ -3025,11 +3029,11 @@ const TelegramPage = () => {
 
               {newChatType === "group" && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1">ប្រភេទ Group</label>
+                  <label className="block text-xs font-bold text-slate-900 mb-1">{t('telegramGroupType', lang === 'km' ? 'ប្រភេទ Group' : 'Group type')}</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
-                      { id: "regular", label: "Group ធម្មតា" },
-                      { id: "topic", label: "Group មាន Topics" }
+                      { id: "regular", label: t('telegramRegularGroup', lang === 'km' ? 'Group ធម្មតា' : 'Regular group') },
+                      { id: "topic", label: t('telegramGroupWithTopics', lang === 'km' ? 'Group មាន Topics' : 'Group with topics') }
                     ].map((mode) => (
                       <button
                         key={mode.id}
@@ -3055,7 +3059,7 @@ const TelegramPage = () => {
               {newChatType === "group" && newChatGroupMode === "topic" && (
                 <div className="space-y-2 rounded-lg border border-slate-200 p-3 bg-slate-50">
                   <label className="block text-xs font-bold text-slate-900" htmlFor="topic-user-account">
-                    Telegram User Account សម្រាប់ទាញ Topic
+                    {t('telegramUserAccountForTopics', lang === 'km' ? 'Telegram User Account សម្រាប់ទាញ Topic' : 'Telegram user account for loading topics')}
                   </label>
                   <div className="flex gap-2">
                     <select
@@ -3068,7 +3072,7 @@ const TelegramPage = () => {
                         <option key={account.id} value={account.id}>{account.name}</option>
                       ))}
                       {!accounts.some((account) => account.type === "user") && (
-                        <option value="">គ្មាន User Account</option>
+                        <option value="">{t('telegramNoUserAccount', lang === 'km' ? 'គ្មាន User Account' : 'No user account')}</option>
                       )}
                     </select>
                     <button
@@ -3077,13 +3081,13 @@ const TelegramPage = () => {
                       disabled={isLoadingForumTopics || !accounts.some((account) => account.type === "user")}
                       className="px-3 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-lg disabled:opacity-50 cursor-pointer"
                     >
-                      {isLoadingForumTopics ? "កំពុងទាញ..." : "ទាញ Topics"}
+                      {isLoadingForumTopics ? t('loading', lang === 'km' ? 'កំពុងទាញ...' : 'Loading...') : t('telegramLoadTopics', lang === 'km' ? 'ទាញ Topics' : 'Load topics')}
                     </button>
                   </div>
                   {forumTopics.length > 0 && (
                     <div>
                       <label className="block text-xs font-bold text-slate-900 mb-1" htmlFor="forum-topic-select">
-                        ជ្រើស Topic
+                        {t('telegramSelectTopic', lang === 'km' ? 'ជ្រើស Topic' : 'Select a topic')}
                       </label>
                       <select
                         id="forum-topic-select"
@@ -3092,10 +3096,10 @@ const TelegramPage = () => {
                         className="w-full px-2 py-2 text-xs bg-white border border-slate-200 rounded-lg"
                         required
                       >
-                        <option value="">ជ្រើស Topic មួយ</option>
+                        <option value="">{t('telegramSelectOneTopic', lang === 'km' ? 'ជ្រើស Topic មួយ' : 'Select a topic')}</option>
                         {forumTopics.map((topic) => (
                           <option key={topic.id} value={topic.id} disabled={topic.closed}>
-                            {topic.name}{topic.closed ? " (បិទ)" : ""}
+                            {topic.name}{topic.closed ? ` (${t('closed', lang === 'km' ? 'បិទ' : 'Closed')})` : ""}
                           </option>
                         ))}
                       </select>
@@ -3106,11 +3110,11 @@ const TelegramPage = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1">
-                  ឈ្មោះសម្គាល់ (Optional)
+                  {t('telegramDisplayNameOptional', lang === 'km' ? 'ឈ្មោះសម្គាល់ (ស្រេចចិត្ត)' : 'Display name (optional)')}
                 </label>
                 <input
                   type="text"
-                  placeholder="ឧ. អតិថិជន សុខ ចាន់ណា"
+                  placeholder={t('telegramDisplayNameExample', lang === 'km' ? 'ឧ. អតិថិជន សុខ ចាន់ណា' : 'e.g. Customer name')}
                   value={newChatName}
                   onChange={(e) => setNewChatName(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
@@ -3119,13 +3123,13 @@ const TelegramPage = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1">
-                  ប្រភេទ Chat
+                  {t('telegramChatType', lang === 'km' ? 'ប្រភេទ Chat' : 'Chat type')}
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
-                    { id: "personal", label: "ឯកជន", icon: FaUser },
-                    { id: "group", label: "ក្រុម", icon: FaUsers },
-                    { id: "channel", label: "ប៉ុស្តិ៍", icon: FaBullhorn }
+                    { id: "personal", label: t('private', lang === 'km' ? 'ឯកជន' : 'Private'), icon: FaUser },
+                    { id: "group", label: t('group', lang === 'km' ? 'ក្រុម' : 'Group'), icon: FaUsers },
+                    { id: "channel", label: t('channel', lang === 'km' ? 'ប៉ុស្តិ៍' : 'Channel'), icon: FaBullhorn }
                   ].map((t) => {
                     const Icon = t.icon;
                     return (
@@ -3153,7 +3157,7 @@ const TelegramPage = () => {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="បញ្ចូលសារដើម្បីចាប់ផ្តើមការសន្ទនា..."
+                  placeholder={t('telegramInitialMessagePlaceholder', lang === 'km' ? 'បញ្ចូលសារដើម្បីចាប់ផ្តើមការសន្ទនា...' : 'Enter a message to start the conversation...')}
                   value={newChatInitialMessage}
                   onChange={(e) => setNewChatInitialMessage(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium resize-none"
@@ -3164,9 +3168,9 @@ const TelegramPage = () => {
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900">
                   {newChatError.startsWith("bot_cant_initiate") ? (
                     <div>
-                      <strong>មិនអាចចាប់ផ្តើមឆាតមុនបានទេ៖</strong>
+                      <strong>{t('telegramBotCannotStartChat', lang === 'km' ? 'មិនអាចចាប់ផ្តើមឆាតមុនបានទេ៖' : 'The bot cannot start a chat first:')}</strong>
                       <p className="mt-1 text-[11px] leading-relaxed">
-                        Telegram Bot មិនអាចផ្ញើសារទៅកាន់ User មុនបានទេ លុះត្រាតែ User នោះបានចុច <strong>START</strong> ក្នុង Bot ជាមុនសិន។
+                        {t('telegramBotMustBeStartedByUser', lang === 'km' ? 'Telegram Bot មិនអាចផ្ញើសារទៅកាន់ User មុនបានទេ លុះត្រាតែ User នោះបានចុច' : 'A Telegram bot cannot message a user first. The user must press')} <strong>START</strong> {t('telegramStartBotFirst', lang === 'km' ? 'ក្នុង Bot ជាមុនសិន។' : 'in the bot first.')}
                       </p>
                       {activeAccount?.username && (
                         <div className="mt-2">
@@ -3176,7 +3180,7 @@ const TelegramPage = () => {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-sky-700 font-bold underline text-[11px]"
                           >
-                            <span>ផ្ញើ Link នេះឱ្យគាត់ចុច Start: t.me/{activeAccount.username.replace("@", "")}</span>
+                            <span>{t('telegramSendStartLink', lang === 'km' ? 'ផ្ញើ Link នេះឱ្យគាត់ចុច Start:' : 'Send this link and ask them to press Start:')} t.me/{activeAccount.username.replace("@", "")}</span>
                             <FaExternalLinkAlt className="text-[9px]" />
                           </a>
                         </div>
@@ -3194,7 +3198,7 @@ const TelegramPage = () => {
                   onClick={() => setIsNewChatModalOpen(false)}
                   className="px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                 >
-                  បោះបង់
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
@@ -3202,7 +3206,7 @@ const TelegramPage = () => {
                   className="px-4 py-1.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-sky-600/25 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <FaPaperPlane className="text-[10px]" />
-                  <span>{isSendingNewChat ? "កំពុងផ្ញើ..." : "ចាប់ផ្តើមឆាត"}</span>
+                  <span>{isSendingNewChat ? t('sending', lang === 'km' ? 'កំពុងផ្ញើ...' : 'Sending...') : t('telegramStartChat', lang === 'km' ? 'ចាប់ផ្តើមឆាត' : 'Start chat')}</span>
                 </button>
               </div>
             </form>

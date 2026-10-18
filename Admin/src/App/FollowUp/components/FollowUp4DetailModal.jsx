@@ -45,10 +45,10 @@ const FollowUp4DetailModal = ({
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/80">
                     <div>
                         <h3 className="text-base font-bold text-sky-400 flex items-center gap-2">
-                            <FaCalculator /> <span>បញ្ចូលទិន្នន័យ DETAIL METRICS</span>
+                            <FaCalculator /> <span>{t('enterDetailMetrics')}</span>
                         </h3>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            Brand: <span className="text-emerald-400 font-bold">{brand || '888MDM'}</span>
+                            {t('brand')}: <span className="text-emerald-400 font-bold">{brand || '888MDM'}</span>
                         </p>
                     </div>
                     <button
@@ -65,7 +65,7 @@ const FollowUp4DetailModal = ({
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <FaRegCalendarAlt className="text-sky-400 text-sm" />
-                            <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
+                            <span className="text-xs font-semibold text-slate-300">{t('date')}:</span>
                             <input
                                 type="date"
                                 value={date}
@@ -76,15 +76,15 @@ const FollowUp4DetailModal = ({
 
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                             <div className="bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 font-mono">
-                                <span className="text-slate-400">Total Submits: </span>
+                                <span className="text-slate-400">{t('totalSubmits')}: </span>
                                 <span className="text-emerald-400 font-bold">{calculatedFormulas.totalSubmits || 0}</span>
                             </div>
                             <div className="bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 font-mono">
-                                <span className="text-slate-400">Total Success: </span>
+                                <span className="text-slate-400">{t('totalSuccess')}: </span>
                                 <span className="text-teal-400 font-bold">{calculatedFormulas.totalSuccess || 0}</span>
                             </div>
                             <div className="bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-700/60 font-mono">
-                                <span className="text-emerald-300">Conv Rate: </span>
+                                <span className="text-emerald-300">{t('successRate')}: </span>
                                 <span className="text-emerald-400 font-bold">{calculatedFormulas.conversionRate || '0.0%'}</span>
                             </div>
                         </div>
@@ -93,7 +93,7 @@ const FollowUp4DetailModal = ({
                     {/* Input Fields Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 text-xs">
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-indigo-600/40">
-                            <label className="block text-indigo-300 font-semibold mb-1">MESSAGE (PG + TG + CALL)</label>
+                            <label className="block text-indigo-300 font-semibold mb-1">{t('totalMessages')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -101,12 +101,12 @@ const FollowUp4DetailModal = ({
                                 placeholder="0"
                                 value={(Number(metrics.page || 0) + Number(metrics.telegram || 0) + Number(metrics.call || 0)) || ''}
                                 className="w-full bg-slate-800/80 text-right text-indigo-300 font-bold text-sm px-3 py-1.5 rounded-lg border border-slate-700 outline-none cursor-not-allowed font-mono"
-                                title="MESSAGE = PG (Page) + TG (Telegram) + CALL"
+                                title={t('messageFormulaTooltip')}
                             />
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">PAGE (FB Page)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('facebookPage')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -118,7 +118,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">TELEGRAM (Tg)</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('telegram')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -154,7 +154,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">REJECT CS</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('rejectCs')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -178,7 +178,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">PAGE SUBMIT</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('pageSubmit')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -190,7 +190,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">TELEGRAM SUBMIT</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('telegramSubmit')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -202,7 +202,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">CALL</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('call')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -214,7 +214,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">REVIEW</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('inReview')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -226,7 +226,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">REJECT</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('reject')}</label>
                             <input
                                 type="number"
                                 min="0"
@@ -238,7 +238,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">REJECT2</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('reject')} 2</label>
                             <input
                                 type="number"
                                 min="0"
@@ -250,7 +250,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">SUCCESS 1</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('success')} 1</label>
                             <input
                                 type="number"
                                 min="0"
@@ -262,7 +262,7 @@ const FollowUp4DetailModal = ({
                         </div>
 
                         <div className="bg-slate-900/70 p-2 rounded-[5px] border border-slate-700/60">
-                            <label className="block text-slate-400 font-semibold mb-1">SUCCESS 2</label>
+                            <label className="block text-slate-400 font-semibold mb-1">{t('success')} 2</label>
                             <input
                                 type="number"
                                 min="0"
@@ -282,7 +282,7 @@ const FollowUp4DetailModal = ({
                         onClick={onClose}
                         className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-[5px] transition-all cursor-pointer"
                     >
-                        បោះបង់
+                        {t('cancel')}
                     </button>
                     <button
                         type="button"

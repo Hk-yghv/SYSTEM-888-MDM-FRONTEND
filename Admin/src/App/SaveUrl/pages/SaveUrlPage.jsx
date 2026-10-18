@@ -90,7 +90,7 @@ const ToggleSwitch = ({ checked, onChange, label }) => (
 );
 
 const SaveUrlPage = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, user, hasPermission } = useAuth();
 
     // Main Table state
@@ -338,7 +338,7 @@ const SaveUrlPage = () => {
             const data = await res.json();
             if (!res.ok) {
                 if (openedWindow) openedWindow.close();
-                setUnlockError(data.error || 'មិនអាចដោះសោ URL បានទេ។');
+                setUnlockError(data.error || t('saveUrlUnlockFailed', lang === 'km' ? 'មិនអាចដោះសោ URL បានទេ។' : 'Unable to unlock URL.'));
                 return;
             }
             setUnlockedUrls(current => ({ ...current, [id]: data.url }));
@@ -358,7 +358,7 @@ const SaveUrlPage = () => {
         } catch (err) {
             if (openedWindow) openedWindow.close();
             console.error('Unlock saved URL error:', err);
-            setUnlockError('មានបញ្ហាក្នុងការភ្ជាប់ទៅម៉ាស៊ីនមេ។ សូមព្យាយាមម្ដងទៀត។');
+            setUnlockError(t('saveUrlUnlockConnectionError', lang === 'km' ? 'មានបញ្ហាក្នុងការភ្ជាប់ទៅម៉ាស៊ីនមេ។ សូមព្យាយាមម្ដងទៀត។' : 'A server connection error occurred. Please try again.'));
         } finally {
             setUnlocking(false);
         }
@@ -368,19 +368,19 @@ const SaveUrlPage = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.title.trim()) {
-            alert('សូមបញ្ចូលចំណងជើង URL (Title is required)');
+            alert(t('saveUrlTitleRequired', lang === 'km' ? 'សូមបញ្ចូលចំណងជើង URL' : 'Please enter a URL title.'));
             return;
         }
         if (!formData.url.trim() && !editingItem) {
-            alert('សូមបញ្ចូលតំណភ្ជាប់ URL (URL is required)');
+            alert(t('saveUrlAddressRequired', lang === 'km' ? 'សូមបញ្ចូលតំណភ្ជាប់ URL' : 'Please enter a URL.'));
             return;
         }
         if (formData.visibility === 'Private' && !formData.brandWide && !formData.subBrand) {
-            alert('សូមជ្រើសរើស Sub Brand ឬបើកការចែករំលែកគ្រប់ Sub Brand ក្នុង Brand នេះ។');
+            alert(t('saveUrlPrivateSubBrandRequired', lang === 'km' ? 'សូមជ្រើសរើស Sub Brand ឬបើកការចែករំលែកជាមួយគ្រប់ Sub Brand ក្នុង Brand នេះ។' : 'Select a sub-brand or enable sharing with all sub-brands in this brand.'));
             return;
         }
         if (formData.passwordProtected && !editingItem?.passwordProtected && formData.password.length < 4) {
-            alert('លេខសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៤ តួអក្សរ។');
+            alert(t('saveUrlPasswordMinimum', lang === 'km' ? 'លេខសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៤ តួអក្សរ។' : 'Password must be at least 4 characters.'));
             return;
         }
 
@@ -428,11 +428,11 @@ const SaveUrlPage = () => {
                 fetchPublicUrls();
             } else {
                 const errData = await res.json().catch(() => ({}));
-                alert(errData.error || 'បរាជ័យក្នុងការរក្សាទុក URL');
+                alert(errData.error || t('saveUrlSaveFailed', lang === 'km' ? 'បរាជ័យក្នុងការរក្សាទុក URL' : 'Failed to save URL.'));
             }
         } catch (err) {
             console.error('Submit saved URL error:', err);
-            alert('Server error: ' + err.message);
+            alert(`${t('serverError', lang === 'km' ? 'កំហុសម៉ាស៊ីនមេ' : 'Server error')}: ${err.message}`);
         } finally {
             setSubmitting(false);
         }
@@ -466,11 +466,11 @@ const SaveUrlPage = () => {
                 fetchPublicUrls();
             } else {
                 const errData = await res.json().catch(() => ({}));
-                alert(errData.error || 'បរាជ័យក្នុងការលុប URL');
+                alert(errData.error || t('saveUrlDeleteFailed', lang === 'km' ? 'បរាជ័យក្នុងការលុប URL' : 'Failed to delete URL.'));
             }
         } catch (err) {
             console.error('Delete saved URL error:', err);
-            alert('Error deleting: ' + err.message);
+            alert(`${t('saveUrlDeleteError', lang === 'km' ? 'កំហុសក្នុងការលុប' : 'Error deleting')}: ${err.message}`);
         } finally {
             setDeleting(false);
         }
@@ -503,10 +503,10 @@ const SaveUrlPage = () => {
                     </div>
                     <div>
                         <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <span>Save URL</span>
+                            <span>{t('saveUrl')}</span>
                         </h1>
                         <p className="text-[11px] text-slate-500">
-                            រក្សាទុក និងគ្រប់គ្រងតំណភ្ជាប់ URL សំខាន់ៗ
+                            {t('saveUrlPageDescription', lang === 'km' ? 'រក្សាទុក និងគ្រប់គ្រងតំណភ្ជាប់ URL សំខាន់ៗ' : 'Save and manage important URLs')}
                         </p>
                     </div>
                 </div>
@@ -518,7 +518,7 @@ const SaveUrlPage = () => {
                         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-md shadow-emerald-600/20 transition-all active:scale-95"
                     >
                         <FaPlus />
-                        <span>បញ្ចូល URL ថ្មី (Add URL)</span>
+                        <span>{t('saveUrlAddNew', lang === 'km' ? 'បញ្ចូល URL ថ្មី' : 'Add URL')}</span>
                     </button>
                 </div>
             </header>
@@ -539,7 +539,7 @@ const SaveUrlPage = () => {
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="text-sm font-bold text-slate-800">
-                                    Shared URLs
+                                    {t('saveUrlSharedUrls', lang === 'km' ? 'តំណភ្ជាប់ដែលបានចែករំលែក' : 'Shared URLs')}
                                 </h2>
 
                                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold font-mono">
@@ -548,7 +548,7 @@ const SaveUrlPage = () => {
                             </div>
 
                             <p className="text-[11px] text-slate-500 mt-0.5">
-                                តំណភ្ជាប់សាធារណៈដែលបានរក្សាទុក
+                                {t('saveUrlPublicSavedUrls', lang === 'km' ? 'តំណភ្ជាប់សាធារណៈដែលបានរក្សាទុក' : 'Saved public URLs')}
                             </p>
                         </div>
                     </div>
@@ -565,7 +565,7 @@ const SaveUrlPage = () => {
                             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all cursor-pointer"
                         >
                             <FaThLarge />
-                            <span>See All</span>
+                            <span>{t('saveUrlSeeAll', lang === 'km' ? 'មើលទាំងអស់' : 'See All')}</span>
                             <span className="text-slate-400">({publicTotal})</span>
                         </button>
                     </div>
@@ -578,7 +578,7 @@ const SaveUrlPage = () => {
                     {loadingPublic ? (
                         <div className="py-6 flex items-center justify-center gap-2 text-slate-400 text-xs">
                             <FaSpinner className="animate-spin text-emerald-600" />
-                            <span>កំពុងទាញយក URLs ដែលបានចែករំលែក...</span>
+                            <span>{t('saveUrlLoadingShared', lang === 'km' ? 'កំពុងទាញយក URLs ដែលបានចែករំលែក...' : 'Loading shared URLs...')}</span>
                         </div>
                     ) : publicUrls.length === 0 ? (
                         <div className="py-8 text-center border border-dashed border-slate-200 rounded-lg">
@@ -601,16 +601,16 @@ const SaveUrlPage = () => {
                                             Title / Description
                                         </th>
                                         <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Category
+                                            {t('category')}
                                         </th>
                                         <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                             Domain
                                         </th>
                                         <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">
-                                            Visibility
+                                            {t('visibility', lang === 'km' ? 'ភាពមើលឃើញ' : 'Visibility')}
                                         </th>
                                         <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-right">
-                                            Actions
+                                            {t('actions')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -667,7 +667,7 @@ const SaveUrlPage = () => {
                                                 <td className="px-3 py-2.5 max-w-[180px]">
                                                     <div
                                                         className="flex items-center gap-1.5 text-[11px] text-slate-600 font-mono"
-                                                        title={item.passwordProtected && !displayUrl ? 'Password protected' : displayUrl}
+                                                        title={item.passwordProtected && !displayUrl ? t('saveUrlPasswordProtected', lang === 'km' ? 'ការពារដោយពាក្យសម្ងាត់' : 'Password protected') : displayUrl}
                                                     >
                                                         <FaLink className="text-emerald-500 text-[10px] shrink-0" />
                                                         <span className="truncate">
@@ -695,7 +695,7 @@ const SaveUrlPage = () => {
                                                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                                 }`}
-                                                            title="ចម្លង URL"
+                                                            title={t('copy', lang === 'km' ? 'ចម្លង URL' : 'Copy URL')}
                                                         >
                                                             {isCopied
                                                                 ? <FaCheck />
@@ -738,7 +738,7 @@ const SaveUrlPage = () => {
                             setSearchTerm(e.target.value);
                             setPage(1);
                         }}
-                        placeholder="ស្វែងរកតាមចំណងជើង, URL, កំណត់ចំណាំ, ឬប្រភេទ..."
+                        placeholder={t('saveUrlSearchPlaceholder', lang === 'km' ? 'ស្វែងរកតាមចំណងជើង, URL, កំណត់ចំណាំ ឬប្រភេទ...' : 'Search by title, URL, notes, or category...')}
                         className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-[5px] outline-none focus:border-emerald-500 text-slate-800 font-medium"
                     />
                 </div>
@@ -747,7 +747,7 @@ const SaveUrlPage = () => {
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                     {/* Visibility Filter */}
                     <div className="flex items-center gap-1">
-                        <span className="text-slate-500 font-bold text-[11px]">Visibility:</span>
+                        <span className="text-slate-500 font-bold text-[11px]">{t('visibility', lang === 'km' ? 'ការបង្ហាញ' : 'Visibility')}:</span>
                         <select
                             value={selectedVisibility}
                             onChange={(e) => {
@@ -756,16 +756,16 @@ const SaveUrlPage = () => {
                             }}
                             className="px-2.5 py-1 text-xs bg-slate-50 border border-slate-200 rounded-[5px] outline-none text-slate-800 font-bold cursor-pointer"
                         >
-                            <option value="All">All ({stats.totalAll || 0})</option>
-                            <option value="Public">Public ({stats.publicCount || 0})</option>
-                            <option value="Private">Private ({stats.privateCount || 0})</option>
-                            <option value="Personal">Personal ({stats.personalCount || 0})</option>
+                            <option value="All">{t('all')} ({stats.totalAll || 0})</option>
+                            <option value="Public">{t('public')} ({stats.publicCount || 0})</option>
+                            <option value="Private">{t('private')} ({stats.privateCount || 0})</option>
+                            <option value="Personal">{t('saveUrlPersonal', lang === 'km' ? 'ផ្ទាល់ខ្លួន' : 'Personal')} ({stats.personalCount || 0})</option>
                         </select>
                     </div>
 
                     {/* Category Filter */}
                     <div className="flex items-center gap-1">
-                        <span className="text-slate-500 font-bold text-[11px]">Category:</span>
+                        <span className="text-slate-500 font-bold text-[11px]">{t('category')}:</span>
                         <select
                             value={selectedCategory}
                             onChange={(e) => {
@@ -774,7 +774,7 @@ const SaveUrlPage = () => {
                             }}
                             className="px-2.5 py-1 text-xs bg-slate-50 border border-slate-200 rounded-[5px] outline-none text-slate-800 font-bold cursor-pointer"
                         >
-                            <option value="All">All Categories</option>
+                            <option value="All">{t('allCategories', lang === 'km' ? 'ប្រភេទទាំងអស់' : 'All Categories')}</option>
                             {PRESET_CATEGORIES.map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
                             ))}
@@ -792,7 +792,7 @@ const SaveUrlPage = () => {
                             }}
                             className="px-2.5 py-1 text-[11px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-[5px] border border-rose-200 transition-all cursor-pointer"
                         >
-                            សម្អាត Filter
+                            {t('clearFilters', lang === 'km' ? 'សម្អាតតម្រង' : 'Clear Filters')}
                         </button>
                     )}
                 </div>
@@ -861,23 +861,23 @@ const SaveUrlPage = () => {
                     <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
 
                         <tr>
-                            <th className="px-4 py-1.5 text-center">No</th>
-                            <th className="px-4 py-1.5">ចំណងជើង URL</th>
-                            <th className="px-4 py-1.5">តំណភ្ជាប់</th>
-                            <th className="px-4 py-1.5">ប្រភេទ</th>
-                            <th className="px-4 py-1.5">Sub Brand</th>
-                            <th className="px-4 py-1.5 text-center">ភាពមើលឃើញ</th>
-                            <th className="px-4 py-1.5">កំណត់ចំណាំ</th>
-                            <th className="px-4 py-1.5">បង្កើតដោយ</th>
-                            <th className="px-4 py-1.5">កាលបរិច្ឆេទ</th>
-                            <th className="px-4 py-1.5 text-center">Actions</th>
+                            <th className="px-4 py-1.5 text-center">{t('no')}</th>
+                            <th className="px-4 py-1.5">{t('saveUrlTitleColumn', lang === 'km' ? 'ចំណងជើង URL' : 'URL Title')}</th>
+                            <th className="px-4 py-1.5">{t('saveUrlLinkColumn', lang === 'km' ? 'តំណភ្ជាប់' : 'Link')}</th>
+                            <th className="px-4 py-1.5">{t('category')}</th>
+                            <th className="px-4 py-1.5">{t('deviceSubBrand')}</th>
+                            <th className="px-4 py-1.5 text-center">{t('visibility', lang === 'km' ? 'ភាពមើលឃើញ' : 'Visibility')}</th>
+                            <th className="px-4 py-1.5">{t('note', lang === 'km' ? 'កំណត់ចំណាំ' : 'Note')}</th>
+                            <th className="px-4 py-1.5">{t('createdBy', lang === 'km' ? 'បង្កើតដោយ' : 'Created By')}</th>
+                            <th className="px-4 py-1.5">{t('date', lang === 'km' ? 'កាលបរិច្ឆេទ' : 'Date')}</th>
+                            <th className="px-4 py-1.5 text-center">{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap">
                         {loading ? (
                             <tr>
                                 <td colSpan={10} className="text-center py-10 text-slate-400 italic">
-                                    កំពុងទាញយកទិន្នន័យ URLs...
+                                    {t('saveUrlLoadingUrls', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យ URLs...' : 'Loading URLs...')}
                                 </td>
                             </tr>
                         ) : urls.length === 0 ? (
@@ -885,7 +885,7 @@ const SaveUrlPage = () => {
                                 <td colSpan={10} className="text-center py-12 text-slate-400 italic">
                                     <div className="flex flex-col items-center justify-center gap-2">
                                         <FaLink className="text-3xl opacity-30 text-slate-400" />
-                                        <span>មិនមានទិន្នន័យ URL ត្រូវបានរក្សាទុកនៅឡើយទេ។ សូមចុចប៊ូតុង "បញ្ចូល URL ថ្មី" ដើម្បីបង្កើត!</span>
+                                        <span>{t('saveUrlEmptyState', lang === 'km' ? 'មិនទាន់មានទិន្នន័យ URL ទេ។ សូមចុច "បញ្ចូល URL ថ្មី" ដើម្បីបង្កើត!' : 'No URLs saved yet. Click "Add URL" to create one!')}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -924,7 +924,7 @@ const SaveUrlPage = () => {
                                                     type="button"
                                                     onClick={() => handleCopy(item.url, itemId, item)}
                                                     className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-emerald-600 cursor-pointer"
-                                                    title="ចម្លង URL"
+                                                    title={t('copy', lang === 'km' ? 'ចម្លង' : 'Copy URL')}
                                                 >
                                                     {isCopied ? <FaCheck className="text-emerald-600 text-xs" /> : <FaCopy className="text-xs" />}
                                                 </button>
@@ -932,9 +932,9 @@ const SaveUrlPage = () => {
                                                     type="button"
                                                     onClick={() => handleOpenLink(item)}
                                                     className="text-emerald-700 hover:underline truncate text-left"
-                                                    title={item.passwordProtected && !displayUrl ? 'Password protected' : displayUrl}
+                                                    title={item.passwordProtected && !displayUrl ? t('saveUrlPasswordProtected', lang === 'km' ? 'ការពារដោយពាក្យសម្ងាត់' : 'Password protected') : displayUrl}
                                                 >
-                                                    {item.passwordProtected && !displayUrl ? '🔒 URL protected by password' : displayUrl}
+                                                    {item.passwordProtected && !displayUrl ? `🔒 ${t('saveUrlPasswordProtected', lang === 'km' ? 'ការពារដោយពាក្យសម្ងាត់' : 'URL protected by password')}` : displayUrl}
                                                 </button>
                                             </div>
                                         </td>
@@ -950,7 +950,7 @@ const SaveUrlPage = () => {
                                         <td className="px-4 py-1.5">
                                             {item.brandWide ? (
                                                 <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 rounded text-[10px] font-bold">
-                                                    All Sub Brands
+                                                    {t('deviceAllSubBrands')}
                                                 </span>
                                             ) : item.subBrand ? (
                                                 <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded text-[10px] font-bold">
@@ -996,7 +996,7 @@ const SaveUrlPage = () => {
                                                     type="button"
                                                     onClick={() => handleOpenLink(item)}
                                                     className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
-                                                    title="បើកតំណភ្ជាប់ (Open Link)"
+                                                    title={t('openLink', lang === 'km' ? 'បើកតំណភ្ជាប់' : 'Open Link')}
                                                 >
                                                     <FaExternalLinkAlt size={12} />
                                                 </button>
@@ -1006,7 +1006,7 @@ const SaveUrlPage = () => {
                                                         type="button"
                                                         onClick={() => handleOpenEdit(item)}
                                                         className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer"
-                                                        title="កែប្រែ (Edit URL)"
+                                                        title={t('editUrl', lang === 'km' ? 'កែប្រែ URL' : 'Edit URL')}
                                                     >
                                                         <FaEdit size={13} />
                                                     </button>
@@ -1017,7 +1017,7 @@ const SaveUrlPage = () => {
                                                         type="button"
                                                         onClick={() => setDeleteModalItem(item)}
                                                         className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-                                                        title="លុប (Delete URL)"
+                                                        title={t('deleteUrl', lang === 'km' ? 'លុប URL' : 'Delete URL')}
                                                     >
                                                         <FaTrash size={12} />
                                                     </button>
@@ -1061,8 +1061,8 @@ const SaveUrlPage = () => {
                             <div className="flex items-center gap-2.5">
                                 <FaGlobe className="text-xl" />
                                 <div>
-                                    <h3 className="text-sm font-bold">Shared URLs Directory (បញ្ជីតំណភ្ជាប់ដែលបានចែករំលែក)</h3>
-                                    <p className="text-[11px] text-white/80">បង្ហាញទិន្នន័យម្ដង ១៥ ទៅ ១០០+ ដោយ Scroll ចុះក្រោម</p>
+                                    <h3 className="text-sm font-bold">{t('saveUrlSharedDirectory', lang === 'km' ? 'បញ្ជីតំណភ្ជាប់ដែលបានចែករំលែក' : 'Shared URLs Directory')}</h3>
+                                    <p className="text-[11px] text-white/80">{t('saveUrlScrollHint', lang === 'km' ? 'បង្ហាញទិន្នន័យ ១៥ ទៅ ១០០+ ក្នុងមួយលើក ដោយរំកិលចុះក្រោម' : 'Scroll down to load 15–100+ items at a time.')}</p>
                                 </div>
                             </div>
                             <button
@@ -1082,19 +1082,19 @@ const SaveUrlPage = () => {
                                     type="text"
                                     value={seeAllSearch}
                                     onChange={(e) => setSeeAllSearch(e.target.value)}
-                                    placeholder="ស្វែងរកក្នុង URLs ដែលបានចែករំលែក..."
+                                    placeholder={t('saveUrlSharedSearchPlaceholder', lang === 'km' ? 'ស្វែងរកក្នុង URL ដែលបានចែករំលែក...' : 'Search shared URLs...')}
                                     className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-emerald-500 font-medium text-slate-800"
                                 />
                             </div>
 
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-bold text-slate-500">ប្រភេទ:</span>
+                                <span className="text-[11px] font-bold text-slate-500">{t('category')}:</span>
                                 <select
                                     value={seeAllCategory}
                                     onChange={(e) => setSeeAllCategory(e.target.value)}
                                     className="px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg font-bold text-slate-800 outline-none cursor-pointer"
                                 >
-                                    <option value="All">All Categories</option>
+                                    <option value="All">{t('allCategories', lang === 'km' ? 'ប្រភេទទាំងអស់' : 'All Categories')}</option>
                                     {PRESET_CATEGORIES.map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
                                     ))}
@@ -1110,7 +1110,7 @@ const SaveUrlPage = () => {
                         >
                             {displayedSeeAllList.length === 0 ? (
                                 <div className="py-16 text-center text-slate-400 text-xs italic">
-                                    មិនមាន URL ត្រូវនឹងការស្វែងរកឡើយ
+                                    {t('saveUrlNoSharedResults', lang === 'km' ? 'រកមិនឃើញ URL ដែលត្រូវនឹងការស្វែងរកទេ' : 'No shared URLs match your search.')}
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -1146,8 +1146,8 @@ const SaveUrlPage = () => {
 
                                                     <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-2 py-1 rounded truncate">
                                                         <FaLink className="text-[9px] shrink-0" />
-                                                        <span className="truncate" title={item.passwordProtected && !displayUrl ? 'Password protected' : domain}>
-                                                            {item.passwordProtected && !displayUrl ? '🔒 Password protected' : domain}
+                                                        <span className="truncate" title={item.passwordProtected && !displayUrl ? t('saveUrlPasswordProtected', lang === 'km' ? 'ការពារដោយពាក្យសម្ងាត់' : 'Password protected') : domain}>
+                                                            {item.passwordProtected && !displayUrl ? `🔒 ${t('saveUrlPasswordProtected', lang === 'km' ? 'ការពារដោយពាក្យសម្ងាត់' : 'Password protected')}` : domain}
                                                         </span>
                                                     </div>
 
@@ -1173,7 +1173,7 @@ const SaveUrlPage = () => {
                                                         onClick={() => handleOpenLink(item)}
                                                         className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] cursor-pointer shadow-xs transition-all active:scale-95"
                                                     >
-                                                        <span>Open</span>
+                                                        <span>{t('open', lang === 'km' ? 'បើក' : 'Open')}</span>
                                                         <FaExternalLinkAlt className="text-[9px]" />
                                                     </button>
                                                 </div>
@@ -1232,14 +1232,14 @@ const SaveUrlPage = () => {
                             {/* Title */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1">
-                                    ចំណងជើង URL (Title / Name) <span className="text-rose-500">*</span>
+                                    {t('saveUrlTitleLabel', lang === 'km' ? 'ចំណងជើង URL' : 'URL Title')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    placeholder="e.g. ABA PayWay Dashboard, Facebook Page, Google Drive..."
+                                    placeholder={t('saveUrlTitlePlaceholder', lang === 'km' ? 'ឧ. ផ្ទាំង ABA PayWay, ទំព័រ Facebook, Google Drive...' : 'e.g. ABA PayWay Dashboard, Facebook Page, Google Drive...')}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 text-slate-900 font-bold"
                                 />
                             </div>
@@ -1247,7 +1247,7 @@ const SaveUrlPage = () => {
                             {/* URL Link */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1">
-                                    តំណភ្ជាប់ URL Link <span className="text-rose-500">*</span>
+                                    {t('saveUrlLinkLabel', lang === 'km' ? 'តំណភ្ជាប់ URL' : 'URL Link')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <FaLink className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1256,7 +1256,7 @@ const SaveUrlPage = () => {
                                         required={!editingItem}
                                         value={formData.url}
                                         onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                                        placeholder={editingItem?.passwordProtected ? 'Unlocked URL (blank keeps existing URL)' : 'https://example.com/...'}
+                                        placeholder={editingItem?.passwordProtected ? t('saveUrlUnlockedUrlPlaceholder', lang === 'km' ? 'URL ដែលបានដោះសោ (ទុកទទេដើម្បីរក្សា URL ចាស់)' : 'Unlocked URL (blank keeps existing URL)') : 'https://example.com/...'}
                                         className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 font-mono text-emerald-700 font-bold"
                                     />
                                 </div>
@@ -1265,7 +1265,7 @@ const SaveUrlPage = () => {
                             {/* Visibility */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1.5">
-                                    ភាពមើលឃើញ (Visibility) <span className="text-rose-500">*</span>
+                                    {t('visibility', lang === 'km' ? 'ភាពមើលឃើញ' : 'Visibility')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <label
@@ -1285,9 +1285,9 @@ const SaveUrlPage = () => {
                                         <div>
                                             <p className="font-bold flex items-center gap-1.5">
                                                 <FaGlobe className="text-emerald-600" />
-                                                <span>Public (សាធារណៈ)</span>
+                                                <span>{t('public')}</span>
                                             </p>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">Account ទាំងអស់ គ្រប់ Brand និង Sub Brand អាចមើលបាន</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">{t('saveUrlPublicDescription', lang === 'km' ? 'គណនីទាំងអស់ក្នុងគ្រប់ Brand និង Sub Brand អាចមើលបាន' : 'All accounts across brands and sub-brands can view this URL.')}</p>
                                         </div>
                                     </label>
 
@@ -1308,9 +1308,9 @@ const SaveUrlPage = () => {
                                         <div>
                                             <p className="font-bold flex items-center gap-1.5">
                                                 <FaLock className="text-amber-600" />
-                                                <span>Private (តាម Sub Brand)</span>
+                                                <span>{t('private')} ({t('deviceSubBrand')})</span>
                                             </p>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">Account ក្នុង Sub Brand ដូចគ្នាអាចមើលបាន</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">{t('saveUrlPrivateDescription', lang === 'km' ? 'គណនីក្នុង Sub Brand ដូចគ្នាអាចមើលបាន' : 'Accounts in the same sub-brand can view this URL.')}</p>
                                         </div>
                                     </label>
 
@@ -1331,9 +1331,9 @@ const SaveUrlPage = () => {
                                         <div>
                                             <p className="font-bold flex items-center gap-1.5">
                                                 <FaLock className="text-indigo-600" />
-                                                <span>Personal (គណនីផ្ទាល់ខ្លួន)</span>
+                                                <span>{t('saveUrlPersonal', lang === 'km' ? 'ផ្ទាល់ខ្លួន' : 'Personal')}</span>
                                             </p>
-                                            <p className="text-[10px] text-slate-500 mt-0.5">មានតែ Account ដែលបានបង្កើតប៉ុណ្ណោះដែលឃើញ</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">{t('saveUrlPersonalDescription', lang === 'km' ? 'មានតែគណនីដែលបានបង្កើតប៉ុណ្ណោះអាចមើលឃើញ' : 'Only the account that created it can view this URL.')}</p>
                                         </div>
                                     </label>
                                 </div>
@@ -1341,8 +1341,8 @@ const SaveUrlPage = () => {
                                 {formData.visibility === 'Private' && (
                                     <div className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
                                         <div>
-                                            <p className="text-xs font-bold text-slate-800">ចែករំលែកគ្រប់ Sub Brand ក្នុង Brand នេះ</p>
-                                            <p className="mt-0.5 text-[10px] text-slate-500">នៅតែជា Private ហើយអាចមើលបានតែ Account ក្នុង Brand ដូចគ្នា</p>
+                                            <p className="text-xs font-bold text-slate-800">{t('saveUrlShareAllSubBrands', lang === 'km' ? 'ចែករំលែកជាមួយគ្រប់ Sub Brand ក្នុង Brand នេះ' : 'Share with all sub-brands in this brand')}</p>
+                                            <p className="mt-0.5 text-[10px] text-slate-500">{t('saveUrlBrandOnlyDescription', lang === 'km' ? 'នៅតែជាឯកជន ហើយគណនីក្នុង Brand ដូចគ្នាប៉ុណ្ណោះអាចមើលបាន' : 'Remains private and visible only to accounts in the same brand.')}</p>
                                         </div>
                                         <ToggleSwitch
                                             checked={formData.brandWide}
@@ -1355,19 +1355,19 @@ const SaveUrlPage = () => {
                                 <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                                     <div className="flex items-center justify-between gap-4">
                                         <div>
-                                            <p className="text-xs font-bold text-slate-800">តម្រូវឱ្យបញ្ចូល Password មុនបើក URL</p>
-                                            <p className="mt-0.5 text-[10px] text-slate-500">URL នឹងត្រូវលាក់លើប្រព័ន្ធ រហូតដល់បញ្ចូល Password ត្រឹមត្រូវ</p>
+                                            <p className="text-xs font-bold text-slate-800">{t('saveUrlRequirePassword', lang === 'km' ? 'តម្រូវឱ្យបញ្ចូលពាក្យសម្ងាត់មុនពេលបើក URL' : 'Require a password to open this URL')}</p>
+                                            <p className="mt-0.5 text-[10px] text-slate-500">{t('saveUrlPasswordDescription', lang === 'km' ? 'URL នឹងត្រូវលាក់រហូតដល់បញ្ចូលពាក្យសម្ងាត់ត្រឹមត្រូវ' : 'The URL stays hidden until the correct password is entered.')}</p>
                                         </div>
                                         <ToggleSwitch
                                             checked={formData.passwordProtected}
                                             onChange={() => setFormData({ ...formData, passwordProtected: !formData.passwordProtected })}
-                                            label="Require a password to reveal the URL"
+                                            label={t('saveUrlRequirePassword', lang === 'km' ? 'តម្រូវឱ្យបញ្ចូលពាក្យសម្ងាត់មុនពេលបង្ហាញ URL' : 'Require a password to reveal the URL')}
                                         />
                                     </div>
                                     {formData.passwordProtected && (
                                         <div className="mt-3">
                                             <label className="mb-1 block font-bold text-slate-700">
-                                                {editingItem?.passwordProtected ? 'Password ថ្មី (ទុកទទេ ដើម្បីរក្សា Password បច្ចុប្បន្ន)' : 'Password'}
+                                                {editingItem?.passwordProtected ? t('saveUrlNewPasswordLabel', lang === 'km' ? 'ពាក្យសម្ងាត់ថ្មី (ទុកទទេដើម្បីរក្សាពាក្យសម្ងាត់បច្ចុប្បន្ន)' : 'New password (leave blank to keep the current password)') : t('password')}
                                             </label>
                                             <input
                                                 type="password"
@@ -1377,7 +1377,7 @@ const SaveUrlPage = () => {
                                                 required={!editingItem?.passwordProtected}
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                placeholder={editingItem?.passwordProtected ? 'បញ្ចូលតែពេលចង់ប្តូរ Password' : 'យ៉ាងហោចណាស់ ៤ តួអក្សរ'}
+                                                placeholder={editingItem?.passwordProtected ? t('saveUrlChangePasswordPlaceholder', lang === 'km' ? 'បញ្ចូលតែពេលចង់ប្តូរពាក្យសម្ងាត់' : 'Enter only if changing the password') : t('saveUrlPasswordMinimum', lang === 'km' ? 'យ៉ាងហោចណាស់ ៤ តួអក្សរ' : 'At least 4 characters')}
                                                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:border-blue-500"
                                             />
                                         </div>
@@ -1388,7 +1388,7 @@ const SaveUrlPage = () => {
                             {/* Category */}
                             <div className="space-y-2">
                                 <label className="block font-bold text-slate-700 mb-1">
-                                    ប្រភេទ (Category)
+                                    {t('category')}
                                 </label>
                                 <select
                                     value={formData.category}
@@ -1405,7 +1405,7 @@ const SaveUrlPage = () => {
                                         type="text"
                                         value={formData.customCategory}
                                         onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
-                                        placeholder="បញ្ចូលឈ្មោះប្រភេទថ្មី..."
+                                        placeholder={t('saveUrlNewCategoryPlaceholder', lang === 'km' ? 'បញ្ចូលឈ្មោះប្រភេទថ្មី...' : 'Enter a new category name...')}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 font-bold text-slate-800"
                                     />
                                 )}
@@ -1419,7 +1419,7 @@ const SaveUrlPage = () => {
                                 if (availSubs.length === 0) return null;
                                 return (
                                     <div>
-                                        <label className="block font-bold text-slate-700 mb-1">Sub Brand</label>
+                                        <label className="block font-bold text-slate-700 mb-1">{t('deviceSubBrand')}</label>
                                         {availSubs.length === 1 ? (
                                             <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg">
                                                 <span className="px-2 py-0.5 bg-indigo-100 border border-indigo-300 text-indigo-700 rounded text-[10px] font-bold">{availSubs[0]}</span>
@@ -1430,7 +1430,7 @@ const SaveUrlPage = () => {
                                                 onChange={(e) => setFormData({ ...formData, subBrand: e.target.value })}
                                                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 text-slate-800 font-bold cursor-pointer"
                                             >
-                                                <option value="">Select Sub Brand</option>
+                                                <option value="">{t('selectSubBrand')}</option>
                                                 {availSubs.map((sb, idx) => (
                                                     <option key={idx} value={sb}>{sb}</option>
                                                 ))}
@@ -1443,13 +1443,13 @@ const SaveUrlPage = () => {
                             {/* Description / Note */}
                             <div>
                                 <label className="block font-bold text-slate-700 mb-1">
-                                    កំណត់ចំណាំបន្ថែម (Description / Notes)
+                                    {t('saveUrlDescriptionLabel', lang === 'km' ? 'កំណត់ចំណាំបន្ថែម' : 'Description / Notes')}
                                 </label>
                                 <textarea
                                     rows={3}
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder="ព័ត៌មានលម្អិត ឬ ការណែនាំបន្ថែមអំពី Link នេះ..."
+                                    placeholder={t('saveUrlDescriptionPlaceholder', lang === 'km' ? 'ព័ត៌មានលម្អិត ឬការណែនាំបន្ថែមអំពីតំណភ្ជាប់នេះ...' : 'Additional details or instructions about this link...')}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:border-emerald-500 resize-none text-slate-800"
                                 />
                             </div>
@@ -1461,14 +1461,14 @@ const SaveUrlPage = () => {
                                     onClick={() => setOpenModal(false)}
                                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer transition-all"
                                 >
-                                    បោះបង់ (Cancel)
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
                                     className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
                                 >
-                                    {submitting ? 'កំពុងរក្សាទុក...' : editingItem ? 'កែប្រែ (Save Changes)' : 'រក្សាទុក (Save URL)'}
+                                    {submitting ? t('saving') : editingItem ? t('saveChanges', lang === 'km' ? 'រក្សាទុកការផ្លាស់ប្តូរ' : 'Save Changes') : t('saveUrlSaveButton', lang === 'km' ? 'រក្សាទុក URL' : 'Save URL')}
                                 </button>
                             </div>
                         </form>
@@ -1496,7 +1496,7 @@ const SaveUrlPage = () => {
                                 <FaLock />
                             </div>
                             <div className="min-w-0">
-                                <h3 className="text-sm font-bold text-slate-900">បញ្ចូល Password ដើម្បីបើក URL</h3>
+                                <h3 className="text-sm font-bold text-slate-900">{t('saveUrlPasswordPrompt', lang === 'km' ? 'បញ្ចូលពាក្យសម្ងាត់ដើម្បីបើក URL' : 'Enter password to open URL')}</h3>
                                 <p className="truncate text-[11px] text-slate-500">{unlockTarget.item.title}</p>
                             </div>
                         </div>
@@ -1507,7 +1507,7 @@ const SaveUrlPage = () => {
                             required
                             value={unlockPassword}
                             onChange={(event) => setUnlockPassword(event.target.value)}
-                            placeholder="Password"
+                            placeholder={t('password')}
                             className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-500"
                         />
                         {unlockError && (
@@ -1525,7 +1525,7 @@ const SaveUrlPage = () => {
                                 }}
                                 className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 disabled:opacity-50"
                             >
-                                បោះបង់
+                                {t('cancel')}
                             </button>
                             <button
                                 type="submit"
@@ -1533,7 +1533,7 @@ const SaveUrlPage = () => {
                                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50"
                             >
                                 {unlocking && <FaSpinner className="animate-spin" />}
-                                {unlocking ? 'កំពុងពិនិត្យ...' : 'ដោះសោ'}
+                                {unlocking ? t('checking', lang === 'km' ? 'កំពុងពិនិត្យ...' : 'Checking...') : t('unlock', lang === 'km' ? 'ដោះសោ' : 'Unlock')}
                             </button>
                         </div>
                     </form>
@@ -1560,17 +1560,17 @@ const SaveUrlPage = () => {
 
                         <div className="space-y-1">
                             <h3 className="text-base font-bold text-slate-900 font-khmer">
-                                បញ្ជាក់ការលុប URL (Delete Saved URL)
+                                {t('saveUrlDeleteTitle', lang === 'km' ? 'បញ្ជាក់ការលុប URL' : 'Delete Saved URL')}
                             </h3>
                             <p className="text-xs text-slate-500">
-                                តើអ្នកពិតជាចង់លុបតំណភ្ជាប់នេះចេញពីប្រព័ន្ធមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានឡើយ។
+                                {t('saveUrlDeleteConfirmation', lang === 'km' ? 'តើអ្នកពិតជាចង់លុបតំណភ្ជាប់នេះចេញពីប្រព័ន្ធមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានឡើយ។' : 'Are you sure you want to delete this URL? This action cannot be undone.')}
                             </p>
                         </div>
 
                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-left space-y-1 font-medium">
                             <p className="text-slate-800 font-bold truncate">📌 {deleteModalItem.title}</p>
                             <p className="text-emerald-700 font-mono text-[11px] truncate">
-                                🔗 {deleteModalItem.passwordProtected ? 'Password protected URL' : deleteModalItem.url}
+                                🔗 {deleteModalItem.passwordProtected ? t('saveUrlPasswordProtected', lang === 'km' ? 'ការពារដោយពាក្យសម្ងាត់' : 'Password protected URL') : deleteModalItem.url}
                             </p>
                         </div>
 
@@ -1581,7 +1581,7 @@ const SaveUrlPage = () => {
                                 onClick={() => setDeleteModalItem(null)}
                                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold cursor-pointer transition-all disabled:opacity-40"
                             >
-                                បោះបង់ (Cancel)
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -1592,12 +1592,12 @@ const SaveUrlPage = () => {
                                 {deleting ? (
                                     <>
                                         <FaSpinner className="animate-spin text-xs" />
-                                        <span>កំពុងលុប...</span>
+                                        <span>{t('deleting', lang === 'km' ? 'កំពុងលុប...' : 'Deleting...')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <FaTrash size={11} />
-                                        <span>បញ្ជាក់ការលុប (Confirm Delete)</span>
+                                        <span>{t('confirmDelete')}</span>
                                     </>
                                 )}
                             </button>

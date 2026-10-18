@@ -228,8 +228,8 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                             <div className="w-16 h-16 rounded-full bg-emerald-600/20 border border-emerald-500 flex items-center justify-center text-emerald-400 text-3xl mx-auto animate-bounce">
                                 <FaCheck />
                             </div>
-                            <h3 className="text-lg font-bold text-emerald-400">Payment Submitted Successfully!</h3>
-                            <p className="text-xs text-gray-300">Payment receipt has been saved and is now visible in Payment History.</p>
+                            <h3 className="text-lg font-bold text-emerald-400">{t('paymentSubmittedSuccessfully')}</h3>
+                            <p className="text-xs text-gray-300">{t('paymentReceiptSavedHistory')}</p>
                         </div>
                     ) : (
                         <div className="space-y-6">
@@ -260,7 +260,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     onChange={(e) => setPhoneForm({ ...phoneForm, paidBy: e.target.value })}
                                                     className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-semibold cursor-pointer"
                                                 >
-                                                    <option value="">-- Select Payment Method --</option>
+                                                    <option value="">{t('selectPaymentMethod', lang === 'km' ? '-- ជ្រើសរើសវិធីសាស្ត្រទូទាត់ --' : '-- Select payment method --')}</option>
                                                     {paymentMethods.map(m => (
                                                         <option key={m} value={m}>{m}</option>
                                                     ))}
@@ -283,7 +283,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     type="text"
                                                     value={phoneForm.description}
                                                     onChange={(e) => setPhoneForm({ ...phoneForm, description: e.target.value })}
-                                                    placeholder="Note or transaction ref"
+                                                    placeholder={t('paymentNoteOrReference')}
                                                     className="w-full h-9 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100"
                                                 />
                                             </div>
@@ -299,10 +299,10 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                         {paymentSubmitting ? (
                                             <div className="flex items-center gap-2">
                                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                <span>{isUploadingPhoto ? 'Uploading Proof Image...' : 'Submitting Payment...'}</span>
+                                                <span>{isUploadingPhoto ? t('uploadingProofImage') : t('submittingPayment')}</span>
                                             </div>
                                         ) : (
-                                            <span>Submit Payment</span>
+                                            <span>{t('submitPayment')}</span>
                                         )}
                                     </button>
                                 </div>
@@ -355,7 +355,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     type="button"
                                                     onClick={() => setPreviewLightbox(true)}
                                                     className="absolute top-2 right-2 p-2 rounded-lg bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
-                                                    title="View Full Size"
+                                                    title={t('viewFullSize')}
                                                 >
                                                     <FaExpand size={12} />
                                                 </button>
@@ -393,7 +393,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                     ចុចទីនេះដើម្បី Upload ឬ អូសទម្លាក់រូបភាព
                                                 </p>
                                                 <p className="text-[11px] text-gray-400 mt-1">
-                                                    ឬចុច <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 font-mono text-[10px]">Ctrl + V</kbd> ដើម្បី Paste រូបភាព
+                                                    {t('orPress')} <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-gray-300 font-mono text-[10px]">Ctrl + V</kbd> {t('toPasteImage')}
                                                 </p>
                                             </div>
                                             <span className="text-[10px] text-gray-500">
@@ -422,7 +422,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                     )}
 
                                     <div className="text-[10px] text-gray-400 text-left bg-gray-950/40 p-2.5 rounded-[5px] border border-gray-800">
-                                        💡 <span className="text-gray-300 font-medium">ចំណាំ៖</span> រូបភាពដែលបានភ្ជាប់នឹងត្រូវរក្សាទុកជាភស្តុតាងនៃការបង់ប្រាក់ ហើយលោតទៅបង្ហាញនៅជួររូបភាពក្នុងទំព័រ <span className="text-emerald-400 font-mono">Payment History</span>។
+                                        💡 <span className="text-gray-300 font-medium">{t('note')}:</span> {t('paymentReceiptInfo')} <span className="text-emerald-400 font-mono">{t('paymentHistory')}</span>.
                                     </div>
                                 </div>
                             </div>
@@ -435,9 +435,9 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                 </div>
                                 <div className="max-h-44 overflow-y-auto divide-y divide-gray-800">
                                     {loadingQrPayments ? (
-                                        <p className="py-4 text-center text-xs text-gray-500">Loading payment history...</p>
+                                        <p className="py-4 text-center text-xs text-gray-500">{t('loadingPaymentHistory')}</p>
                                     ) : qrPayments.length === 0 ? (
-                                        <p className="py-4 text-center text-xs text-gray-500">No payment records yet.</p>
+                                        <p className="py-4 text-center text-xs text-gray-500">{t('noPaymentRecordsYet')}</p>
                                     ) : qrPayments.map((payment, index) => {
                                         const proofImages = Array.isArray(payment.paymentImages) && payment.paymentImages.length
                                             ? payment.paymentImages.filter(Boolean)
@@ -451,7 +451,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                                             type="button"
                                                             onClick={() => { setViewHistoryImages(proofImages); setViewHistoryImageIndex(0); }}
                                                             className="w-8 h-8 rounded-lg overflow-hidden border border-emerald-500/40 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform"
-                                                            title="មើលរូបភាពភស្តុតាង"
+                                                            title={t('viewReceiptImage')}
                                                         >
                                                             <img src={proofImg} alt="Receipt" className="w-full h-full object-cover" />
                                                         </button>
@@ -468,7 +468,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                     })}
                                 </div>
                                 <div className="flex justify-between pt-2 border-t border-gray-800 text-xs font-bold">
-                                    <span className="text-gray-400">Total Paid</span>
+                                    <span className="text-gray-400">{t('totalPaid')}</span>
                                     <span className="text-emerald-400 font-mono">${qrPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0).toLocaleString()}</span>
                                 </div>
                             </div>
@@ -507,7 +507,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                     index={viewHistoryImageIndex}
                     onIndexChange={setViewHistoryImageIndex}
                     onClose={() => setViewHistoryImages([])}
-                    title="Payment proof"
+                    title={t('paymentProof')}
                 />
             )}
         </>

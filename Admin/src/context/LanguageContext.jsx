@@ -23,15 +23,21 @@ export const LanguageProvider = ({ children }) => {
         localStorage.setItem('mdm_lang', code);
     };
 
+    const isUsableTranslation = (value) => {
+        if (typeof value !== 'string' || value === '') return false;
+        const questionMarks = (value.match(/\?/g) || []).length;
+        return questionMarks < 2 || questionMarks / value.length <= 0.2;
+    };
+
     const t = (key, fallback) => {
         if (!key) return '';
-        if (dict[lang] && dict[lang][key] !== undefined && dict[lang][key] !== '') {
+        if (dict[lang] && isUsableTranslation(dict[lang][key])) {
             return dict[lang][key];
         }
-        if (dict['en'] && dict['en'][key] !== undefined && dict['en'][key] !== '') {
+        if (dict['en'] && isUsableTranslation(dict['en'][key])) {
             return dict['en'][key];
         }
-        if (dict['km'] && dict['km'][key] !== undefined && dict['km'][key] !== '') {
+        if (dict['km'] && isUsableTranslation(dict['km'][key])) {
             return dict['km'][key];
         }
         return fallback !== undefined ? fallback : key;
@@ -45,4 +51,3 @@ export const LanguageProvider = ({ children }) => {
 };
 
 export const useLanguage = () => useContext(LanguageContext);
-

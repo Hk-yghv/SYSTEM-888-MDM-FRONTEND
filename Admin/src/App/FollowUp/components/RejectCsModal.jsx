@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../../context/LanguageContext';
 import { FaBan, FaRegCalendarAlt, FaSave, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
 
@@ -20,6 +21,8 @@ const RejectCsModal = ({
     onSave,
     saving = false
 }) => {
+    const { t } = useLanguage();
+
     const handleCountChange = (reason, value) => {
         const val = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
         setCounts(prev => ({
@@ -53,7 +56,7 @@ const RejectCsModal = ({
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/80">
                     <div>
                         <h3 className="text-base font-bold text-amber-400 flex items-center gap-2">
-                            <FaBan /> <span>បញ្ចូលទិន្នន័យ REJECT CS</span>
+                            <FaBan /> <span>{t('enterRejectCsData')}</span>
                         </h3>
                         <p className="text-xs text-slate-400 mt-0.5">
                             Brand: <span className="text-emerald-400 font-bold">{brand || '888MDM'}</span>
@@ -73,7 +76,7 @@ const RejectCsModal = ({
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <FaRegCalendarAlt className="text-amber-400 text-sm" />
-                            <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
+                            <span className="text-xs font-semibold text-slate-300">{t('date')}:</span>
                             <input
                                 type="date"
                                 value={date}
@@ -83,9 +86,9 @@ const RejectCsModal = ({
                         </div>
 
                         <div className="text-right w-full sm:w-auto">
-                            <span className="text-xs text-slate-400 mr-2">សរុបប្រចាំថ្ងៃ៖</span>
+                            <span className="text-xs text-slate-400 mr-2">{t('dailyTotal')}:</span>
                             <span className="text-amber-400 font-mono font-bold text-base bg-amber-950/60 border border-amber-800/40 px-3 py-1 rounded-lg">
-                                {totalCount} ករណី
+                                {totalCount} {t('cases')}
                             </span>
                         </div>
                     </div>
@@ -94,13 +97,13 @@ const RejectCsModal = ({
                     {reasons.length === 0 ? (
                         <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-2">
                             <FaExclamationTriangle className="text-amber-400 text-2xl mx-auto mb-2" />
-                            <p className="text-xs font-semibold">មិនទាន់មានបញ្ជីមូលហេតុ REJECT CS នៅក្នុង Control System នៅឡើយទេ</p>
-                            <p className="text-[11px] text-slate-500 mt-1">សូមចូលទៅកាន់ Settings &gt; Control System &gt; &quot;Reject CS Reasons&quot; ដើម្បីបន្ថែម</p>
+                            <p className="text-xs font-semibold">{t('noRejectCsReasonsConfigured')}</p>
+                            <p className="text-[11px] text-slate-500 mt-1">{t('rejectCsReasonsSetupInstructions')}</p>
                         </div>
                     ) : (
                         <div className="space-y-2.5">
                             <p className="text-xs font-semibold text-slate-400 mb-1">
-                                បញ្ចូលចំនួនតាមមូលហេតុនីមួយៗ (ទាញចេញពី Control System)៖
+                                {t('enterReasonCountsFromControlSystem')}
                             </p>
                             {reasons.map((reason, idx) => (
                                 <div
@@ -151,7 +154,7 @@ const RejectCsModal = ({
                         onClick={onClose}
                         className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-[5px] transition-all cursor-pointer"
                     >
-                        បោះបង់
+                        {t('cancel')}
                     </button>
                     <button
                         type="button"
@@ -160,7 +163,7 @@ const RejectCsModal = ({
                         className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-5 py-2.5 rounded-[5px] transition-all shadow-lg shadow-amber-600/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-sm" /> : <FaSave />}
-                        <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ'}</span>
+                        <span>{saving ? t('saving') : t('saveData')}</span>
                     </button>
                 </div>
             </div>

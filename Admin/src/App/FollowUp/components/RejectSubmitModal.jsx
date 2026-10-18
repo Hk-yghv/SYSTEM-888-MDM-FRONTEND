@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../../context/LanguageContext';
 import { FaBan, FaRegCalendarAlt, FaSave, FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
 
@@ -24,6 +25,8 @@ const RejectSubmitModal = ({
     submitError = '',
     onLoadSubmitList
 }) => {
+    const { t } = useLanguage();
+
     const [showFollowUpTable, setShowFollowUpTable] = React.useState(false);
 
     const handleCountChange = (reason, value) => {
@@ -70,7 +73,7 @@ const RejectSubmitModal = ({
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/80">
                     <div>
                         <h3 className="text-base font-bold text-rose-400 flex items-center gap-2">
-                            <FaBan /> <span>បញ្ចូលទិន្នន័យ REJECT SUBMIT</span>
+                            <FaBan /> <span>{t('enterRejectSubmitData')}</span>
                         </h3>
                         <p className="text-xs text-slate-400 mt-0.5">
                             Brand: <span className="text-emerald-400 font-bold">{brand || '888MDM'}</span>
@@ -91,7 +94,7 @@ const RejectSubmitModal = ({
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/80 p-2 rounded-[5px] border border-slate-700">
                             <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <FaRegCalendarAlt className="text-rose-400 text-sm" />
-                                <span className="text-xs font-semibold text-slate-300">កាលបរិច្ឆេទ៖</span>
+                                <span className="text-xs font-semibold text-slate-300">{t('date')}:</span>
                                 <input
                                     type="date"
                                     value={date}
@@ -114,12 +117,12 @@ const RejectSubmitModal = ({
                                     }}
                                     className="bg-slate-700 hover:bg-slate-600 text-slate-100 text-[11px] font-bold px-3 py-2 rounded-[5px] transition-all cursor-pointer"
                                 >
-                                    FOLLOW UP
+                                    {t('followUp')}
                                 </button>
                                 <div className="text-right">
-                                    <span className="text-xs text-slate-400 mr-2">សរុបប្រចាំថ្ងៃ៖</span>
+                                    <span className="text-xs text-slate-400 mr-2">{t('dailyTotal')}:</span>
                                     <span className="text-rose-400 font-mono font-bold text-base bg-rose-950/60 border border-rose-800/40 px-3 py-1 rounded-lg">
-                                        {totalCount} ករណី
+                                        {totalCount} {t('cases')}
                                     </span>
                                 </div>
                             </div>
@@ -134,39 +137,39 @@ const RejectSubmitModal = ({
                                         onClick={() => setShowFollowUpTable(false)}
                                         className="text-slate-400 hover:text-white text-xs cursor-pointer"
                                     >
-                                        បិទ
+                                        {t('close')}
                                     </button>
                                 </div>
                                 <div className="max-h-72 overflow-auto">
                                     {submitLoading ? (
-                                        <div className="text-center py-6 text-xs text-slate-400">កំពុងទាញយកទិន្នន័យ...</div>
+                                        <div className="text-center py-6 text-xs text-slate-400">{t('loading')}</div>
                                     ) : submitError ? (
                                         <div className="text-center py-6 text-xs text-rose-300">{submitError}</div>
                                     ) : followUpRows.length === 0 ? (
                                         <div className="text-center py-6 text-xs text-slate-400 px-3">
-                                            គ្មាន FOLLOW UP SUBMIT ស្ថានភាព REJECT សម្រាប់ {date}
+                                            {t('noRejectedFollowUpSubmitForDate')} {date}
                                         </div>
                                     ) : (
                                         <table className="w-max min-w-full text-left text-[11px] text-slate-200">
                                             <thead className="bg-slate-950/80 text-slate-400 uppercase">
                                                 <tr>
                                                     <th className="py-1.5 px-2 text-center">#</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">ថ្ងៃខែឆ្នាំ</th>
-                                                    <th className="py-1.5 px-2">NAME</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">USER NAME</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">PHONE NUMBER</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">NAME TELEGRAM</th>
-                                                    <th className="py-1.5 px-2">មកពី</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">PG/TL From</th>
-                                                    <th className="py-1.5 px-2">ទាក់ទង</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">PG/TL Contact</th>
-                                                    <th className="py-1.5 px-2">វាយតម្លៃ</th>
-                                                    <th className="py-1.5 px-2">បានស្នើ</th>
-                                                    <th className="py-1.5 px-2 whitespace-nowrap">ប្រភេទទ្រព្យ</th>
-                                                    <th className="py-1.5 px-2">MODEL</th>
-                                                    <th className="py-1.5 px-2">STATUS</th>
-                                                    <th className="py-1.5 px-2">បរិយាយ</th>
-                                                    <th className="py-1.5 px-2 text-center">សកម្មភាព</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('date')}</th>
+                                                    <th className="py-1.5 px-2">{t('customerName')}</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('username')}</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('phone')}</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('telegramName')}</th>
+                                                    <th className="py-1.5 px-2">{t('source')}</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('pgTlSourceName')}</th>
+                                                    <th className="py-1.5 px-2">{t('contactType')}</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('pgTlContactName')}</th>
+                                                    <th className="py-1.5 px-2">{t('evaluation')}</th>
+                                                    <th className="py-1.5 px-2">{t('requested')}</th>
+                                                    <th className="py-1.5 px-2 whitespace-nowrap">{t('collateral')}</th>
+                                                    <th className="py-1.5 px-2">{t('model')}</th>
+                                                    <th className="py-1.5 px-2">{t('status')}</th>
+                                                    <th className="py-1.5 px-2">{t('description')}</th>
+                                                    <th className="py-1.5 px-2 text-center">{t('actionLabel')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-700/60">
@@ -203,13 +206,13 @@ const RejectSubmitModal = ({
                     {reasons.length === 0 ? (
                         <div className="text-center py-8 text-slate-400 bg-slate-900/40 rounded-[5px] border border-dashed border-slate-700 p-2">
                             <FaExclamationTriangle className="text-amber-400 text-2xl mx-auto mb-2" />
-                            <p className="text-xs font-semibold">មិនទាន់មានបញ្ជីមូលហេតុ REJECT SUBMIT នៅក្នុង Control System នៅឡើយទេ</p>
-                            <p className="text-[11px] text-slate-500 mt-1">សូមចូលទៅកាន់ Settings &gt; Control System &gt; &quot;Reject Submit Reasons&quot; ដើម្បីបន្ថែម</p>
+                            <p className="text-xs font-semibold">{t('noRejectSubmitReasonsConfigured')}</p>
+                            <p className="text-[11px] text-slate-500 mt-1">{t('rejectSubmitReasonsSetupInstructions')}</p>
                         </div>
                     ) : (
                         <div className="space-y-2.5">
                             <p className="text-xs font-semibold text-slate-400 mb-1">
-                                បញ្ចូលចំនួនតាមមូលហេតុនីមួយៗ៖
+                                {t('enterReasonCounts')}
                             </p>
                             {reasons.map((reason, idx) => (
                                 <div
@@ -260,7 +263,7 @@ const RejectSubmitModal = ({
                         onClick={onClose}
                         className="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-[5px] transition-all cursor-pointer"
                     >
-                        បោះបង់
+                        {t('cancel')}
                     </button>
                     <button
                         type="button"
@@ -269,7 +272,7 @@ const RejectSubmitModal = ({
                         className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-5 py-2.5 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                         {saving ? <MdOutlineSync className="animate-spin text-sm" /> : <FaSave />}
-                        <span>{saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ'}</span>
+                        <span>{saving ? t('saving') : t('saveData')}</span>
                     </button>
                 </div>
             </div>

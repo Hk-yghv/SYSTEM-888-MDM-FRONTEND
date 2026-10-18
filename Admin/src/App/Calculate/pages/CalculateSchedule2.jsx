@@ -11,7 +11,7 @@ import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 
 const CalculateSchedule2 = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { user, API_BASE } = useAuth();
 
     const formatDateToYMD = (d) => {
@@ -372,11 +372,11 @@ const CalculateSchedule2 = () => {
                 localStorage.setItem('calc_schedules_updated', Date.now().toString());
                 fetchHistory(true);
             } else {
-                alert('បរាជ័យក្នុងការរក្សាទុក: ' + (data.error || 'Server error'));
+                alert(`${t('calculateSaveFailed', lang === 'km' ? 'បរាជ័យក្នុងការរក្សាទុក' : 'Failed to save')}: ${data.error || t('serverError', lang === 'km' ? 'កំហុសម៉ាស៊ីនមេ' : 'Server error')}`);
             }
         } catch (err) {
             console.error('Error saving schedule:', err);
-            alert('បញ្ហាតភ្ជាប់ទៅកាន់ Server!');
+            alert(t('networkError', lang === 'km' ? 'មានបញ្ហាក្នុងការតភ្ជាប់ទៅម៉ាស៊ីនមេ!' : 'Server connection error.'));
         } finally {
             setSaving(false);
         }
@@ -419,7 +419,7 @@ const CalculateSchedule2 = () => {
     // ─── Delete Record from History ────────────────────────────────
     const handleDeleteRecord = async (id, e) => {
         if (e) e.stopPropagation();
-        if (!window.confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?')) return;
+        if (!window.confirm(t('calculateConfirmDelete', lang === 'km' ? 'តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?' : 'Are you sure you want to delete this record?'))) return;
 
         try {
             const res = await fetch(`${API_BASE}/calculate-schedules/${id}`, {
@@ -430,7 +430,7 @@ const CalculateSchedule2 = () => {
                 setSavedHistory(prev => prev.filter(item => item._id !== id));
                 localStorage.setItem('calc_schedules_updated', Date.now().toString());
             } else {
-                alert('មិនអាចលុបទិន្នន័យបានទេ');
+                alert(t('calculateDeleteFailed', lang === 'km' ? 'មិនអាចលុបទិន្នន័យបានទេ' : 'Unable to delete the record.'));
             }
         } catch (err) {
             console.error('Error deleting record:', err);
@@ -682,7 +682,7 @@ const CalculateSchedule2 = () => {
                                 type="button"
                                 onClick={() => setShowHistoryModal(true)}
                                 className="px-4 py-2.5 rounded-[5px] bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs sm:text-sm flex items-center gap-2 border border-violet-200 transition-all cursor-pointer">
-                                <FaHistory /> បញ្ជីចាស់ៗ ({savedHistory.length})
+                                <FaHistory /> {t('history', lang === 'km' ? 'បញ្ជីចាស់ៗ' : 'History')} ({savedHistory.length})
                             </button>
                         )}
                         {result && (
@@ -696,9 +696,9 @@ const CalculateSchedule2 = () => {
                                             ? 'bg-white text-violet-700 shadow-xs'
                                             : 'text-slate-600 hover:text-slate-900'
                                             }`}
-                                        title="បោះពុម្ពទម្រង់បញ្ឈរ (Portrait)">
+                                        title={t('calculatePrintPortrait', lang === 'km' ? 'បោះពុម្ពទម្រង់បញ្ឈរ (Portrait)' : 'Print in portrait orientation')}>
                                         <span>📄</span>
-                                        <span>បញ្ឈរ</span>
+                                        <span>{t('portrait', lang === 'km' ? 'បញ្ឈរ' : 'Portrait')}</span>
                                     </button>
                                     <button
                                         type="button"
@@ -707,9 +707,9 @@ const CalculateSchedule2 = () => {
                                             ? 'bg-white text-violet-700 shadow-xs'
                                             : 'text-slate-600 hover:text-slate-900'
                                             }`}
-                                        title="បោះពុម្ពទម្រង់ប្ដេក (Landscape)">
+                                        title={t('calculatePrintLandscape', lang === 'km' ? 'បោះពុម្ពទម្រង់ប្ដេក (Landscape)' : 'Print in landscape orientation')}>
                                         <span>📑</span>
-                                        <span>ប្ដេក</span>
+                                        <span>{t('landscape', lang === 'km' ? 'ប្ដេក' : 'Landscape')}</span>
                                     </button>
                                 </div>
 
@@ -719,13 +719,13 @@ const CalculateSchedule2 = () => {
                                     disabled={saving}
                                     className="px-4 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer">
                                     {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                                    រក្សាទុក (Save)
+                                    {t('save', lang === 'km' ? 'រក្សាទុក' : 'Save')}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handlePrint}
                                     className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
-                                    <FaPrint /> បោះពុម្ព
+                                    <FaPrint /> {t('print', lang === 'km' ? 'បោះពុម្ព' : 'Print')}
                                 </button>
                             </>
                         )}
@@ -784,7 +784,7 @@ const CalculateSchedule2 = () => {
                                                 type="text"
                                                 value={customerName}
                                                 onChange={(e) => setCustomerName(e.target.value)}
-                                                placeholder="ឧ. ចន ពេជ្រច័ន្ទដារ៉ា"
+                                                placeholder={t('calculateCustomerNameExample', lang === 'km' ? 'ឧ. ចន ពេជ្រច័ន្ទដារ៉ា' : 'e.g. ចន ពេជ្រច័ន្ទដារ៉ា')}
                                                 required
                                                 className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
@@ -803,7 +803,7 @@ const CalculateSchedule2 = () => {
                                                 list="cs2-asset-list"
                                                 value={assetName}
                                                 onChange={(e) => setAssetName(e.target.value)}
-                                                placeholder="ឧ. iPhone 14"
+                                                placeholder={t('calculateAssetNameExample', lang === 'km' ? 'ឧ. iPhone 14' : 'e.g. iPhone 14')}
                                                 required
                                                 className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
@@ -819,7 +819,7 @@ const CalculateSchedule2 = () => {
                                     {/* Duration */}
                                     <div className="space-y-1.5">
                                         <label className="block text-xs text-slate-700">
-                                            រយៈពេល <span className="text-rose-500">*</span>
+                                            {t('duration', lang === 'km' ? 'រយៈពេល' : 'Duration')} <span className="text-rose-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-sm">#</span>
@@ -860,7 +860,7 @@ const CalculateSchedule2 = () => {
                                                 type="text"
                                                 value={contractNumber}
                                                 onChange={(e) => setContractNumber(e.target.value)}
-                                                placeholder="ឧ. 013"
+                                                placeholder={t('calculateContractNumberExample', lang === 'km' ? 'ឧ. 013' : 'e.g. 013')}
                                                 className="w-full pl-9 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-[#fff] text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-xs"
                                             />
                                         </div>
@@ -938,7 +938,7 @@ const CalculateSchedule2 = () => {
                                     <button
                                         type="submit"
                                         className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-violet-600/25 transition-all transform active:scale-95 cursor-pointer">
-                                        <MdCalculate className="text-lg" /> គណនា (Calculate)
+                                        <MdCalculate className="text-lg" /> {t('calculate', lang === 'km' ? 'គណនា' : 'Calculate')}
                                     </button>
 
                                     <button
@@ -987,7 +987,7 @@ const CalculateSchedule2 = () => {
                                     type="text"
                                     value={historySearch}
                                     onChange={(e) => setHistorySearch(e.target.value)}
-                                    placeholder="ស្វែងរកតាមឈ្មោះ/កិច្ចសន្យា..."
+                                    placeholder={t('calculateHistorySearch', lang === 'km' ? 'ស្វែងរកតាមឈ្មោះ ឬលេខកិច្ចសន្យា...' : 'Search by name or contract...')}
                                     className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-[#fff] focus:outline-none focus:ring-1 focus:ring-violet-500"
                                 />
                             </div>
@@ -1000,13 +1000,13 @@ const CalculateSchedule2 = () => {
                             {historyLoading ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs gap-2">
                                     <FaSpinner className="animate-spin text-lg text-violet-500" />
-                                    <span>កំពុងទាញយកទិន្នន័យ...</span>
+                                    <span>{t('loading', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យ...' : 'Loading data...')}</span>
                                 </div>
                             ) : filteredHistory.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs text-center p-2">
                                     <FaFileInvoiceDollar className="text-3xl text-slate-300 mb-2" />
-                                    <span>មិនទាន់មានទិន្នន័យបានរក្សាទុកទេ</span>
-                                    <span className="text-[11px] text-slate-400 mt-1">ចុចប៊ូតុង "រក្សាទុក (Save)" ដើម្បីរក្សាទុកកាលវិភាគ</span>
+                                    <span>{t('calculateNoSavedData', lang === 'km' ? 'មិនទាន់មានទិន្នន័យបានរក្សាទុកទេ' : 'No saved data yet')}</span>
+                                    <span className="text-[11px] text-slate-400 mt-1">{t('calculateSaveScheduleHint', lang === 'km' ? 'ចុចប៊ូតុង "រក្សាទុក (Save)" ដើម្បីរក្សាទុកកាលវិភាគ' : 'Click "Save" to save the schedule.')}</span>
                                 </div>
                             ) : (
                                 <>
@@ -1039,7 +1039,7 @@ const CalculateSchedule2 = () => {
                                                         <button
                                                             type="button"
                                                             onClick={(e) => handleDeleteRecord(item._id, e)}
-                                                            title="លុប"
+                                                            title={t('delete')}
                                                             className="p-2 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
                                                             <FaTrash className="text-[10px]" />
                                                         </button>
@@ -1052,8 +1052,8 @@ const CalculateSchedule2 = () => {
                                                 </div>
 
                                                 <div className="text-slate-400 text-[10px] mt-1 flex items-center justify-between pt-1 border-t border-slate-100">
-                                                    <span>{formatDate(item.startDate)} • {item.months} ខែ</span>
-                                                    <span className="text-violet-600 font-semibold font-mono">ការប្រាក់ ${item.monthlyInterest}/ខែ</span>
+                                                    <span>{formatDate(item.startDate)} • {item.months} {t('months', lang === 'km' ? 'ខែ' : 'months')}</span>
+                                                    <span className="text-violet-600 font-semibold font-mono">{t('interest', lang === 'km' ? 'ការប្រាក់' : 'Interest')} ${item.monthlyInterest}/{t('month', lang === 'km' ? 'ខែ' : 'month')}</span>
                                                 </div>
                                             </div>
                                         );
@@ -1066,7 +1066,7 @@ const CalculateSchedule2 = () => {
                                                 type="button"
                                                 onClick={() => setDisplayLimit(prev => Math.min(prev + 10, filteredHistory.length))}
                                                 className="w-full py-1.5 px-3 rounded-lg text-[11px] bg-violet-50 hover:bg-violet-100 text-violet-700 font-semibold border border-violet-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
-                                                <span>ទាញយក +10 ទៀត ({displayedHistory.length}/{filteredHistory.length})</span>
+                                                <span>{t('loadMore', lang === 'km' ? 'ទាញយកបន្ថែម' : 'Load more')} +10 ({displayedHistory.length}/{filteredHistory.length})</span>
                                             </button>
                                         </div>
                                     )}
@@ -1107,23 +1107,23 @@ const CalculateSchedule2 = () => {
                             {/* Left Meta */}
                             <div className="space-y-2 w-full">
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="whitespace-nowrap text-slate-800 text-[13px]">ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:</span>
+                                    <span className="whitespace-nowrap text-slate-800 text-[13px]">{t('pawnDate', lang === 'km' ? 'ថ្ងៃខែឆ្នាំដាក់បញ្ចាំ:' : 'Pawn date:')}</span>
                                     <span className="text-blue-500 font-bold  text-[13px]">
                                         {formatDate(result.startDate)}
                                     </span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800  text-[13px]">ចំនួនទឹកប្រាក់បញ្ចាំ:</span>
+                                    <span className="text-slate-800  text-[13px]">{t('pawnAmount', lang === 'km' ? 'ចំនួនទឹកប្រាក់បញ្ចាំ:' : 'Pawn amount:')}</span>
                                     <span className="text-blue-500 font-bold  text-[13px]">
                                         {result.principal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USD
                                     </span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800  text-[13px]">រយៈពេល (ចំនួនខែ):</span>
+                                    <span className="text-slate-800  text-[13px]">{t('durationMonths', lang === 'km' ? 'រយៈពេល (ចំនួនខែ):' : 'Duration (months):')}</span>
                                     <span className="text-blue-500 font-bold text-right  text-[13px]">{result.months}</span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800 text-[13px]">ការប្រាក់ នឹង សេវ៉ាជួល:</span>
+                                    <span className="text-slate-800 text-[13px]">{t('interestAndRentalFee', lang === 'km' ? 'ការប្រាក់ និងសេវាជួល:' : 'Interest and rental fee:')}</span>
                                     <span className="font-black text-right  text-[13px] text-blue-500">
                                         {result.monthlyInterest.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                                     </span>
@@ -1133,15 +1133,15 @@ const CalculateSchedule2 = () => {
                             {/* Right Meta */}
                             <div className="space-y-2 text-left w-full">
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800  text-[13px]">ឈ្មោះអតិថិជន:</span>
+                                    <span className="text-slate-800  text-[13px]">{t('customerName', lang === 'km' ? 'ឈ្មោះអតិថិជន:' : 'Customer name:')}</span>
                                     <span className="text-blue-500 font-bold  text-[13px] text-right">{result.customerName || '—'}</span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800 text-[13px]">ប្រភេទទ្រព្យបញ្ចាំ:</span>
+                                    <span className="text-slate-800 text-[13px]">{t('pawnAssetType', lang === 'km' ? 'ប្រភេទទ្រព្យបញ្ចាំ:' : 'Pawn asset type:')}</span>
                                     <span className="text-blue-500 font-bold text-[13px] text-right">{result.assetName || '—'}</span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
-                                    <span className="text-slate-800 text-[13px]">លេខកិច្ចសន្យា:</span>
+                                    <span className="text-slate-800 text-[13px]">{t('contractNumber', lang === 'km' ? 'លេខកិច្ចសន្យា:' : 'Contract number:')}</span>
                                     <span className="text-blue-500 font-bold text-[13px] text-right">
                                         {result.contractNumber || '—'}
                                     </span>
@@ -1154,11 +1154,11 @@ const CalculateSchedule2 = () => {
                             <table className="w-full border-collapse border border-black text-xs sm:text-sm">
                                 <tbody>
                                     <tr className='border border-black'>
-                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ខែទី</span></th>
-                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ថ្ងៃបង់ប្រាក់</span></th>
-                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ទឹកប្រាក់ត្រូវបង់សរុប</span></th>
-                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>ការប្រាក់ត្រូវបង់</span></th>
-                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>សមតុល្យនៅសល់</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>{t('monthNumberLabel', lang === 'km' ? 'ខែទី' : 'Month')}</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>{t('paymentDate', lang === 'km' ? 'ថ្ងៃបង់ប្រាក់' : 'Payment date')}</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>{t('totalAmountDue', lang === 'km' ? 'ទឹកប្រាក់ត្រូវបង់សរុប' : 'Total amount due')}</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>{t('interestDue', lang === 'km' ? 'ការប្រាក់ត្រូវបង់' : 'Interest due')}</span></th>
+                                        <th className="px-4 py-1 border border-black text-[11px]"><span className='text-black text-bold text-[13px]'>{t('remainingBalance', lang === 'km' ? 'សមតុល្យនៅសល់' : 'Remaining balance')}</span></th>
                                     </tr>
                                 </tbody>
                                 <tbody>
@@ -1183,25 +1183,25 @@ const CalculateSchedule2 = () => {
                                 </tbody>
                             </table>
                             <p className='text-left mt-4 text-[12px] font-bold '>
-                                <span className='text-red-900'>ចំណាំ ៖</span> ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។
+                                <span className='text-red-900'>{t('note', lang === 'km' ? 'ចំណាំ ៖' : 'Note:')}</span> {t('calculateInterestRefundNotice', lang === 'km' ? 'ករណីអតិថិជនបង់ការប្រាក់រួចហើយ អតិថិជនមិនអាចដកប្រាក់វិញបានទេ (ដោយគ្មានលក្ខខណ្ឌ) ។' : 'Once the customer has paid interest, it is non-refundable under any circumstances.')}
                             </p>
                         </div>
 
                         {/* Signature Block */}
                         <div className="cs2-signature-grid w-full mt-6 cs2-page-margin pb-1 grid grid-cols-2 gap-12 text-xs text-slate-800">
                             <div className="cs2-signature-col flex flex-col items-center justify-center text-center w-full">
-                                <p className="text-[13px] font-bold text-slate-800 text-center w-full" style={{ fontFamily: 'moul' }}>តំណាងក្រុមហ៊ុន</p>
+                                <p className="text-[13px] font-bold text-slate-800 text-center w-full" style={{ fontFamily: 'moul' }}>{t('companyRepresentative', lang === 'km' ? 'តំណាងក្រុមហ៊ុន' : 'Company representative')}</p>
                                 <div className="cs2-signature-line mt-16 border-b border-dotted border-slate-400 w-[180px] mx-auto" />
                             </div>
                             <div className="cs2-signature-col flex flex-col items-center justify-center text-center w-full">
-                                <p className="text-[13px] font-bold text-slate-800 text-center w-full" style={{ fontFamily: 'moul' }}>ឈ្មោះអតិថិជន</p>
+                                <p className="text-[13px] font-bold text-slate-800 text-center w-full" style={{ fontFamily: 'moul' }}>{t('customerName', lang === 'km' ? 'ឈ្មោះអតិថិជន' : 'Customer name')}</p>
                                 <div className="cs2-signature-line mt-16 border-b border-dotted border-slate-400 w-[180px] mx-auto" />
                             </div>
                         </div>
 
                         {/* Address Footer */}
                         <div className="cs2-address-footer text-center pb-4 text-[12px] pt-8 mt-6 cs2-page-margin" style={{ fontFamily: 'khmer' }}>
-                            អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ
+                            {t('companyAddress', lang === 'km' ? 'អាសយដ្ឋាន: អគារលេខ378A ផ្លូវ1928 ភូមិកោះអណ្តែត សង្កាត់ទួលសង្កែទី២ ខណ្ឌឬស្សីកែវ រាជធានីភ្នំពេញ' : 'Address: Building 378A, Street 1928, Koh Andet Village, Sangkat Toul Sangke 2, Khan Russey Keo, Phnom Penh')}
                         </div>
                     </div>
                 )}
@@ -1214,7 +1214,7 @@ const CalculateSchedule2 = () => {
                                 <div className="flex items-center gap-2">
                                     <FaHistory className="text-violet-600 text-lg" />
                                     <h3 className="font-black text-base text-slate-800">
-                                        ប្រវត្តិបានរក្សាទុក ({savedHistory.length})
+                                        {t('savedHistory', lang === 'km' ? 'ប្រវត្តិបានរក្សាទុក' : 'Saved history')} ({savedHistory.length})
                                     </h3>
                                 </div>
                                 <button
@@ -1232,7 +1232,7 @@ const CalculateSchedule2 = () => {
                                         type="text"
                                         value={historySearch}
                                         onChange={(e) => setHistorySearch(e.target.value)}
-                                        placeholder="ស្វែងរកតាមឈ្មោះអតិថិជន លេខកិច្ចសន្យា ឬប្រភេទទ្រព្យ..."
+                                        placeholder={t('calculateCustomerSearch', lang === 'km' ? 'ស្វែងរកតាមឈ្មោះអតិថិជន លេខកិច្ចសន្យា ឬប្រភេទទ្រព្យ...' : 'Search by customer name, contract number, or asset type...')}
                                         className="w-full pl-9 pr-3.5 py-2 rounded-[5px] border border-slate-200 text-sm bg-slate-50 focus:bg-[#fff] focus:outline-none focus:ring-2 focus:ring-violet-500"
                                     />
                                 </div>
@@ -1241,7 +1241,7 @@ const CalculateSchedule2 = () => {
                             <div className="flex-1 overflow-y-auto p-2 space-y-2">
                                 {filteredHistory.length === 0 ? (
                                     <div className="text-center py-12 text-slate-400 text-sm">
-                                        មិនមានទិន្នន័យត្រូវបង្ហាញទេ
+                                        {t('noDataToDisplay', lang === 'km' ? 'មិនមានទិន្នន័យត្រូវបង្ហាញទេ' : 'No data to display')}
                                     </div>
                                 ) : (
                                     filteredHistory.map((item) => (
@@ -1251,7 +1251,7 @@ const CalculateSchedule2 = () => {
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-slate-800 text-sm">
-                                                        {item.customerName || 'អតិថិជនទូទៅ'}
+                                                        {item.customerName || t('generalCustomer', lang === 'km' ? 'អតិថិជនទូទៅ' : 'General customer')}
                                                     </span>
                                                     {item.contractNumber && (
                                                         <span className="px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-600">
@@ -1260,11 +1260,11 @@ const CalculateSchedule2 = () => {
                                                     )}
                                                 </div>
                                                 <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                                    <span>ទ្រព្យ: <strong className="text-slate-700">{item.assetName}</strong></span>
-                                                    <span>ថ្ងៃចាប់ផ្តើម: <strong className="text-slate-700 font-mono">{formatDate(item.startDate)}</strong></span>
-                                                    <span>រយៈពេល: <strong className="text-slate-700">{item.months} ខែ</strong></span>
-                                                    <span>ប្រាក់ដើម: <strong className="text-emerald-700 font-mono">${item.principal}</strong></span>
-                                                    <span>ការប្រាក់/ខែ: <strong className="text-violet-700 font-mono">${item.monthlyInterest}</strong></span>
+                                                    <span>{t('asset', lang === 'km' ? 'ទ្រព្យ' : 'Asset')}: <strong className="text-slate-700">{item.assetName}</strong></span>
+                                                    <span>{t('startDate', lang === 'km' ? 'ថ្ងៃចាប់ផ្តើម' : 'Start date')}: <strong className="text-slate-700 font-mono">{formatDate(item.startDate)}</strong></span>
+                                                    <span>{t('duration', lang === 'km' ? 'រយៈពេល' : 'Duration')}: <strong className="text-slate-700">{item.months} {t('months', lang === 'km' ? 'ខែ' : 'months')}</strong></span>
+                                                    <span>{t('principal', lang === 'km' ? 'ប្រាក់ដើម' : 'Principal')}: <strong className="text-emerald-700 font-mono">${item.principal}</strong></span>
+                                                    <span>{t('monthlyInterest', lang === 'km' ? 'ការប្រាក់/ខែ' : 'Monthly interest')}: <strong className="text-violet-700 font-mono">${item.monthlyInterest}</strong></span>
                                                 </div>
                                             </div>
 
@@ -1276,13 +1276,13 @@ const CalculateSchedule2 = () => {
                                                         setShowHistoryModal(false);
                                                     }}
                                                     className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs flex items-center gap-1.5 transition-all cursor-pointer">
-                                                    <FaEye /> មើល / Load
+                                                    <FaEye /> {t('viewLoad', lang === 'km' ? 'មើល / Load' : 'View / Load')}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleDeleteRecord(item._id, e)}
                                                     className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center gap-1.5 border border-rose-200 transition-all cursor-pointer">
-                                                    <FaTrash /> លុប
+                                                    <FaTrash /> {t('delete')}
                                                 </button>
                                             </div>
                                         </div>

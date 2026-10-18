@@ -145,7 +145,7 @@ const PenaltyPage = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         if (!formData.amount || Number(formData.amount) <= 0) {
-            alert('សូមបញ្ចូលចំនួនទឹកប្រាក់ដែលត្រឹមត្រូវ! (Please enter a valid amount)');
+            alert(t('validAmountAlert'));
             return;
         }
 
@@ -231,7 +231,7 @@ const PenaltyPage = () => {
     };
 
     const handleDelete = async (item) => {
-        if (!window.confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យពិន័យនេះមែនទេ? (Are you sure you want to delete this record?)')) {
+        if (!window.confirm(t('confirmDelete'))) {
             return;
         }
         try {
@@ -336,7 +336,7 @@ const PenaltyPage = () => {
 
                 <div className='flex items-center gap-2 flex-wrap'>
                     <button onClick={openCreateForm} className='flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-amber-600/20'>
-                        <FaPlus className="text-xs" /><span>{t('create')} (បង្កើតពិន័យ)</span>
+                        <FaPlus className="text-xs" /><span>{t('addPenalty')}</span>
                     </button>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                     {/* PDF Orientation Toggle */}
@@ -374,7 +374,7 @@ const PenaltyPage = () => {
                                 <FaDollarSign />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total USD Penalty ($)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalUsdPenalty')}</p>
                                 <h3 className="text-lg font-black text-amber-700 mt-0.5">${kpi.totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -384,7 +384,7 @@ const PenaltyPage = () => {
                                 ៛
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total KHR Penalty (៛)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalKhrPenalty')}</p>
                                 <h3 className="text-lg font-black text-amber-700 mt-0.5">{kpi.totalKHR.toLocaleString()} ៛</h3>
                             </div>
                         </div>
@@ -394,7 +394,7 @@ const PenaltyPage = () => {
                                 <FaMoneyBillWave />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Est. USD Total ($)</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalEstimatedUsd')}</p>
                                 <h3 className="text-lg font-black text-indigo-700 mt-0.5">${kpi.grandTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -404,7 +404,7 @@ const PenaltyPage = () => {
                                 <FaListUl />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Penalty Entries</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('totalPenaltyEntries')}</p>
                                 <h3 className="text-lg font-black text-slate-900 mt-0.5">{kpi.count.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -413,11 +413,11 @@ const PenaltyPage = () => {
                     {/* Line Chart - Penalty Trend */}
                     <LineChart
                         title={t('penaltyTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួនចូលច្រង និងតម្លៃចំនួនប្រចាំថ្ងៃ/ខែ"
+                        subtitle={t('penaltyTrendSub')}
                         data={chartTrendData}
                         series={[
-                            { key: 'count', label: 'ចំនួនផ័កចូលច្រង', color: '#10b981', isCurrency: false },
-                            { key: 'totalUSD', label: 'តម្លៃសរុប ($)', color: '#3b82f6', isCurrency: true }
+                            { key: 'count', label: t('transactions'), color: '#10b981', isCurrency: false },
+                            { key: 'totalUSD', label: `${t('total')} ($)`, color: '#3b82f6', isCurrency: true }
                         ]}
                     />
                 </div>
@@ -442,7 +442,7 @@ const PenaltyPage = () => {
                                     ...(endDate ? { endDate } : {})
                                 }}
                                 value={searchTerm}
-                                placeholder="ស្វែងរក category/ description..."
+                                placeholder={t('searchPenaltyPlaceholder')}
                                 className="w-52 sm:w-64"
                                 onChange={(value) => {
                                     setSelectedRecord(null);
@@ -468,7 +468,7 @@ const PenaltyPage = () => {
                         </div>
 
                         <button onClick={openCreateForm} className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-[5px] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
-                            <FaPlus /> <span>បន្ថែមពិន័យ</span>
+                            <FaPlus /> <span>{t('addPenalty')}</span>
                         </button>
                     </div>
 
@@ -477,22 +477,22 @@ const PenaltyPage = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 font-bold'>
                                 <tr>
-                                    <th className='px-4 py-1 text-center'>No</th>
-                                    <th className='px-4 py-1'>Date</th>
-                                    <th className='px-4 py-1'>Payment Type</th>
-                                    <th className='px-4 py-1'>Category</th>
-                                    <th className='px-4 py-1 text-right'>Amount</th>
-                                    <th className='px-4 py-1'>Description</th>
-                                    <th className='px-4 py-1 text-center'>Receipt Image</th>
-                                    <th className='px-4 py-1'>Performed By</th>
-                                    <th className='px-4 py-1 text-center'>Actions</th>
+                                    <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-4 py-1'>{t('date')}</th>
+                                    <th className='px-4 py-1'>{t('paymentType')}</th>
+                                    <th className='px-4 py-1'>{t('category')}</th>
+                                    <th className='px-4 py-1 text-right'>{t('amount')}</th>
+                                    <th className='px-4 py-1'>{t('description')}</th>
+                                    <th className='px-4 py-1 text-center'>{t('receiptImage')}</th>
+                                    <th className='px-4 py-1'>{t('performedBy')}</th>
+                                    <th className='px-4 py-1 text-center'>{t('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={9} className="text-center py-10 text-amber-600 font-semibold">Loading...</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-10 text-amber-600 font-semibold">{t('loading')}</td></tr>
                                 ) : visibleDataList.length === 0 ? (
-                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">មិនមានទិន្នន័យពិន័យទេ។ (No penalty records found.)</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">{t('noPenaltyRecords')}</td></tr>
                                 ) : (
                                     visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-amber-50/40 transition-colors'>
@@ -517,15 +517,15 @@ const PenaltyPage = () => {
                                                     <button onClick={() => { setSelectedImages(getPhotoUrls(item)); setSelectedImageIndex(0); }} className="text-indigo-600 hover:text-indigo-800 underline font-bold flex items-center justify-center gap-1 mx-auto">
                                                         <FaImage /> <span>View{getPhotoUrls(item).length > 1 ? ` (${getPhotoUrls(item).length})` : ''}</span>
                                                     </button>
-                                                ) : <span className="text-slate-400 italic">No image</span>}
+                                                ) : <span className="text-slate-400 italic">{t('dashboardNoImage')}</span>}
                                             </td>
                                             <td className='px-4 py-1 font-bold text-slate-800'>{item.performedBy || '-'}</td>
                                             <td className='px-4 py-1 text-center'>
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <button onClick={() => handleEdit(item)} title="Edit" className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    <button onClick={() => handleEdit(item)} title={t('edit')} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                         <FaEdit />
                                                     </button>
-                                                    <button onClick={() => handleDelete(item)} title="Delete" className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                                                    <button onClick={() => handleDelete(item)} title={t('delete')} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
                                                         <FaTrashAlt />
                                                     </button>
                                                 </div>
@@ -577,7 +577,7 @@ const PenaltyPage = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-slate-700 font-bold mb-1">រូបិយប័ណ្ណ</label>
+                                    <label className="block text-slate-700 font-bold mb-1">{t('currency')}</label>
                                     <select
                                         value={formData.currency}
                                         onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
@@ -605,7 +605,7 @@ const PenaltyPage = () => {
                                 <label className="block text-slate-700 font-bold mb-1">{t('category')}</label>
                                 <input
                                     type="text"
-                                    placeholder="ឧទាហរណ៍៖ ចំណូលសេវាកម្ម, ប្រាក់បង់រំលស់បន្ថែម, ចំណូលផ្សេងៗ..."
+                                    placeholder={t('penaltyCategoryPlaceholder')}
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500"
@@ -616,7 +616,7 @@ const PenaltyPage = () => {
                                 <label className="block text-slate-700 font-bold mb-1">{t('description')}</label>
                                 <textarea
                                     rows="2"
-                                    placeholder="ពិពណ៌នាបន្ថែមពីចំណូលនេះ..."
+                                    placeholder={t('penaltyDescriptionPlaceholder')}
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500"
@@ -624,7 +624,7 @@ const PenaltyPage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 font-bold mb-1">រូបភាព/វិក្កយបត្រ (Choose Image File)</label>
+                                <label className="block text-slate-700 font-bold mb-1">{t('penaltyReceiptPhoto')}</label>
                                 <div className="space-y-2">
                                     <ImageStorageSelect value={imageStorageType} onChange={setImageStorageType} disabled={uploadingImage} />
                                     <input
@@ -636,7 +636,7 @@ const PenaltyPage = () => {
                                     {uploadingImage && <p className="text-[11px] text-amber-600 font-bold animate-pulse">🔄 {t('uploadingImage')}</p>}
                                     <textarea
                                         rows="2"
-                                        placeholder="ឬបិទភ្ជាប់ URL រូបភាព (មួយក្នុងមួយបន្ទាត់)"
+                                        placeholder={t('imageUrlsOnePerLine')}
                                         value={formData.photoUrls.join('\n')}
                                         onChange={(e) => {
                                             const photoUrls = [...new Set(e.target.value.split(/\r?\n/).map(url => url.trim()).filter(Boolean))];
@@ -657,7 +657,7 @@ const PenaltyPage = () => {
                                                     </button>
                                                 </div>
                                             ))}
-                                            <span className="text-[10px] text-amber-700 font-bold">{formData.photoUrls.length} រូបភាពបានបញ្ចូល</span>
+                                            <span className="text-[10px] text-amber-700 font-bold">{formData.photoUrls.length} {t('imagesUploaded')}</span>
                                         </div>
                                     )}
                                 </div>

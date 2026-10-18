@@ -17,7 +17,7 @@ const DURATION_PRESETS = [1, 2, 3, 4, 6, 12];
 const AMOUNT_PRESETS = [100, 200, 300, 500, 1000, 2000, 5000];
 
 const CalculateSchedule1 = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { user } = useAuth();
 
     const formatDateToYMD = (d) => {
@@ -56,11 +56,11 @@ const CalculateSchedule1 = () => {
         const duration = parseInt(durationInput, 10) || 1;
 
         if (principal <= 0) {
-            alert('សូមបញ្ចូលចំនួនប្រាក់ដើមឱ្យបានត្រឹមត្រូវ (> 0)!');
+            alert(t('calculatePrincipalPositive', lang === 'km' ? 'សូមបញ្ចូលចំនួនប្រាក់ដើមឱ្យបានត្រឹមត្រូវ (ធំជាង ០)!' : 'Please enter a valid principal amount greater than 0.'));
             return;
         }
         if (duration <= 0) {
-            alert('សូមបញ្ចូលចំនួនរយៈពេលកម្ចីឱ្យបានត្រឹមត្រូវ (> 0)!');
+            alert(t('calculateDurationPositive', lang === 'km' ? 'សូមបញ្ចូលរយៈពេលកម្ចីឱ្យបានត្រឹមត្រូវ (ធំជាង ០)!' : 'Please enter a valid loan duration greater than 0.'));
             return;
         }
 
@@ -110,7 +110,7 @@ const CalculateSchedule1 = () => {
 
             schedule.push({
                 monthIndex: i,
-                label: `ខែទី ${i} (Month ${i})`,
+                label: `${t('monthNumber', lang === 'km' ? `ខែទី ${i}` : `Month ${i}`)}`,
                 dueDate: formatDateToYMD(dueDate),
                 principalDue: currentPrincipalDue,
                 interestDue: monthlyInterestUSD,
@@ -163,16 +163,16 @@ const CalculateSchedule1 = () => {
             monthlyInterestUSD, paymentPerMonth, totalInterest, totalRepayment
         } = calculationResult;
 
-        const text = `📋 តារាងគណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់
+        const text = `📋 ${t('calculateInterestSchedule', lang === 'km' ? 'តារាងគណនាការប្រាក់ និងកាលវិភាគបង់ប្រាក់' : 'Interest calculation and payment schedule')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-💵 ប្រាក់ដើមកម្ចី: $${principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-📊 អត្រាការប្រាក់: ${ratePercent}% / ខែ
-⏳ រយៈពេលកម្ចី: ${monthsCount} ខែ
+💵 ${t('principalAmount', lang === 'km' ? 'ប្រាក់ដើមកម្ចី' : 'Loan principal')}: $${principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+📊 ${t('interestRate', lang === 'km' ? 'អត្រាការប្រាក់' : 'Interest rate')}: ${ratePercent}% / ${t('month', lang === 'km' ? 'ខែ' : 'month')}
+⏳ ${t('loanDuration', lang === 'km' ? 'រយៈពេលកម្ចី' : 'Loan duration')}: ${monthsCount} ${t('months', lang === 'km' ? 'ខែ' : 'months')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-💰 ការប្រាក់ក្នុង ១ ខែ: $${monthlyInterestUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-💳 ត្រូវបង់ក្នុង ១ ខែ: $${paymentPerMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-💵 សរុបការប្រាក់ទាំងអស់ (${monthsCount}ខែ): $${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-✨ សរុបប្រាក់ត្រូវបង់ត្រឡប់មកវិញទាំងអស់: $${totalRepayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💰 ${t('monthlyInterest', lang === 'km' ? 'ការប្រាក់ក្នុងមួយខែ' : 'Monthly interest')}: $${monthlyInterestUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💳 ${t('monthlyPayment', lang === 'km' ? 'ត្រូវបង់ក្នុងមួយខែ' : 'Monthly payment')}: $${paymentPerMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💵 ${t('totalInterest', lang === 'km' ? 'សរុបការប្រាក់ទាំងអស់' : 'Total interest')} (${monthsCount} ${t('months', lang === 'km' ? 'ខែ' : 'months')}): $${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+✨ ${t('totalRepayment', lang === 'km' ? 'សរុបប្រាក់ត្រូវបង់ត្រឡប់មកវិញ' : 'Total repayment')}: $${totalRepayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
         navigator.clipboard.writeText(text);
@@ -188,21 +188,21 @@ const CalculateSchedule1 = () => {
             [t('no')]: row.monthIndex,
             [t('period')]: row.label,
             [t('dueDate')]: row.dueDate,
-            'ប្រាក់ដើមត្រូវបង់ ($)': Number(row.principalDue.toFixed(2)),
-            'ការប្រាក់ត្រូវបង់ ($)': Number(row.interestDue.toFixed(2)),
-            'សរុបត្រូវបង់ក្នុងខែ ($)': Number(row.totalDueMonth.toFixed(2)),
-            'សមតុល្យប្រាក់ដើមនៅសល់ ($)': Number(row.remainingPrincipal.toFixed(2))
+            [t('principalDue', lang === 'km' ? 'ប្រាក់ដើមត្រូវបង់ ($)' : 'Principal due ($)')]: Number(row.principalDue.toFixed(2)),
+            [t('interestDue', lang === 'km' ? 'ការប្រាក់ត្រូវបង់ ($)' : 'Interest due ($)')]: Number(row.interestDue.toFixed(2)),
+            [t('totalDuePerMonth', lang === 'km' ? 'សរុបត្រូវបង់ក្នុងខែ ($)' : 'Total due per month ($)')]: Number(row.totalDueMonth.toFixed(2)),
+            [t('remainingPrincipal', lang === 'km' ? 'សមតុល្យប្រាក់ដើមនៅសល់ ($)' : 'Remaining principal ($)')]: Number(row.remainingPrincipal.toFixed(2))
         }));
 
         // Add summary row at the end
         exportData.push({
-            [t('no')]: 'សរុបរួម',
-            [t('period')]: `សរុប ${monthsCount} ខែ`,
+            [t('no')]: t('grandTotal', lang === 'km' ? 'សរុបរួម' : 'Grand total'),
+            [t('period')]: `${t('total', lang === 'km' ? 'សរុប' : 'Total')} ${monthsCount} ${t('months', lang === 'km' ? 'ខែ' : 'months')}`,
             [t('dueDate')]: '—',
-            'ប្រាក់ដើមត្រូវបង់ ($)': Number(principal.toFixed(2)),
-            'ការប្រាក់ត្រូវបង់ ($)': Number(totalInterest.toFixed(2)),
-            'សរុបត្រូវបង់ក្នុងខែ ($)': Number(totalRepayment.toFixed(2)),
-            'សមតុល្យប្រាក់ដើមនៅសល់ ($)': 0
+            [t('principalDue', lang === 'km' ? 'ប្រាក់ដើមត្រូវបង់ ($)' : 'Principal due ($)')]: Number(principal.toFixed(2)),
+            [t('interestDue', lang === 'km' ? 'ការប្រាក់ត្រូវបង់ ($)' : 'Interest due ($)')]: Number(totalInterest.toFixed(2)),
+            [t('totalDuePerMonth', lang === 'km' ? 'សរុបត្រូវបង់ក្នុងខែ ($)' : 'Total due per month ($)')]: Number(totalRepayment.toFixed(2)),
+            [t('remainingPrincipal', lang === 'km' ? 'សមតុល្យប្រាក់ដើមនៅសល់ ($)' : 'Remaining principal ($)')]: 0
         });
 
         return {
@@ -235,7 +235,7 @@ const CalculateSchedule1 = () => {
                 <div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
-                            Calculate Schedule 1
+                            {t('calculateSchedule1')}
                         </h1>
                     </div>
                 </div>
@@ -251,12 +251,12 @@ const CalculateSchedule1 = () => {
                                 }`}
                         >
                             {copiedText ? <FaCheckCircle className="text-white" /> : <FaCopy className="text-slate-500" />}
-                            {copiedText ? 'បានចម្លងរួចរាល់!' : t('copyInfo')}
+                            {copiedText ? t('copied', lang === 'km' ? 'បានចម្លងរួចរាល់!' : 'Copied successfully!') : t('copyInfo')}
                         </button>
                         <ExportDropdown
                             onExportExcel={handleExportExcel}
                             onExportPDF={handleExportPDF}
-                            triggerLabel="Export"
+                            triggerLabel={t('export')}
                             excelLabel={t('downloadExcel')}
                             pdfLabel={t('downloadPdf')}
                         />
@@ -297,7 +297,7 @@ const CalculateSchedule1 = () => {
                                     min="0"
                                     value={principalInput}
                                     onChange={(e) => setPrincipalInput(e.target.value)}
-                                    placeholder="ឧ. 1000"
+                                    placeholder={t('exampleAmount', lang === 'km' ? 'ឧ. 1000' : 'e.g. 1000')}
                                     required
                                     className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
@@ -334,7 +334,7 @@ const CalculateSchedule1 = () => {
                                     list="interest-rate-droplist"
                                     value={rateInput}
                                     onChange={(e) => setRateInput(e.target.value)}
-                                    placeholder="ឧ. 11.5%"
+                                    placeholder={t('exampleInterestRate', lang === 'km' ? 'ឧ. 11.5%' : 'e.g. 11.5%')}
                                     required
                                     className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
@@ -400,7 +400,7 @@ const CalculateSchedule1 = () => {
                                     min="1"
                                     value={durationInput}
                                     onChange={(e) => setDurationInput(e.target.value)}
-                                    placeholder={durationUnit === 'months' ? 'ឧ. 4' : 'ឧ. 120'}
+                                    placeholder={durationUnit === 'months' ? t('exampleMonths', lang === 'km' ? 'ឧ. 4' : 'e.g. 4') : t('exampleDays', lang === 'km' ? 'ឧ. 120' : 'e.g. 120')}
                                     required
                                     className="w-full pl-8 pr-3.5 py-2.5 rounded-[5px] border border-slate-300 bg-white text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                 />
@@ -417,7 +417,7 @@ const CalculateSchedule1 = () => {
                                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                                             }`}
                                     >
-                                        {m} ខែ
+                                        {m} {t('months', lang === 'km' ? 'ខែ' : 'months')}
                                     </button>
                                 ))}
                             </div>
@@ -440,7 +440,7 @@ const CalculateSchedule1 = () => {
                                 />
                             </div>
                             <p className="text-[11px] text-slate-400 font-medium">
-                                សម្រាប់គណនាកាលបរិច្ឆេទត្រូវបង់តាមខែនីមួយៗ
+                                {t('calculateScheduleDescription', lang === 'km' ? 'សម្រាប់គណនាកាលបរិច្ឆេទត្រូវបង់តាមខែនីមួយៗ' : 'Calculate payment due dates for each month')}
                             </p>
                         </div>
                     </div>
@@ -474,7 +474,7 @@ const CalculateSchedule1 = () => {
                         {/* 1. Principal Amount */}
                         <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
-                                <span>ប្រាក់ដើមកម្ចី</span>
+                                <span>{t('principalAmount', lang === 'km' ? 'ប្រាក់ដើមកម្ចី' : 'Loan principal')}</span>
                                 <FaDollarSign className="text-emerald-500" />
                             </div>
                             <div>
@@ -482,7 +482,7 @@ const CalculateSchedule1 = () => {
                                     ${calculationResult.principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <div className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                                    Principal Amount
+                                    {t('principalAmount')}
                                 </div>
                             </div>
                         </div>
@@ -490,7 +490,7 @@ const CalculateSchedule1 = () => {
                         {/* 2. Interest Rate */}
                         <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
-                                <span>អត្រាការប្រាក់</span>
+                                <span>{t('interestRate', lang === 'km' ? 'អត្រាការប្រាក់' : 'Interest rate')}</span>
                                 <FaPercentage className="text-indigo-500" />
                             </div>
                             <div>
@@ -506,7 +506,7 @@ const CalculateSchedule1 = () => {
                         {/* 3. Monthly Interest USD */}
                         <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
-                                <span>ការប្រាក់ក្នុង ១ ខែ</span>
+                                <span>{t('monthlyInterest', lang === 'km' ? 'ការប្រាក់ក្នុងមួយខែ' : 'Monthly interest')}</span>
                                 <FaMoneyBillWave className="text-amber-500" />
                             </div>
                             <div>
@@ -522,7 +522,7 @@ const CalculateSchedule1 = () => {
                         {/* 4. Monthly Payment */}
                         <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-emerald-300 rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between bg-emerald-50/40">
                             <div className="flex items-center justify-between text-emerald-800 text-xs font-bold mb-1">
-                                <span>ត្រូវបង់ក្នុង ១ ខែ</span>
+                                <span>{t('monthlyPayment', lang === 'km' ? 'ត្រូវបង់ក្នុងមួយខែ' : 'Monthly payment')}</span>
                                 <MdOutlinePayments className="text-emerald-600 text-lg" />
                             </div>
                             <div>
@@ -530,7 +530,7 @@ const CalculateSchedule1 = () => {
                                     ${calculationResult.paymentPerMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <div className="text-[10px] font-semibold text-emerald-600/80 mt-0.5">
-                                    ដើម (${calculationResult.principalPerMonth.toFixed(0)}) + ការប្រាក់ (${calculationResult.monthlyInterestUSD.toFixed(0)})
+                                    {t('principal', lang === 'km' ? 'ប្រាក់ដើម' : 'Principal')} (${calculationResult.principalPerMonth.toFixed(0)}) + {t('interest', lang === 'km' ? 'ការប្រាក់' : 'Interest')} (${calculationResult.monthlyInterestUSD.toFixed(0)})
                                 </div>
                             </div>
                         </div>
@@ -538,7 +538,7 @@ const CalculateSchedule1 = () => {
                         {/* 5. Total Interest */}
                         <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-[var(--app-border,rgba(226,232,240,0.8))] rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between">
                             <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1">
-                                <span>សរុបការប្រាក់ទាំងអស់</span>
+                                <span>{t('totalInterest', lang === 'km' ? 'សរុបការប្រាក់ទាំងអស់' : 'Total interest')}</span>
                                 <FaChartPie className="text-rose-500" />
                             </div>
                             <div>
@@ -546,7 +546,7 @@ const CalculateSchedule1 = () => {
                                     ${calculationResult.totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </div>
                                 <div className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                                    Total Interest ({calculationResult.monthsCount} ខែ)
+                                    {t('totalInterest', lang === 'km' ? 'សរុបការប្រាក់ទាំងអស់' : 'Total interest')} ({calculationResult.monthsCount} {t('months', lang === 'km' ? 'ខែ' : 'months')})
                                 </div>
                             </div>
                         </div>
@@ -554,7 +554,7 @@ const CalculateSchedule1 = () => {
                         {/* 6. Total Repayment Return */}
                         <div className="bg-[var(--app-card,rgba(255,255,255,0.8))] border border-indigo-300 rounded-[5px] p-2 shadow-xs backdrop-blur-md flex flex-col justify-between bg-indigo-50/40">
                             <div className="flex items-center justify-between text-indigo-900 text-xs font-bold mb-1">
-                                <span>សរុបត្រូវបង់មកវិញ</span>
+                                <span>{t('totalRepayment', lang === 'km' ? 'សរុបត្រូវបង់មកវិញ' : 'Total repayment')}</span>
                                 <FaDollarSign className="text-indigo-600" />
                             </div>
                             <div>
@@ -578,14 +578,14 @@ const CalculateSchedule1 = () => {
                                         {t('repaymentSchedule')}
                                     </h3>
                                     <p className="text-xs text-slate-500 font-medium">
-                                        បង្ហាញពីកាលវិភាគបង់រំលស់ប្រចាំខែនីមួយៗ ចំនួន {calculationResult.monthsCount} ដំណាក់កាល
+                                        {t('calculateScheduleStages', lang === 'km' ? `បង្ហាញពីកាលវិភាគបង់រំលស់ប្រចាំខែនីមួយៗ ចំនួន ${calculationResult.monthsCount} ដំណាក់កាល` : `Monthly installment schedule with ${calculationResult.monthsCount} periods`)}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                                    រយៈពេល: {calculationResult.monthsCount} ខែ
+                                    {t('loanDuration', lang === 'km' ? 'រយៈពេល' : 'Duration')}: {calculationResult.monthsCount} {t('months', lang === 'km' ? 'ខែ' : 'months')}
                                 </span>
                             </div>
                         </div>
@@ -594,13 +594,13 @@ const CalculateSchedule1 = () => {
                             <table className="w-full text-left border-collapse text-xs sm:text-sm">
                                 <thead>
                                     <tr className="bg-slate-100/80 text-slate-700 font-black border-b border-slate-200 uppercase tracking-wider text-[11px]">
-                                        <th className="px-4 py-3.5 text-center w-16">ល.រ</th>
-                                        <th className="px-4 py-3.5">ដំណាក់កាល / ខែទី</th>
-                                        <th className="px-4 py-3.5 text-center">កាលបរិច្ឆេទត្រូវបង់</th>
-                                        <th className="px-4 py-3.5 text-right font-khmer">ប្រាក់ដើមត្រូវបង់</th>
-                                        <th className="px-4 py-3.5 text-right font-khmer">ការប្រាក់ត្រូវបង់</th>
-                                        <th className="px-4 py-3.5 text-right font-khmer font-black text-emerald-800">សរុបត្រូវបង់ក្នុងខែ</th>
-                                        <th className="px-4 py-3.5 text-right font-khmer text-slate-600">សមតុល្យដើមនៅសល់</th>
+                                        <th className="px-4 py-3.5 text-center w-16">{t('no')}</th>
+                                        <th className="px-4 py-3.5">{t('period', lang === 'km' ? 'ដំណាក់កាល / ខែទី' : 'Period / Month')}</th>
+                                        <th className="px-4 py-3.5 text-center">{t('dueDate')}</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer">{t('principalDue', lang === 'km' ? 'ប្រាក់ដើមត្រូវបង់' : 'Principal due')}</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer">{t('interestDue', lang === 'km' ? 'ការប្រាក់ត្រូវបង់' : 'Interest due')}</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer font-black text-emerald-800">{t('totalDuePerMonth', lang === 'km' ? 'សរុបត្រូវបង់ក្នុងខែ' : 'Total due per month')}</th>
+                                        <th className="px-4 py-3.5 text-right font-khmer text-slate-600">{t('remainingPrincipal', lang === 'km' ? 'សមតុល្យដើមនៅសល់' : 'Remaining principal')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200/70 text-slate-800 font-medium">
@@ -635,7 +635,7 @@ const CalculateSchedule1 = () => {
                                 <tfoot>
                                     <tr className="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-300">
                                         <td colSpan={3} className="px-4 py-3.5 text-center font-bold text-slate-700 uppercase tracking-wider text-xs">
-                                            សរុបរួម ({calculationResult.monthsCount} ខែ)
+                                            {t('grandTotal', lang === 'km' ? 'សរុបរួម' : 'Grand total')} ({calculationResult.monthsCount} {t('months', lang === 'km' ? 'ខែ' : 'months')})
                                         </td>
                                         <td className="px-4 py-3.5 text-right font-mono text-slate-900 text-sm">
                                             ${calculationResult.principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

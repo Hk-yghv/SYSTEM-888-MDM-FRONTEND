@@ -503,9 +503,9 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     if (!open) return null;
 
     const tabs = [
-        { id: 'customer', label: 'Customer Info', icon: <FaUser />, color: 'indigo' },
-        { id: 'device', label: 'Device Info', icon: <FaMobileAlt />, color: 'purple' },
-        { id: 'loan', label: 'Loan Terms', icon: <FaDollarSign />, color: 'emerald' },
+        { id: 'customer', label: t('customerInformation'), icon: <FaUser />, color: 'indigo' },
+        { id: 'device', label: t('deviceInformation'), icon: <FaMobileAlt />, color: 'purple' },
+        { id: 'loan', label: t('loanTerms'), icon: <FaDollarSign />, color: 'emerald' },
     ];
     const tabCls = {
         indigo: { active: 'bg-indigo-600 text-white border-indigo-500', inactive: 'text-indigo-400 border-gray-700 hover:bg-indigo-900/40' },
@@ -533,7 +533,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     <div className="flex gap-2">
                         <button type="button" onClick={() => setOpen(false)}
                             className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-[5px] text-xs cursor-pointer transition-all flex items-center gap-1.5">
-                            <MdClose /> Cancel
+                            <MdClose /> {t('cancel')}
                         </button>
                         <button type="submit" disabled={submitting}
                             className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[5px] text-xs cursor-pointer shadow-lg shadow-emerald-600/30 transition-all">
@@ -562,22 +562,22 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     {/* TAB 1: Customer Info */}
                     {activeTab === 'customer' && (<>
                         <div className="grid grid-cols-4 gap-3">
-                            <AutoField id="customerNameEn" label="Name English" value={form.customerNameEn} placeholder="Name English" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="customerNameKh" label="Name Khmer" value={form.customerNameKh} placeholder="Name Khmer" font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="idCardNumber" label="ID Card Number" value={form.idCardNumber} placeholder="ID Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="phone" label="Phone Number" value={form.phone} placeholder="Phone" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="customerNameEn" label={t('nameEnglish')} value={form.customerNameEn} placeholder={t('customerNameEnglish')} list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="customerNameKh" label={t('nameKhmer')} value={form.customerNameKh} placeholder={t('customerNameKhmer')} font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="idCardNumber" label={t('idCardNo')} value={form.idCardNumber} placeholder={t('idNumber')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="phone" label={t('phone')} value={form.phone} placeholder={t('phone')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                         </div>
                         <div className="grid grid-cols-4 gap-3">
-                            <Field label="Date of Birth"><input className={inp} type="date" id="dob" value={form.dob || ''} onChange={handleChange} /></Field>
-                            <Field label="Gender">
+                            <Field label={t('dateOfBirth')}><input className={inp} type="date" id="dob" value={form.dob || ''} onChange={handleChange} /></Field>
+                            <Field label={t('gender')}>
                                 <select className={sel} id="gender" value={form.gender || 'male'} onChange={handleChange}>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
+                                    <option value="male">{t('male')}</option>
+                                    <option value="female">{t('female')}</option>
                                 </select>
                             </Field>
                             <Field label={t('brand')}>
                                 <select id="brand" value={form.brand || ''} onChange={handleChange} disabled={user?.role !== 'Administrator'} className={`${sel} font-semibold disabled:opacity-60`}>
-                                    <option value="">Select Brand</option>
+                                    <option value="">{t('selectBrand')}</option>
                                     {brandsList.map((b, idx) => <option key={idx} value={b}>{b}</option>)}
                                 </select>
                             </Field>
@@ -587,7 +587,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     : (Array.isArray(user?.subBrands) ? user.subBrands : []);
                                 if (availSubs.length === 0) return null;
                                 return (
-                                    <Field label="Sub Brand">
+                                    <Field label={t('subBrand')}>
                                         {availSubs.length === 1 ? (
                                             <div className={`${inp} font-semibold text-indigo-300 flex items-center gap-1.5`}>
                                                 <span className="px-2 py-0.5 bg-indigo-900/60 border border-indigo-700 rounded-[4px] text-indigo-300 text-[10px] font-bold">{availSubs[0]}</span>
@@ -595,24 +595,24 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                             </div>
                                         ) : (
                                             <select id="subBrand" value={form.subBrand || ''} onChange={handleChange} className={`${sel} font-semibold`}>
-                                                <option value="">Select Sub Brand</option>
+                                                <option value="">{t('selectSubBrand')}</option>
                                                 {availSubs.map((sb, idx) => <option key={idx} value={sb}>{sb}</option>)}
                                             </select>
                                         )}
                                     </Field>
                                 );
                             })()}
-                            <Field label="Relative Phone"><input className={`${inp} font-mono`} type="text" id="relativePhone" value={form.relativePhone || ''} onChange={handleChange} placeholder="Relative phone" /></Field>
+                            <Field label="Relative Phone"><input className={`${inp} font-mono`} type="text" id="relativePhone" value={form.relativePhone || ''} onChange={handleChange} placeholder={t('customerRelativePhone')} /></Field>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
-                            <Field label="Birth Address"><input className={inp} type="text" id="birthAddress" value={form.birthAddress || ''} onChange={handleChange} placeholder="Birth address" /></Field>
-                            <Field label="Current Address"><input className={inp} type="text" id="currentAddress" value={form.currentAddress || ''} onChange={handleChange} placeholder="Current address" /></Field>
-                            <Field label="Facebook Name"><input className={inp} type="text" id="facebookName" value={form.facebookName || ''} onChange={handleChange} placeholder="Facebook Name" /></Field>
-                            <Field label="Telegram Name"><input className={inp} type="text" id="telegramName" value={form.telegramName || ''} onChange={handleChange} placeholder="Telegram Name" /></Field>
+                            <Field label="Birth Address"><input className={inp} type="text" id="birthAddress" value={form.birthAddress || ''} onChange={handleChange} placeholder={t('customerBirthAddress')} /></Field>
+                            <Field label="Current Address"><input className={inp} type="text" id="currentAddress" value={form.currentAddress || ''} onChange={handleChange} placeholder={t('customerCurrentAddress')} /></Field>
+                            <Field label="Facebook Name"><input className={inp} type="text" id="facebookName" value={form.facebookName || ''} onChange={handleChange} placeholder={t('customerFacebookName')} /></Field>
+                            <Field label="Telegram Name"><input className={inp} type="text" id="telegramName" value={form.telegramName || ''} onChange={handleChange} placeholder={t('customerTelegramName')} /></Field>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
-                            <Field label="URL Facebook"><input className={inp} type="text" id="urlFb" value={form.urlFb || ''} onChange={handleChange} placeholder="URL Facebook" /></Field>
-                            <Field label="URL Mosyle"><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
+                            <Field label={t('facebookUrl')}><input className={inp} type="text" id="urlFb" value={form.urlFb || ''} onChange={handleChange} placeholder={t('facebookUrl')} /></Field>
+                            <Field label={t('mosyleUrl')}><input className={`${inp} font-mono`} type="text" id="mosyleUrl" value={form.mosyleUrl || ''} onChange={handleChange} placeholder="https://" /></Field>
                             <Field label={t('evidencePhotos')} accent>
                                 <div className="flex flex-col gap-2">
                                     <div className="flex flex-col gap-2">
@@ -624,7 +624,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                             disabled={photoUploading}
                                             className="px-2.5 py-2 bg-amber-600/80 hover:bg-amber-500 disabled:opacity-50 text-white rounded-[5px] text-[10px] font-bold flex items-center gap-1 cursor-pointer whitespace-nowrap transition-all"
                                         >
-                                            {photoUploading ? 'Uploading...' : 'Upload Files'}
+                                            {photoUploading ? t('uploading') : t('uploadFiles')}
                                         </button>
                                         <input
                                             ref={photoFileRef}
@@ -641,7 +641,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                         <div className="p-2 bg-gray-800/90 border border-amber-600/30 rounded-[5px]">
                                             <div className="text-[10px] text-amber-300 font-bold mb-1.5 flex items-center justify-between">
                                                 <span>រូបភាពភស្តុតាងបានភ្ជាប់ ({form.photos?.length || 1} រូប)</span>
-                                                <span className="text-[9px] text-gray-400 font-normal">អាចចុច Upload បន្ថែមរូបទៀតបាន</span>
+                                                <span className="text-[9px] text-gray-400 font-normal">{t('uploadMorePhotosHint')}</span>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap max-h-36 overflow-y-auto p-2">
                                                 {(Array.isArray(form.photos) && form.photos.length > 0 ? form.photos : [form.googleDrivePhotoUrl]).filter(Boolean).map((imgUrl, pIdx) => (
@@ -655,7 +655,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                                             type="button"
                                                             onClick={() => handleRemovePhoto(pIdx)}
                                                             className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold hover:bg-rose-500 cursor-pointer shadow-md opacity-90 group-hover:opacity-100"
-                                                            title="Remove photo"
+                                                            title={t('removePhoto')}
                                                         >
                                                             ✕
                                                         </button>
@@ -677,14 +677,14 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                         <div className="grid grid-cols-4 gap-3">
                             <Field label="Device Model">
                                 <select id="model" value={form.model || ''} onChange={handleChange} required className={`${sel} font-semibold`}>
-                                    <option value="">Select Device Model</option>
+                                    <option value="">{t('selectDeviceModel')}</option>
                                     {modelsList.map((m, idx) => <option key={idx} value={m}>{m}</option>)}
                                     {form.model && !modelsList.includes(form.model) && <option value={form.model}>{form.model}</option>}
                                 </select>
                             </Field>
-                            <AutoField id="serialNumber" label="Serial Number" value={form.serialNumber} placeholder="Serial Number" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder="IMEI 1" font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <Field label="IMEI 2"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder="IMEI 2" /></Field>
+                            <AutoField id="serialNumber" label="Serial Number" value={form.serialNumber} placeholder={t('serialNumber')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder={t('imei1')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                            <Field label="IMEI 2"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder={t('imei2')} /></Field>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                             <Field label="MEID Number">
@@ -693,8 +693,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <Field label="Version">
                                 <input className={`${inp} text-indigo-300 font-semibold`} type="text" id="version" value={form.version || ''} onChange={handleChange} placeholder="e.g. Android 14 / iOS 18" />
                             </Field>
-                            <Field label="Color"><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder="e.g. Midnight Black" /></Field>
-                            <Field label="Capacity / Storage"><input className={inp} type="text" id="capacity" value={form.capacity || ''} onChange={handleChange} placeholder="e.g. 128 GB / 256 GB" /></Field>
+                            <Field label={t('color')}><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder={t('deviceColorPlaceholder')} /></Field>
+                            <Field label={t('capacityStorage')}><input className={inp} type="text" id="capacity" value={form.capacity || ''} onChange={handleChange} placeholder={t('deviceCapacityPlaceholder')} /></Field>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                             <Field label="Device Problem">
@@ -703,7 +703,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     value={form.deviceProblem || ''}
                                     onChange={handleChange}
                                     rows={3}
-                                    placeholder="Describe any device issues, damages, or notes... (e.g. Screen cracked, battery weak, speaker not working)"
+                                    placeholder={t('deviceIssuesPlaceholder')}
                                     className={`${inp} resize-none text-amber-300 font-medium`}
                                 />
                             </Field>
@@ -712,17 +712,17 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <div className="p-2 bg-purple-900/20 border border-purple-700/40 rounded-[5px] flex items-center gap-4">
                                 <FaMobileAlt className="text-purple-400 text-3xl flex-shrink-0" />
                                 <div className="grid grid-cols-4 gap-x-4 gap-y-2 w-full text-xs">
-                                    <div><span className="text-gray-500 block text-[10px]">Model</span><span className="text-purple-300 font-bold">{form.model || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">Serial No.</span><span className="text-gray-100 font-mono font-bold">{form.serialNumber || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">IMEI 1</span><span className="text-gray-100 font-mono font-bold">{formatIMEI(form.imei1)}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">IMEI 2</span><span className="text-gray-100 font-mono font-bold">{formatIMEI(form.imei2)}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">MEID</span><span className="text-pink-400 font-mono font-semibold">{form.meid || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">Version / OS</span><span className="text-indigo-300 font-bold">{form.version || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">Color</span><span className="text-gray-100">{form.color || '—'}</span></div>
-                                    <div><span className="text-gray-500 block text-[10px]">Brand</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('model')}</span><span className="text-purple-300 font-bold">{form.model || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('serialNumber')}</span><span className="text-gray-100 font-mono font-bold">{form.serialNumber || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('imei1')}</span><span className="text-gray-100 font-mono font-bold">{formatIMEI(form.imei1)}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('imei2')}</span><span className="text-gray-100 font-mono font-bold">{formatIMEI(form.imei2)}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('deviceMeid')}</span><span className="text-pink-400 font-mono font-semibold">{form.meid || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('deviceVersionOs')}</span><span className="text-indigo-300 font-bold">{form.version || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('deviceColor')}</span><span className="text-gray-100">{form.color || '—'}</span></div>
+                                    <div><span className="text-gray-500 block text-[10px]">{t('brand')}</span><span className="text-gray-100 font-semibold">{form.brand || '—'}</span></div>
                                     {form.deviceProblem && (
                                         <div className="col-span-4 p-2 bg-amber-900/20 border border-amber-700/40 rounded-[5px]">
-                                            <span className="text-amber-400 block text-[10px] font-bold mb-0.5">Device Problem</span>
+                                            <span className="text-amber-400 block text-[10px] font-bold mb-0.5">{t('deviceProblem')}</span>
                                             <span className="text-amber-300 text-[11px] font-medium">{form.deviceProblem}</span>
                                         </div>
                                     )}
@@ -756,50 +756,50 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             </Field>
                             <Field label="Total Loan Amount ($)">
                                 <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
-                                    type="number" id="amount" value={form.amount || ''} onChange={handleChange} placeholder="Amount" />
+                                    type="number" id="amount" value={form.amount || ''} onChange={handleChange} placeholder={t('amount')} />
                             </Field>
                             <Field label="Customer Received ($)">
                                 <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
-                                    type="number" id="monthlyPayment" value={form.monthlyPayment || ''} onChange={handleChange} placeholder="Monthly Payment" />
+                                    type="number" id="monthlyPayment" value={form.monthlyPayment || ''} onChange={handleChange} placeholder={t('monthlyPayment')} />
                             </Field>
-                            <Field label="Interest Rate"><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
-                            <Field label="Duration"><input className={inp} type="text" id="duration" value={form.duration || ''} onChange={handleChange} placeholder="e.g. 12 Months" /></Field>
+                            <Field label={t('interestRate')}><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
+                            <Field label={t('duration')}><input className={inp} type="text" id="duration" value={form.duration || ''} onChange={handleChange} placeholder="e.g. 12 Months" /></Field>
                         </div>
                         <div className="p-2 bg-emerald-900/20 border border-emerald-700/40 rounded-[5px]">
-                            <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">Loan Summary Preview</p>
+                            <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">{t('loanSummaryPreview')}</p>
                             <div className="grid grid-cols-5 gap-3 text-xs mb-3">
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 block text-[10px] mb-1">Contract IID (Manual)</span>
+                                    <span className="text-gray-500 block text-[10px] mb-1">{t('contractIidManual')}</span>
                                     <span className="text-indigo-400 font-mono font-bold text-sm">
                                         {(form.brand || user?.brand || 'M8').trim()}-{currentYear}-{String(form.contractSuffix || '1').replace(/[^0-9]/g, '').padStart(9, '0')}
                                     </span>
                                 </div>
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 block text-[10px] mb-1">Contract ID (Auto)</span>
+                                    <span className="text-gray-500 block text-[10px] mb-1">{t('contractIdAuto')}</span>
                                     <span className="text-amber-300 font-mono font-bold text-sm">
                                         {form.contractId || `CT-${currentYear}-...`}
                                     </span>
                                 </div>
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 block text-[10px] mb-1">Total Loan Amount</span>
+                                    <span className="text-gray-500 block text-[10px] mb-1">{t('customerTotalLoanAmount')}</span>
                                     <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.amount || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 block text-[10px] mb-1">Customer Received</span>
+                                    <span className="text-gray-500 block text-[10px] mb-1">{t('ctmReceived')}</span>
                                     <span className="text-emerald-400 font-mono font-bold text-base">${Number(form.monthlyPayment || 0).toLocaleString()}</span>
                                 </div>
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 block text-[10px] mb-1">Interest · Duration</span>
+                                    <span className="text-gray-500 block text-[10px] mb-1">{t('interestDuration')}</span>
                                     <span className="text-gray-200 font-bold">{form.interest || '14%'} · {form.duration || '12 Mo'}</span>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-xs">
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 text-[10px] block">Customer</span>
+                                    <span className="text-gray-500 text-[10px] block">{t('customerLabel')}</span>
                                     <span className="text-gray-100 font-semibold">{form.customerNameEn || '—'}{form.customerNameKh ? ` (${form.customerNameKh})` : ''}</span>
                                 </div>
                                 <div className="p-2 bg-gray-900/60 rounded-[5px] border border-gray-800">
-                                    <span className="text-gray-500 text-[10px] block">Device</span>
+                                    <span className="text-gray-500 text-[10px] block">{t('deviceLabel')}</span>
                                     <span className="text-gray-100 font-semibold">{form.model || '—'}{form.serialNumber ? ` · ${form.serialNumber}` : ''}</span>
                                 </div>
                             </div>

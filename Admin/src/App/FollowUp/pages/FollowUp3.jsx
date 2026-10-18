@@ -387,7 +387,7 @@ const FollowUp3 = () => {
             fetchDroplists();
         } catch (err) {
             console.error('Submit form error:', err);
-            alert(`Error: ${err.message}`);
+            alert(`${t('error')}: ${err.message}`);
         } finally {
             setSubmitting(false);
         }
@@ -412,7 +412,7 @@ const FollowUp3 = () => {
             fetchDroplists();
         } catch (err) {
             console.error('Delete record error:', err);
-            alert(`Error deleting record: ${err.message}`);
+            alert(`${t('errorDeletingRecord')}: ${err.message}`);
         } finally {
             setDeleting(false);
         }
@@ -472,7 +472,7 @@ const FollowUp3 = () => {
             const items = resJson.data || [];
 
             if (items.length === 0) {
-                alert('No follow up 3 data found in the selected date range to export.');
+                alert(t('noFollowUp3DataInSelectedDateRange'));
                 setIsExporting(false);
                 return;
             }
@@ -487,7 +487,7 @@ const FollowUp3 = () => {
                 { header: t('location'), accessor: (row) => row.location || '' },
                 { header: t('source'), accessor: (row) => row.source || '' },
                 {
-                    header: 'ចំនួនស្នើបញ្ចាំ ($)',
+                    header: `${t('requestedAmount')} ($)`,
                     accessor: (row) => row.requestedAmount !== undefined && row.requestedAmount !== ''
                         ? `$${Number(row.requestedAmount || 0).toLocaleString()}`
                         : ''
@@ -503,7 +503,7 @@ const FollowUp3 = () => {
             const summaryRow = {
                 isGrandTotal: true,
                 date: t('grandTotal'),
-                customerName: `សរុប ${items.length} នាក់`,
+                customerName: `${t('total')} ${items.length} ${t('people')}`,
                 phone: '',
                 location: '',
                 source: '',
@@ -528,7 +528,7 @@ const FollowUp3 = () => {
             setIsExportModalOpen(false);
         } catch (err) {
             console.error('Export error:', err);
-            alert(`Export failed: ${err.message}`);
+            alert(`${t('exportFailed')}: ${err.message}`);
         } finally {
             setIsExporting(false);
         }
@@ -578,7 +578,7 @@ const FollowUp3 = () => {
                 <div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                            {t('followUp3') || 'Follow up 3'}
+                            {t('followUp3')}
                         </h1>
                     </div>
                 </div>
@@ -591,7 +591,7 @@ const FollowUp3 = () => {
                             className="px-3.5 py-2 rounded-[5px] border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-sm cursor-pointer"
                         >
                             <FaFileDownload className="text-sm" />
-                            <span>{t('export') || 'Export'}</span>
+                            <span>{t('export')}</span>
                         </button>
                     )}
 
@@ -602,7 +602,7 @@ const FollowUp3 = () => {
                             className="px-4 py-2 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 transition shadow-md shadow-emerald-600/25 cursor-pointer"
                         >
                             <FaPlusCircle className="text-sm" />
-                            <span>{t('create') || 'បង្កើតថ្មី'}</span>
+                            <span>{t('create')}</span>
                         </button>
                     )}
                 </div>
@@ -620,7 +620,7 @@ const FollowUp3 = () => {
                             <h3 className="text-2xl sm:text-3xl font-black text-slate-800 mt-1">
                                 {Number(summary.totalRecords || 0).toLocaleString()}
                             </h3>
-                            <p className="text-xs text-slate-400 mt-1">អតិថិជនបានតាមដាន</p>
+                            <p className="text-xs text-slate-400 mt-1">{t('customersFollowedUp')}</p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaListUl />
@@ -633,12 +633,12 @@ const FollowUp3 = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                {t('totalRequestedAmount') || 'ចំនួនស្នើបញ្ចាំសរុប ($)'}
+                                {t('totalRequestedAmount')}
                             </p>
                             <h3 className="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">
                                 ${Number(summary.totalRequestedAmount || 0).toLocaleString()}
                             </h3>
-                            <p className="text-xs text-slate-400 mt-1">ទឹកប្រាក់ស្នើសុំសរុប</p>
+                            <p className="text-xs text-slate-400 mt-1">{t('totalRequestedAmountDescription')}</p>
                         </div>
                         <div className="w-12 h-12 rounded-[5px] bg-teal-50 text-teal-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
                             <FaDollarSign />
@@ -665,7 +665,7 @@ const FollowUp3 = () => {
                             ...(selectedBrand ? { brand: selectedBrand } : {})
                         }}
                         value={searchTerm}
-                        placeholder="ស្វែងរកតាម ឈ្មោះ, លេខទូរស័ព្ទ, ទីតាំង, អ្នកឆ្លើយតប, Username, បរិយាយ..."
+                        placeholder={t('searchFollowUp3Placeholder')}
                         onChange={(value) => {
                             setSearchTerm(value);
                             setSelectedSearchRecord(null);
@@ -699,7 +699,7 @@ const FollowUp3 = () => {
                             onChange={(e) => setSelectedBrand(e.target.value)}
                             className="w-full lg:w-auto px-3 py-2 rounded-[5px] border border-slate-200 text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                         >
-                            <option value="">{t('allBrandsShort')} ទាំងអស់</option>
+                            <option value="">{t('allBrandsShort')}</option>
                             {brandsList.map(b => (
                                 <option key={b} value={b}>{b}</option>
                             ))}
@@ -713,7 +713,7 @@ const FollowUp3 = () => {
                             className="flex-1 lg:flex-none px-4 py-2.5 rounded-[5px] bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
                         >
                             <FaFilter className="text-xs" />
-                            <span>ស្វែងរក</span>
+                            <span>{t('search')}</span>
                         </button>
 
                         {(searchTerm || filterDate || startDate || endDate || selectedBrand) && (
@@ -728,7 +728,7 @@ const FollowUp3 = () => {
                                     setSelectedBrand('');
                                 }}
                                 className="px-3 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs sm:text-sm font-bold transition cursor-pointer"
-                                title="Clear Filters"
+                                title={t('clear')}
                             >
                                 <FaTimes />
                             </button>
@@ -744,18 +744,18 @@ const FollowUp3 = () => {
                         <thead>
                             <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] sm:text-xs font-black text-slate-600 uppercase tracking-wider">
                                 <th className="py-3.5 px-4 text-center w-12">#</th>
-                                <th className="py-3.5 px-4">កាលបរិច្ឆេទ</th>
-                                <th className="py-3.5 px-4">ឈ្មោះអតិថិជន</th>
-                                <th className="py-3.5 px-4">លេខទូរស័ព្ទ</th>
-                                <th className="py-3.5 px-4">ទីតាំង</th>
-                                <th className="py-3.5 px-4">តាមរយៈ</th>
-                                <th className="py-3.5 px-4 text-right">ចំនួនស្នើបញ្ចាំ</th>
-                                <th className="py-3.5 px-4">ប្រភេទទ្រព្យ</th>
-                                <th className="py-3.5 px-4 min-w-[150px]">បរិយាយ</th>
-                                <th className="py-3.5 px-4 text-center">Link</th>
-                                <th className="py-3.5 px-4">អ្នកឆ្លើយតប</th>
-                                <th className="py-3.5 px-4">Username</th>
-                                <th className="py-3.5 px-4 text-center">សកម្មភាព</th>
+                                <th className="py-3.5 px-4">{t('date')}</th>
+                                <th className="py-3.5 px-4">{t('customerName')}</th>
+                                <th className="py-3.5 px-4">{t('phone')}</th>
+                                <th className="py-3.5 px-4">{t('location')}</th>
+                                <th className="py-3.5 px-4">{t('source')}</th>
+                                <th className="py-3.5 px-4 text-right">{t('requestedAmount')}</th>
+                                <th className="py-3.5 px-4">{t('collateral')}</th>
+                                <th className="py-3.5 px-4 min-w-[150px]">{t('description')}</th>
+                                <th className="py-3.5 px-4 text-center">{t('link')}</th>
+                                <th className="py-3.5 px-4">{t('responder')}</th>
+                                <th className="py-3.5 px-4">{t('username')}</th>
+                                <th className="py-3.5 px-4 text-center">{t('actionLabel')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs sm:text-sm text-slate-700">
@@ -764,14 +764,14 @@ const FollowUp3 = () => {
                                     <td colSpan="13" className="py-12 text-center text-slate-400">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="w-7 h-7 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                                            <span className="font-semibold text-xs">កំពុងទាញយកទិន្នន័យ...</span>
+                                            <span className="font-semibold text-xs">{t('loading')}</span>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (selectedSearchRecord ? [selectedSearchRecord] : dataList).length === 0 ? (
                                 <tr>
                                     <td colSpan="13" className="py-12 text-center text-slate-400 font-semibold text-xs">
-                                        មិនមានទិន្នន័យ Follow Up 3 នៅក្នុងប្រព័ន្ធឡើយ
+                                        {t('noData')}
                                     </td>
                                 </tr>
                             ) : (
@@ -874,7 +874,7 @@ const FollowUp3 = () => {
                                                             title={item.link}
                                                         >
                                                             <FaExternalLinkAlt className="text-xs" />
-                                                            <span>បើក Link</span>
+                                                            <span>{t('openLink')}</span>
                                                         </a>
                                                         <CopyCell text={item.link} />
                                                     </div>
@@ -914,7 +914,7 @@ const FollowUp3 = () => {
                                                         <button
                                                             onClick={() => handleOpenEdit(item)}
                                                             className="p-2 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition cursor-pointer"
-                                                            title="Edit"
+                                                            title={t('edit')}
                                                         >
                                                             <FaEdit className="text-xs" />
                                                         </button>
@@ -923,7 +923,7 @@ const FollowUp3 = () => {
                                                         <button
                                                             onClick={() => setDeleteModalItem(item)}
                                                             className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
-                                                            title="Delete"
+                                                            title={t('delete')}
                                                         >
                                                             <FaTrashAlt className="text-xs" />
                                                         </button>
@@ -942,7 +942,7 @@ const FollowUp3 = () => {
                 {!selectedSearchRecord && !loading && total > 0 && (
                     <div className="p-2 border-t border-slate-100 flex items-center justify-between">
                         <p className="text-xs text-slate-500 font-medium">
-                            បង្ហាញ <span className="font-bold text-slate-800">{Math.min((page - 1) * LIMIT + 1, total)}</span> - <span className="font-bold text-slate-800">{Math.min(page * LIMIT, total)}</span> នៃ <span className="font-bold text-slate-800">{total}</span>
+                            {t('showing')} <span className="font-bold text-slate-800">{Math.min((page - 1) * LIMIT + 1, total)}</span> - <span className="font-bold text-slate-800">{Math.min(page * LIMIT, total)}</span> {t('auditOf')} <span className="font-bold text-slate-800">{total}</span>
                         </p>
                         <Pagination
                             currentPage={page}
@@ -966,10 +966,10 @@ const FollowUp3 = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-black text-slate-800">
-                                        {editingItem ? [t('editFollowUp3')]: 'បង្កើត Follow Up 3 ថ្មី'}
+                                        {editingItem ? t('editFollowUp3') : `${t('create')} ${t('followUp3')}`}
                                     </h3>
                                     <p className="text-xs text-slate-400 font-medium">
-                                        អាចវាយបញ្ចូលដោយសេរី ឬជ្រើសរើសពី Droplist
+                                        {t('freeTextOrChooseFromDroplist')}
                                     </p>
                                 </div>
                             </div>
@@ -990,10 +990,10 @@ const FollowUp3 = () => {
                                     </div>
                                     <div>
                                         <p className="text-xs font-black text-emerald-900">
-                                            រកឃើញទិន្នន័យអតិថិជនធ្លាប់បញ្ចូលពីមុន៖ {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
+                                            {t('existingCustomerRecordFound')}: {detectedMatch.customerName} {detectedMatch.phone ? `(${detectedMatch.phone})` : ''}
                                         </p>
                                         <p className="text-[11px] text-emerald-700 font-medium">
-                                            ទីតាំង: {detectedMatch.location || '—'} | តាមរយៈ: {detectedMatch.source || '—'} | ប្រភេទទ្រព្យ: {detectedMatch.collateralType || '—'}
+                                            {t('location')}: {detectedMatch.location || '—'} | {t('source')}: {detectedMatch.source || '—'} | {t('collateral')}: {detectedMatch.collateralType || '—'}
                                         </p>
                                     </div>
                                 </div>
@@ -1010,7 +1010,7 @@ const FollowUp3 = () => {
                                         type="button"
                                         onClick={() => setDetectedMatch(null)}
                                         className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-                                        title="Dismiss"
+                                        title={t('close')}
                                     >
                                         <FaTimes className="text-xs" />
                                     </button>
@@ -1025,7 +1025,7 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaRegCalendarAlt className="text-slate-400" />
-                                        <span>កាលបរិច្ឆេទ <span className="text-rose-500">*</span></span>
+                                        <span>{t('date')} <span className="text-rose-500">*</span></span>
                                     </label>
                                     <input
                                         type="date"
@@ -1040,13 +1040,13 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaUserTie className="text-slate-400" />
-                                        <span>ឈ្មោះអតិថិជន <span className="text-rose-500">*</span></span>
+                                        <span>{t('customerName')} <span className="text-rose-500">*</span></span>
                                     </label>
                                     <input
                                         type="text"
                                         required
                                         list="fu3-customer-list"
-                                        placeholder="បញ្ចូលឈ្មោះអតិថិជន..."
+                                        placeholder={t('enterCustomerName')}
                                         value={formData.customerName}
                                         onChange={(e) => handleFieldChange('customerName', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
@@ -1057,11 +1057,11 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaPhoneAlt className="text-slate-400" />
-                                        <span>លេខទូរស័ព្ទ</span>
+                                        <span>{t('phone')}</span>
                                     </label>
                                     <input
                                         type="tel"
-                                        placeholder="012 345 678"
+                                        placeholder={t('phone')}
                                         value={formData.phone}
                                         onChange={(e) => handleFieldChange('phone', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700"
@@ -1072,12 +1072,12 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaMapMarkerAlt className="text-slate-400" />
-                                        <span>ទីតាំង</span>
+                                        <span>{t('location')}</span>
                                     </label>
                                     <input
                                         type="text"
                                         list="fu3-location-list"
-                                        placeholder="វាយបញ្ចូល ឬជ្រើសរើសទីតាំង..."
+                                        placeholder={t('typeOrSelectLocation')}
                                         value={formData.location}
                                         onChange={(e) => handleFieldChange('location', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
@@ -1093,7 +1093,7 @@ const FollowUp3 = () => {
                                     <input
                                         type="text"
                                         list="fu3-source-list"
-                                        placeholder="Facebook, Telegram, Walk-in..."
+                                        placeholder={t('sourceExamplesPlaceholder')}
                                         value={formData.source}
                                         onChange={(e) => handleFieldChange('source', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
@@ -1104,13 +1104,13 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaDollarSign className="text-slate-400" />
-                                        <span>ចំនួនស្នើបញ្ចាំ ($)</span>
+                                        <span>{t('requestedAmount')} ($)</span>
                                     </label>
                                     <input
                                         type="number"
                                         min="0"
                                         step="any"
-                                        placeholder="ឧទាហរណ៍: 500"
+                                        placeholder={t('amountExample')}
                                         value={formData.requestedAmount}
                                         onChange={(e) => handleFieldChange('requestedAmount', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-bold text-emerald-700"
@@ -1121,12 +1121,12 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaTag className="text-slate-400" />
-                                        <span>ប្រភេទទ្រព្យ</span>
+                                        <span>{t('collateral')}</span>
                                     </label>
                                     <input
                                         type="text"
                                         list="fu3-collateral-list"
-                                        placeholder="ទូរស័ព្ទ, ម៉ូតូ, ឡាន, ប្លង់ដី..."
+                                        placeholder={t('collateralTypesPlaceholder')}
                                         value={formData.collateralType}
                                         onChange={(e) => handleFieldChange('collateralType', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
@@ -1137,12 +1137,12 @@ const FollowUp3 = () => {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                         <FaComments className="text-indigo-500" />
-                                        <span>អ្នកឆ្លើយតប</span>
+                                        <span>{t('responder')}</span>
                                     </label>
                                     <input
                                         type="text"
                                         list="fu3-responder-list"
-                                        placeholder="ឈ្មោះអ្នកឆ្លើយតប..."
+                                        placeholder={t('responderNamePlaceholder')}
                                         value={formData.responder}
                                         onChange={(e) => handleFieldChange('responder', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
@@ -1158,7 +1158,7 @@ const FollowUp3 = () => {
                                     <input
                                         type="text"
                                         list="fu3-username-list"
-                                        placeholder="Staff Username..."
+                                        placeholder={t('staffUsernamePlaceholder')}
                                         value={formData.username}
                                         onChange={(e) => handleFieldChange('username', e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm font-semibold text-slate-700 bg-white"
@@ -1170,11 +1170,11 @@ const FollowUp3 = () => {
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                     <FaExternalLinkAlt className="text-slate-400" />
-                                    <span>Link (Facebook/Telegram/Chat Post URL)</span>
+                                    <span>{t('linkUrlLabel')}</span>
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="https://facebook.com/..."
+                                    placeholder={t('linkUrlPlaceholder')}
                                     value={formData.link}
                                     onChange={(e) => handleFieldChange('link', e.target.value)}
                                     className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700"
@@ -1189,7 +1189,7 @@ const FollowUp3 = () => {
                                 </label>
                                 <textarea
                                     rows="3"
-                                    placeholder="បញ្ចូលការបរិយាយបន្ថែម ឬចំណាំ..."
+                                    placeholder={t('additionalDescriptionOrNotes')}
                                     value={formData.description}
                                     onChange={(e) => handleFieldChange('description', e.target.value)}
                                     className="w-full px-3.5 py-2.5 rounded-[5px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm text-slate-700"
@@ -1203,14 +1203,14 @@ const FollowUp3 = () => {
                                     onClick={() => setIsFormOpen(false)}
                                     className="px-5 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs sm:text-sm transition cursor-pointer"
                                 >
-                                    {t('cancel') || 'បោះបង់'}
+                                    {t('cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
                                     className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs sm:text-sm transition shadow-md shadow-emerald-600/25 cursor-pointer disabled:opacity-50"
                                 >
-                                    {submitting ? 'កំពុងរក្សាទុក...' : (editingItem ? 'កែប្រែទិន្នន័យ' : 'បង្កើតទិន្នន័យ')}
+                                    {submitting ? t('saving') : (editingItem ? t('edit') : t('create'))}
                                 </button>
                             </div>
                         </form>
@@ -1226,9 +1226,9 @@ const FollowUp3 = () => {
                             <FaTrashAlt />
                         </div>
                         <div className="text-center space-y-1.5">
-                            <h3 className="text-lg font-black text-slate-800">តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?</h3>
+                            <h3 className="text-lg font-black text-slate-800">{t('confirmDeleteData')}</h3>
                             <p className="text-xs text-slate-500 font-medium">
-                                ការលុបនេះនឹងមិនអាចយកត្រឡប់មកវិញបានឡើយ សម្រាប់អតិថិជន{' '}
+                                {t('deleteIrreversibleForCustomer')}{' '}
                                 <strong className="text-slate-800">{deleteModalItem.customerName}</strong>
                             </p>
                         </div>
@@ -1238,7 +1238,7 @@ const FollowUp3 = () => {
                                 onClick={() => setDeleteModalItem(null)}
                                 className="flex-1 px-4 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
                             >
-                                {t('cancel') || 'បោះបង់'}
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"
@@ -1246,7 +1246,7 @@ const FollowUp3 = () => {
                                 onClick={confirmDelete}
                                 className="flex-1 px-4 py-2.5 rounded-[5px] bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition shadow-md shadow-rose-600/25 cursor-pointer disabled:opacity-50"
                             >
-                                {deleting ? 'កំពុងលុប...' : (t('delete') || 'លុបចេញ')}
+                                {deleting ? t('deleting') : t('delete')}
                             </button>
                         </div>
                     </div>
@@ -1260,7 +1260,7 @@ const FollowUp3 = () => {
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
                                 <FaFileDownload className="text-emerald-600" />
-                                <span>{t('export') || 'Export Follow Up 3'}</span>
+                                <span>{t('export')}</span>
                             </h3>
                             <button
                                 onClick={() => setIsExportModalOpen(false)}
@@ -1286,7 +1286,7 @@ const FollowUp3 = () => {
                                     }`}
                                 >
                                     <FaFileExcel className="text-emerald-600 text-base" />
-                                    <span>Excel (.xlsx)</span>
+                                    <span>{t('exportExcel')} (.xlsx)</span>
                                 </button>
                                 <button
                                     type="button"
@@ -1298,7 +1298,7 @@ const FollowUp3 = () => {
                                     }`}
                                 >
                                     <MdPictureAsPdf className="text-rose-600 text-base" />
-                                    <span>PDF (.pdf)</span>
+                                    <span>{t('exportPDF')} (.pdf)</span>
                                 </button>
                             </div>
                         </div>
@@ -1325,7 +1325,7 @@ const FollowUp3 = () => {
                         {exportScope === 'custom' && (
                             <div className="grid grid-cols-2 gap-3 pt-1">
                                 <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 mb-1">ពីថ្ងៃ</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 mb-1">{t('fromDate')}</label>
                                     <input
                                         type="date"
                                         value={exportStartDate}
@@ -1334,7 +1334,7 @@ const FollowUp3 = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 mb-1">ដល់ថ្ងៃ</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 mb-1">{t('toDate')}</label>
                                     <input
                                         type="date"
                                         value={exportEndDate}
@@ -1352,7 +1352,7 @@ const FollowUp3 = () => {
                                 onClick={() => setIsExportModalOpen(false)}
                                 className="px-4 py-2.5 rounded-[5px] border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer"
                             >
-                                {t('cancel') || 'បោះបង់'}
+                                {t('cancel')}
                             </button>
                             <button
                                 type="button"

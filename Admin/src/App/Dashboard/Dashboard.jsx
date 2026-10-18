@@ -25,7 +25,7 @@ import './Dashboard.css';
 import { getAutomaticPenalty, getRowWithDueDate, getRowInterest, getContractTotalInterest } from '../../utils/repaymentUtils';
 
 const Dashboard = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, API_BASE1, user } = useAuth();
 
     // ── Number & Currency Formatting ──
@@ -75,7 +75,7 @@ const Dashboard = () => {
     const [rawContracts, setRawContracts] = useState([]);
     const [rawPayments, setRawPayments] = useState([]);
     const [penaltyRulesByBrand, setPenaltyRulesByBrand] = useState({});
-    const [lastSyncTime, setLastSyncTime] = useState('មុននេះបន្តិច');
+    const [lastSyncTime, setLastSyncTime] = useState('');
 
     // Timeframe Filter State
     const [selectedTimeframe, setSelectedTimeframe] = useState('monthly'); // 'today' | '7d' | '30d' | 'monthly' | 'month_select' | 'all' | 'custom'
@@ -231,7 +231,9 @@ const Dashboard = () => {
     };
 
     // ── Timeframe Descriptions & Unified Range Computation ──
-    const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+    const monthNames = useMemo(() => Array.from({ length: 12 }, (_, month) => (
+        new Intl.DateTimeFormat(lang, { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, month, 1)))
+    )), [lang]);
 
     const dateRange = useMemo(() => {
         const today = new Date();
@@ -287,22 +289,22 @@ const Dashboard = () => {
 
     const timeframeLabel = useMemo(() => {
         switch (selectedTimeframe) {
-            case 'today': return `ថ្ងៃនេះ (${new Date().toISOString().split('T')[0]})`;
-            case '7d': return '៧ ថ្ងៃចុងក្រោយ';
-            case '30d': return '៣០ ថ្ងៃចុងក្រោយ';
-            case 'all': return 'ទិន្នន័យទាំងអស់ (All Time)';
+            case 'today': return `${t('today')} (${new Date().toISOString().split('T')[0]})`;
+            case '7d': return t('dashboardLast7Days');
+            case '30d': return t('dashboardLast30Days');
+            case 'all': return t('dashboardAllTime');
             case 'month_select':
-                return `ខែ ${khmerMonths[(selectedMonth || 1) - 1]} ${selectedYear}`;
+                return `${monthNames[(selectedMonth || 1) - 1]} ${selectedYear}`;
             case 'custom':
                 if (customStartDate && customEndDate) {
-                    return `${customStartDate} ដល់ ${customEndDate}`;
+                    return `${customStartDate} ${t('to')} ${customEndDate}`;
                 }
-                return 'កំណត់តាមកាលបរិច្ឆេទ';
+                return t('dashboardCustomDateRange');
             case 'monthly':
             default:
-                return `ប្រចាំខែ (${khmerMonths[new Date().getMonth()]} ${new Date().getFullYear()})`;
+                return `${monthNames[new Date().getMonth()]} ${new Date().getFullYear()}`;
         }
-    }, [selectedTimeframe, selectedMonth, selectedYear, customStartDate, customEndDate]);
+    }, [t, monthNames, selectedTimeframe, selectedMonth, selectedYear, customStartDate, customEndDate]);
 
     // ── Filter Contracts by Timeframe (Matching Loan Date or Installment Due Date) ──
     const filteredContracts = useMemo(() => {
@@ -843,11 +845,11 @@ const Dashboard = () => {
 
     const handleApplyCustomDateRange = () => {
         if (!customStartDate || !customEndDate) {
-            setCustomDateError('សូមជ្រើសរើសថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់');
+            setCustomDateError(t('dashboardSelectDateRangeError'));
             return;
         }
         if (new Date(customStartDate) > new Date(customEndDate)) {
-            setCustomDateError('ថ្ងៃចាប់ផ្តើមត្រូវតែតូចជាង ឬស្មើថ្ងៃបញ្ចប់');
+            setCustomDateError(t('dashboardDateRangeOrderError'));
             return;
         }
         setCustomDateError(null);
@@ -867,7 +869,7 @@ const Dashboard = () => {
             .join('\n');
 
         const iframe = document.createElement('iframe');
-        iframe.setAttribute('title', 'Dashboard Print Frame');
+        iframe.setAttribute('title', `${t('dashboard')} ${t('dashboardPrintReport')}`);
         iframe.style.position = 'fixed';
         iframe.style.right = '0';
         iframe.style.bottom = '0';
@@ -884,7 +886,7 @@ const Dashboard = () => {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Dashboard Report</title>
+                <title>${t('dashboard')} ${t('report')}</title>
                 ${styles}
                 <style>
                     @page {
@@ -1066,7 +1068,7 @@ const Dashboard = () => {
                                     onChange={(e) => setBrandFilter(e.target.value)}
                                     className="brand-filter-select desktop-only"
                                 >
-                                    <option value="">{t('allBrands') || 'គ្រប់ Brand ទាំងអស់'}</option>
+                                    <option value="">{t('allBrands')}</option>
                                     {brandsList.map((b, i) => (
                                         <option key={i} value={typeof b === 'string' ? b : b.name || ''}>
                                             {typeof b === 'string' ? b : b.name || ''}
@@ -1077,9 +1079,9 @@ const Dashboard = () => {
 
                             {/* Overdue Alert Chip */}
                             {totalOverdueAlertCount > 0 && (
-                                <div className="system-alert-chip" title={`មាន ${totalOverdueAlertCount} កុងត្រាហួសថ្ងៃកំណត់បង់ប្រាក់`}>
+                                <div className="system-alert-chip" title={`${t('dashboardOverdueAlertTitle')} ${totalOverdueAlertCount}`}>
                                     <FaTriangleExclamation />
-                                    <span>ហួសកំណត់: <strong>{totalOverdueAlertCount}</strong></span>
+                                    <span>{t('overdueCustomers')}: <strong>{totalOverdueAlertCount}</strong></span>
                                 </div>
                             )}
 
@@ -1087,13 +1089,13 @@ const Dashboard = () => {
                             <div className="system-status-chip">
                                 <div className="status-live-indicator">
                                     <span className="live-status-dot"></span>
-                                    <span className="status-text desktop-only">ប្រព័ន្ធដំណើរការល្អ</span>
-                                    <span className="status-text mobile-only">Online</span>
+                                    <span className="status-text desktop-only">{t('dashboardSystemHealthy')}</span>
+                                    <span className="status-text mobile-only">{t('online')}</span>
                                 </div>
                                 <span className="status-divider desktop-only">·</span>
                                 <div className="sync-time-box desktop-only">
                                     <FaClock />
-                                    <span>បច្ចុប្បន្នភាព: {lastSyncTime}</span>
+                                    <span>{t('dashboardLastUpdated')}: {lastSyncTime || t('now')}</span>
                                 </div>
                             </div>
                         </div>
@@ -1108,11 +1110,11 @@ const Dashboard = () => {
                                 <FaChartLine />
                             </div>
                             <div className="title-text-group">
-                                <h2>Dashboard</h2>
+                                <h2>{t('dashboard')}</h2>
                             </div>
                         </div>
                         <div className="header-desc-row">
-                            <p className="header-desc">ផ្ទាំងគ្រប់គ្រងសង្ខេបប្រតិបត្តិ ឥណទាន និងទូរស័ព្ទ MDM</p>
+                            <p className="header-desc">{t('dashboardDescription')}</p>
                             <span className="desc-timeframe-tag">
                                 <FaCalendarCheck /> {timeframeLabel}
                             </span>
@@ -1123,11 +1125,11 @@ const Dashboard = () => {
                         <button
                             type="button"
                             className="btn-action btn-print"
-                            title="បោះពុម្ព ឬទាញយកជារបាយការណ៍ PDF"
+                            title={t('dashboardPrintReport')}
                             onClick={handlePrint}
                         >
                             <FaPrint />
-                            <span>Print Report</span>
+                            <span>{t('dashboardPrintReport')}</span>
                         </button>
                     </div>
                 </div>
@@ -1140,7 +1142,7 @@ const Dashboard = () => {
                     {/* Card 1: Disbursed */}
                     <div className="exec-card card-disbursed">
                         <div className="exec-card-header">
-                            <span className="card-label">ឥណទានបញ្ចេញសរុប</span>
+                            <span className="card-label">{t('dashboardTotalDisbursed')}</span>
                             <div className="exec-card-icon icon-blue">
                                 <FaCreditCard />
                             </div>
@@ -1148,9 +1150,9 @@ const Dashboard = () => {
                         <div className="card-value">{formatMoney(totalDisbursedAmount)}</div>
                         <div className="exec-card-footer">
                             <div className="stacked-stat">
-                                <span>អតិថិជន: <strong>{formatNumber(activatedCount)} នាក់</strong></span>
-                                <span>អតិថិជនសរុប: <strong>{formatNumber(totalCount)} នាក់</strong></span>
-                                <span>ឥណទានសរុប: <strong>{formatMoney(totalDisbursedAmount)}</strong></span>
+                                <span>{t('dashboardCustomers')}: <strong>{formatNumber(activatedCount)} {t('people')}</strong></span>
+                                <span>{t('totalCustomers')}: <strong>{formatNumber(totalCount)} {t('people')}</strong></span>
+                                <span>{t('dashboardTotalLoans')}: <strong>{formatMoney(totalDisbursedAmount)}</strong></span>
                             </div>
                         </div>
                     </div>
@@ -1158,7 +1160,7 @@ const Dashboard = () => {
                     {/* Card 2: Collected */}
                     <div className="exec-card card-collected">
                         <div className="exec-card-header">
-                            <span className="card-label">ប្រាក់ប្រមូលបានសរុប</span>
+                            <span className="card-label">{t('dashboardTotalCollected')}</span>
                             <div className="exec-card-icon icon-green">
                                 <FaArrowTrendUp />
                             </div>
@@ -1166,9 +1168,9 @@ const Dashboard = () => {
                         <div className="card-value color-green">{formatMoney(totalCollectedRevenue)}</div>
                         <div className="exec-card-footer">
                             <div className="stacked-stat">
-                                <span>បានបង់: <strong>{formatNumber(totalPaidInstallmentsCount)} លើក</strong></span>
-                                <span>ការប្រាក់ប្រមូលបាន: <strong className="color-green">{formatMoney(totalCollectedInterest)}</strong></span>
-                                <span>ប្រមូលបាន: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
+                                <span>{t('dashboardPaymentsMade')}: <strong>{formatNumber(totalPaidInstallmentsCount)} {t('dashboardPaymentsCount')}</strong></span>
+                                <span>{t('dashboardInterestCollected')}: <strong className="color-green">{formatMoney(totalCollectedInterest)}</strong></span>
+                                <span>{t('dashboardCollectionRate')}: <strong>{totalDisbursedAmount > 0 ? ((totalCollectedRevenue / totalDisbursedAmount) * 100).toFixed(2) : '0.00'}%</strong></span>
                             </div>
                         </div>
                     </div>
@@ -1176,7 +1178,7 @@ const Dashboard = () => {
                     {/* Card 3: Scheduled */}
                     <div className="exec-card card-scheduled">
                         <div className="exec-card-header">
-                            <span className="card-label">ប្រាក់ត្រូវប្រមូលសរុប</span>
+                            <span className="card-label">{t('dashboardTotalScheduled')}</span>
                             <div className="exec-card-icon icon-purple">
                                 <FaReceipt />
                             </div>
@@ -1184,11 +1186,11 @@ const Dashboard = () => {
                         <div className="card-value color-purple">{formatMoney(totalScheduledAmount)}</div>
                         <div className="exec-card-footer split-footer">
                             <div className="stacked-stat">
-                                <span>ការប្រាក់ត្រូវប្រមូល: <strong className="color-purple">{formatMoney(totalScheduledInterest)}</strong></span>
-                                <span>ពិន័យសរុប: <strong>{formatMoney(totalPenaltyAll)}</strong></span>
-                                <span>ពិន័យបានបង់: <strong>{formatMoney(totalPaidPenalty)}</strong></span>
-                                <span>ពិន័យមិនទាន់បង់: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
-                                <span>កាតព្វកិច្ចសរុប: <strong>{formatMoney(totalObligation)}</strong></span>
+                                <span>{t('dashboardInterestScheduled')}: <strong className="color-purple">{formatMoney(totalScheduledInterest)}</strong></span>
+                                <span>{t('dashboardTotalPenalty')}: <strong>{formatMoney(totalPenaltyAll)}</strong></span>
+                                <span>{t('dashboardPenaltyPaid')}: <strong>{formatMoney(totalPaidPenalty)}</strong></span>
+                                <span>{t('dashboardPenaltyUnpaid')}: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
+                                <span>{t('dashboardTotalObligation')}: <strong>{formatMoney(totalObligation)}</strong></span>
                             </div>
                         </div>
                     </div>
@@ -1196,7 +1198,7 @@ const Dashboard = () => {
                     {/* Card 4: Outstanding */}
                     <div className="exec-card card-outstanding">
                         <div className="exec-card-header">
-                            <span className="card-label">ប្រាក់នៅសល់មិនទាន់ប្រមូល</span>
+                            <span className="card-label">{t('dashboardOutstanding')}</span>
                             <div className="exec-card-icon icon-orange">
                                 <FaLock />
                             </div>
@@ -1204,9 +1206,9 @@ const Dashboard = () => {
                         <div className="card-value color-orange">{formatMoney(totalOutstandingAmount)}</div>
                         <div className="exec-card-footer">
                             <div className="stacked-stat">
-                                <span>ការប្រាក់នៅសល់: <strong className="color-orange">{formatMoney(totalOutstandingInterest)}</strong></span>
-                                <span>ពិន័យមិនទាន់ប្រមូល: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
-                                <span>អត្រាមិនទាន់ប្រមូល: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
+                                <span>{t('dashboardInterestOutstanding')}: <strong className="color-orange">{formatMoney(totalOutstandingInterest)}</strong></span>
+                                <span>{t('dashboardPenaltyUncollected')}: <strong>{formatMoney(totalUnpaidPenalty)}</strong></span>
+                                <span>{t('dashboardOutstandingRate')}: <strong>{totalObligation > 0 ? ((totalOutstandingAmount / totalObligation) * 100).toFixed(2) : '0.00'}%</strong></span>
                             </div>
                         </div>
                     </div>
@@ -1222,39 +1224,39 @@ const Dashboard = () => {
                                     <div className="mini-icon green-icon">
                                         <FaChartArea />
                                     </div>
-                                    <h3>ក្រាហ្វិកប្រាក់ប្រមូល & អតិថិជន</h3>
+                                    <h3>{t('dashboardCollectionChartTitle')}</h3>
                                 </div>
-                                <span className="c-subtitle">បង្ហាញពីលំហូរទឹកប្រាក់ប្រមូលបាន ឥណទានបញ្ចេញ និងចំនួនអតិថិជន Activated</span>
+                                <span className="c-subtitle">{t('dashboardCollectionChartSubtitle')}</span>
                             </div>
 
                             <div className="chart-controls">
                                 <div className="custom-legend">
                                     <span className="legend-badge">
                                         <span className="legend-dot dot-green"></span>
-                                        <span className="legend-text-full desktop-only">ប្រាក់ប្រមូលបាន</span>
-                                        <span className="legend-text-short mobile-only">ប្រមូល</span>
+                                        <span className="legend-text-full desktop-only">{t('dashboardCollected')}</span>
+                                        <span className="legend-text-short mobile-only">{t('dashboardCollectedShort')}</span>
                                     </span>
                                     <span className="legend-badge">
                                         <span className="legend-dot dot-blue"></span>
-                                        <span className="legend-text-full desktop-only">ឥណទានបញ្ចេញ</span>
-                                        <span className="legend-text-short mobile-only">ឥណទាន</span>
+                                        <span className="legend-text-full desktop-only">{t('dashboardDisbursed')}</span>
+                                        <span className="legend-text-short mobile-only">{t('dashboardDisbursedShort')}</span>
                                     </span>
                                     <span className="legend-badge">
                                         <span className="legend-dot dot-purple"></span>
-                                        <span className="legend-text-full desktop-only">ចំនួនអតិថិជន</span>
-                                        <span className="legend-text-short mobile-only">អតិថិជន</span>
+                                        <span className="legend-text-full desktop-only">{t('totalCustomers')}</span>
+                                        <span className="legend-text-short mobile-only">{t('customer')}</span>
                                     </span>
                                 </div>
 
                                 <div className="timeframe-container" ref={popoverRef}>
                                     <div className="timeframe-switch">
                                         {[
-                                            { key: 'today', label: 'ថ្ងៃនេះ' },
-                                            { key: '7d', label: '៧ ថ្ងៃ' },
-                                            { key: '30d', label: '៣០ ថ្ងៃ' },
-                                            { key: 'monthly', label: 'ខែនេះ' },
-                                            { key: 'all', label: 'ទាំងអស់' },
-                                            { key: 'custom', label: '📅 កំណត់ថ្ងៃ' }
+                                            { key: 'today', label: t('today') },
+                                            { key: '7d', label: t('dashboardLast7Days') },
+                                            { key: '30d', label: t('dashboardLast30Days') },
+                                            { key: 'monthly', label: t('thisMonth') },
+                                            { key: 'all', label: t('all') },
+                                            { key: 'custom', label: t('dashboardCustomDate') }
                                         ].map(item => {
                                             const isCustom = item.key === 'custom';
                                             const isActive = selectedTimeframe === item.key;
@@ -1275,7 +1277,7 @@ const Dashboard = () => {
                                                     {isCustom ? (
                                                         selectedTimeframe === 'custom' && customStartDate && customEndDate ? (
                                                             `📅 ${customStartDate.slice(5)} - ${customEndDate.slice(5)}`
-                                                        ) : '📅 កំណត់ថ្ងៃ'
+                                                        ) : t('dashboardCustomDate')
                                                     ) : item.label}
                                                 </button>
                                             );
@@ -1288,33 +1290,33 @@ const Dashboard = () => {
                                             <div className="popover-header">
                                                 <div className="popover-title">
                                                     <FaCalendarDays />
-                                                    <span>កំណត់ចន្លោះកាលបរិច្ឆេទ</span>
+                                                    <span>{t('filterDateRange')}</span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     className="btn-close-popover"
                                                     onClick={() => setIsCustomPopoverOpen(false)}
-                                                    aria-label="បិទ"
+                                                    aria-label={t('close')}
                                                 >
                                                     <FaXmark />
                                                 </button>
                                             </div>
 
                                             <div className="popover-shortcuts">
-                                                <button type="button" onClick={() => handleApplyDatePreset(7)}>៧ ថ្ងៃ</button>
-                                                <button type="button" onClick={() => handleApplyDatePreset(14)}>១៤ ថ្ងៃ</button>
-                                                <button type="button" onClick={() => handleApplyDatePreset(30)}>៣០ ថ្ងៃ</button>
+                                                <button type="button" onClick={() => handleApplyDatePreset(7)}>{t('dashboardLast7Days')}</button>
+                                                <button type="button" onClick={() => handleApplyDatePreset(14)}>{t('dashboardLast14Days')}</button>
+                                                <button type="button" onClick={() => handleApplyDatePreset(30)}>{t('dashboardLast30Days')}</button>
                                                 <button type="button" onClick={() => {
                                                     const d = new Date();
                                                     d.setMonth(d.getMonth() - 1);
                                                     handleApplyMonthPreset(d.getMonth() + 1, d.getFullYear());
-                                                }}>ខែមុន</button>
+                                                }}>{t('dashboardPreviousMonth')}</button>
                                             </div>
 
                                             {/* Month & Year Select Section */}
                                             <div style={{ marginBottom: 10, padding: '8px 0', borderTop: '1px dashed var(--dash-line)', borderBottom: '1px dashed var(--dash-line)' }}>
                                                 <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--dash-ink)', marginBottom: 6 }}>
-                                                    📅 ជ្រើសរើសខែ និងឆ្នាំជាក់លាក់
+                                                    {t('dashboardSelectMonthYear')}
                                                 </div>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 6, marginBottom: 6 }}>
                                                     <select
@@ -1322,8 +1324,8 @@ const Dashboard = () => {
                                                         onChange={(e) => setSelectedMonth(Number(e.target.value))}
                                                         style={{ padding: '4px 6px', fontSize: '11.5px', borderRadius: 5, border: '1px solid var(--dash-line)', background: 'var(--dash-bg)', color: 'var(--dash-ink)' }}
                                                     >
-                                                        {khmerMonths.map((mName, idx) => (
-                                                            <option key={idx + 1} value={idx + 1}>ខែ {mName}</option>
+                                                        {monthNames.map((mName, idx) => (
+                                                            <option key={idx + 1} value={idx + 1}>{mName}</option>
                                                         ))}
                                                     </select>
                                                     <select
@@ -1341,13 +1343,13 @@ const Dashboard = () => {
                                                     onClick={() => handleApplyMonthPreset(selectedMonth, selectedYear)}
                                                     style={{ width: '100%', padding: '4px', fontSize: '11px', fontWeight: 600, background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer' }}
                                                 >
-                                                    ត្រងតាមខែដែលបានជ្រើស
+                                                    {t('dashboardFilterSelectedMonth')}
                                                 </button>
                                             </div>
 
                                             <div className="popover-inputs">
                                                 <label className="date-input-group">
-                                                    <span className="input-label">ចាប់ពី</span>
+                                                    <span className="input-label">{t('from')}</span>
                                                     <input
                                                         type="date"
                                                         value={customStartDate}
@@ -1358,7 +1360,7 @@ const Dashboard = () => {
                                                     />
                                                 </label>
                                                 <label className="date-input-group">
-                                                    <span className="input-label">ដល់</span>
+                                                    <span className="input-label">{t('to')}</span>
                                                     <input
                                                         type="date"
                                                         value={customEndDate}
@@ -1380,14 +1382,14 @@ const Dashboard = () => {
                                                     className="btn-popover-cancel"
                                                     onClick={() => setIsCustomPopoverOpen(false)}
                                                 >
-                                                    បោះបង់
+                                                    {t('cancel')}
                                                 </button>
                                                 <button
                                                     type="button"
                                                     className="btn-popover-apply"
                                                     onClick={handleApplyCustomDateRange}
                                                 >
-                                                    ត្រងចន្លោះថ្ងៃ
+                                                    {t('dashboardFilterDateRange')}
                                                 </button>
                                             </div>
                                         </div>
@@ -1398,7 +1400,7 @@ const Dashboard = () => {
 
                         {/* SVG Interactive Trend Chart */}
                         <div className="line-canvas-box">
-                            <LineChartCanvas points={chartPoints} />
+                            <LineChartCanvas points={chartPoints} t={t} />
                         </div>
                     </div>
 
@@ -1410,48 +1412,48 @@ const Dashboard = () => {
                                     <div className="mini-icon purple-icon">
                                         <FaFileContract />
                                     </div>
-                                    <h3>ស្ថានភាពកិច្ចសន្យា & MDM</h3>
+                                    <h3>{t('dashboardContractStatus')}</h3>
                                 </div>
-                                <span className="c-subtitle">សរុបកិច្ចសន្យា: <strong>{formatNumber(totalCount)} ករណី</strong></span>
+                                <span className="c-subtitle">{t('totalContracts')}: <strong>{formatNumber(totalCount)} {t('dashboardCases')}</strong></span>
                             </div>
                         </div>
 
                         <div className="pipeline-list">
                             <PipelineItem
-                                label="Activated"
-                                khmerLabel="ដំណើរការ"
+                                label={t('activated')}
+                                khmerLabel=""
                                 count={activatedCount}
                                 percent={Number(activatedPct)}
                                 colorClass="fill-green"
                                 trackColor="rgba(16, 185, 129, 0.12)"
                             />
                             <PipelineItem
-                                label="Application"
-                                khmerLabel="ពាក្យស្នើសុំ"
+                                label={t('application')}
+                                khmerLabel=""
                                 count={applicationCount}
                                 percent={Number(applicationPct)}
                                 colorClass="fill-blue"
                                 trackColor="rgba(59, 130, 246, 0.12)"
                             />
                             <PipelineItem
-                                label="Check"
-                                khmerLabel="កំពុងត្រួតពិនិត្យ"
+                                label={t('check')}
+                                khmerLabel=""
                                 count={checkCount}
                                 percent={Number(checkPct)}
                                 colorClass="fill-cyan"
                                 trackColor="rgba(6, 182, 212, 0.12)"
                             />
                             <PipelineItem
-                                label="Redeem"
-                                khmerLabel="បញ្ចាំ/ដោះដូរ"
+                                label={t('redeem')}
+                                khmerLabel=""
                                 count={redeemCount}
                                 percent={Number(redeemPct)}
                                 colorClass="fill-purple"
                                 trackColor="rgba(139, 92, 246, 0.12)"
                             />
                             <PipelineItem
-                                label="Blacklist"
-                                khmerLabel="បញ្ជីខ្មៅ"
+                                label={t('blacklist')}
+                                khmerLabel=""
                                 count={blacklistCount}
                                 percent={Number(blacklistPct)}
                                 colorClass="fill-red"
@@ -1462,8 +1464,8 @@ const Dashboard = () => {
                         {/* Phone Remote Lock Ratio Panel */}
                         <div className="remote-lock-panel">
                             <div className="lock-header">
-                                <span>Phone Remote Lock Ratio</span>
-                                <span className="lock-stat-badge">{formatNumber(lockedPhones)} Locked</span>
+                                <span>{t('dashboardRemoteLockRatio')}</span>
+                                <span className="lock-stat-badge">{formatNumber(lockedPhones)} {t('locked')}</span>
                             </div>
                             <div className="lock-ratio-bar">
                                 <div className="ratio-locked" style={{ width: `${lockedRatio}%` }}></div>
@@ -1471,10 +1473,10 @@ const Dashboard = () => {
                             </div>
                             <div className="lock-footer">
                                 <span className="lock-text locked">
-                                    <FaLock /> {lockedRatio}% Locked
+                                    <FaLock /> {lockedRatio}% {t('locked')}
                                 </span>
                                 <span className="lock-text unlocked">
-                                    <FaLockOpen /> {unlockedRatio}% Unlocked
+                                    <FaLockOpen /> {unlockedRatio}% {t('unlocked')}
                                 </span>
                             </div>
                         </div>
@@ -1489,63 +1491,61 @@ const Dashboard = () => {
                                 <div className="mini-icon orange-icon">
                                     <FaUsers />
                                 </div>
-                                <h3>
-                                    លម្អិតភ្ញៀវត្រូវបង់ និងពិន័យ
-                                </h3>
+                                <h3>{t('dashboardPaymentDetails')}</h3>
                             </div>
-                            <span className="c-subtitle">បញ្ជីភ្ញៀវក្នុង {timeframeLabel} និងស្ថានភាពការបង់ប្រាក់</span>
+                            <span className="c-subtitle">{t('dashboardCustomerListFor')} {timeframeLabel} · {t('dashboardPaymentStatus')}</span>
                         </div>
                     </div>
 
                     <div className="mobile-table-hint mobile-only">
                         <FaTableCellsLarge />
-                        <span>បង្ហាញជាកាតសម្រាប់មើលងាយលើទូរស័ព្ទ</span>
+                        <span>{t('dashboardMobileTableHint')}</span>
                     </div>
 
                     {/* Sub-section 1: ភ្ញៀវត្រូវបង់ (Due) */}
                     <div className="payment-section payment-section-due">
                         <div className="payment-section-heading">
                             <h4>
-                                <FaReceipt /> ភ្ញៀវត្រូវបង់
+                                <FaReceipt /> {t('dashboardDueCustomers')}
                             </h4>
                             <div className="payment-section-summary">
                                 <span className="payment-total">
-                                    បានបង់ <strong>{formatMoney(dueTotalPaid)}</strong>
+                                    {t('paid')} <strong>{formatMoney(dueTotalPaid)}</strong>
                                 </span>
                                 <span className="payment-total">
-                                    នៅសល់ <strong>{formatMoney(dueTotalRemaining)}</strong>
+                                    {t('dashboardRemaining')} <strong>{formatMoney(dueTotalRemaining)}</strong>
                                 </span>
                                 <span className="payment-total">
-                                    ការប្រាក់សរុប <strong>{formatMoney(dueTotalInterest)}</strong>
+                                    {t('dashboardTotalInterest')} <strong>{formatMoney(dueTotalInterest)}</strong>
                                 </span>
                                 <span className="payment-total">
-                                    ពិន័យសរុប <strong>{formatMoney(dueTotalPenalty)}</strong>
+                                    {t('dashboardTotalPenalty')} <strong>{formatMoney(dueTotalPenalty)}</strong>
                                 </span>
-                                <span className="payment-count">{dueCustomerRows.length} នាក់</span>
+                                <span className="payment-count">{dueCustomerRows.length} {t('people')}</span>
                             </div>
                         </div>
-                        <CustomerTable rows={dueCustomerRows} formatMoney={formatMoney} formatNumber={formatNumber} />
+                        <CustomerTable rows={dueCustomerRows} formatMoney={formatMoney} formatNumber={formatNumber} t={t} />
                     </div>
 
                     {/* Sub-section 2: ភ្ញៀវយឺត (Late / Overdue) */}
                     <div className="payment-section payment-section-late">
                         <div className="payment-section-heading">
                             <h4>
-                                <FaClock /> ភ្ញៀវយឺត
+                                <FaClock /> {t('dashboardOverdueCustomers')}
                             </h4>
                             <div className="payment-section-summary">
                                 <span className="payment-total">
-                                    ពិន័យសរុប <strong>{formatMoney(lateTotalPenalty)}</strong>
+                                    {t('dashboardTotalPenalty')} <strong>{formatMoney(lateTotalPenalty)}</strong>
                                 </span>
-                                <span className="payment-count">{overdueCustomerRows.length} នាក់</span>
+                                <span className="payment-count">{overdueCustomerRows.length} {t('people')}</span>
                                 <select
                                     className="payment-filter-select"
-                                    aria-label="តម្រងបញ្ជីភ្ញៀវយឺត"
+                                    aria-label={t('dashboardOverdueFilter')}
                                     value={lateSectionFilter}
                                     onChange={(e) => setLateSectionFilter(e.target.value)}
                                 >
-                                    <option value="all">ទាំងអស់</option>
-                                    <option value="filtered">តាម Filter</option>
+                                    <option value="all">{t('all')}</option>
+                                    <option value="filtered">{t('dashboardFiltered')}</option>
                                 </select>
                             </div>
                         </div>
@@ -1553,6 +1553,7 @@ const Dashboard = () => {
                             rows={lateSectionFilter === 'all' ? overdueCustomerRows : overdueCustomerRows.slice(0, 10)}
                             formatMoney={formatMoney}
                             formatNumber={formatNumber}
+                            t={t}
                         />
                     </div>
 
@@ -1560,13 +1561,13 @@ const Dashboard = () => {
                     <div className="payment-section payment-section-penalty">
                         <div className="payment-section-heading">
                             <h4>
-                                <FaTriangleExclamation /> ភ្ញៀវត្រូវពិន័យ
+                                <FaTriangleExclamation /> {t('dashboardPenaltyCustomers')}
                             </h4>
                             <div className="payment-section-summary">
                                 <span className="payment-total">
-                                    សរុប <strong>{formatMoney(penaltyTotalAmount)}</strong>
+                                    {t('total')} <strong>{formatMoney(penaltyTotalAmount)}</strong>
                                 </span>
-                                <span className="payment-count">{penaltyPaymentRows.length} នាក់</span>
+                                <span className="payment-count">{penaltyPaymentRows.length} {t('people')}</span>
                             </div>
                         </div>
 
@@ -1575,7 +1576,7 @@ const Dashboard = () => {
                                 <table className="analytics-table customer-payment-table">
                                     <tbody>
                                         <tr>
-                                            <td colSpan={9} className="empty-table-cell">មិនមានទិន្នន័យ</td>
+                                            <td colSpan={9} className="empty-table-cell">{t('noData')}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1585,34 +1586,34 @@ const Dashboard = () => {
                                 <table className="analytics-table customer-payment-table">
                                     <thead>
                                         <tr>
-                                            <th>NO</th>
-                                            <th>DATE</th>
-                                            <th>PAYMENT TYPE</th>
-                                            <th>CUSTOMER NAME</th>
-                                            <th className="num">AMOUNT</th>
-                                            <th>DESCRIPTION</th>
-                                            <th>RECEIPT IMAGE</th>
+                                            <th>{t('no')}</th>
+                                            <th>{t('date')}</th>
+                                            <th>{t('type')}</th>
+                                            <th>{t('customerName')}</th>
+                                            <th className="num">{t('amount')}</th>
+                                            <th>{t('description')}</th>
+                                            <th>{t('dashboardReceiptImage')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {penaltyPaymentRows.map((p, idx) => (
                                             <tr key={p.id}>
-                                                <td data-label="NO">{idx + 1}</td>
-                                                <td data-label="DATE">{p.dueDate}</td>
-                                                <td data-label="PAYMENT TYPE">{p.paymentMethod || '-'}</td>
-                                                <td data-label="CUSTOMER NAME">{p.category || '-'}</td>
-                                                <td data-label="AMOUNT" className="num color-red">{formatMoney(p.penaltyAmount)}</td>
-                                                <td data-label="DESCRIPTION">{p.description || '-'}</td>
-                                                <td data-label="RECEIPT IMAGE">
+                                                <td data-label={t('no')}>{idx + 1}</td>
+                                                <td data-label={t('date')}>{p.dueDate}</td>
+                                                <td data-label={t('type')}>{p.paymentMethod || '-'}</td>
+                                                <td data-label={t('customerName')}>{p.category || '-'}</td>
+                                                <td data-label={t('amount')} className="num color-red">{formatMoney(p.penaltyAmount)}</td>
+                                                <td data-label={t('description')}>{p.description || '-'}</td>
+                                                <td data-label={t('dashboardReceiptImage')}>
                                                     {p.photoUrl ? (
                                                         <button
                                                             type="button"
                                                             className="receipt-preview-button"
                                                             onClick={() => setPreviewImage(p.photoUrl)}
                                                         >
-                                                            <FaImage /> View
+                                                            <FaImage /> {t('view')}
                                                         </button>
-                                                    ) : 'No image'}
+                                                    ) : t('dashboardNoImage')}
                                                 </td>
                                             </tr>
                                         ))}
@@ -1630,19 +1631,19 @@ const Dashboard = () => {
                     className="receipt-preview-backdrop"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Receipt image preview"
+                    aria-label={t('dashboardReceiptPreview')}
                     onClick={() => setPreviewImage(null)}
                 >
                     <div className="receipt-preview-modal" onClick={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             className="receipt-preview-close"
-                            aria-label="Close image preview"
+                            aria-label={t('close')}
                             onClick={() => setPreviewImage(null)}
                         >
                             <FaXmark />
                         </button>
-                        <img src={previewImage} alt="Receipt" className="receipt-preview-image" />
+                        <img src={previewImage} alt={t('dashboardReceipt')} className="receipt-preview-image" />
                     </div>
                 </div>
             )}
@@ -1652,11 +1653,11 @@ const Dashboard = () => {
 
 // ── Sub-Components ──
 
-const PipelineItem = ({ label, khmerLabel, count, percent, colorClass, trackColor }) => (
+const PipelineItem = ({ label, count, percent, colorClass, trackColor }) => (
     <div className="pipeline-item">
         <div className="pipeline-labels">
             <span className="pipeline-title">
-                <strong>{label}</strong> <span className="kh-sub">({khmerLabel})</span>
+                <strong>{label}</strong>
             </span>
             <span className="pipeline-count">
                 <strong>{count}</strong> ({percent.toFixed(2)}%)
@@ -1668,14 +1669,14 @@ const PipelineItem = ({ label, khmerLabel, count, percent, colorClass, trackColo
     </div>
 );
 
-const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
+const CustomerTable = ({ rows = [], formatMoney, formatNumber, t }) => {
     if (rows.length === 0) {
         return (
             <div className="table-responsive">
                 <table className="analytics-table customer-payment-table">
                     <tbody>
                         <tr>
-                            <td colSpan={9} className="empty-table-cell">មិនមានទិន្នន័យ</td>
+                            <td colSpan={9} className="empty-table-cell">{t('noData')}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1689,14 +1690,14 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>ឈ្មោះភ្ញៀវ</th>
-                        <th>លេខកិច្ចសន្យា</th>
-                        <th>ថ្ងៃត្រូវបង់</th>
-                        <th className="num">ត្រូវបង់ ($)</th>
-                        <th className="num">បានបង់ ($)</th>
-                        <th className="num">នៅសល់ ($)</th>
-                        <th className="num">ពិន័យ ($)</th>
-                        <th>ស្ថានភាព</th>
+                        <th>{t('customerName')}</th>
+                        <th>{t('contractIdLabel')}</th>
+                        <th>{t('dueDateLabel')}</th>
+                        <th className="num">{t('dashboardDueAmount')} ($)</th>
+                        <th className="num">{t('paid')} ($)</th>
+                        <th className="num">{t('dashboardRemaining')} ($)</th>
+                        <th className="num">{t('dashboardPenalty')} ($)</th>
+                        <th>{t('status')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1708,14 +1709,16 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                         const totalDue = row.scheduledAmount + (row.isPaid ? (row.paidPenaltyAmount || 0) : row.penaltyAmount);
                         const totalRemaining = row.isPaid ? 0 : (row.outstandingAmount + (row.unpaidPenaltyAmount || 0));
 
-                        let statusLabel = 'ត្រូវបង់';
+                        let statusLabel = t('dashboardDue');
                         let statusClass = 'due';
 
                         if (row.isPaid || totalRemaining <= 0) {
                             if (row.paidPenaltyAmount > 0 || row.lateDays > 0) {
-                                statusLabel = row.lateDays > 0 ? `បានបង់ (យឺត ${row.lateDays} ថ្ងៃ)` : 'បានបង់ (មានពិន័យ)';
+                                statusLabel = row.lateDays > 0
+                                    ? t('dashboardPaidLateStatus').replace('{days}', formatNumber(row.lateDays))
+                                    : t('dashboardPaidWithPenalty');
                             } else {
-                                statusLabel = 'បានបង់';
+                                statusLabel = t('paid');
                             }
                             statusClass = 'paid';
                         } else if (row.lateDays > 0 || (row.daysUntilDue !== null && row.daysUntilDue < 0)) {
@@ -1723,48 +1726,52 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
                             if (lateCount >= 30) {
                                 const m = Math.floor(lateCount / 30);
                                 const d = lateCount % 30;
-                                statusLabel = d > 0 ? `លើស ${m} ខែ ${d} ថ្ងៃ` : `លើស ${m} ខែ`;
+                                statusLabel = d > 0
+                                    ? t('dashboardOverdueMonthsAndDays')
+                                        .replace('{months}', formatNumber(m))
+                                        .replace('{days}', formatNumber(d))
+                                    : t('dashboardOverdueMonths').replace('{months}', formatNumber(m));
                             } else {
-                                statusLabel = `លើស ${lateCount} ថ្ងៃ`;
+                                statusLabel = t('dashboardOverdueDays').replace('{days}', formatNumber(lateCount));
                             }
                             statusClass = 'overdue';
                         } else if (row.unpaidPenaltyAmount > 0 || row.penaltyAmount > 0) {
-                            statusLabel = 'មានពិន័យ';
+                            statusLabel = t('dashboardHasPenalty');
                             statusClass = 'penalty';
                         } else if (row.daysUntilDue === 0) {
-                            statusLabel = 'ត្រូវបង់ថ្ងៃនេះ';
+                            statusLabel = t('dashboardDueToday');
                             statusClass = 'due';
                         } else if (row.daysUntilDue === 1) {
-                            statusLabel = 'សល់ ១ ថ្ងៃត្រូវបង់';
+                            statusLabel = t('dashboardDueInOneDay');
                             statusClass = 'due';
                         } else if (row.daysUntilDue !== null && row.daysUntilDue > 1) {
-                            statusLabel = `នៅសល់ ${formatNumber(row.daysUntilDue)} ថ្ងៃ`;
+                            statusLabel = t('dashboardDueInDays').replace('{days}', formatNumber(row.daysUntilDue));
                             statusClass = 'due';
                         }
 
                         return (
                             <tr key={row.id}>
                                 <td data-label="#">{idx + 1}</td>
-                                <td data-label="ឈ្មោះភ្ញៀវ" className="customer-name-cell">
+                                <td data-label={t('customerName')} className="customer-name-cell">
                                     <strong style={{ display: 'block', color: '#0f172a' }}>
-                                        {row.customerNameKh || row.customerName || row.customerNameEn || 'មិនស្គាល់'}
+                                        {row.customerNameKh || row.customerName || row.customerNameEn || t('unknown')}
                                     </strong>
                                     <small style={{ color: '#64748b' }}>{row.phone}</small>
                                 </td>
-                                <td data-label="លេខកិច្ចសន្យា">
+                                <td data-label={t('contractIdLabel')}>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                                         <strong>{row.contractIid || row.contractId || '-'}</strong>
                                         {row.monthLabel && <small style={{ fontSize: '11px', color: '#64748b' }}>{row.monthLabel}</small>}
                                     </div>
                                 </td>
-                                <td data-label="ថ្ងៃត្រូវបង់">{row.dueDate || '-'}</td>
-                                <td data-label="ត្រូវបង់" className="num">{formatMoney(totalDue)}</td>
-                                <td data-label="បានបង់" className="num color-green">{formatMoney(row.paidAmount)}</td>
-                                <td data-label="នៅសល់" className="num color-orange">{formatMoney(totalRemaining)}</td>
-                                <td data-label="ពិន័យ" className={`num ${row.isPaid && penaltyDisplayVal > 0 ? 'color-green' : (penaltyDisplayVal > 0 ? 'color-red' : '')}`}>
+                                <td data-label={t('dueDateLabel')}>{row.dueDate || '-'}</td>
+                                <td data-label={t('dashboardDueAmount')} className="num">{formatMoney(totalDue)}</td>
+                                <td data-label={t('paid')} className="num color-green">{formatMoney(row.paidAmount)}</td>
+                                <td data-label={t('dashboardRemaining')} className="num color-orange">{formatMoney(totalRemaining)}</td>
+                                <td data-label={t('dashboardPenalty')} className={`num ${row.isPaid && penaltyDisplayVal > 0 ? 'color-green' : (penaltyDisplayVal > 0 ? 'color-red' : '')}`}>
                                     {formatMoney(penaltyDisplayVal)}
                                 </td>
-                                <td data-label="ស្ថានភាព">
+                                <td data-label={t('status')}>
                                     <span className={`payment-status payment-status-${statusClass}`}>
                                         {statusLabel}
                                     </span>
@@ -1779,7 +1786,7 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber }) => {
 };
 
 // ── SVG Interactive Line & Area Chart ──
-const LineChartCanvas = ({ points = [] }) => {
+const LineChartCanvas = ({ points = [], t }) => {
     const width = 800;
     const height = 250;
     const padX = 50;
@@ -1997,13 +2004,13 @@ const LineChartCanvas = ({ points = [] }) => {
                             {coords[hoverIdx].label}
                         </text>
                         <text x="10" y="32" fontSize="10" fill="#3b82f6" fontWeight="600">
-                            ● ឥណទាន: ${Number(coords[hoverIdx].disbursed).toLocaleString()}
+                            ● {t('dashboardDisbursed')}: ${Number(coords[hoverIdx].disbursed).toLocaleString()}
                         </text>
                         <text x="10" y="47" fontSize="10" fill="#10b981" fontWeight="600">
-                            ● ប្រមូល: ${Number(coords[hoverIdx].collected).toLocaleString()}
+                            ● {t('dashboardCollected')}: ${Number(coords[hoverIdx].collected).toLocaleString()}
                         </text>
                         <text x="10" y="62" fontSize="10" fill="#8b5cf6" fontWeight="600">
-                            ● អតិថិជន: {coords[hoverIdx].customers} នាក់
+                            ● {t('customer')}: {coords[hoverIdx].customers} {t('people')}
                         </text>
                     </g>
                 </g>

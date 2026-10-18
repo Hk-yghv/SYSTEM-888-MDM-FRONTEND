@@ -113,13 +113,13 @@ const ActivatedReport = () => {
     const handleExportExcel = async () => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Activated', accessor: 'totalActivated' },
-                { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Est. Monthly ($)', cell: (r) => `$${(r.totalMonthly || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
-                { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalContracts'), accessor: 'totalActivated' },
+                { header: t('loanDisbursedCol'), cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: t('monthlyEstCol'), cell: (r) => `$${(r.totalMonthly || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: t('lockPhone'), accessor: 'lockedPhoneCount' },
+                { header: t('lockWallpaper'), accessor: 'lockedWallpaperCount' }
             ];
             const excelData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
             return exportToExcel('Activated Contracts — Summary Table', summaryColumns, excelData, user?.brand || '');
@@ -127,13 +127,13 @@ const ActivatedReport = () => {
 
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer (EN)', accessor: 'customerNameEn' },
-            { header: 'Customer (KH)', accessor: 'customerNameKh' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Brand', accessor: 'brand' },
-            { header: 'Status', cell: () => 'Activated' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: `${t('customerName')} (EN)`, accessor: 'customerNameEn' },
+            { header: `${t('customerName')} (KH)`, accessor: 'customerNameKh' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNo'), accessor: 'serialNumber' },
+            { header: t('brand'), accessor: 'brand' },
+            { header: t('status'), cell: () => 'Activated' }
         ];
         exportToExcel('Activated Contracts Report', columns, allData, user?.brand || '');
     };
@@ -141,25 +141,25 @@ const ActivatedReport = () => {
     const handleExportPDF = async (orientation = 'portrait') => {
         if (activeTab === 'summary') {
             const summaryColumns = [
-                { header: 'No', cell: (r, idx) => r.isTotalRow ? 'TOTAL' : idx + 1 },
-                { header: 'Brand Domain', accessor: 'brand' },
-                { header: 'Total Activated', accessor: 'totalActivated' },
-                { header: 'Total Loan ($)', cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Est. Monthly ($)', cell: (r) => `$${(r.totalMonthly || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-                { header: 'Lock Phone', accessor: 'lockedPhoneCount' },
-                { header: 'Lock Wallpaper', accessor: 'lockedWallpaperCount' }
+                { header: t('no'), cell: (r, idx) => r.isTotalRow ? t('totalLabel') : idx + 1 },
+                { header: t('brandDomain'), accessor: 'brand' },
+                { header: t('totalContracts'), accessor: 'totalActivated' },
+                { header: t('loanDisbursedCol'), cell: (r) => `$${(r.totalLoan || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: t('monthlyEstCol'), cell: (r) => `$${(r.totalMonthly || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+                { header: t('lockPhone'), accessor: 'lockedPhoneCount' },
+                { header: t('lockWallpaper'), accessor: 'lockedWallpaperCount' }
             ];
             const pdfData = [...summaryBreakdown.rows, summaryBreakdown.grandTotal];
             return exportToPDF('Activated Contracts — Summary Table', summaryColumns, pdfData, user?.brand || '', pdfOrientation);
         }
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
-            { header: 'Customer (EN)', accessor: 'customerNameEn' },
-            { header: 'Model', accessor: 'model' },
-            { header: 'Serial No.', accessor: 'serialNumber' },
-            { header: 'Brand', accessor: 'brand' },
-            { header: 'Status', cell: () => 'Activated' }
+            { header: t('no'), cell: (_, idx) => idx + 1 },
+            { header: `${t('customerName')} (EN)`, accessor: 'customerNameEn' },
+            { header: t('model'), accessor: 'model' },
+            { header: t('serialNo'), accessor: 'serialNumber' },
+            { header: t('brand'), accessor: 'brand' },
+            { header: t('status'), cell: () => 'Activated' }
         ];
         exportToPDF('Activated Contracts Report', columns, allData, user?.brand || '', pdfOrientation);
     };
@@ -288,7 +288,7 @@ const ActivatedReport = () => {
                                 <FaCheckCircle />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Activated Devices</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('activatedDevices')}</p>
                                 <h3 className="text-lg font-black text-slate-900 mt-0.5">{kpi.totalActivated.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -298,7 +298,7 @@ const ActivatedReport = () => {
                                 <FaDollarSign />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Active Loan Portfolio</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('activeLoanPortfolio')}</p>
                                 <h3 className="text-lg font-black text-blue-700 mt-0.5">${kpi.totalLoan.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -308,7 +308,7 @@ const ActivatedReport = () => {
                                 <FaMoneyBillWave />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Est. Monthly Collection</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('estimatedMonthlyCollection')}</p>
                                 <h3 className="text-lg font-black text-indigo-700 mt-0.5">${kpi.totalMonthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
@@ -318,7 +318,7 @@ const ActivatedReport = () => {
                                 <FaLock />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Locked Devices</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('lockedDevices')}</p>
                                 <h3 className="text-lg font-black text-rose-700 mt-0.5">{kpi.lockedPhone.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -328,7 +328,7 @@ const ActivatedReport = () => {
                                 <FaImage />
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Set Wallpaper</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('deviceSetWallpaper')}</p>
                                 <h3 className="text-lg font-black text-purple-700 mt-0.5">{kpi.lockedWallpaper.toLocaleString()}</h3>
                             </div>
                         </div>
@@ -337,12 +337,12 @@ const ActivatedReport = () => {
                     {/* Line Chart Component */}
                     <LineChart
                         title={t('activatedTrendChart')}
-                        subtitle="បង្ហាញពីការកើនឡើងចំនួន Activated ទឹកប្រាក់ឥណទាន និងប្រចាំខែ"
+                        subtitle={t('activatedReportTrendDescription')}
                         data={chartTrendData}
                         series={[
-                            { key: 'activatedCount', label: 'Activated', color: '#10b981', isCurrency: false },
-                            { key: 'loanAmount', label: 'ទឹកប្រាក់ឥណទាន ($)', color: '#3b82f6', isCurrency: true },
-                            { key: 'monthlyAmount', label: 'ប្រចាំខែ ($)', color: '#a855f7', isCurrency: true }
+                            { key: 'activatedCount', label: t('activated'), color: '#10b981', isCurrency: false },
+                            { key: 'loanAmount', label: t('loanDisbursedCol'), color: '#3b82f6', isCurrency: true },
+                            { key: 'monthlyAmount', label: t('monthlyCollectionAmount'), color: '#a855f7', isCurrency: true }
                         ]}
                     />
 
@@ -395,19 +395,19 @@ const ActivatedReport = () => {
                     <table className='w-full text-left text-xs whitespace-nowrap'>
                         <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                             <tr>
-                                <th className='px-4 py-1 text-center'>No</th>
-                                <th className='px-4 py-1'>Customer</th>
-                                <th className='px-4 py-1'>Model</th>
-                                <th className='px-4 py-1'>Serial Number</th>
-                                <th className='px-4 py-1'>Brand</th>
-                                <th className='px-4 py-1 text-center'>Status</th>
+                                <th className='px-4 py-1 text-center'>{t('no')}</th>
+                                <th className='px-4 py-1'>{t('customerLabel')}</th>
+                                <th className='px-4 py-1'>{t('model')}</th>
+                                <th className='px-4 py-1'>{t('serialNumber')}</th>
+                                <th className='px-4 py-1'>{t('brand')}</th>
+                                <th className='px-4 py-1 text-center'>{t('status')}</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                             {loading ? (
-                                <tr><td colSpan={6} className="text-center py-10 text-emerald-600 font-semibold">Loading...</td></tr>
+                                <tr><td colSpan={6} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                             ) : visibleDataList.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">No activated contracts found.</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-slate-500 italic">{t('noActivatedContracts')}</td></tr>
                             ) : (
                                 visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/40 transition-colors'>
@@ -416,7 +416,7 @@ const ActivatedReport = () => {
                                         <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
                                         <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
                                         <td className='px-4 py-1'><span className='px-2.5 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || user?.brand || 'SYSTEM'}</span></td>
-                                        <td className='px-4 py-1 text-center font-bold text-emerald-700'>Activated</td>
+                                        <td className='px-4 py-1 text-center font-bold text-emerald-700'>{t('activated')}</td>
                                     </tr>
                                 ))
                             )}
@@ -439,13 +439,13 @@ const ActivatedReport = () => {
                         <table className='w-full text-left text-xs whitespace-nowrap'>
                             <thead className='bg-emerald-900 text-white uppercase tracking-wider font-bold text-[11px]'>
                                 <tr>
-                                    <th className='px-3.5 py-1 text-center'>No</th>
-                                    <th className='px-3.5 py-1'>Brand Domain</th>
-                                    <th className='px-3.5 py-1 text-center'>Activated Count</th>
-                                    <th className='px-3.5 py-1 text-right'>Active Loan Value ($)</th>
-                                    <th className='px-3.5 py-1 text-right text-emerald-200'>Est. Monthly Collection ($)</th>
-                                    <th className='px-3.5 py-1 text-center text-rose-200'>Lock Phone</th>
-                                    <th className='px-3.5 py-1 text-center text-purple-200'>Lock Wallpaper</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('no')}</th>
+                                    <th className='px-3.5 py-1'>{t('brandDomain')}</th>
+                                    <th className='px-3.5 py-1 text-center'>{t('activatedCount')}</th>
+                                    <th className='px-3.5 py-1 text-right'>{t('activeLoanValue')}</th>
+                                    <th className='px-3.5 py-1 text-right text-emerald-200'>{t('estimatedMonthlyCollectionAmount')}</th>
+                                    <th className='px-3.5 py-1 text-center text-rose-200'>{t('lockPhone')}</th>
+                                    <th className='px-3.5 py-1 text-center text-purple-200'>{t('lockWallpaper')}</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
@@ -467,7 +467,7 @@ const ActivatedReport = () => {
 
                                 {/* Grand Total Row */}
                                 <tr className="bg-emerald-100/80 border-t-2 border-emerald-400 font-black text-emerald-950">
-                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">TOTAL</td>
+                                    <td className="px-3.5 py-3.5 text-center font-mono font-black">{t('totalLabel')}</td>
                                     <td className="px-3.5 py-3.5 uppercase tracking-wide font-black text-emerald-950">
                                         {summaryBreakdown.grandTotal.brand}
                                     </td>
