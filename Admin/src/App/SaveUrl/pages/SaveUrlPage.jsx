@@ -449,7 +449,7 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             <div className="bg-white border border-slate-200 rounded-[5px] p-2 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 h-62.5">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[11px]">
                             <FaGlobe />
                         </div>
@@ -522,7 +522,7 @@ const SaveUrlPage = () => {
                             return (
                                 <div
                                     key={item._id || item.id || idx}
-                                    className="min-w-[185px] max-w-[205px] h-[52px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
+                                    className="min-w-[185px] max-w-[205px] h-[150px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
                                 >
                                     <div className="space-y-0.5 min-w-0">
                                         {/* Category & Visibility Header */}
