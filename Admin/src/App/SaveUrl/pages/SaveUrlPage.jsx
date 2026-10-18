@@ -515,7 +515,7 @@ const SaveUrlPage = () => {
                 </div>
 
                 {/* Content */}
-                <div className="p-3 sm:p-4 h-[30%]">
+                <div className="p-3 sm:p-4">
 
                     {loadingPublic ? (
                         <div className="min-h-28 flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -556,10 +556,10 @@ const SaveUrlPage = () => {
                                 return (
                                     <div
                                         key={item._id || item.id || idx}
-                                        className="w-[240px] min-w-[240px] sm:w-[260px] sm:min-w-[260px] snap-start rounded-xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md transition-all duration-200 flex flex-col group"
+                                        className="w-[220px] min-w-[220px] sm:w-[230px] sm:min-w-[230px] snap-start rounded-lg border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm transition-all duration-200 flex flex-col group"
                                     >
                                         {/* Card Header */}
-                                        <div className="p-3 flex-1 space-y-3">
+                                        <div className="p-2.5 flex-1 space-y-2">
 
                                             <div className="flex items-center justify-between gap-2">
                                                 <span
