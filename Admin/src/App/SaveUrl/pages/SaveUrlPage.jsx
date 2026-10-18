@@ -531,7 +531,7 @@ const SaveUrlPage = () => {
                             </p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto rounded-lg border border-slate-200">
+                        <div className="max-h-[170px] overflow-auto rounded-lg border border-slate-200">
                             <table className="w-full text-left border-collapse min-w-[650px]">
 
                                 {/* Table Header */}
@@ -631,8 +631,8 @@ const SaveUrlPage = () => {
                                                             type="button"
                                                             onClick={() => handleCopy(item.url, item._id || item.id)}
                                                             className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md border text-[10px] font-semibold transition-colors cursor-pointer ${isCopied
-                                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                                 }`}
                                                             title="ចម្លង URL"
                                                         >
