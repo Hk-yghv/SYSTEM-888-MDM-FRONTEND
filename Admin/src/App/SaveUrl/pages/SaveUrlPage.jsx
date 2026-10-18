@@ -515,159 +515,169 @@ const SaveUrlPage = () => {
                 </div>
 
                 {/* Content */}
+                {/* Content - Table Layout */}
                 <div className="p-3 sm:p-4">
 
                     {loadingPublic ? (
-                        <div className="min-h-28 flex flex-col items-center justify-center gap-2 text-slate-400">
-                            <FaSpinner className="animate-spin text-2xl text-emerald-500" />
-                            <span className="text-xs">
-                                កំពុងទាញយក Public URLs...
-                            </span>
+                        <div className="py-6 flex items-center justify-center gap-2 text-slate-400 text-xs">
+                            <FaSpinner className="animate-spin text-emerald-600" />
+                            <span>កំពុងទាញយក Public URLs...</span>
                         </div>
                     ) : publicUrls.length === 0 ? (
-                        <div className="min-h-32 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-6 text-center">
-                            <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
-                                <FaGlobe className="text-lg" />
-                            </div>
-
-                            <p className="text-sm font-semibold text-slate-600">
-                                មិនទាន់មាន Public URL
-                            </p>
-
-                            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-                                សូមចុច "បញ្ចូល URL ថ្មី" ហើយកំណត់ Visibility ជា Public។
+                        <div className="py-8 text-center border border-dashed border-slate-200 rounded-lg">
+                            <FaGlobe className="mx-auto mb-2 text-2xl text-slate-300" />
+                            <p className="text-xs text-slate-500">
+                                មិនទាន់មាន Public URL នៅឡើយទេ។
                             </p>
                         </div>
                     ) : (
-                        <div
-                            ref={horizontalScrollRef}
-                            onScroll={handleHorizontalScroll}
-                            onWheel={(e) => {
-                                if (e.deltaY !== 0) {
-                                    e.currentTarget.scrollLeft += e.deltaY;
-                                }
-                            }}
-                            className="flex items-stretch gap-3 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
-                        >
-                            {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
-                                const domain = formatDomain(item.url);
-                                const isCopied = copiedId === (item._id || item.id);
+                        <div className="overflow-x-auto rounded-lg border border-slate-200">
+                            <table className="w-full text-left border-collapse min-w-[650px]">
 
-                                return (
-                                    <div
-                                        key={item._id || item.id || idx}
-                                        className="w-[220px] min-w-[220px] sm:w-[230px] sm:min-w-[230px] snap-start rounded-lg border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-sm transition-all duration-200 flex flex-col group"
-                                    >
-                                        {/* Card Header */}
-                                        <div className="p-2.5 flex-1 space-y-2">
+                                {/* Table Header */}
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                        <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            #
+                                        </th>
+                                        <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Title / Description
+                                        </th>
+                                        <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Category
+                                        </th>
+                                        <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Domain
+                                        </th>
+                                        <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">
+                                            Visibility
+                                        </th>
+                                        <th className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-right">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                                            <div className="flex items-center justify-between gap-2">
-                                                <span
-                                                    className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-semibold border truncate max-w-[145px] ${getCategoryColor(item.category)}`}
-                                                    title={item.category || 'General'}
-                                                >
-                                                    {item.category || 'General'}
-                                                </span>
+                                {/* Table Body */}
+                                <tbody className="divide-y divide-slate-100 bg-white">
+                                    {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
+                                        const domain = formatDomain(item.url);
+                                        const isCopied = copiedId === (item._id || item.id);
 
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 shrink-0">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                                    Public
-                                                </span>
-                                            </div>
-
-                                            <div className="min-w-0">
-                                                <h4
-                                                    className="text-sm font-bold text-slate-800 leading-snug line-clamp-2 break-words cursor-pointer group-hover:text-emerald-700 transition-colors"
-                                                    onClick={() => handleOpenLink(item)}
-                                                    title={item.description
-                                                        ? `${item.title} — ${item.description}`
-                                                        : item.title}
-                                                >
-                                                    {item.title}
-                                                </h4>
-
-                                                {item.description && (
-                                                    <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed line-clamp-2 break-words">
-                                                        {item.description}
-                                                    </p>
-                                                )}
-                                            </div>
-
-                                            {/* URL */}
-                                            <div
-                                                className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 min-w-0"
-                                                title={item.url}
+                                        return (
+                                            <tr
+                                                key={item._id || item.id || idx}
+                                                className="hover:bg-emerald-50/40 transition-colors group"
                                             >
-                                                <FaLink className="text-emerald-600 text-xs shrink-0" />
+                                                {/* Number */}
+                                                <td className="px-3 py-2.5 text-[11px] text-slate-400 font-mono">
+                                                    {idx + 1}
+                                                </td>
 
-                                                <span className="text-[11px] text-slate-600 font-mono truncate">
-                                                    {domain}
-                                                </span>
-                                            </div>
-                                        </div>
+                                                {/* Title */}
+                                                <td className="px-3 py-2.5 max-w-[240px]">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenLink(item)}
+                                                        className="block max-w-full text-left text-xs font-semibold text-slate-800 hover:text-emerald-700 truncate cursor-pointer"
+                                                        title={item.title}
+                                                    >
+                                                        {item.title}
+                                                    </button>
 
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-2 p-3 pt-0">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleCopy(item.url, item._id || item.id)}
-                                                className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${isCopied
-                                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                                    }`}
-                                                title="ចម្លង URL"
-                                            >
-                                                {isCopied
-                                                    ? <FaCheck className="text-emerald-600" />
-                                                    : <FaCopy />}
+                                                    {item.description && (
+                                                        <p
+                                                            className="mt-0.5 text-[10px] text-slate-400 truncate max-w-[220px]"
+                                                            title={item.description}
+                                                        >
+                                                            {item.description}
+                                                        </p>
+                                                    )}
+                                                </td>
 
-                                                <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                                            </button>
+                                                {/* Category */}
+                                                <td className="px-3 py-2.5">
+                                                    <span
+                                                        className={`inline-flex px-2 py-1 rounded-md text-[10px] font-semibold border ${getCategoryColor(item.category)}`}
+                                                    >
+                                                        {item.category || 'General'}
+                                                    </span>
+                                                </td>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => handleOpenLink(item)}
-                                                className="flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer"
-                                            >
-                                                <span>Open</span>
-                                                <FaExternalLinkAlt className="text-[10px]" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                                {/* Domain */}
+                                                <td className="px-3 py-2.5 max-w-[180px]">
+                                                    <div
+                                                        className="flex items-center gap-1.5 text-[11px] text-slate-600 font-mono"
+                                                        title={item.url}
+                                                    >
+                                                        <FaLink className="text-emerald-500 text-[10px] shrink-0" />
+                                                        <span className="truncate">{domain}</span>
+                                                    </div>
+                                                </td>
+
+                                                {/* Visibility */}
+                                                <td className="px-3 py-2.5 text-center">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                        Public
+                                                    </span>
+                                                </td>
+
+                                                {/* Actions */}
+                                                <td className="px-3 py-2.5">
+                                                    <div className="flex items-center justify-end gap-1.5">
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleCopy(item.url, item._id || item.id)}
+                                                            className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-md border text-[10px] font-semibold transition-colors cursor-pointer ${isCopied
+                                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                                                }`}
+                                                            title="ចម្លង URL"
+                                                        >
+                                                            {isCopied
+                                                                ? <FaCheck />
+                                                                : <FaCopy />}
+                                                            {isCopied ? 'Copied' : 'Copy'}
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleOpenLink(item)}
+                                                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-semibold transition-colors cursor-pointer"
+                                                        >
+                                                            Open
+                                                            <FaExternalLinkAlt className="text-[9px]" />
+                                                        </button>
+
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
 
                             {/* Load More */}
                             {visiblePublicCount < publicUrls.length && (
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setVisiblePublicCount(prev =>
-                                            Math.min(
-                                                prev + PUBLIC_CHUNK_SIZE,
-                                                publicUrls.length
+                                <div className="p-2.5 flex items-center justify-center border-t border-slate-100 bg-slate-50">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setVisiblePublicCount(prev =>
+                                                Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length)
                                             )
-                                        )
-                                    }
-                                    className="w-[130px] min-w-[130px] min-h-[170px] snap-start rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-slate-500 hover:text-emerald-700 flex flex-col items-center justify-center gap-3 transition-all cursor-pointer"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center">
-                                        <FaChevronRight />
-                                    </div>
-
-                                    <div className="text-center">
-                                        <p className="text-xs font-bold">
-                                            + {Math.min(
-                                                PUBLIC_CHUNK_SIZE,
-                                                publicUrls.length - visiblePublicCount
-                                            )} More
-                                        </p>
-
-                                        <p className="text-[10px] mt-1 text-slate-400">
-                                            អូសដើម្បីមើលបន្ត
-                                        </p>
-                                    </div>
-                                </button>
+                                        }
+                                        className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-[11px] font-semibold text-slate-600 transition-colors cursor-pointer"
+                                    >
+                                        + Load More (
+                                        {Math.min(
+                                            PUBLIC_CHUNK_SIZE,
+                                            publicUrls.length - visiblePublicCount
+                                        )})
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}
