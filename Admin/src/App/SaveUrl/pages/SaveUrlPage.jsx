@@ -848,7 +848,7 @@ const SaveUrlPage = () => {
                                     (item.createdBy || '').trim().toLowerCase() === (user?.username || '').trim().toLowerCase();
 
                                 return (
-                                    <tr key={item._id || item.id || idx} className="hover:bg-emerald-50/40 transition-colors">
+                                    <tr key={item._id || item.id || idx} className="hover:bg-emerald-50/40 h-9 transition-colors">
                                         <td className="px-4 py-1.5 text-center font-mono text-slate-500 font-semibold">
                                             {(page - 1) * LIMIT + idx + 1}
                                         </td>
@@ -915,7 +915,7 @@ const SaveUrlPage = () => {
                                         </td>
 
                                         {/* Note / Description */}
-                                        <td className="px-4 py-1.5 max-w-[280px] text-slate-600 whitespace-normal" title={item.description || ''}>
+                                        <td className="px-4 py-1.5 max-w-[999999px] text-slate-600 whitespace-normal" title={item.description || ''}>
                                             <p className="line-clamp-3 text-xs leading-snug" title={item.description || ''}>
                                                 {item.description || '—'}
                                             </p>
