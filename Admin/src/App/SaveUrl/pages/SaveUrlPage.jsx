@@ -447,7 +447,7 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             {/* TOP PUBLIC URL SHOWCASE SECTION (Horizontal 5-Item Scroll)       */}
             {/* ───────────────────────────────────────────────────────────────── */}
-            <div className="bg-white border border-slate-200 rounded-[5px] p-2 shadow-xs space-y-1.5">
+            <div className="bg-white border border-slate-200 rounded-[5px] p-2 shadow-xs space-y-1.5 h-[200px]">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[11px]">
