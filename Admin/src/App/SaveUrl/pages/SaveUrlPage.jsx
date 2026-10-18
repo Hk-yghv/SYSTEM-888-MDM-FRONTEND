@@ -447,7 +447,7 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             {/* TOP PUBLIC URL SHOWCASE SECTION (Horizontal 5-Item Scroll)       */}
             {/* ───────────────────────────────────────────────────────────────── */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden h-[80%]">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
 
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50/70 via-white to-white">
@@ -515,7 +515,7 @@ const SaveUrlPage = () => {
                 </div>
 
                 {/* Content */}
-                <div className="p-3 sm:p-4">
+                <div className="p-3 sm:p-4 h-[30%]">
 
                     {loadingPublic ? (
                         <div className="min-h-28 flex flex-col items-center justify-center gap-2 text-slate-400">
