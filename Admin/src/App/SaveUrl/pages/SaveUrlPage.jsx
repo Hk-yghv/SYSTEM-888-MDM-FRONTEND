@@ -14,8 +14,6 @@ import {
     FaEdit,
     FaTrash,
     FaTimes,
-    FaChevronLeft,
-    FaChevronRight,
     FaLink,
     FaBookmark,
     FaSpinner,
@@ -29,7 +27,7 @@ import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 
 const LIMIT = 10;
-const PUBLIC_CHUNK_SIZE = 5;
+const TOP_PUBLIC_COUNT = 2;
 const SEE_ALL_CHUNK_SIZE = 15;
 
 const PRESET_CATEGORIES = [
@@ -108,12 +106,10 @@ const SaveUrlPage = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [selectedVisibility, setSelectedVisibility] = useState('All');
 
-    // Top Public Showcase state (Horizontal Infinite Scroll / Progressive reveal)
+    // Top shared URL showcase
     const [publicUrls, setPublicUrls] = useState([]);
     const [publicTotal, setPublicTotal] = useState(0);
-    const [visiblePublicCount, setVisiblePublicCount] = useState(5);
     const [loadingPublic, setLoadingPublic] = useState(true);
-    const horizontalScrollRef = useRef(null);
 
     // "See All" Modal state
     const [seeAllOpen, setSeeAllOpen] = useState(false);
@@ -268,34 +264,6 @@ const SaveUrlPage = () => {
             fetch(`${API_BASE}/saved-urls/${id}/click`, { method: 'PATCH' }).catch(() => { });
         } catch { }
         window.open(url, '_blank', 'noopener,noreferrer');
-    };
-
-    // Horizontal Scroll Handler (Top Showcase)
-    const handleHorizontalScroll = () => {
-        const el = horizontalScrollRef.current;
-        if (!el) return;
-        // If scrolled near the right end, reveal next 5 items
-        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 80) {
-            if (visiblePublicCount < publicUrls.length) {
-                setVisiblePublicCount(prev => Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length));
-            }
-        }
-    };
-
-    const scrollLeft = () => {
-        if (horizontalScrollRef.current) {
-            horizontalScrollRef.current.scrollBy({ left: -320, behavior: 'smooth' });
-        }
-    };
-
-    const scrollRight = () => {
-        if (horizontalScrollRef.current) {
-            // If near end and more items exist, load next chunk before scrolling
-            if (visiblePublicCount < publicUrls.length) {
-                setVisiblePublicCount(prev => Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length));
-            }
-            horizontalScrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
-        }
     };
 
     // "See All" Infinite Scroll Handler
@@ -600,28 +568,6 @@ const SaveUrlPage = () => {
                             <span>See All</span>
                             <span className="text-slate-400">({publicTotal})</span>
                         </button>
-
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                onClick={scrollLeft}
-                                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
-                                title="Scroll Left"
-                                aria-label="Scroll Left"
-                            >
-                                <FaChevronLeft className="text-xs" />
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={scrollRight}
-                                className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
-                                title="Scroll Right"
-                                aria-label="Scroll Right"
-                            >
-                                <FaChevronRight className="text-xs" />
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -671,7 +617,7 @@ const SaveUrlPage = () => {
 
                                 {/* Table Body */}
                                 <tbody className="divide-y divide-slate-100 bg-white">
-                                    {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
+                                    {publicUrls.slice(0, TOP_PUBLIC_COUNT).map((item, idx) => {
                                         const itemId = item._id || item.id;
                                         const isCopied = copiedId === itemId;
                                         const displayUrl = item.passwordProtected ? unlockedUrls[itemId] : item.url;
@@ -765,7 +711,6 @@ const SaveUrlPage = () => {
                                                             Open
                                                             <FaExternalLinkAlt className="text-[9px]" />
                                                         </button>
-
                                                     </div>
                                                 </td>
                                             </tr>
@@ -774,26 +719,6 @@ const SaveUrlPage = () => {
                                 </tbody>
                             </table>
 
-                            {/* Load More */}
-                            {visiblePublicCount < publicUrls.length && (
-                                <div className="p-2.5 flex items-center justify-center border-t border-slate-100 bg-slate-50">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setVisiblePublicCount(prev =>
-                                                Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length)
-                                            )
-                                        }
-                                        className="px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-[11px] font-semibold text-slate-600 transition-colors cursor-pointer"
-                                    >
-                                        + Load More (
-                                        {Math.min(
-                                            PUBLIC_CHUNK_SIZE,
-                                            publicUrls.length - visiblePublicCount
-                                        )})
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
