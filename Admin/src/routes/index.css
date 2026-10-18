@@ -700,6 +700,46 @@ td .absolute,
 .table-action-menu {
     z-index: 9999 !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+}
+
+tbody tr:focus-within {
+    position: relative;
+    z-index: 9998;
+}
+
+tbody td:focus-within {
+    position: relative;
+    z-index: 9999;
+}
+
+.activated-installment-due-today > td {
+    background-color: #fefce8 !important;
+    border-top: 2px solid #eab308 !important;
+    border-bottom: 2px solid #eab308 !important;
+}
+
+.activated-installment-due-today > td:first-child {
+    border-left: 2px solid #eab308 !important;
+}
+
+.activated-installment-due-today > td:last-child {
+    border-right: 2px solid #eab308 !important;
+}
+
+.activated-installment-overdue > td {
+    background-color: #fff1f2 !important;
+    border-top: 2px solid #fda4af !important;
+    border-bottom: 2px solid #fda4af !important;
+}
+
+.activated-installment-overdue > td:first-child {
+    border-left: 2px solid #fda4af !important;
+}
+
+.activated-installment-overdue > td:last-child {
+    border-right: 2px solid #fda4af !important;
 }
 
 /* Borders & Dividers with Subtle Emerald & Slate Touch */

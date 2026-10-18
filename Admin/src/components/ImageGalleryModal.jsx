@@ -84,10 +84,10 @@ const ImageGalleryModal = ({ images, index, onIndexChange, onClose, title = 'Ima
                 {/* Modal Header */}
                 <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-4 py-2 bg-slate-950">
                     <div className="min-w-0">
-                        <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <div className="text-xs sm:text-sm font-bold text-black flex items-center gap-2">
                             <span className="truncate">{title}</span>
                             {hasMultiple && (
-                                <span className="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] sm:text-[11px] font-mono text-emerald-400 font-semibold shrink-0">
+                                <span className="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] sm:text-[11px] font-mono text-black font-semibold shrink-0">
                                     {currentIndex + 1} / {images.length}
                                 </span>
                             )}

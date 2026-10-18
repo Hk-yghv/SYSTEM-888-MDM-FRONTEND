@@ -109,6 +109,29 @@ const Activated = () => {
         return clean.toLowerCase();
     };
 
+    const getInstallmentUrgency = (contract) => {
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const schedule = Array.isArray(contract.repaymentSchedule) ? contract.repaymentSchedule : [];
+        let hasDueToday = false;
+
+        for (const row of schedule) {
+            const status = String(row.status || '').toLowerCase();
+            const scheduledAmount = Number(row.scheduledAmount || row.amount || 0);
+            const paidAmount = Number(row.paidAmount || row.paid || 0);
+            const isPaid = ['paid', 'payoff', 'settled'].includes(status) ||
+                (scheduledAmount > 0 && paidAmount >= scheduledAmount);
+            if (isPaid) continue;
+
+            const dueDate = normalizeDateStr(row.dueDate);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) continue;
+            if (dueDate < today) return 'overdue';
+            if (dueDate === today) hasDueToday = true;
+        }
+
+        return hasDueToday ? 'due-today' : '';
+    };
+
     // Khmer Month dictionary for accurate calendar parsing
     const KHMER_MONTH_NAMES = {
         '01': 'មករា',
@@ -1057,9 +1080,13 @@ const Activated = () => {
                                     return true;
                                 });
                                 const hasAnyAction = canSetDescription || canOpenMosyle || canOpenFb || canHistory || canComment || canLock || canWallpaper || canCheck || canBlacklist || !!matchingCalcSchedule;
+                                const installmentUrgency = getInstallmentUrgency(item);
 
                                 return (
-                                    <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
+                                    <tr
+                                        key={item._id || idx}
+                                        className={`hover:bg-emerald-50/50 transition-colors ${installmentUrgency === 'due-today' ? 'activated-installment-due-today' : installmentUrgency === 'overdue' ? 'activated-installment-overdue' : ''}`}
+                                    >
                                         <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? locatedIndex + 1 : (currentPage - 1) * itemsPerPage + idx + 1}</td>
                                         <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                         <td className='px-4 py-1'>

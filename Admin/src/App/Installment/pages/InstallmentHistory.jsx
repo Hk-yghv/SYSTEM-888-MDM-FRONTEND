@@ -285,8 +285,8 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 const filterDate = isHistoryPage ? row.paidDate : row.dueDate;
                 if (dateRange.from && filterDate < dateRange.from) return false;
                 if (dateRange.to && filterDate > dateRange.to) return false;
-                const isRedeemOrPayoff = Boolean(row.isRedeem || row.type === 'Payoff');
-                if (paymentTypeFilter === 'regular' && isRedeemOrPayoff) return false;
+                const isRedeemOrPayoff = row.type === 'Redeem' || row.type === 'Payoff';
+                if (paymentTypeFilter === 'regular' && row.type !== 'Pad') return false;
                 if (paymentTypeFilter === 'redeem' && !isRedeemOrPayoff) return false;
                 return true;
             })
