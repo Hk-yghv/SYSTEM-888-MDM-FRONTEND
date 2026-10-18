@@ -776,23 +776,27 @@ const SaveUrlPage = () => {
             </div>
 
             {/* Saved URLs Table */}
-            <div className="w-full max-h-[250px] overflow-x-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container">
+
+            <div className="w-full max-h-[360px] overflow-auto rounded-[5px] border border-slate-200 bg-white shadow-md table-container">
+
                 <table className="w-full text-left text-xs whitespace-nowrap">
                     <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
                         <tr>
                             <th className="px-4 py-1.5 text-center">No</th>
-                            <th className="px-4 py-1.5">ចំណងជើង URL (Title)</th>
-                            <th className="px-4 py-1.5">តំណភ្ជាប់ (URL Link)</th>
-                            <th className="px-4 py-1.5">ប្រភេទ (Category)</th>
+                            <th className="px-4 py-1.5">ចំណងជើង URL</th>
+                            <th className="px-4 py-1.5">តំណភ្ជាប់</th>
+                            <th className="px-4 py-1.5">ប្រភេទ</th>
                             <th className="px-4 py-1.5">Sub Brand</th>
-                            <th className="px-4 py-1.5 text-center">ភាពមើលឃើញ (Visibility)</th>
-                            <th className="px-4 py-1.5">កំណត់ចំណាំ (Description)</th>
-                            <th className="px-4 py-1.5">បង្កើតដោយ (By)</th>
-                            <th className="px-4 py-1.5">កាលបរិច្ឆេទ (Date)</th>
+                            <th className="px-4 py-1.5 text-center">ភាពមើលឃើញ</th>
+                            <th className="px-4 py-1.5">កំណត់ចំណាំ</th>
+                            <th className="px-4 py-1.5">បង្កើតដោយ</th>
+                            <th className="px-4 py-1.5">កាលបរិច្ឆេទ</th>
                             <th className="px-4 py-1.5 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-800 whitespace-nowrap">
+
+                    <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200 whitespace-nowrap">
+
                         {loading ? (
                             <tr>
                                 <td colSpan={10} className="text-center py-10 text-slate-400 italic">
