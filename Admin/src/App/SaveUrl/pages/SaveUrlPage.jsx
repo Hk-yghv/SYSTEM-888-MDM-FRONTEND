@@ -415,7 +415,7 @@ const SaveUrlPage = () => {
     const displayedSeeAllList = filteredSeeAllList.slice(0, seeAllVisibleCount);
 
     return (
-        <div className="w-full bg-[#f4f6f8] p-2 select-none space-y-2">
+        <div className="w-full bg-[#f4f6f8] p-2 select-none space-y-2" data-allow-scroll="true">
             {/* Top Header Bar */}
             <header className="p-2 w-full border border-slate-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
@@ -449,7 +449,7 @@ const SaveUrlPage = () => {
             {/* ───────────────────────────────────────────────────────────────── */}
             <div className="bg-white border border-slate-200 rounded-[5px] p-2 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5 h-62.5">
+                    <div className="flex items-center gap-1.5">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[11px]">
                             <FaGlobe />
                         </div>
@@ -513,7 +513,12 @@ const SaveUrlPage = () => {
                     <div
                         ref={horizontalScrollRef}
                         onScroll={handleHorizontalScroll}
-                        className="flex items-center gap-2.5 overflow-x-auto pb-1 scroll-smooth no-scrollbar"
+                        onWheel={(e) => {
+                            if (e.deltaY !== 0) {
+                                e.currentTarget.scrollLeft += e.deltaY;
+                            }
+                        }}
+                        className="flex items-center gap-2 overflow-x-auto pb-1 scroll-smooth"
                     >
                         {publicUrls.slice(0, visiblePublicCount).map((item, idx) => {
                             const domain = formatDomain(item.url);
@@ -522,9 +527,9 @@ const SaveUrlPage = () => {
                             return (
                                 <div
                                     key={item._id || item.id || idx}
-                                    className="min-w-[185px] max-w-[205px] h-[150px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-1.5 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
+                                    className="min-w-[210px] max-w-[230px] h-[78px] bg-gradient-to-b from-slate-50 to-white border border-slate-200 hover:border-emerald-400 hover:shadow-xs rounded-[5px] p-2 flex flex-col justify-between transition-all duration-200 shrink-0 group relative"
                                 >
-                                    <div className="space-y-0.5 min-w-0">
+                                    <div className="space-y-1 min-w-0">
                                         {/* Category & Visibility Header */}
                                         <div className="flex items-center justify-between gap-1">
                                             <span className={`px-1.5 py-0.2 rounded text-[8px] font-bold border truncate max-w-[110px] ${getCategoryColor(item.category)}`}>
@@ -538,47 +543,41 @@ const SaveUrlPage = () => {
 
                                         {/* Title */}
                                         <h4
-                                            className="font-bold text-slate-900 text-[11px] leading-tight line-clamp-1 hover:text-emerald-600 cursor-pointer transition-colors"
+                                            className="font-bold text-slate-900 text-[11px] leading-tight truncate hover:text-emerald-600 cursor-pointer transition-colors"
                                             onClick={() => handleOpenLink(item)}
                                             title={item.description ? `${item.title} — ${item.description}` : item.title}
                                         >
                                             {item.title}
                                         </h4>
-
-                                        {/* URL Domain Badge */}
-                                        <div className="flex items-center gap-1 text-[9px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-1 py-0.2 rounded truncate">
-                                            <FaLink className="text-[7px] shrink-0" />
-                                            <span className="truncate" title={item.url}>{domain}</span>
-                                        </div>
-
-                                        {/* Compact Description (1-line tooltip) */}
-                                        {item.description && (
-                                            <p className="text-[9px] text-slate-400 line-clamp-1 leading-none" title={item.description}>
-                                                {item.description}
-                                            </p>
-                                        )}
                                     </div>
 
-                                    {/* Action Bar */}
-                                    <div className="pt-1 mt-0.5 border-t border-slate-100 flex items-center justify-between gap-1 shrink-0">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleCopy(item.url, item._id || item.id)}
-                                            className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
-                                            title="ចម្លង URL"
-                                        >
-                                            {isCopied ? <FaCheck className="text-emerald-600 text-[8px]" /> : <FaCopy className="text-[8px]" />}
-                                            <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                                        </button>
+                                    {/* URL Domain Badge & Quick Actions */}
+                                    <div className="pt-1 border-t border-slate-100 flex items-center justify-between gap-1 shrink-0">
+                                        <div className="flex items-center gap-1 text-[9px] text-emerald-700 font-mono bg-emerald-50/70 border border-emerald-200/60 px-1 py-0.2 rounded truncate max-w-[95px]" title={item.url}>
+                                            <FaLink className="text-[7px] shrink-0" />
+                                            <span className="truncate">{domain}</span>
+                                        </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => handleOpenLink(item)}
-                                            className="flex items-center gap-1 px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[9px] cursor-pointer shadow-xs transition-all active:scale-95"
-                                        >
-                                            <span>Open</span>
-                                            <FaExternalLinkAlt className="text-[7px]" />
-                                        </button>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleCopy(item.url, item._id || item.id)}
+                                                className="flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                                                title="ចម្លង URL"
+                                            >
+                                                {isCopied ? <FaCheck className="text-emerald-600 text-[7px]" /> : <FaCopy className="text-[7px]" />}
+                                                <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenLink(item)}
+                                                className="flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[8px] cursor-pointer shadow-xs transition-all active:scale-95"
+                                            >
+                                                <span>Open</span>
+                                                <FaExternalLinkAlt className="text-[6px]" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -589,7 +588,7 @@ const SaveUrlPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setVisiblePublicCount(prev => Math.min(prev + PUBLIC_CHUNK_SIZE, publicUrls.length))}
-                                className="min-w-[100px] h-[82px] bg-slate-50 hover:bg-emerald-50 border border-dashed border-slate-300 hover:border-emerald-400 rounded-[5px] flex flex-col items-center justify-center p-2 text-[10px] font-bold text-slate-600 hover:text-emerald-700 cursor-pointer transition-all shrink-0"
+                                className="min-w-[90px] h-[78px] bg-slate-50 hover:bg-emerald-50 border border-dashed border-slate-300 hover:border-emerald-400 rounded-[5px] flex flex-col items-center justify-center p-2 text-[10px] font-bold text-slate-600 hover:text-emerald-700 cursor-pointer transition-all shrink-0"
                             >
                                 <span>+ {Math.min(PUBLIC_CHUNK_SIZE, publicUrls.length - visiblePublicCount)} More</span>
                                 <span className="text-[9px] text-slate-400 mt-0.5">អូសបន្ត</span>
