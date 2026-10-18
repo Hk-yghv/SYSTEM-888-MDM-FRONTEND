@@ -1,5 +1,6 @@
 import express from 'express';
 import CalculateSchedule from '../models/CalculateSchedule.js';
+import ControlSystem from '../models/ControlSystem.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
@@ -12,6 +13,75 @@ if (!MEM_DB.calculateSchedules) {
 }
 
 const sseClients = new Set();
+const migratedLegacyScheduleBrands = new Set();
+const legacyScheduleMigrations = new Map();
+
+const getFirstSubBrandForBrand = async (brand) => {
+    let config = null;
+    if (isMongoConnected) {
+        const results = await queryAllDBs(ControlSystem, M => M.findOne({
+            key: 'brand_subbrands',
+            $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }]
+        }).select('value'));
+        config = Array.isArray(results) ? results.find(Boolean) : results;
+    }
+
+    const brandSubBrands = config?.value || MEM_DB.controlSystem?.brand_subbrands ||
+        MEM_DB.controlSystems?.find(item => item.key === 'brand_subbrands' && !item.brand)?.value || {};
+    let subBrands = brandSubBrands instanceof Map
+        ? brandSubBrands.get(brand)
+        : brandSubBrands[brand];
+    if (typeof subBrands === 'string') subBrands = [subBrands];
+    return Array.isArray(subBrands)
+        ? subBrands.find(subBrand => typeof subBrand === 'string' && subBrand.trim())?.trim() || ''
+        : '';
+};
+
+const backfillLegacySchedules = async (brand) => {
+    if (!brand || migratedLegacyScheduleBrands.has(brand)) return;
+    const pendingMigration = legacyScheduleMigrations.get(brand);
+    if (pendingMigration) {
+        await pendingMigration;
+        return;
+    }
+
+    const migration = (async () => {
+        const firstSubBrand = await getFirstSubBrandForBrand(brand);
+        if (!firstSubBrand) return;
+
+        if (isMongoConnected) {
+            await queryAllDBs(CalculateSchedule, async M => {
+                const unassignedFilter = {
+                    brand: { $regex: new RegExp(`^${brand.trim()}$`, 'i') },
+                    $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }]
+                };
+                if (await M.exists(unassignedFilter)) {
+                    await M.updateMany(unassignedFilter, { $set: { subBrand: firstSubBrand } });
+                }
+                return [];
+            });
+        }
+
+        if (Array.isArray(MEM_DB.calculateSchedules)) {
+            MEM_DB.calculateSchedules.forEach(record => {
+                if (
+                    String(record.brand || '').trim().toLowerCase() === brand.trim().toLowerCase() &&
+                    !String(record.subBrand || '').trim()
+                ) {
+                    record.subBrand = firstSubBrand;
+                }
+            });
+        }
+        migratedLegacyScheduleBrands.add(brand);
+    })();
+
+    legacyScheduleMigrations.set(brand, migration);
+    try {
+        await migration;
+    } finally {
+        legacyScheduleMigrations.delete(brand);
+    }
+};
 
 export const broadcastCalculateUpdate = (eventData) => {
     try {
@@ -65,6 +135,7 @@ router.get('/', async (req, res) => {
 
         const { search = '' } = req.query;
         const isolation = await resolveUserIsolation(req);
+        await backfillLegacySchedules(isolation.brand);
 
         let records = [];
         if (isMongoConnected) {
@@ -79,15 +150,11 @@ router.get('/', async (req, res) => {
                     ];
                 }
                 // Enforce Brand and Sub-Brand isolation in MongoDB query
-                applyIsolationFilter(query, isolation, { includeUnassignedSubBrand: true });
+                applyIsolationFilter(query, isolation);
                 return await M.find(query).sort({ createdAt: -1 }).lean();
             });
         } else {
-            let list = filterInMemoryRecords(
-                [...MEM_DB.calculateSchedules],
-                isolation,
-                { includeUnassignedSubBrand: true }
-            );
+            let list = filterInMemoryRecords([...MEM_DB.calculateSchedules], isolation);
             if (search && search.trim()) {
                 const s = search.trim().toLowerCase();
                 list = list.filter(item =>
@@ -105,11 +172,7 @@ router.get('/', async (req, res) => {
 
         // Secondary safety in-memory filter
         if (!isolation.isMasterAdmin && records.length > 0) {
-            records = filterInMemoryRecords(
-                records,
-                isolation,
-                { includeUnassignedSubBrand: true }
-            );
+            records = filterInMemoryRecords(records, isolation);
         }
 
         res.json({ success: true, count: records.length, data: records });
@@ -146,8 +209,8 @@ router.post('/', async (req, res) => {
         }
 
         const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : brand;
-        const effectiveSubBrand = (!isolation.isMasterAdmin && isolation.hasSubBrandRestriction && !subBrand)
-            ? (isolation.allowedSubBrands[0] || '')
+        const effectiveSubBrand = !isolation.isMasterAdmin && isolation.allowedSubBrands.length > 0
+            ? isolation.allowedSubBrands[0]
             : subBrand;
 
         const newDoc = {

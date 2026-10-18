@@ -1,5 +1,6 @@
 import express from 'express';
 import ControlSystem from '../models/ControlSystem.js';
+import CalculateSchedule from '../models/CalculateSchedule.js';
 import Contract from '../models/Contract.js';
 import User from '../models/User.js';
 import PhoneLog from '../models/PhoneLog.js';
@@ -463,9 +464,23 @@ router.post('/subbrands', async (req, res) => {
         let backfilledContracts = 0;
         let backfilledUrls = 0;
         let backfilledLogs = 0;
+        let backfilledSchedules = 0;
 
         if (defaultSubBrand) {
             if (isMongoConnected) {
+                try {
+                    await queryAllDBs(CalculateSchedule, async (BoundM) => {
+                        const result = await BoundM.updateMany(
+                            { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                            { $set: { subBrand: defaultSubBrand } }
+                        );
+                        backfilledSchedules += (result.modifiedCount || 0);
+                        return [];
+                    });
+                } catch (e) {
+                    console.warn('[SubBrands] Backfill calculate schedules warning:', e.message);
+                }
+
                 // Update Contracts
                 try {
                     await queryAllDBs(Contract, async (BoundM) => {
@@ -518,6 +533,14 @@ router.post('/subbrands', async (req, res) => {
                     }
                 });
             }
+            if (MEM_DB.calculateSchedules) {
+                MEM_DB.calculateSchedules.forEach(schedule => {
+                    if (schedule.brand === brand && (!schedule.subBrand || schedule.subBrand === '')) {
+                        schedule.subBrand = defaultSubBrand;
+                        backfilledSchedules++;
+                    }
+                });
+            }
             if (MEM_DB.savedUrls) {
                 MEM_DB.savedUrls.forEach(u => {
                     if (u.brand === brand && (!u.subBrand || u.subBrand === '')) {
@@ -544,7 +567,7 @@ router.post('/subbrands', async (req, res) => {
             subbrands: normalized[brand] || [],
             brand_subbrands: normalized,
             message: `Sub Brand '${subBrand}' added. Existing data assigned to '${defaultSubBrand}'.`,
-            backfillCount: backfilledContracts + backfilledUrls + backfilledLogs
+            backfillCount: backfilledContracts + backfilledUrls + backfilledLogs + backfilledSchedules
         });
     } catch (err) {
         console.error('Add subbrand error:', err);
