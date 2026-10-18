@@ -1133,7 +1133,7 @@ const CalculateSchedule2 = () => {
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
                                     <span className="text-slate-800  text-[13px]">ចំនួនទឹកប្រាក់បញ្ចាំ៖</span>
                                     <span className="text-blue-500 font-bold  text-[13px]">
-                                        {result.principal.toLocaleString('km-KH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ដុល្លារ
+                                        {result.principal.toLocaleString('km-KH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USD
                                     </span>
                                 </div>
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
@@ -1143,7 +1143,7 @@ const CalculateSchedule2 = () => {
                                 <div className="cs2-meta-row flex items-center justify-between w-full">
                                     <span className="text-slate-800 text-[13px]">ការប្រាក់ និងសេវាជួល៖</span>
                                     <span className="font-black text-right  text-[13px] text-blue-500">
-                                        {result.monthlyInterest.toLocaleString('km-KH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                                        {result.monthlyInterest.toLocaleString('km-KH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} $
                                     </span>
                                 </div>
                             </div>
