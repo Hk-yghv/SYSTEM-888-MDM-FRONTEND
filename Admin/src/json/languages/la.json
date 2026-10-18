@@ -1015,7 +1015,7 @@
   "calculatePrintLandscape": "Calculate print landscape",
   "calculatePrintPortrait": "Calculate print portrait",
   "calculateSaveFailed": "Calculate save failed",
-  "calculateSaveScheduleHint": "Calculate save schedule hint",
+  "calculateSaveScheduleHint": "ຄລິກປຸ່ມ “ບັນທຶກ” ເພື່ອບັນທຶກຕາຕະລາງນີ້.",
   "calendarConfirmDelete": "Calendar confirm ລຶບ",
   "call": "Call",
   "cannotUndoAction": "Cannot undo ການດຳເນີນການ",
@@ -1928,5 +1928,7 @@
   "wizardStepPreviewTest": "Wizard step preview test",
   "workflows": "Workflows",
   "yourBrand": "Your brand",
+  "newRecord": "ໃໝ່",
+  "calculateHistoryLoadFailed": "ບໍ່ສາມາດໂຫຼດຕາຕະລາງທີ່ບັນທຶກໄວ້ໄດ້. ກະລຸນາລອງອີກຄັ້ງ.",
   "you": "ທ່ານ:"
 }

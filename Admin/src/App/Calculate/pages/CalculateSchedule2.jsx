@@ -37,6 +37,7 @@ const CalculateSchedule2 = () => {
     const [result, setResult] = useState(null);
     const [savedHistory, setSavedHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyLoadError, setHistoryLoadError] = useState(false);
     const [historySearch, setHistorySearch] = useState('');
     const [saving, setSaving] = useState(false);
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
@@ -102,15 +103,19 @@ const CalculateSchedule2 = () => {
             const res = await fetch(
                 `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&userSubBrands=${encodeURIComponent(userSubBrands)}&_t=${Date.now()}`
             );
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success && Array.isArray(data.data)) {
-                    setSavedHistory(data.data);
-                    setContractNumber(current => current || getNextContractNumber(data.data));
-                }
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
             }
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.data)) {
+                throw new Error(data.error || 'Invalid calculate schedules response');
+            }
+            setSavedHistory(data.data);
+            setHistoryLoadError(false);
+            setContractNumber(current => current || getNextContractNumber(data.data));
         } catch (err) {
             console.error('Error loading saved calculation history:', err);
+            setHistoryLoadError(true);
         } finally {
             if (!isSilent) setHistoryLoading(false);
         }
@@ -486,17 +491,22 @@ const CalculateSchedule2 = () => {
         const [y, m, d] = dateStr.split('-');
         const date = new Date(`${y}-${m}-${d}T00:00:00`);
 
-        const weekdays = [
-            'ថ្ងៃអាទិត្យ',
-            'ថ្ងៃចន្ទ',
-            'ថ្ងៃអង្គារ',
-            'ថ្ងៃពុធ',
-            'ថ្ងៃព្រហស្បតិ៍',
-            'ថ្ងៃសុក្រ',
-            'ថ្ងៃសៅរ៍'
-        ];
+        const localeByLanguage = {
+            km: 'km-KH',
+            en: 'en-US',
+            ja: 'ja-JP',
+            th: 'th-TH',
+            vi: 'vi-VN',
+            zh: 'zh-CN',
+            ko: 'ko-KR',
+            ru: 'ru-RU',
+            la: 'lo-LA'
+        };
+        const weekday = new Intl.DateTimeFormat(localeByLanguage[lang] || 'en-US', {
+            weekday: 'long'
+        }).format(date);
 
-        return `${d}-${m}-${y} ${weekdays[date.getDay()]}`;
+        return `${d}-${m}-${y} ${weekday}`;
     };
     const formatMoney = (value) => {
         if (value === null || value === undefined || value === '') return '';
@@ -1002,6 +1012,17 @@ const CalculateSchedule2 = () => {
                                     <FaSpinner className="animate-spin text-lg text-violet-500" />
                                     <span>{t('loading', lang === 'km' ? 'កំពុងទាញយកទិន្នន័យ...' : 'Loading data...')}</span>
                                 </div>
+                            ) : historyLoadError && savedHistory.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-40 text-rose-500 text-xs text-center p-2">
+                                    <span>{t('calculateHistoryLoadFailed', lang === 'km' ? 'មិនអាចទាញយកប្រវត្តិកាលវិភាគបានទេ។ សូមព្យាយាមម្ដងទៀត។' : 'Unable to load saved schedules. Please try again.')}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => fetchHistory(false)}
+                                        className="mt-2 px-3 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold"
+                                    >
+                                        {t('reload')}
+                                    </button>
+                                </div>
                             ) : filteredHistory.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs text-center p-2">
                                     <FaFileInvoiceDollar className="text-3xl text-slate-300 mb-2" />
@@ -1028,10 +1049,10 @@ const CalculateSchedule2 = () => {
                                                     }`}>
                                                 <div className="flex items-start justify-between gap-1">
                                                     <div className="flex items-center gap-1.5 font-bold text-slate-800 truncate">
-                                                        <span>{item.customerName || 'អតិថិជនទូទៅ'}</span>
+                                                        <span>{item.customerName || t('generalCustomer')}</span>
                                                         {isNewlyAdded && (
                                                             <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-600 text-white font-bold tracking-tight animate-bounce">
-                                                                ថ្មី
+                                                                {t('newRecord')}
                                                             </span>
                                                         )}
                                                     </div>

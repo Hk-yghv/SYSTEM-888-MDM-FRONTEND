@@ -264,7 +264,7 @@ const getRowUrgency = (displayRow, isAllDone, t) => {
 // ──────────────────────────────────────────────────────────────────────────────
 // Portal dropdown — renders outside DOM tree to escape overflow clipping
 // ──────────────────────────────────────────────────────────────────────────────
-const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal }) => {
+const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal, t }) => {
     const schedule = item?.repaymentSchedule || [];
     const activeIdx = getActiveRowIdx(schedule);
     const menuRef = useRef(null);
@@ -362,7 +362,7 @@ const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMont
 // ──────────────────────────────────────────────────────────────────────────────
 
 const InstallmentPage = () => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE1, user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -380,13 +380,13 @@ const InstallmentPage = () => {
 
     // Sync search param from URL when URL changes
     useEffect(() => {
-        const q = searchParams.get('search');
-        if (q !== null && q !== searchTerm) {
+        const q = searchParams.get('search') || '';
+        if (q !== searchTerm) {
             setSearchTerm(q);
             setCurrentPage(1);
         }
-        const u = searchParams.get('urgency');
-        if (u !== null && u !== urgencyFilter) {
+        const u = searchParams.get('urgency') || 'all';
+        if (u !== urgencyFilter) {
             setUrgencyFilter(u);
             setCurrentPage(1);
         }
@@ -654,6 +654,7 @@ const InstallmentPage = () => {
                     onOpenSchedule={openScheduleForMonth}
                     onSelectMonth={selectMonthForOuterRow}
                     onOpenQrModal={(c) => setSelectedQrContract(c)}
+                    t={t}
                 />
             )}
 
