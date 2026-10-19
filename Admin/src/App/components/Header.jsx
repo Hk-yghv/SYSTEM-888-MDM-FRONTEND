@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
-import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes, FaTelegramPlane, FaWallet, FaArrowUp, FaMoneyBillWave, FaDownload, FaExternalLinkAlt } from 'react-icons/fa';
 import { MdOutlineTrendingUp, MdAttachMoney } from 'react-icons/md';
 import { getFirstAllowedRoute, hasAnyAlertPermission } from '../../utils/permissionUtils';
 
@@ -23,7 +23,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         totalLoanAmount: 0,
         totalRevenue: 0,
         totalRepaymentExpected: 0,
-        outstandingBalance: 0
+        outstandingBalance: 0,
+        totalPenaltyReceived: 0
     });
     const [pulseAlert, setPulseAlert] = useState(false);
     const [installPrompt, setInstallPrompt] = useState(() => (
@@ -172,10 +173,15 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
             const contractParams = new URLSearchParams(params);
             contractParams.set('limit', '999999');
+            const penaltyParams = new URLSearchParams(params);
+            penaltyParams.set('type', 'penalty');
+            penaltyParams.set('page', '1');
+            penaltyParams.set('limit', '1');
 
-            const [statsRes, contractsRes] = await Promise.all([
+            const [statsRes, contractsRes, penaltyRes] = await Promise.all([
                 fetch(`${API_BASE}/dashboard/stats?${params.toString()}`),
-                fetch(`${API_BASE1}/contracts?${contractParams.toString()}`)
+                fetch(`${API_BASE1}/contracts?${contractParams.toString()}`),
+                fetch(`${API_BASE}/cash-transactions?${penaltyParams.toString()}`)
             ]);
 
             if (!statsRes.ok) {
@@ -206,12 +212,30 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             const resolvedExpected = totalExpected || data.totalRepaymentExpected || 0;
             const resolvedOutstanding = Math.max(resolvedExpected - totalCustomerPaid, 0);
 
-            setBalance({
+            let totalPenaltyReceived;
+            if (penaltyRes.ok) {
+                try {
+                    const penaltyData = await penaltyRes.json();
+                    const amount = Number(penaltyData?.kpi?.grandTotalUSD);
+                    if (Number.isFinite(amount)) {
+                        totalPenaltyReceived = amount;
+                    } else {
+                        console.error('Penalty summary response did not contain a valid USD total.');
+                    }
+                } catch (err) {
+                    console.error('Unable to read penalty financial summary:', err);
+                }
+            } else {
+                console.error(`Header penalty summary request failed: HTTP ${penaltyRes.status}`);
+            }
+
+            setBalance(current => ({
                 totalLoanAmount: data.totalLoanAmount || 0,
                 totalRevenue: contractsRes.ok ? totalCustomerPaid : (data.totalRevenue || 0),
                 totalRepaymentExpected: resolvedExpected,
-                outstandingBalance: resolvedOutstanding
-            });
+                outstandingBalance: resolvedOutstanding,
+                totalPenaltyReceived: totalPenaltyReceived ?? current.totalPenaltyReceived
+            }));
         } catch (err) {
             console.error('Unable to fetch header financial summary:', err);
         }
@@ -336,6 +360,20 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                             <div>
                                 <p className='text-[8px] text-amber-600 uppercase tracking-wider leading-none'>{t('outstandingReceivables') || 'Outstanding'}</p>
                                 <p className='text-xs font-black text-amber-800 leading-tight font-mono'>{formatMoney(balance.outstandingBalance)}</p>
+                            </div>
+                        </div>
+
+                        {/* Penalty Revenue */}
+                        <div
+                            className='flex items-center gap-2 px-2.5 py-1.5 rounded-[8px] cursor-default border border-rose-200 bg-rose-50'
+                            title='ប្រាក់ទទួលបានពីការពិន័យ'
+                        >
+                            <div className='w-5 h-5 rounded-md flex items-center justify-center bg-rose-200'>
+                                <FaMoneyBillWave className='text-rose-700' size={10} />
+                            </div>
+                            <div>
+                                <p className='text-[8px] text-rose-600 uppercase tracking-wider leading-none'>{t('totalPenaltyReceived')}</p>
+                                <p className='text-xs font-black text-rose-800 leading-tight font-mono'>{formatMoney(balance.totalPenaltyReceived)}</p>
                             </div>
                         </div>
                     </div>
