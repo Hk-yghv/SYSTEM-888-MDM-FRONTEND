@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import { createPortal } from 'react-dom';
 import { FaMobileAlt, FaCheck, FaCloudUploadAlt, FaTrashAlt, FaExpand, FaImage } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
@@ -33,6 +34,17 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
     const [viewHistoryImageIndex, setViewHistoryImageIndex] = useState(0);
 
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        if (!open) return undefined;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [open]);
 
     // Reset when modal opens
     useEffect(() => {
@@ -195,12 +207,12 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
         }
     };
 
-    return (
+    return createPortal((
         <>
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-2 overflow-y-auto">
-                <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-6 w-full max-w-4xl shadow-2xl space-y-6 animate-in zoom-in-95 duration-150">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999999] p-2 overflow-hidden overscroll-none">
+                <div className="bg-[#0f1426] border border-gray-700 rounded-3xl p-4 sm:p-6 w-full max-w-4xl max-h-[calc(100dvh-1rem)] min-h-0 shadow-2xl flex flex-col gap-4 overflow-hidden animate-in zoom-in-95 duration-150">
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                    <div className="flex items-center justify-between border-b border-gray-800 pb-3 flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-[5px] bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
                                 <FaMobileAlt className="text-xl" />
@@ -224,7 +236,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                     </div>
 
                     {paymentSuccess ? (
-                        <div className="p-8 text-center space-y-3">
+                        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-8 text-center space-y-3">
                             <div className="w-16 h-16 rounded-full bg-emerald-600/20 border border-emerald-500 flex items-center justify-center text-emerald-400 text-3xl mx-auto animate-bounce">
                                 <FaCheck />
                             </div>
@@ -232,10 +244,10 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                             <p className="text-xs text-gray-300">{t('paymentReceiptSavedHistory')}</p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Left Column: Payment Entry Form */}
-                                <div className="p-5 rounded-[5px] bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner flex flex-col justify-between">
+                                <div className="min-w-0 p-4 sm:p-5 rounded-[5px] bg-[#090c17] border border-indigo-500/30 text-left space-y-4 relative shadow-inner flex flex-col justify-between">
                                     <div>
                                         <div className="flex items-center gap-2 pb-2 border-b border-gray-800 text-xs font-bold text-emerald-400">
                                             <FaMobileAlt className="text-base" />
@@ -308,7 +320,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                                 </div>
 
                                 {/* Right Column: Payment Proof / Receipt Image Upload */}
-                                <div className="p-5 rounded-[5px] bg-gray-900/80 border border-gray-800 text-center space-y-3 flex flex-col justify-between">
+                                <div className="min-w-0 p-4 sm:p-5 rounded-[5px] bg-gray-900/80 border border-gray-800 text-center space-y-3 flex flex-col justify-between">
                                     <div className="flex items-center justify-between pb-2 border-b border-gray-800">
                                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
                                             <FaImage className="text-sm" />
@@ -428,7 +440,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                             </div>
 
                             {/* Payment History Section */}
-                            <div className="p-5 rounded-[5px] bg-gray-900/80 border border-sky-500/30 space-y-3">
+                            <div className="min-w-0 p-4 sm:p-5 rounded-[5px] bg-gray-900/80 border border-sky-500/30 space-y-3">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-2">
                                     <h4 className="text-xs font-bold text-sky-300 uppercase tracking-wider">{t('paymentHistory')}</h4>
                                     <span className="text-[10px] text-gray-400">{qrPayments.length} Transactions</span>
@@ -511,7 +523,7 @@ const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
                 />
             )}
         </>
-    );
+    ), document.body);
 };
 
 export default QrPaymentModal;

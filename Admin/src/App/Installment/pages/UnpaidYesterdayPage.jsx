@@ -89,7 +89,7 @@ const statusTextClass = (status) => {
     return 'text-amber-700';
 };
 
-const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal }) => {
+const ActionDropdownPortal = ({ item, pos, onClose, onOpenSchedule, onSelectMonth, onOpenQrModal, t }) => {
     const schedule = item?.repaymentSchedule || [];
     const activeIdx = getActiveRowIdx(schedule);
     const dropdownWidth = 240;
@@ -235,7 +235,7 @@ const UnpaidYesterdayPage = () => {
             <RepaymentScheduleModal open={scheduleModalOpen} setOpen={setScheduleModalOpen} contract={scheduleModalContract} mode="view_edit" defaultMonthIdx={scheduleModalMonthIdx} onSaved={() => fetchContracts(searchTerm)} />
             <QrPaymentModal open={Boolean(selectedQrContract)} contract={selectedQrContract} onClose={() => setSelectedQrContract(null)} onSaved={() => fetchContracts(searchTerm)} />
             {openMenu.id && openMenuContract && (
-                <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} />
+                <ActionDropdownPortal item={openMenuContract} pos={openMenu.pos} onClose={() => setOpenMenu({ id: null, pos: { left: 0, bottom: 0 } })} onOpenSchedule={openScheduleForMonth} onSelectMonth={selectMonthForOuterRow} onOpenQrModal={(c) => setSelectedQrContract(c)} t={t} />
             )}
 
             <header className='p-2 w-full border border-amber-200 bg-white rounded-[5px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs'>
