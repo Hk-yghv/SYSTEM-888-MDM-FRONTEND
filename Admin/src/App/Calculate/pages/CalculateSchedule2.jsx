@@ -584,6 +584,10 @@ const CalculateSchedule2 = () => {
                                 #cs2-print-area table td {
                                     border: 1px solid #000 !important;
                                     color: #000 !important;
+                                    line-height: 1.8 !important;
+                                    padding-top: 6px !important;
+                                    padding-bottom: 6px !important;
+                                    vertical-align: middle !important;
                                     print-color-adjust: exact !important;
                                 }
                                 #cs2-print-area .cs2-meta-grid {
@@ -783,6 +787,10 @@ const CalculateSchedule2 = () => {
                     #cs2-print-area table td {
                         border: 1px solid #000000 !important;
                         color: #000000 !important;
+                        line-height: 1.8 !important;
+                        padding-top: 6px !important;
+                        padding-bottom: 6px !important;
+                        vertical-align: middle !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
