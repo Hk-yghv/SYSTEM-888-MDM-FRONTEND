@@ -584,11 +584,13 @@ const CalculateSchedule2 = () => {
                                 #cs2-print-area table td {
                                     border: 1px solid #000 !important;
                                     color: #000 !important;
-                                    line-height: 1.8 !important;
-                                    padding-top: 6px !important;
-                                    padding-bottom: 6px !important;
                                     vertical-align: middle !important;
                                     print-color-adjust: exact !important;
+                                }
+                                #cs2-print-area table th > span,
+                                #cs2-print-area table td > .cs2-cell-text {
+                                    position: relative !important;
+                                    top: -2px !important;
                                 }
                                 #cs2-print-area .cs2-meta-grid {
                                     display: grid !important;
@@ -787,12 +789,14 @@ const CalculateSchedule2 = () => {
                     #cs2-print-area table td {
                         border: 1px solid #000000 !important;
                         color: #000000 !important;
-                        line-height: 1.8 !important;
-                        padding-top: 6px !important;
-                        padding-bottom: 6px !important;
                         vertical-align: middle !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
+                    }
+                    #cs2-print-area table th > span,
+                    #cs2-print-area table td > .cs2-cell-text {
+                        position: relative !important;
+                        top: -2px !important;
                     }
                     #cs2-print-area .cs2-meta-grid {
                         display: grid !important;
@@ -1383,18 +1387,18 @@ const CalculateSchedule2 = () => {
                                     {result.schedule.map((row) => (
                                         <tr key={row.no}
                                             className="text-center">
-                                            <td className="px-3 border border-black text-slate-900">{row.no}</td>
+                                            <td className="px-3 border border-black text-slate-900"><span className="cs2-cell-text">{row.no}</span></td>
                                             <td className="px-4 border border-black text-slate-900 text-left py-1">
-                                                {formatDateWithWeekday(row.dueDate)}
+                                                <span className="cs2-cell-text">{formatDateWithWeekday(row.dueDate)}</span>
                                             </td>
                                             <td className="px-4 border border-black text-slate-900">
-                                                {row.totalDueMonth ? row.totalDueMonth.toLocaleString('km-KH', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) : ''}
+                                                <span className="cs2-cell-text">{row.totalDueMonth ? row.totalDueMonth.toLocaleString('km-KH', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) : ''}</span>
                                             </td>
                                             <td className="px-4 border border-black text-slate-900">
-                                                {result.monthlyInterest.toLocaleString('km-KH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                                                <span className="cs2-cell-text">{result.monthlyInterest.toLocaleString('km-KH', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</span>
                                             </td>
                                             <td className="px-3 border border-black text-slate-900">
-                                                {formatMoney(row.remainingBalance)}
+                                                <span className="cs2-cell-text">{formatMoney(row.remainingBalance)}</span>
                                             </td>
                                         </tr>
                                     ))}
