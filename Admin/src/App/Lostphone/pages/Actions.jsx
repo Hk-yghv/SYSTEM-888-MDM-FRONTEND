@@ -213,7 +213,7 @@ const Actions = () => {
                                             </span>
                                         </td>
                                         <td className='px-4 py-1 text-center'>
-                                            {hasPermission('/lostphone/actions', 'edit') || hasPermission('/lostphone/actions', 'create') ? (
+                                            {hasPermission('/lostphone/actions', isLocked ? 'unlockPhone' : 'lockDevice') ? (
                                                 isLocked ? (
                                                     <button
                                                         onClick={() => handleOpenConfirm(item, 'Unlocked')}

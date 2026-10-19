@@ -5,6 +5,7 @@ import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel, dbInstances } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
+import { backfillTelegramAuditSubBrand } from '../utils/telegramAuditSubBrand.js';
 
 const router = express.Router();
 
@@ -170,6 +171,12 @@ router.get('/', async (req, res) => {
         const targetDate = date ? String(date).trim() : getTodayDateStr();
         const todayStr = getTodayDateStr();
         const isolation = await resolveUserIsolation(req);
+        if (!isolation.isMasterAdmin && isolation.brand) {
+            const firstSubBrand = await resolveSubBrand(isolation.brand);
+            if (firstSubBrand) {
+                await backfillTelegramAuditSubBrand(isolation.brand, firstSubBrand);
+            }
+        }
         const submissionFilter = { auditDate: targetDate };
         const contactFilter = {};
         const logScopeFilter = {};

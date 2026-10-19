@@ -75,7 +75,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Reports & Analytics', path: '/audit/telegram/report', label: 'Report Audit Telegram (របាយការណ៍ Audit)', actions: ['read', 'export'] },
 
     { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log', actions: ['read', 'export'] },
-    { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log', actions: ['read', 'export'] },
+    { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log', actions: ['read', 'edit', 'export'] },
 
     { category: 'Follow Up System', path: '/follow-up/follow-up-1', label: 'Follow Up 1', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-2', label: 'Follow up 2 (បញ្ចាំ & ឆ្លើយតបឆាត)', actions: ['read', 'create', 'edit', 'delete', 'export'] },

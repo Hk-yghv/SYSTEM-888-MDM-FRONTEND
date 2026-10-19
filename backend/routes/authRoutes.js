@@ -16,13 +16,11 @@ const QR_ENCRYPTION_KEY = createHash('sha256')
     .update(process.env.ENCRYPTION_KEY || JWT_SECRET || randomBytes(32))
     .digest();
 const AUTH_COOKIE_NAME = 'mdm_session';
-const AUTH_COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const AUTH_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/api',
-    maxAge: AUTH_COOKIE_MAX_AGE_MS
+    path: '/api'
 };
 const AUTH_COOKIE_CLEAR_OPTIONS = {
     httpOnly: true,
@@ -410,7 +408,7 @@ export default function createAuthRoutes(bot) {
             }
 
             const token = jwt.sign(
-                { userId: user.userId, username: user.username },
+                { userId: user.userId, username: user.username, sessionVersion: 2 },
                 JWT_SECRET,
                 { expiresIn: '30d' }
             );
@@ -515,7 +513,7 @@ export default function createAuthRoutes(bot) {
             }).catch(() => { });
 
             const token = jwt.sign(
-                { userId: user.userId, username: user.username },
+                { userId: user.userId, username: user.username, sessionVersion: 2 },
                 JWT_SECRET,
                 { expiresIn: '30d' }
             );
@@ -772,7 +770,7 @@ export default function createAuthRoutes(bot) {
         }
 
         const token = jwt.sign(
-            { userId: user.userId, username: user.username },
+            { userId: user.userId, username: user.username, sessionVersion: 2 },
             JWT_SECRET,
             { expiresIn: '30d' }
         );

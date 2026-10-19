@@ -8,10 +8,10 @@ import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
 import SavedUrl from '../models/SavedUrl.js';
 import { FollowUp4Submit } from '../models/FollowUp4.js';
-import { TelegramAuditContact, TelegramAuditLog, TelegramAuditSubmission } from '../models/TelegramAudit.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { backfillFollowUp4SubmitSubBrands } from './followUp4Routes.js';
+import { backfillTelegramAuditSubBrand } from '../utils/telegramAuditSubBrand.js';
 
 const router = express.Router();
 
@@ -542,24 +542,10 @@ router.post('/subbrands', async (req, res) => {
                     console.warn('[SubBrands] Backfill Follow Up 4 submits warning:', e.message);
                 }
 
-                // Update Telegram audit contacts, logs, and daily submissions
-                for (const [model, label] of [
-                    [TelegramAuditContact, 'contacts'],
-                    [TelegramAuditLog, 'logs'],
-                    [TelegramAuditSubmission, 'submissions']
-                ]) {
-                    try {
-                        await queryAllDBs(model, async (BoundM) => {
-                            const result = await BoundM.updateMany(
-                                { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
-                                { $set: { subBrand: defaultSubBrand } }
-                            );
-                            backfilledTelegramAudit += (result.modifiedCount || 0);
-                            return [];
-                        });
-                    } catch (e) {
-                        console.warn(`[SubBrands] Backfill Telegram audit ${label} warning:`, e.message);
-                    }
+                try {
+                    backfilledTelegramAudit += await backfillTelegramAuditSubBrand(brand, defaultSubBrand);
+                } catch (e) {
+                    console.warn('[SubBrands] Backfill Telegram audit data warning:', e.message);
                 }
             }
 
@@ -598,19 +584,6 @@ router.post('/subbrands', async (req, res) => {
             }
             backfilledFollowUp4Submits += backfillFollowUp4SubmitSubBrands(brand, defaultSubBrand);
 
-            for (const collection of [
-                MEM_DB.telegramAuditContacts,
-                MEM_DB.telegramAuditLogs,
-                MEM_DB.telegramAuditSubmissions
-            ]) {
-                if (!Array.isArray(collection)) continue;
-                collection.forEach(item => {
-                    if (item.brand === brand && (!item.subBrand || item.subBrand === '')) {
-                        item.subBrand = defaultSubBrand;
-                        backfilledTelegramAudit++;
-                    }
-                });
-            }
         }
 
         const normalized = normalizeBrandSubbrands(brand_subbrands);

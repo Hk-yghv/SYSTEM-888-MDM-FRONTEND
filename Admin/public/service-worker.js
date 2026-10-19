@@ -1,4 +1,4 @@
-const CACHE_NAME = "system-mdm-shell-v1";
+const CACHE_NAME = "system-mdm-shell-v2";
 const APP_SHELL = [
     "/",
     "/manifest.webmanifest",
@@ -50,7 +50,26 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    if (url.pathname.startsWith("/assets/") || APP_SHELL.includes(url.pathname)) {
+    if (url.pathname.startsWith("/assets/")) {
+        event.respondWith(
+            fetch(request).then((response) => {
+                const contentType = response.headers.get("content-type") || "";
+                const isExpectedAsset = request.destination === "script"
+                    ? /javascript|ecmascript/i.test(contentType)
+                    : request.destination === "style"
+                        ? /text\/css/i.test(contentType)
+                        : !/text\/html/i.test(contentType);
+                if (response.ok && isExpectedAsset) {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+                }
+                return response;
+            }).catch(async () => (await caches.match(request)) || Response.error())
+        );
+        return;
+    }
+
+    if (APP_SHELL.includes(url.pathname)) {
         event.respondWith(
             caches.match(request).then((cached) => {
                 if (cached) return cached;

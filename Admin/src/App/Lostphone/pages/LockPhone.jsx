@@ -160,7 +160,7 @@ const LockPhone = () => {
                         </select>
                     )}
 
-                    {hasPermission('/lost-phone/lock-phone', 'export') && (
+                    {hasPermission('/lostphone/lockphone', 'export') && (
                         <>
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         </>

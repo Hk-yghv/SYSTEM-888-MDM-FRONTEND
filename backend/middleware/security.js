@@ -289,6 +289,7 @@ export const verifySecurityAuth = (req, res, next) => {
     const token = (bearerToken && !EXTERNAL_PARTNER_API_KEYS.includes(bearerToken))
         ? bearerToken
         : getSessionCookieToken(req.headers.cookie);
+    const isSessionCookieToken = token && token === getSessionCookieToken(req.headers.cookie);
     const acceptHeader = (req.headers['accept'] || '').toLowerCase();
     const userAgent = (req.headers['user-agent'] || '').toLowerCase();
 
@@ -432,6 +433,9 @@ export const verifySecurityAuth = (req, res, next) => {
                 return res.status(503).json({ error: 'API authentication is not configured securely.' });
             }
             const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
+            if (isSessionCookieToken && decoded.sessionVersion !== 2) {
+                return res.status(401).json({ error: 'Browser session expired. Please log in again.' });
+            }
             req.user = decoded;
             return next();
         } catch (err) {

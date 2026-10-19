@@ -163,7 +163,7 @@ const Actions = () => {
                                             </span>
                                         </td>
                                         <td className='px-4 py-1 text-center'>
-                                            {hasPermission('/wallpaper/actions', 'edit') || hasPermission('/wallpaper/actions', 'create') ? (
+                                            {hasPermission('/wallpaper/actions', isLocked ? 'unlockWallpaper' : 'setWallpaper') ? (
                                                 isLocked ? (
                                                     <button
                                                         onClick={() => handleToggleWallpaper(item, 'Unlocked')}

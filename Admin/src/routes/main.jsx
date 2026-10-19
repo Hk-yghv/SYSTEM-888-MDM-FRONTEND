@@ -7,6 +7,23 @@ document.title = __APP_NAME__;
 
 localStorage.setItem("website_version", __WEBSITE_VERSION__);
 
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  const retryKey = `mdm_chunk_retry_${__WEBSITE_VERSION__}`;
+  try {
+    const lastRetry = Number(sessionStorage.getItem(retryKey) || 0);
+    if (Date.now() - lastRetry < 30000) {
+      console.error("App module failed to load after refreshing; retry later or clear site cache.");
+      return;
+    }
+    sessionStorage.setItem(retryKey, String(Date.now()));
+  } catch (error) {
+    console.error("Unable to prepare app reload after module load failure:", error);
+    return;
+  }
+  window.location.reload();
+});
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js")
