@@ -7,6 +7,7 @@
     "telegram": "/telegram",
     "customer": "/customer",
     "device": "/device",
+    "deviceEnrolment": "/device/enrolment",
     "report": {
         "report": "/report",
         "allCustomers": "/report/all-customers",

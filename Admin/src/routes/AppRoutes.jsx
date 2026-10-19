@@ -13,6 +13,7 @@ const KhmerCalendarPage = lazy(() => import("../App/Calendar/KhmerCalendarPage")
 const TelegramPage = lazy(() => import("../App/Telegram/TelegramPage"));
 const Customer = lazy(() => import("../App/Customer/pages/Customer"));
 const Device = lazy(() => import("../App/Device/pages/Device"));
+const DeviceEnrolment = lazy(() => import("../App/Device/pages/DeviceEnrolment"));
 const Application = lazy(() => import("../App/Contract/page/Application"));
 const Activated = lazy(() => import("../App/Contract/page/Activated"));
 const Check = lazy(() => import("../App/Contract/page/Check"));
@@ -118,6 +119,7 @@ const AppRoutes = () => {
       {/* Customer & Device */}
       <Route path={json.customer} element={renderProtected(json.customer, Customer)} />
       <Route path={json.device} element={renderProtected(json.device, Device)} />
+      <Route path={json.deviceEnrolment || "/device/enrolment"} element={renderProtected(json.device, DeviceEnrolment)} />
 
       {/* Contracts */}
       <Route path={json.contract.application} element={renderProtected(json.contract.application, Application)} />
