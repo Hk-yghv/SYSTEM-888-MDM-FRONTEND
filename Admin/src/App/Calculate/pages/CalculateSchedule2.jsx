@@ -508,7 +508,7 @@ const CalculateSchedule2 = () => {
             await document.fonts.ready;
             const { default: html2pdf } = await import('html2pdf.js');
             const isLandscape = printOrientation === 'landscape';
-            const pageWidth = isLandscape ? '297mm' : '210mm';
+            const pageWidth = isLandscape ? '1123px' : '794px';
             const pdfTitle = [result.contractNumber, result.customerName, 'Calculate_Schedule_2']
                 .filter(Boolean)
                 .join('_')
@@ -528,13 +528,34 @@ const CalculateSchedule2 = () => {
                             if (!clonedPrintArea) return;
 
                             sanitizePdfColors(clonedDocument);
+                            for (let ancestor = clonedPrintArea; ancestor; ancestor = ancestor.parentElement) {
+                                Object.entries({
+                                    boxSizing: 'border-box',
+                                    display: 'block',
+                                    width: pageWidth,
+                                    maxWidth: pageWidth,
+                                    minWidth: pageWidth,
+                                    height: 'auto',
+                                    maxHeight: 'none',
+                                    minHeight: '0',
+                                    margin: '0',
+                                    padding: '0',
+                                    position: 'static',
+                                    overflow: 'visible',
+                                    transform: 'none'
+                                }).forEach(([property, value]) => {
+                                    ancestor.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, 'important');
+                                });
+                            }
                             const printStyles = clonedDocument.createElement('style');
                             printStyles.textContent = `
                                 #cs2-print-area {
                                     display: block !important;
                                     position: relative !important;
-                                    width: 100% !important;
+                                    box-sizing: border-box !important;
+                                    width: ${pageWidth} !important;
                                     max-width: ${pageWidth} !important;
+                                    min-width: ${pageWidth} !important;
                                     margin: 0 auto !important;
                                     padding: 0 !important;
                                     box-shadow: none !important;
@@ -543,12 +564,15 @@ const CalculateSchedule2 = () => {
                                     overflow: visible !important;
                                 }
                                 #cs2-print-area div[class*="overflow-x-auto"] {
+                                    box-sizing: border-box !important;
+                                    width: 100% !important;
                                     min-height: auto !important;
                                     padding-bottom: 0 !important;
                                     overflow: visible !important;
                                     display: block !important;
                                 }
                                 #cs2-print-area table {
+                                    box-sizing: border-box !important;
                                     width: 100% !important;
                                     border-collapse: collapse !important;
                                     margin: 0 auto !important;
