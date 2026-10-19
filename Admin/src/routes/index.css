@@ -83,13 +83,13 @@ table {
 table thead {
     position: sticky;
     top: 0;
-    z-index: 30;
+    /* z-index: 30; */
 }
 
 table thead th {
     position: sticky;
     top: 0;
-    z-index: 30;
+    /* z-index: 30; */
 }
 
 table tbody tr.table-scroll-row {
