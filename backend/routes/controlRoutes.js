@@ -7,7 +7,6 @@ import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
 import SavedUrl from '../models/SavedUrl.js';
-import { FollowUp4Submit } from '../models/FollowUp4.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { backfillFollowUp4SubmitSubBrands } from './followUp4Routes.js';
@@ -472,6 +471,8 @@ router.post('/subbrands', async (req, res) => {
         let backfilledTelegramAudit = 0;
 
         if (defaultSubBrand) {
+            backfilledFollowUp4Submits += await backfillFollowUp4SubmitSubBrands(brand, defaultSubBrand);
+
             if (isMongoConnected) {
                 try {
                     await queryAllDBs(CalculateSchedule, async (BoundM) => {
@@ -528,20 +529,6 @@ router.post('/subbrands', async (req, res) => {
                     console.warn('[SubBrands] Backfill phoneLogs warning:', e.message);
                 }
 
-                // Update Follow Up 4 submit records
-                try {
-                    await queryAllDBs(FollowUp4Submit, async (BoundM) => {
-                        const result = await BoundM.updateMany(
-                            { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
-                            { $set: { subBrand: defaultSubBrand } }
-                        );
-                        backfilledFollowUp4Submits += (result.modifiedCount || 0);
-                        return [];
-                    });
-                } catch (e) {
-                    console.warn('[SubBrands] Backfill Follow Up 4 submits warning:', e.message);
-                }
-
                 try {
                     backfilledTelegramAudit += await backfillTelegramAuditSubBrand(brand, defaultSubBrand);
                 } catch (e) {
@@ -582,8 +569,6 @@ router.post('/subbrands', async (req, res) => {
                     }
                 });
             }
-            backfilledFollowUp4Submits += backfillFollowUp4SubmitSubBrands(brand, defaultSubBrand);
-
         }
 
         const normalized = normalizeBrandSubbrands(brand_subbrands);

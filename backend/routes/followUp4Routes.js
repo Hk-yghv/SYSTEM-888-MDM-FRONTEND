@@ -28,11 +28,38 @@ const MEM_REJECT_SUBMITS = [];
 const MEM_REJECT_CS = [];
 const MEM_DETAILS = [];
 
-export const backfillFollowUp4SubmitSubBrands = (brand, defaultSubBrand) => {
+export const backfillFollowUp4SubmitSubBrands = async (brand, defaultSubBrand) => {
+    const normalizedBrand = String(brand || '').trim();
+    const normalizedSubBrand = String(defaultSubBrand || '').trim();
+    if (!normalizedBrand || !normalizedSubBrand) return 0;
+
     let backfilledCount = 0;
+    const brandRegex = new RegExp(`^${normalizedBrand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
+    if (isMongoConnected) {
+        await queryAllDBs(FollowUp4Submit, async (M) => {
+            const result = await M.updateMany(
+                {
+                    brand: brandRegex,
+                    $or: [
+                        { subBrand: { $exists: false } },
+                        { subBrand: null },
+                        { subBrand: /^\s*$/ }
+                    ]
+                },
+                { $set: { subBrand: normalizedSubBrand } }
+            );
+            backfilledCount += result.modifiedCount || 0;
+            return [];
+        });
+    }
+
     MEM_SUBMITS.forEach(item => {
-        if (item.brand === brand && (!item.subBrand || item.subBrand === '')) {
-            item.subBrand = defaultSubBrand;
+        if (
+            String(item.brand || '').trim().toLowerCase() === normalizedBrand.toLowerCase() &&
+            !String(item.subBrand || '').trim()
+        ) {
+            item.subBrand = normalizedSubBrand;
             backfilledCount++;
         }
     });
