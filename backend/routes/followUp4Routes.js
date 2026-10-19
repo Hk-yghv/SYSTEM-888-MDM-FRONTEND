@@ -5,7 +5,8 @@ import {
     FollowUp4RejectCS,
     FollowUp4Detail
 } from '../models/FollowUp4.js';
-import { isMongoConnected } from '../config/db.js';
+import ControlSystem from '../models/ControlSystem.js';
+import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
@@ -27,6 +28,26 @@ const MEM_SUBMITS = [];
 const MEM_REJECT_SUBMITS = [];
 const MEM_REJECT_CS = [];
 const MEM_DETAILS = [];
+
+const getFirstSubBrand = async (brand) => {
+    let brandSubBrands = MEM_DB.controlSystem?.brand_subbrands || {};
+    if (isMongoConnected) {
+        const config = await queryAllDBs(ControlSystem, M =>
+            M.findOne({
+                key: 'brand_subbrands',
+                $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }]
+            }).lean()
+        );
+        const doc = Array.isArray(config) ? config.find(Boolean) : config;
+        if (doc?.value) brandSubBrands = doc.value;
+    }
+
+    if (brandSubBrands instanceof Map) {
+        brandSubBrands = Object.fromEntries(brandSubBrands);
+    }
+    const subBrands = brandSubBrands?.[brand];
+    return Array.isArray(subBrands) ? String(subBrands[0] || '').trim() : '';
+};
 
 export const backfillFollowUp4SubmitSubBrands = async (brand, defaultSubBrand) => {
     const normalizedBrand = String(brand || '').trim();
@@ -86,6 +107,13 @@ router.get('/submit', async (req, res) => {
         } = req.query;
 
         const isolation = await resolveUserIsolation(req);
+        if (!isolation.isMasterAdmin && isolation.brand) {
+            const firstSubBrand = await getFirstSubBrand(isolation.brand);
+            if (firstSubBrand) {
+                await backfillFollowUp4SubmitSubBrands(isolation.brand, firstSubBrand);
+            }
+        }
+
         let filter = {};
         if (isolation.isMasterAdmin) {
             if (brand && brand !== 'ALL' && brand !== 'All') {
