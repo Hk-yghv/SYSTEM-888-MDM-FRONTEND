@@ -190,11 +190,13 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 const cData = await contractsRes.json();
                 const contracts = cData.data || cData.contracts || (Array.isArray(cData) ? cData : []);
                 contracts.forEach(c => {
-                    if (Array.isArray(c.repaymentSchedule)) {
+                    if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
                         c.repaymentSchedule.forEach(row => {
-                            totalCustomerPaid += Number(row.paidAmount || 0);
+                            totalCustomerPaid += Number(row.paidAmount || row.paid || 0);
                             totalExpected += (Number(row.scheduledAmount || 0) + Number(row.penalty || 0));
                         });
+                    } else {
+                        totalCustomerPaid += Number(c.paidAmount || 0);
                     }
                 });
             } else {
@@ -206,7 +208,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
             setBalance({
                 totalLoanAmount: data.totalLoanAmount || 0,
-                totalRevenue: data.totalRevenue || 0,
+                totalRevenue: contractsRes.ok ? totalCustomerPaid : (data.totalRevenue || 0),
                 totalRepaymentExpected: resolvedExpected,
                 outstandingBalance: resolvedOutstanding
             });
