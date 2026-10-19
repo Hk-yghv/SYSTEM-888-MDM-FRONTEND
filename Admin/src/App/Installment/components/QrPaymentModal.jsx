@@ -9,7 +9,7 @@ import { storeImageFile } from '../../../utils/mediaUtils';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const QrPaymentModal = ({ open, contract, onClose, onSaved }) => {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const { API_BASE, API_BASE1, user } = useAuth();
 
     const [paymentMethods, setPaymentMethods] = useState(['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Transfer']);
