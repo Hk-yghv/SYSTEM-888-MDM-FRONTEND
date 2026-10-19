@@ -162,7 +162,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
         if (!hasPermission('/dashboard', 'read')) return;
         try {
             const params = new URLSearchParams();
-            if (user?.brand && user?.role !== 'Administrator') params.set('userBrand', user.brand);
+            if (user?.brand) params.set('userBrand', user.brand);
+            if (Array.isArray(user?.subBrands) && user.subBrands.length > 0) {
+                params.set('userSubBrands', user.subBrands.join(','));
+            }
             if (user?.role) params.set('userRole', user.role);
             if (user?.username) params.set('username', user.username);
             if (user?.isImmutable) params.set('isImmutable', 'true');
@@ -175,8 +178,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 fetch(`${API_BASE1}/contracts?${contractParams.toString()}`)
             ]);
 
-            let data = {};
-            if (statsRes.ok) data = await statsRes.json();
+            if (!statsRes.ok) {
+                throw new Error(`Dashboard stats request failed: HTTP ${statsRes.status}`);
+            }
+            const data = await statsRes.json();
 
             let totalCustomerPaid = 0;
             let totalExpected = 0;
@@ -192,6 +197,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                         });
                     }
                 });
+            } else {
+                console.error(`Header contracts request failed: HTTP ${contractsRes.status}`);
             }
 
             const resolvedExpected = totalExpected || data.totalRepaymentExpected || 0;
@@ -203,7 +210,9 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 totalRepaymentExpected: resolvedExpected,
                 outstandingBalance: resolvedOutstanding
             });
-        } catch { }
+        } catch (err) {
+            console.error('Unable to fetch header financial summary:', err);
+        }
     };
 
     useEffect(() => {

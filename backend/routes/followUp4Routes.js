@@ -28,6 +28,17 @@ const MEM_REJECT_SUBMITS = [];
 const MEM_REJECT_CS = [];
 const MEM_DETAILS = [];
 
+export const backfillFollowUp4SubmitSubBrands = (brand, defaultSubBrand) => {
+    let backfilledCount = 0;
+    MEM_SUBMITS.forEach(item => {
+        if (item.brand === brand && (!item.subBrand || item.subBrand === '')) {
+            item.subBrand = defaultSubBrand;
+            backfilledCount++;
+        }
+    });
+    return backfilledCount;
+};
+
 // ==========================================
 // 1. FOLLOW UP SUBMIT ENDPOINTS
 // ==========================================
@@ -81,11 +92,19 @@ router.get('/submit', async (req, res) => {
         if (isMongoConnected) {
             items = await queryAllDBs(FollowUp4Submit, (M) => M.find(filter).sort({ date: -1, createdAt: -1 }));
         } else {
-            items = MEM_SUBMITS.filter(item => {
-                if (filter.brand && item.brand !== filter.brand) return false;
+            items = filterInMemoryRecords(MEM_SUBMITS.filter(item => {
+                if (brand && brand !== 'ALL' && brand !== 'All' && item.brand?.toLowerCase() !== brand.trim().toLowerCase()) return false;
+                if (!isolation.isMasterAdmin && isolation.brand && item.brand?.toLowerCase() !== isolation.brand.toLowerCase()) return false;
                 if (date && item.date !== date) return false;
+                if (startDate && item.date < startDate) return false;
+                if (endDate && item.date > endDate) return false;
+                if (search) {
+                    const searchTerm = search.trim().toLowerCase();
+                    const searchableFields = [item.name, item.userName, item.phone, item.nameTelegram, item.model, item.description];
+                    if (!searchableFields.some(value => String(value || '').toLowerCase().includes(searchTerm))) return false;
+                }
                 return true;
-            });
+            }), isolation);
         }
         res.json({ success: true, data: items });
     } catch (err) {

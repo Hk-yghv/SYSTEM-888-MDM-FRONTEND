@@ -240,6 +240,7 @@ const AuditTelegram = () => {
                 page: 1,
                 limit: 500,
                 userBrand: user?.brand || '',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
                 userRole: user?.role || '',
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
@@ -260,7 +261,16 @@ const AuditTelegram = () => {
         setReloading(true);
         try {
             const base = API_BASE || '';
-            const res = await fetch(`${base}/telegram-audit?date=${encodeURIComponent(targetDate)}&brand=${encodeURIComponent(user?.brand || '')}`);
+            const params = new URLSearchParams({
+                date: targetDate,
+                brand: user?.brand || '',
+                userBrand: user?.brand || '',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            });
+            const res = await fetch(`${base}/telegram-audit?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.success) {
@@ -293,7 +303,7 @@ const AuditTelegram = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 400);
         }
-    }, [API_BASE, selectedDate, user?.brand]);
+    }, [API_BASE, selectedDate, user]);
 
     // Initial Load & on selectedDate Change
     useEffect(() => {

@@ -39,12 +39,9 @@ router.get('/stats', async (req, res) => {
 
             // Payments
             const contractIds = allContracts.map(c => c.contractId);
-            const allPayments = await queryAllDBs(Payment, (M) => {
-                if (userBrand && !isMasterAdmin) {
-                    return M.find({ contractId: { $in: contractIds } });
-                }
-                return M.find();
-            });
+            const allPayments = contractIds.length
+                ? await queryAllDBs(Payment, (M) => M.find({ contractId: { $in: contractIds } }))
+                : [];
             paymentCount = allPayments.length;
             totalRevenue = allPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
@@ -76,10 +73,7 @@ router.get('/stats', async (req, res) => {
             unlockedWallpapers = contracts.filter(c => c.lockWallpaperStatus !== 'Locked').length;
 
             const contractIds = contracts.map(c => c.contractId);
-            const filteredPayments = MEM_DB.payments.filter(p => {
-                if (userBrand && !isMasterAdmin) return contractIds.includes(p.contractId);
-                return true;
-            });
+            const filteredPayments = MEM_DB.payments.filter(p => contractIds.includes(p.contractId));
             totalRevenue = filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
             paymentCount = filteredPayments.length;
 

@@ -7,8 +7,11 @@ import PhoneLog from '../models/PhoneLog.js';
 import WallpaperLog from '../models/WallpaperLog.js';
 import DeviceActionLog from '../models/DeviceActionLog.js';
 import SavedUrl from '../models/SavedUrl.js';
+import { FollowUp4Submit } from '../models/FollowUp4.js';
+import { TelegramAuditContact, TelegramAuditLog, TelegramAuditSubmission } from '../models/TelegramAudit.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { backfillFollowUp4SubmitSubBrands } from './followUp4Routes.js';
 
 const router = express.Router();
 
@@ -465,6 +468,8 @@ router.post('/subbrands', async (req, res) => {
         let backfilledUrls = 0;
         let backfilledLogs = 0;
         let backfilledSchedules = 0;
+        let backfilledFollowUp4Submits = 0;
+        let backfilledTelegramAudit = 0;
 
         if (defaultSubBrand) {
             if (isMongoConnected) {
@@ -522,6 +527,40 @@ router.post('/subbrands', async (req, res) => {
                 } catch (e) {
                     console.warn('[SubBrands] Backfill phoneLogs warning:', e.message);
                 }
+
+                // Update Follow Up 4 submit records
+                try {
+                    await queryAllDBs(FollowUp4Submit, async (BoundM) => {
+                        const result = await BoundM.updateMany(
+                            { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                            { $set: { subBrand: defaultSubBrand } }
+                        );
+                        backfilledFollowUp4Submits += (result.modifiedCount || 0);
+                        return [];
+                    });
+                } catch (e) {
+                    console.warn('[SubBrands] Backfill Follow Up 4 submits warning:', e.message);
+                }
+
+                // Update Telegram audit contacts, logs, and daily submissions
+                for (const [model, label] of [
+                    [TelegramAuditContact, 'contacts'],
+                    [TelegramAuditLog, 'logs'],
+                    [TelegramAuditSubmission, 'submissions']
+                ]) {
+                    try {
+                        await queryAllDBs(model, async (BoundM) => {
+                            const result = await BoundM.updateMany(
+                                { brand, $or: [{ subBrand: { $exists: false } }, { subBrand: '' }, { subBrand: null }] },
+                                { $set: { subBrand: defaultSubBrand } }
+                            );
+                            backfilledTelegramAudit += (result.modifiedCount || 0);
+                            return [];
+                        });
+                    } catch (e) {
+                        console.warn(`[SubBrands] Backfill Telegram audit ${label} warning:`, e.message);
+                    }
+                }
             }
 
             // MEM_DB updates
@@ -557,6 +596,21 @@ router.post('/subbrands', async (req, res) => {
                     }
                 });
             }
+            backfilledFollowUp4Submits += backfillFollowUp4SubmitSubBrands(brand, defaultSubBrand);
+
+            for (const collection of [
+                MEM_DB.telegramAuditContacts,
+                MEM_DB.telegramAuditLogs,
+                MEM_DB.telegramAuditSubmissions
+            ]) {
+                if (!Array.isArray(collection)) continue;
+                collection.forEach(item => {
+                    if (item.brand === brand && (!item.subBrand || item.subBrand === '')) {
+                        item.subBrand = defaultSubBrand;
+                        backfilledTelegramAudit++;
+                    }
+                });
+            }
         }
 
         const normalized = normalizeBrandSubbrands(brand_subbrands);
@@ -567,7 +621,7 @@ router.post('/subbrands', async (req, res) => {
             subbrands: normalized[brand] || [],
             brand_subbrands: normalized,
             message: `Sub Brand '${subBrand}' added. Existing data assigned to '${defaultSubBrand}'.`,
-            backfillCount: backfilledContracts + backfilledUrls + backfilledLogs + backfilledSchedules
+            backfillCount: backfilledContracts + backfilledUrls + backfilledLogs + backfilledSchedules + backfilledFollowUp4Submits + backfilledTelegramAudit
         });
     } catch (err) {
         console.error('Add subbrand error:', err);
