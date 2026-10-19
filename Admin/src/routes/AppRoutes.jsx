@@ -62,6 +62,7 @@ const Profile = lazy(() => import("../App/Profile/Profile"));
 const AllPicture = lazy(() => import("../App/Media/AllPicture"));
 const SaveUrlPage = lazy(() => import("../App/SaveUrl/pages/SaveUrlPage"));
 const AuditTelegram = lazy(() => import("../App/Audit/pages/AuditTelegram"));
+const AuditDevice = lazy(() => import("../App/Audit/pages/AuditDevice"));
 const ReportAuditTelegram = lazy(() => import("../App/Audit/pages/ReportAuditTelegram"));
 const PrintIdCard = lazy(() => import("../App/Print/pages/PrintIdCard"));
 const HelpSupport = lazy(() => import("../App/Support/pages/HelpSupport"));
@@ -191,8 +192,9 @@ const AppRoutes = () => {
       {/* Save URL */}
       <Route path={json.saveUrl || "/save-url"} element={renderProtected(json.saveUrl || "/save-url", SaveUrlPage)} />
 
-      {/* Audit Telegram */}
+      {/* Audit */}
       <Route path={json.audit?.telegram || "/audit/telegram"} element={renderProtected(json.audit?.telegram || "/audit/telegram", AuditTelegram)} />
+      <Route path={json.audit?.device || "/audit/device"} element={renderProtected(json.audit?.device || "/audit/device", AuditDevice)} />
       <Route path={json.audit?.reportTelegram || "/audit/telegram/report"} element={renderProtected(json.audit?.reportTelegram || "/audit/telegram/report", ReportAuditTelegram)} />
 
       {/* Print */}

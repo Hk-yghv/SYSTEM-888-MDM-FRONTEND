@@ -19,10 +19,12 @@ import RejectSubmitModal from '../components/RejectSubmitModal';
 import RejectCsModal from '../components/RejectCsModal';
 import FollowUp4DetailModal from '../components/FollowUp4DetailModal';
 
-const FollowUp4 = () => {
+const FollowUp4 = ({ workspaceId = 4 }) => {
     const { t } = useLanguage();
     const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
     const API_BASE = API_BASE1 || API_BASE2 || '/api';
+    const workspaceApi = `${API_BASE}/follow-up-${workspaceId}`;
+    const permissionPath = `/follow-up/follow-up-${workspaceId}`;
 
     // Active Tab
     const [activeTab, setActiveTab] = useState('submit'); // 'submit' | 'rejectSubmit' | 'rejectCs' | 'detail'
@@ -35,7 +37,7 @@ const FollowUp4 = () => {
     const [droplists, setDroplists] = useState({
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'CALL', 'Other'],
         contactTypes: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'],
-        statuses: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
+        statuses: [],
         assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'],
         models: [],
         pgTlNames: [],
@@ -71,7 +73,6 @@ const FollowUp4 = () => {
 
                     const src = findCat(['Follow Up 4 Sources', 'Sources', 'ប្រភព']);
                     const ct = findCat(['Follow Up 4 Contact Types', 'Contact Types', 'ប្រភេទទំនាក់ទំនង', 'ទាក់ទង']);
-                    const st = findCat(['Follow Up 4 Statuses', 'Statuses', 'ស្ថានភាព']);
                     const ast = findCat(['Follow Up 4 Asset Types', 'Asset Types', 'ប្រភេទទ្រព្យ']);
                     const modelOptions = findCat(['Device Models', 'Models', 'ម៉ូឌែល']);
                     const pgTlNames = findCat(['Follow Up 4 PG/TL Names', 'PG/TL Names']);
@@ -85,7 +86,7 @@ const FollowUp4 = () => {
                     setDroplists(prev => ({
                         sources: (src && src.length > 0) ? src : prev.sources,
                         contactTypes: (ct && ct.length > 0) ? ct : prev.contactTypes,
-                        statuses: (st && st.length > 0) ? st : prev.statuses,
+                        statuses: prev.statuses,
                         assetTypes: (ast && ast.length > 0) ? ast : prev.assetTypes,
                         models: modelOptions || prev.models,
                         pgTlNames: pgTlNames || [],
@@ -98,11 +99,57 @@ const FollowUp4 = () => {
         } catch (err) {
             console.error('Fetch Control System Error in FollowUp4:', err);
         }
-    }, [API_BASE, selectedBrand, user?.brand]);
+    }, [API_BASE, workspaceId, selectedBrand, user?.brand]);
 
     useEffect(() => {
         fetchControlSystemData();
     }, [fetchControlSystemData]);
+
+    const fetchStatuses = useCallback(async (brandOverride = '') => {
+        const brand = brandOverride || selectedBrand || user?.brand || '888MDM';
+        const params = new URLSearchParams({
+            brand,
+            username: user?.username || '',
+            userRole: user?.role || '',
+            userBrand: user?.brand || '',
+            isImmutable: user?.isImmutable ? 'true' : 'false'
+        });
+        try {
+            const res = await fetch(`${workspaceApi}/statuses?${params.toString()}`);
+            if (!res.ok) throw new Error(`Failed to load Follow Up 4 statuses (${res.status})`);
+            const data = await res.json();
+            setDroplists(prev => ({ ...prev, statuses: Array.isArray(data.data) ? data.data : [] }));
+        } catch (err) {
+            console.error('Fetch Follow Up 4 statuses error:', err);
+            setDroplists(prev => ({ ...prev, statuses: [] }));
+        }
+    }, [workspaceApi, selectedBrand, user]);
+
+    useEffect(() => {
+        fetchStatuses();
+    }, [fetchStatuses]);
+
+    const handleCreateStatus = async (status) => {
+        const brand = selectedBrand || user?.brand || formData.brand || '888MDM';
+        const response = await fetch(`${workspaceApi}/statuses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                status,
+                brand,
+                username: user?.username || '',
+                userRole: user?.role || '',
+                userBrand: user?.brand || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false'
+            })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || t('failedToSave'));
+        }
+        await fetchStatuses(brand);
+        setFormData(prev => ({ ...prev, status: result.data.status }));
+    };
 
     // Helper functions for date range formatting
     const getPastDateStr = (daysAgo) => {
@@ -153,6 +200,10 @@ const FollowUp4 = () => {
         brand: user?.brand || '888MDM'
     });
 
+    useEffect(() => {
+        if (isSubmitModalOpen) fetchStatuses(formData.brand);
+    }, [isSubmitModalOpen, formData.brand, fetchStatuses]);
+
     const [deleteModalItem, setDeleteModalItem] = useState(null);
 
     const fetchSubmitData = useCallback(async () => {
@@ -168,7 +219,7 @@ const FollowUp4 = () => {
             if (submitEndDate) params.append('endDate', submitEndDate);
             if (searchTerm) params.append('search', searchTerm);
 
-            const res = await fetch(`${API_BASE}/follow-up-4/submit?${params.toString()}`);
+            const res = await fetch(`${workspaceApi}/submit?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 setSubmitList(result.data || []);
@@ -178,7 +229,7 @@ const FollowUp4 = () => {
         } finally {
             setSubmitLoading(false);
         }
-    }, [API_BASE, user, selectedBrand, submitStartDate, submitEndDate, searchTerm]);
+    }, [workspaceApi, API_BASE, user, selectedBrand, submitStartDate, submitEndDate, searchTerm]);
 
     useEffect(() => {
         if (activeTab === 'submit') {
@@ -205,7 +256,7 @@ const FollowUp4 = () => {
             requested: '',
             assetType: droplists.assetTypes[0] || '',
             model: '',
-            status: droplists.statuses[0] || 'PENDING',
+            status: droplists.statuses[0] || '',
             description: '',
             brand: selectedBrand || user?.brand || '888MDM'
         });
@@ -241,8 +292,8 @@ const FollowUp4 = () => {
         setSubmitFormSaving(true);
         try {
             const url = editingItem
-                ? `${API_BASE}/follow-up-4/submit/${editingItem._id}`
-                : `${API_BASE}/follow-up-4/submit`;
+                ? `${workspaceApi}/submit/${editingItem._id}`
+                : `${workspaceApi}/submit`;
             const method = editingItem ? 'PUT' : 'POST';
 
             const payload = {
@@ -368,7 +419,7 @@ const FollowUp4 = () => {
     const handleDeleteSubmit = async () => {
         if (!deleteModalItem) return;
         try {
-            const res = await fetch(`${API_BASE}/follow-up-4/submit/${deleteModalItem._id}`, {
+            const res = await fetch(`${workspaceApi}/submit/${deleteModalItem._id}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -410,7 +461,7 @@ const FollowUp4 = () => {
             if (rejectSubmitStartDate) params.append('startDate', rejectSubmitStartDate);
             if (rejectSubmitEndDate) params.append('endDate', rejectSubmitEndDate);
 
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-submit?${params.toString()}`);
+            const res = await fetch(`${workspaceApi}/reject-submit?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 const rawData = result.data || [];
@@ -429,7 +480,7 @@ const FollowUp4 = () => {
         } finally {
             setRejectSubmitLoading(false);
         }
-    }, [API_BASE, rejectSubmitDate, rejectSubmitStartDate, rejectSubmitEndDate, selectedBrand, user]);
+    }, [workspaceApi, API_BASE, rejectSubmitDate, rejectSubmitStartDate, rejectSubmitEndDate, selectedBrand, user]);
 
     useEffect(() => {
         if (activeTab === 'rejectSubmit') {
@@ -465,7 +516,7 @@ const FollowUp4 = () => {
             if (user?.isImmutable) params.append('isImmutable', String(user.isImmutable));
             if (selectedBrand) params.append('brand', selectedBrand);
 
-            const res = await fetch(`${API_BASE}/follow-up-4/submit?${params.toString()}`);
+            const res = await fetch(`${workspaceApi}/submit?${params.toString()}`);
             const result = await res.json();
             if (!res.ok) {
                 throw new Error(result.message || 'Failed to load Follow Up Submit records');
@@ -479,7 +530,7 @@ const FollowUp4 = () => {
         } finally {
             setRejectSubmitFollowUpLoading(false);
         }
-    }, [API_BASE, selectedBrand, user]);
+    }, [workspaceApi, API_BASE, selectedBrand, user]);
 
     const handleSaveRejectSubmit = async () => {
         setRejectSubmitSaving(true);
@@ -490,7 +541,7 @@ const FollowUp4 = () => {
                 count: Number(rejectSubmitCounts[reason]) || 0
             }));
 
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-submit/save`, {
+            const res = await fetch(`${workspaceApi}/reject-submit/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -581,7 +632,7 @@ const FollowUp4 = () => {
             if (rejectCsStartDate) params.append('startDate', rejectCsStartDate);
             if (rejectCsEndDate) params.append('endDate', rejectCsEndDate);
 
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-cs?${params.toString()}`);
+            const res = await fetch(`${workspaceApi}/reject-cs?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 const rawData = result.data || [];
@@ -600,7 +651,7 @@ const FollowUp4 = () => {
         } finally {
             setRejectCsLoading(false);
         }
-    }, [API_BASE, rejectCsDate, rejectCsStartDate, rejectCsEndDate, selectedBrand, user]);
+    }, [workspaceApi, API_BASE, rejectCsDate, rejectCsStartDate, rejectCsEndDate, selectedBrand, user]);
 
     useEffect(() => {
         if (activeTab === 'rejectCs') {
@@ -633,7 +684,7 @@ const FollowUp4 = () => {
                 count: Number(rejectCsCounts[reason]) || 0
             }));
 
-            const res = await fetch(`${API_BASE}/follow-up-4/reject-cs/save`, {
+            const res = await fetch(`${workspaceApi}/reject-cs/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -829,7 +880,7 @@ const FollowUp4 = () => {
             if (detailStartDate) params.append('startDate', detailStartDate);
             if (detailEndDate) params.append('endDate', detailEndDate);
 
-            const res = await fetch(`${API_BASE}/follow-up-4/detail?${params.toString()}`);
+            const res = await fetch(`${workspaceApi}/detail?${params.toString()}`);
             if (res.ok) {
                 const result = await res.json();
                 const list = result.data || [];
@@ -861,7 +912,7 @@ const FollowUp4 = () => {
         } finally {
             setDetailLoading(false);
         }
-    }, [API_BASE, detailDate, detailStartDate, detailEndDate, selectedBrand, user]);
+    }, [workspaceApi, API_BASE, detailDate, detailStartDate, detailEndDate, selectedBrand, user]);
 
     useEffect(() => {
         if (activeTab === 'detail') {
@@ -916,7 +967,7 @@ const FollowUp4 = () => {
         setDetailSaving(true);
         try {
             const targetBrand = selectedBrand || user?.brand || '888MDM';
-            const res = await fetch(`${API_BASE}/follow-up-4/detail/save`, {
+            const res = await fetch(`${workspaceApi}/detail/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1070,7 +1121,7 @@ const FollowUp4 = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-2 rounded-[5px] border border-slate-700/60 shadow-xl">
                 <div>
                     <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
-                        Follow Up 4 System
+                        Follow Up {workspaceId} System
                     </h1>
                 </div>
 
@@ -1183,7 +1234,7 @@ const FollowUp4 = () => {
                         </div>
 
                         {/* Add Button */}
-                        {hasPermission('/follow-up/follow-up-4', 'create') && (
+                        {hasPermission(permissionPath, 'create') && (
                             <button
                                 onClick={handleOpenCreateSubmitForm}
                                 className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-black font-semibold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-md cursor-pointer"
@@ -1269,7 +1320,7 @@ const FollowUp4 = () => {
                                                                 <td className="py-2.5 px-3 text-slate-400 truncate max-w-[150px]">{item.description}</td>
                                                                 <td className="py-2.5 px-3 text-center">
                                                                     <div className="flex items-center justify-center gap-1.5">
-                                                                        {hasPermission('/follow-up/follow-up-4', 'edit') && (
+                                                                        {hasPermission(permissionPath, 'edit') && (
                                                                             <button
                                                                                 onClick={() => handleOpenEditSubmitForm(item)}
                                                                                 className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
@@ -1278,7 +1329,7 @@ const FollowUp4 = () => {
                                                                                 <FaEdit size={14} />
                                                                             </button>
                                                                         )}
-                                                                        {hasPermission('/follow-up/follow-up-4', 'delete') && (
+                                                                        {hasPermission(permissionPath, 'delete') && (
                                                                             <button
                                                                                 onClick={() => setDeleteModalItem(item)}
                                                                                 className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded transition-all cursor-pointer"
@@ -1390,7 +1441,7 @@ const FollowUp4 = () => {
                                 }}
                             />
 
-                            {hasPermission('/follow-up/follow-up-4', 'create') && (
+                            {hasPermission(permissionPath, 'create') && (
                                 <button
                                     onClick={() => handleOpenCreateRejectSubmit()}
                                     className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-rose-600/20 cursor-pointer"
@@ -1519,7 +1570,7 @@ const FollowUp4 = () => {
                                 }}
                             />
 
-                            {hasPermission('/follow-up/follow-up-4', 'create') && (
+                            {hasPermission(permissionPath, 'create') && (
                                 <button
                                     onClick={() => handleOpenCreateRejectCs()}
                                     className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-amber-600/20 cursor-pointer"
@@ -1648,7 +1699,7 @@ const FollowUp4 = () => {
                                 }}
                             />
 
-                            {hasPermission('/follow-up/follow-up-4', 'create') && (
+                            {hasPermission(permissionPath, 'create') && (
                                 <button
                                     onClick={() => handleOpenCreateDetail()}
                                     className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2.5 rounded-[5px] transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
@@ -1802,6 +1853,7 @@ const FollowUp4 = () => {
                 droplists={droplists}
                 isMasterAdmin={isMasterAdmin}
                 brandsList={brandsList}
+                onCreateStatus={handleCreateStatus}
             />
 
             {/* 2. Reject Submit Modal */}

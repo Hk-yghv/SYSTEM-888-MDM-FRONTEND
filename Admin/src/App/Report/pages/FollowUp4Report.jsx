@@ -381,7 +381,7 @@ const FollowUp4Report = () => {
     );
 
     return (
-        <main className="mx-auto min-h-screen max-w-[1800px] space-y-5 p-2 sm:p-3">
+        <main className="mx-auto max-w-[1800px] space-y-5 p-2 sm:p-3">
             <header className="flex flex-col justify-between gap-4 rounded-[5px] border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
                 <div>
                     <h1 className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-800">

@@ -74,3 +74,20 @@ export const FollowUp4Submit = mongoose.model('FollowUp4Submit', followUp4Submit
 export const FollowUp4RejectSubmit = mongoose.model('FollowUp4RejectSubmit', followUp4RejectSubmitSchema);
 export const FollowUp4RejectCS = mongoose.model('FollowUp4RejectCS', followUp4RejectCSSchema);
 export const FollowUp4Detail = mongoose.model('FollowUp4Detail', followUp4DetailSchema);
+
+const createWorkspaceModels = (suffix) => ({
+    submit: mongoose.models[`FollowUp${suffix}Submit`] || mongoose.model(`FollowUp${suffix}Submit`, followUp4SubmitSchema, `followup${suffix}submits`),
+    rejectSubmit: mongoose.models[`FollowUp${suffix}RejectSubmit`] || mongoose.model(`FollowUp${suffix}RejectSubmit`, followUp4RejectSubmitSchema, `followup${suffix}rejectsubmits`),
+    rejectCs: mongoose.models[`FollowUp${suffix}RejectCS`] || mongoose.model(`FollowUp${suffix}RejectCS`, followUp4RejectCSSchema, `followup${suffix}rejectcs`),
+    detail: mongoose.models[`FollowUp${suffix}Detail`] || mongoose.model(`FollowUp${suffix}Detail`, followUp4DetailSchema, `followup${suffix}details`)
+});
+
+export const FollowUp1Workspace = createWorkspaceModels('1');
+export const FollowUp2Workspace = createWorkspaceModels('2');
+export const FollowUp3Workspace = createWorkspaceModels('3');
+export const FollowUp4Workspace = {
+    submit: FollowUp4Submit,
+    rejectSubmit: FollowUp4RejectSubmit,
+    rejectCs: FollowUp4RejectCS,
+    detail: FollowUp4Detail
+};

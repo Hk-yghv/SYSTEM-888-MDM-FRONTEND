@@ -28,6 +28,7 @@ const MEM_SUBMITS = [];
 const MEM_REJECT_SUBMITS = [];
 const MEM_REJECT_CS = [];
 const MEM_DETAILS = [];
+const FOLLOW_UP_STATUS_KEY = 'follow_up_4_statuses';
 
 const getFirstSubBrand = async (brand) => {
     let brandSubBrands = MEM_DB.controlSystem?.brand_subbrands || {};
@@ -48,6 +49,82 @@ const getFirstSubBrand = async (brand) => {
     const subBrands = brandSubBrands?.[brand];
     return Array.isArray(subBrands) ? String(subBrands[0] || '').trim() : '';
 };
+
+const getStoredFollowUp4Statuses = async (brand) => {
+    if (isMongoConnected) {
+        const results = await queryAllDBs(ControlSystem, M =>
+            M.find({ key: FOLLOW_UP_STATUS_KEY, brand }).select('value').lean()
+        );
+        return (Array.isArray(results) ? results : [results])
+            .flatMap(doc => Array.isArray(doc?.value) ? doc.value : [])
+            .map(value => String(value || '').trim())
+            .filter(Boolean);
+    }
+    return [...(MEM_DB.followUp4Statuses?.[brand] || [])];
+};
+
+router.get('/statuses', async (req, res) => {
+    try {
+        const isolation = await resolveUserIsolation(req);
+        const brand = isolation.isMasterAdmin
+            ? String(req.query.brand || '').trim()
+            : String(isolation.brand || '').trim();
+        const filter = { key: FOLLOW_UP_STATUS_KEY, brand };
+        const statusLists = isMongoConnected
+            ? await queryAllDBs(ControlSystem, M => M.find(filter).select('value').lean())
+            : [];
+        const statuses = new Set();
+        (Array.isArray(statusLists) ? statusLists : [statusLists]).forEach(doc => {
+            if (Array.isArray(doc?.value)) {
+                doc.value.forEach(value => {
+                    const status = String(value || '').trim();
+                    if (status) statuses.add(status);
+                });
+            }
+        });
+        if (!isMongoConnected) {
+            (MEM_DB.followUp4Statuses?.[brand] || []).forEach(status => statuses.add(status));
+        }
+        res.json({ success: true, data: Array.from(statuses) });
+    } catch (err) {
+        console.error('Error fetching Follow Up 4 statuses:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.post('/statuses', async (req, res) => {
+    try {
+        const isolation = await resolveUserIsolation(req);
+        const brand = isolation.isMasterAdmin
+            ? String(req.body.brand || '').trim()
+            : String(isolation.brand || '').trim();
+        const status = String(req.body.status || '').trim();
+        if (!brand || !status) {
+            return res.status(400).json({ success: false, message: 'Brand and status are required' });
+        }
+
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(ControlSystem) || ControlSystem;
+            await WriteModel.findOneAndUpdate(
+                { key: FOLLOW_UP_STATUS_KEY, brand },
+                { $addToSet: { value: status } },
+                { upsert: true, new: true }
+            );
+        } else {
+            MEM_DB.followUp4Statuses ||= {};
+            MEM_DB.followUp4Statuses[brand] ||= [];
+            if (!MEM_DB.followUp4Statuses[brand].includes(status)) {
+                MEM_DB.followUp4Statuses[brand].push(status);
+            }
+        }
+
+        recordSystemAudit(req, 'CREATE_FOLLOWUP4_STATUS', `Created Follow Up 4 status "${status}" for ${brand}`);
+        res.json({ success: true, data: { brand, status } });
+    } catch (err) {
+        console.error('Error saving Follow Up 4 status:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
 export const backfillFollowUp4SubmitSubBrands = async (brand, defaultSubBrand) => {
     const normalizedBrand = String(brand || '').trim();
@@ -198,6 +275,10 @@ router.post('/submit', async (req, res) => {
         if (!effectiveBrand || !date) {
             return res.status(400).json({ success: false, message: 'Date and Brand are required' });
         }
+        const statuses = await getStoredFollowUp4Statuses(effectiveBrand);
+        if (!statuses.includes(String(status || '').trim())) {
+            return res.status(400).json({ success: false, message: 'Select a status saved for this brand first.' });
+        }
 
         const recordData = {
             date,
@@ -241,6 +322,14 @@ router.post('/submit', async (req, res) => {
 router.put('/submit/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        if (Object.prototype.hasOwnProperty.call(req.body, 'status')) {
+            const isolation = await resolveUserIsolation(req);
+            const effectiveBrand = isolation.isMasterAdmin ? req.body.brand : isolation.brand;
+            const statuses = await getStoredFollowUp4Statuses(String(effectiveBrand || '').trim());
+            if (!statuses.includes(String(req.body.status || '').trim())) {
+                return res.status(400).json({ success: false, message: 'Select a status saved for this brand first.' });
+            }
+        }
         if (isMongoConnected) {
             const WriteModel = getWriteModel(FollowUp4Submit) || FollowUp4Submit;
             const updated = await WriteModel.findByIdAndUpdate(id, req.body, { new: true });

@@ -83,13 +83,13 @@ table {
 table thead {
     position: sticky;
     top: 0;
-    /* z-index: 30; */
+    z-index: 30;
 }
 
 table thead th {
     position: sticky;
     top: 0;
-    /* z-index: 30; */
+    z-index: 30;
 }
 
 table tbody tr.table-scroll-row {
@@ -115,7 +115,7 @@ table tbody tr.table-scroll-row:hover {
     transform: scale(calc(var(--table-scroll-scale, 1) * 1.012)) translateY(-2.5px) !important;
     opacity: 1 !important;
     position: relative;
-    z-index: 20 !important;
+    /* z-index: 20 !important; */
     filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.12)) drop-shadow(0 2px 5px rgba(16, 185, 129, 0.22)) !important;
     cursor: pointer;
 }
@@ -125,7 +125,7 @@ table tbody tr.table-scroll-row:focus-within:hover {
     transform: none !important;
     opacity: 1 !important;
     position: relative;
-    z-index: 9998 !important;
+    /* z-index: 9998 !important; */
     filter: none !important;
 }
 
@@ -134,7 +134,7 @@ table tbody tr.table-scroll-row.row-action-menu-open:hover {
     transform: none !important;
     opacity: 1 !important;
     position: relative;
-    z-index: 9998 !important;
+    /* z-index: 9998 !important; */
     filter: none !important;
     will-change: auto !important;
 }

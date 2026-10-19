@@ -100,7 +100,7 @@ const ReportAuditTelegram = () => {
     }, [filteredDates, report, allStatusKeys, allActivityKeys, allNoteKeys]);
 
     return (
-        <div className="p-4 sm:p-6 space-y-4 bg-slate-50 min-h-screen font-sans">
+        <div className="p-4 sm:p-6 space-y-4 bg-slate-50 font-sans">
 
             {/* ── Header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-[5px] border border-slate-200 shadow-xs">

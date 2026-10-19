@@ -74,6 +74,7 @@
     "saveUrl": "/save-url",
     "audit": {
         "telegram": "/audit/telegram",
+        "device": "/audit/device",
         "reportTelegram": "/audit/telegram/report"
     },
     "print": {

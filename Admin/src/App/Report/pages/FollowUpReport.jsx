@@ -411,7 +411,7 @@ const FollowUpReport = () => {
     };
 
     return (
-        <div className="p-2 sm:p-2 space-y-6 max-w-[1700px] mx-auto min-h-screen">
+        <div className="p-2 sm:p-2 space-y-6 max-w-[1700px] mx-auto">
             {/* Header Title & Actions */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-[5px] border border-slate-100 shadow-sm">
                 <div>

@@ -54,6 +54,19 @@ const getTodayDateStr = () => {
     }
 };
 
+const getCurrentAuditRound = () => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Phnom_Penh',
+        hour: '2-digit',
+        hourCycle: 'h23'
+    }).formatToParts(new Date());
+    const hour = Number(parts.find(part => part.type === 'hour')?.value || 0);
+    return hour >= 12 ? 'PM' : 'AM';
+};
+
+const matchesAuditRound = (submission, round) =>
+    submission.auditRound === round || (round === 'AM' && !submission.auditRound);
+
 const formatAuditDateTime = (date = new Date()) => {
     if (!date) return '';
     if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}(:\d{2})?\s+(AM|PM)$/i.test(date.trim())) {
@@ -119,18 +132,21 @@ const runAutoSubmitCheck = async () => {
             const unsubmittedDates = await LogModel.distinct('auditDate', { auditDate: { $lt: todayStr } });
             for (const d of unsubmittedDates) {
                 if (d && d < todayStr) {
-                    await SubmissionModel.findOneAndUpdate(
-                        { auditDate: d },
-                        {
-                            $set: {
-                                auditDate: d,
-                                isSubmitted: true,
-                                submittedAt: new Date(),
-                                submittedBy: 'System Auto-Submit (Midnight 11:59PM)'
-                            }
-                        },
-                        { upsert: true, new: true }
-                    );
+                    for (const auditRound of ['AM', 'PM']) {
+                        await SubmissionModel.findOneAndUpdate(
+                            { auditDate: d, auditRound },
+                            {
+                                $set: {
+                                    auditDate: d,
+                                    auditRound,
+                                    isSubmitted: true,
+                                    submittedAt: new Date(),
+                                    submittedBy: 'System Auto-Submit (Midnight 11:59PM)'
+                                }
+                            },
+                            { upsert: true, new: true }
+                        );
+                    }
                 }
             }
         } else {
@@ -142,18 +158,24 @@ const runAutoSubmitCheck = async () => {
                 )
             ];
             for (const d of unsubmittedDates) {
-                let sub = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === d);
-                if (sub) {
-                    sub.isSubmitted = true;
-                    sub.submittedAt = new Date();
-                    sub.submittedBy = 'System Auto-Submit (Midnight 11:59PM)';
-                } else {
-                    MEM_DB.telegramAuditSubmissions.push({
-                        auditDate: d,
-                        isSubmitted: true,
-                        submittedAt: new Date(),
-                        submittedBy: 'System Auto-Submit (Midnight 11:59PM)'
-                    });
+                for (const auditRound of ['AM', 'PM']) {
+                    let sub = MEM_DB.telegramAuditSubmissions.find(
+                        s => s.auditDate === d && matchesAuditRound(s, auditRound)
+                    );
+                    if (sub) {
+                        sub.auditRound = auditRound;
+                        sub.isSubmitted = true;
+                        sub.submittedAt = new Date();
+                        sub.submittedBy = 'System Auto-Submit (Midnight 11:59PM)';
+                    } else {
+                        MEM_DB.telegramAuditSubmissions.push({
+                            auditDate: d,
+                            auditRound,
+                            isSubmitted: true,
+                            submittedAt: new Date(),
+                            submittedBy: 'System Auto-Submit (Midnight 11:59PM)'
+                        });
+                    }
                 }
             }
         }
@@ -170,6 +192,7 @@ router.get('/', async (req, res) => {
         const { date, brand = '' } = req.query;
         const targetDate = date ? String(date).trim() : getTodayDateStr();
         const todayStr = getTodayDateStr();
+        const currentRound = getCurrentAuditRound();
         const isolation = await resolveUserIsolation(req);
         if (!isolation.isMasterAdmin && isolation.brand) {
             const firstSubBrand = await resolveSubBrand(isolation.brand);
@@ -190,6 +213,18 @@ router.get('/', async (req, res) => {
             submissionFilter.brand = brand;
         }
         const auditFilter = { ...logScopeFilter, auditDate: targetDate };
+
+        const auditedDatesRaw = isMongoConnected
+            ? await queryAllDBs(TelegramAuditLog, M => M.distinct('auditDate', logScopeFilter))
+            : filterInMemoryRecords(MEM_DB.telegramAuditLogs || [], isolation)
+                .filter(log => !isolation.isMasterAdmin || !brand || log.brand === brand)
+                .map(log => log.auditDate);
+        const auditedDates = [...new Set((Array.isArray(auditedDatesRaw) ? auditedDatesRaw : [auditedDatesRaw])
+            .filter(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)))].sort().reverse();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate) || targetDate > todayStr ||
+            (targetDate !== todayStr && !auditedDates.includes(targetDate))) {
+            return res.status(400).json({ success: false, error: 'Select today or a date with existing audit records.' });
+        }
 
         let isSubmitted = false;
         let submissionInfo = null;
@@ -217,7 +252,10 @@ router.get('/', async (req, res) => {
                 try {
                     const WriteSubModel = getWriteModel(TelegramAuditSubmission);
                     if (WriteSubModel) {
-                        const direct = await WriteSubModel.findOne(submissionFilter).lean();
+                        const roundFilter = currentRound === 'AM'
+                            ? { ...submissionFilter, $or: [{ auditRound: 'AM' }, { auditRound: { $exists: false } }] }
+                            : { ...submissionFilter, auditRound: currentRound };
+                        const direct = await WriteSubModel.findOne(roundFilter).lean();
                         if (direct && direct.isSubmitted) {
                             submissionInfo = direct;
                             isSubmitted = true;
@@ -230,7 +268,10 @@ router.get('/', async (req, res) => {
                 // 2. Query across all DBs with find()
                 if (!isSubmitted) {
                     try {
-                        const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.find(submissionFilter).lean());
+                        const roundFilter = currentRound === 'AM'
+                            ? { ...submissionFilter, $or: [{ auditRound: 'AM' }, { auditRound: { $exists: false } }] }
+                            : { ...submissionFilter, auditRound: currentRound };
+                        const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.find(roundFilter).lean());
                         const found = Array.isArray(subResults)
                             ? subResults.find(r => r && r.isSubmitted)
                             : (subResults && subResults.isSubmitted ? subResults : null);
@@ -247,7 +288,9 @@ router.get('/', async (req, res) => {
             // 3. Fallback check in memory
             if (!isSubmitted && Array.isArray(MEM_DB.telegramAuditSubmissions)) {
                 const memFound = filterInMemoryRecords(
-                    MEM_DB.telegramAuditSubmissions.filter(s => s.auditDate === targetDate),
+                    MEM_DB.telegramAuditSubmissions.filter(
+                        s => s.auditDate === targetDate && matchesAuditRound(s, currentRound)
+                    ),
                     isolation
                 ).find(s => s.isSubmitted && (!isolation.isMasterAdmin || !brand || s.brand === brand));
                 if (memFound) {
@@ -277,8 +320,12 @@ router.get('/', async (req, res) => {
                         ...logScopeFilter,
                         statusAccount: { $exists: true, $nin: ['', null] }
                     });
-                    if (Array.isArray(list)) {
-                        list.forEach(s => {
+                    const secondRoundStatuses = await BoundModel.distinct('statusAccount2', {
+                        ...logScopeFilter,
+                        statusAccount2: { $exists: true, $nin: ['', null] }
+                    });
+                    if (Array.isArray(list) && Array.isArray(secondRoundStatuses)) {
+                        [...list, ...secondRoundStatuses].forEach(s => {
                             const trimmed = String(s || '').trim();
                             if (trimmed) statusSet.add(trimmed);
                         });
@@ -292,7 +339,15 @@ router.get('/', async (req, res) => {
             // Compute latest audit for each contractId across all dates
             const latestLogs = await queryAllDBs(TelegramAuditLog, (M) =>
                 M.aggregate([
-                    { $match: { ...logScopeFilter, statusAccount: { $exists: true, $nin: ['', null] } } },
+                    {
+                        $match: {
+                            ...logScopeFilter,
+                            $or: [
+                                { statusAccount: { $exists: true, $nin: ['', null] } },
+                                { statusAccount2: { $exists: true, $nin: ['', null] } }
+                            ]
+                        }
+                    },
                     { $sort: { auditDate: -1, createdAt: -1 } },
                     {
                         $group: {
@@ -302,8 +357,13 @@ router.get('/', async (req, res) => {
                             statusAccount: { $first: '$statusAccount' },
                             accountActivity: { $first: '$accountActivity' },
                             noteAudit: { $first: '$noteAudit' },
+                            statusAccount2: { $first: '$statusAccount2' },
+                            accountActivity2: { $first: '$accountActivity2' },
+                            noteAudit2: { $first: '$noteAudit2' },
                             auditDate: { $first: '$auditDate' },
                             auditDateTime: { $first: '$auditDateTime' },
+                            auditDate2: { $first: '$auditDate2' },
+                            auditDateTime2: { $first: '$auditDateTime2' },
                             createdAt: { $first: '$createdAt' },
                             updatedAt: { $first: '$updatedAt' }
                         }
@@ -318,8 +378,13 @@ router.get('/', async (req, res) => {
                             statusAccount: item.statusAccount || '',
                             accountActivity: item.accountActivity || '',
                             noteAudit: item.noteAudit || '',
+                            statusAccount2: item.statusAccount2 || '',
+                            accountActivity2: item.accountActivity2 || '',
+                            noteAudit2: item.noteAudit2 || '',
                             auditDate: item.auditDate || '',
-                            auditDateTime: resolvedDT || item.auditDateTime || ''
+                            auditDateTime: resolvedDT || item.auditDateTime || '',
+                            auditDate2: item.auditDate2 || '',
+                            auditDateTime2: item.auditDateTime2 || ''
                         };
                     }
                 }
@@ -327,7 +392,9 @@ router.get('/', async (req, res) => {
         } else {
             if (!isSubmitted) {
                 submissionInfo = filterInMemoryRecords(
-                    MEM_DB.telegramAuditSubmissions.filter(s => s.auditDate === targetDate),
+                    MEM_DB.telegramAuditSubmissions.filter(
+                        s => s.auditDate === targetDate && matchesAuditRound(s, currentRound)
+                    ),
                     isolation
                 ).find(s => !isolation.isMasterAdmin || !brand || s.brand === brand) || null;
                 if (submissionInfo && submissionInfo.isSubmitted) {
@@ -343,13 +410,13 @@ router.get('/', async (req, res) => {
             distinctStatuses = [
                 ...new Set(
                     scopedLogs
-                        .map(l => String(l.statusAccount || '').trim())
+                        .flatMap(l => [l.statusAccount, l.statusAccount2].map(value => String(value || '').trim()))
                         .filter(Boolean)
                 )
             ];
 
             const sortedMem = [...scopedLogs]
-                .filter(l => l.statusAccount)
+                .filter(l => l.statusAccount || l.statusAccount2)
                 .sort((a, b) => (b.auditDate || '').localeCompare(a.auditDate || ''));
             for (const l of sortedMem) {
                 if (l.contractId && !latestAuditMap[String(l.contractId)]) {
@@ -358,8 +425,13 @@ router.get('/', async (req, res) => {
                         statusAccount: l.statusAccount || '',
                         accountActivity: l.accountActivity || '',
                         noteAudit: l.noteAudit || '',
+                        statusAccount2: l.statusAccount2 || '',
+                        accountActivity2: l.accountActivity2 || '',
+                        noteAudit2: l.noteAudit2 || '',
                         auditDate: l.auditDate || '',
-                        auditDateTime: resolvedDT || l.auditDateTime || ''
+                        auditDateTime: resolvedDT || l.auditDateTime || '',
+                        auditDate2: l.auditDate2 || '',
+                        auditDateTime2: l.auditDateTime2 || ''
                     };
                 }
             }
@@ -401,7 +473,9 @@ router.get('/', async (req, res) => {
             contactByName,
             auditMap,
             latestAuditMap,
-            distinctStatuses
+            distinctStatuses,
+            currentRound,
+            auditedDates
         });
     } catch (err) {
         console.error('Error in GET /telegram-audit:', err);
@@ -580,7 +654,6 @@ router.post('/log', async (req, res) => {
             contractIid = '',
             customerName = '',
             auditDate,
-            auditDateTime = '',
             statusAccount = '',
             accountActivity = '',
             noteAudit = '',
@@ -599,6 +672,14 @@ router.post('/log', async (req, res) => {
 
         const targetDate = String(auditDate).trim();
         const todayStr = getTodayDateStr();
+        const auditRound = getCurrentAuditRound();
+        const roundSubmissionFilter = auditRound === 'AM'
+            ? {
+                auditDate: targetDate,
+                brand: String(brand || ''),
+                $or: [{ auditRound: 'AM' }, { auditRound: { $exists: false } }]
+            }
+            : { auditDate: targetDate, auditRound, brand: String(brand || '') };
 
         // Check if day is locked/submitted
         if (targetDate < todayStr) {
@@ -607,13 +688,16 @@ router.post('/log', async (req, res) => {
                 error: 'ទិន្នន័យសម្រាប់ថ្ងៃកន្លងផុតទៅត្រូវបាន Auto-Submit រួចហើយ មិនអាចកែប្រែបានទៀតទេ!'
             });
         }
+        if (targetDate > todayStr) {
+            return res.status(400).json({ success: false, error: 'Future audit dates are not allowed.' });
+        }
 
         let isAlreadySubmitted = false;
         if (isMongoConnected) {
             try {
                 const SubModel = getWriteModel(TelegramAuditSubmission);
                 if (SubModel) {
-                    const existingSub = await SubModel.findOne({ auditDate: targetDate });
+                    const existingSub = await SubModel.findOne(roundSubmissionFilter);
                     if (existingSub && existingSub.isSubmitted) {
                         isAlreadySubmitted = true;
                     }
@@ -621,7 +705,7 @@ router.post('/log', async (req, res) => {
             } catch {}
             if (!isAlreadySubmitted) {
                 try {
-                    const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.find({ auditDate: targetDate }).lean());
+                    const subResults = await queryAllDBs(TelegramAuditSubmission, (M) => M.find(roundSubmissionFilter).lean());
                     if (Array.isArray(subResults) && subResults.some(r => r && r.isSubmitted)) {
                         isAlreadySubmitted = true;
                     }
@@ -629,7 +713,10 @@ router.post('/log', async (req, res) => {
             }
         }
         if (!isAlreadySubmitted && Array.isArray(MEM_DB.telegramAuditSubmissions)) {
-            const memSub = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate && s.isSubmitted);
+            const memSub = MEM_DB.telegramAuditSubmissions.find(
+                s => s.auditDate === targetDate && matchesAuditRound(s, auditRound) &&
+                    s.brand === String(brand || '') && s.isSubmitted
+            );
             if (memSub) isAlreadySubmitted = true;
         }
 
@@ -640,10 +727,22 @@ router.post('/log', async (req, res) => {
             });
         }
 
-        const nowFormatted = (auditDateTime && typeof auditDateTime === 'string' && auditDateTime.trim())
-            ? formatAuditDateTime(auditDateTime.trim())
-            : formatAuditDateTime();
+        const nowFormatted = formatAuditDateTime();
         const effectiveSubBrand = await resolveSubBrand(brand, subBrand);
+        const roundFields = auditRound === 'PM'
+            ? {
+                statusAccount2: String(statusAccount || '').trim(),
+                accountActivity2: String(accountActivity || '').trim(),
+                noteAudit2: String(noteAudit || '').trim(),
+                auditDate2: targetDate,
+                auditDateTime2: nowFormatted
+            }
+            : {
+                statusAccount: String(statusAccount || '').trim(),
+                accountActivity: String(accountActivity || '').trim(),
+                noteAudit: String(noteAudit || '').trim(),
+                auditDateTime: nowFormatted
+            };
         let savedLog = null;
 
         if (isMongoConnected) {
@@ -656,10 +755,7 @@ router.post('/log', async (req, res) => {
                         contractIid: String(contractIid || ''),
                         customerName: String(customerName || ''),
                         auditDate: targetDate,
-                        auditDateTime: nowFormatted,
-                        statusAccount: String(statusAccount || '').trim(),
-                        accountActivity: String(accountActivity || '').trim(),
-                        noteAudit: String(noteAudit || '').trim(),
+                        ...roundFields,
                         auditedBy: String(auditedBy || 'Staff'),
                         brand: String(brand || ''),
                         subBrand: effectiveSubBrand
@@ -678,10 +774,7 @@ router.post('/log', async (req, res) => {
                 l => String(l.contractId) === String(contractId) && l.auditDate === targetDate
             );
             if (found) {
-                found.statusAccount = String(statusAccount || '').trim();
-                found.accountActivity = String(accountActivity || '').trim();
-                found.noteAudit = String(noteAudit || '').trim();
-                found.auditDateTime = nowFormatted;
+                Object.assign(found, roundFields);
                 found.auditedBy = String(auditedBy || 'Staff');
                 found.contractIid = String(contractIid || '');
                 found.customerName = String(customerName || '');
@@ -695,10 +788,7 @@ router.post('/log', async (req, res) => {
                     contractIid: String(contractIid || ''),
                     customerName: String(customerName || ''),
                     auditDate: targetDate,
-                    auditDateTime: nowFormatted,
-                    statusAccount: String(statusAccount || '').trim(),
-                    accountActivity: String(accountActivity || '').trim(),
-                    noteAudit: String(noteAudit || '').trim(),
+                    ...roundFields,
                     auditedBy: String(auditedBy || 'Staff'),
                     brand: String(brand || ''),
                     subBrand: effectiveSubBrand,
@@ -720,7 +810,7 @@ router.post('/log', async (req, res) => {
             brand: brand || ''
         }).catch(() => {});
 
-        res.json({ success: true, message: 'Audited successfully', data: savedLog });
+        res.json({ success: true, message: 'Audited successfully', data: savedLog, auditRound });
     } catch (err) {
         console.error('Error saving telegram audit log:', err);
         res.status(500).json({ success: false, error: err.message });
@@ -881,7 +971,18 @@ router.post('/submit', async (req, res) => {
     try {
         const { auditDate, submittedBy = 'Staff', brand = '', subBrand = '' } = req.body;
         const targetDate = auditDate ? String(auditDate).trim() : getTodayDateStr();
+        const auditRound = getCurrentAuditRound();
+        if (targetDate !== getTodayDateStr()) {
+            return res.status(400).json({ success: false, error: 'Only the current date can be submitted manually.' });
+        }
         const effectiveSubBrand = await resolveSubBrand(brand, subBrand);
+        const submissionIdentity = auditRound === 'AM'
+            ? {
+                auditDate: targetDate,
+                brand: String(brand || ''),
+                $or: [{ auditRound: 'AM' }, { auditRound: { $exists: false } }]
+            }
+            : { auditDate: targetDate, auditRound, brand: String(brand || '') };
 
         let subDoc = null;
         if (isMongoConnected) {
@@ -896,10 +997,11 @@ router.post('/submit', async (req, res) => {
                         BoundSubModel = instance.conn.model('TelegramAuditSubmission', TelegramAuditSubmission.schema);
                     }
                     const resDoc = await BoundSubModel.findOneAndUpdate(
-                        { auditDate: targetDate },
+                        submissionIdentity,
                         {
                             $set: {
                                 auditDate: targetDate,
+                                auditRound,
                                 isSubmitted: true,
                                 submittedAt: new Date(),
                                 submittedBy: String(submittedBy || 'Staff'),
@@ -917,10 +1019,11 @@ router.post('/submit', async (req, res) => {
             if (!subDoc) {
                 const SubModel = getWriteModel(TelegramAuditSubmission) || TelegramAuditSubmission;
                 subDoc = await SubModel.findOneAndUpdate(
-                    { auditDate: targetDate },
+                    submissionIdentity,
                     {
                         $set: {
                             auditDate: targetDate,
+                            auditRound,
                             isSubmitted: true,
                             submittedAt: new Date(),
                             submittedBy: String(submittedBy || 'Staff'),
@@ -934,8 +1037,11 @@ router.post('/submit', async (req, res) => {
         }
 
         // Always keep memory updated as cache/fallback
-        let found = MEM_DB.telegramAuditSubmissions.find(s => s.auditDate === targetDate);
+        let found = MEM_DB.telegramAuditSubmissions.find(
+            s => s.auditDate === targetDate && matchesAuditRound(s, auditRound) && s.brand === String(brand || '')
+        );
         if (found) {
+            found.auditRound = auditRound;
             found.isSubmitted = true;
             found.submittedAt = new Date();
             found.submittedBy = String(submittedBy || 'Staff');
@@ -945,6 +1051,7 @@ router.post('/submit', async (req, res) => {
         } else {
             const memItem = {
                 auditDate: targetDate,
+                auditRound,
                 isSubmitted: true,
                 submittedAt: new Date(),
                 submittedBy: String(submittedBy || 'Staff'),
@@ -967,6 +1074,7 @@ router.post('/submit', async (req, res) => {
 
         res.json({
             success: true,
+            auditRound,
             message: `បាន Submit និងចាក់សោរទិន្នន័យសម្រាប់ថ្ងៃ ${targetDate} ដោយជោគជ័យ!`,
             data: subDoc
         });

@@ -11,10 +11,23 @@ import { AiOutlineMenu } from 'react-icons/ai';
 
 const formatDateToYMD = (d) => {
     if (!d || !(d instanceof Date) || isNaN(d)) return '';
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Phnom_Penh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(d);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+};
+
+const getAuditRound = () => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Phnom_Penh',
+        hour: '2-digit',
+        hourCycle: 'h23'
+    }).formatToParts(new Date());
+    return Number(parts.find(part => part.type === 'hour')?.value || 0) >= 12 ? 'PM' : 'AM';
 };
 
 const formatNowAuditDateTime = () => {
@@ -150,6 +163,8 @@ const AuditTelegram = () => {
 
     const todayStr = useMemo(() => formatDateToYMD(new Date()), []);
     const [selectedDate, setSelectedDate] = useState(todayStr);
+    const [currentRound, setCurrentRound] = useState(getAuditRound);
+    const [auditedDates, setAuditedDates] = useState([]);
 
     // Admin ធំ (Super Admin) Permission Check
     const isAdmin = useMemo(() => {
@@ -196,6 +211,13 @@ const AuditTelegram = () => {
     });
     const [savingAudit, setSavingAudit] = useState(false);
 
+    const isRoundLocallyLocked = useCallback((date, round = currentRound) => {
+        const roundLock = localStorage.getItem(`telegram_audit_submitted_${date}_${round}`) === 'true';
+        const legacyMorningLock = round === 'AM' &&
+            localStorage.getItem(`telegram_audit_submitted_${date}`) === 'true';
+        return roundLock || legacyMorningLock;
+    }, [currentRound]);
+
     // Check if Status Account has been filled (cannot fill Account Activity or Note Audit if false)
     const isStatusFilled = useMemo(() => {
         if (auditForm.isCustomStatus) {
@@ -227,8 +249,14 @@ const AuditTelegram = () => {
     const availableStatuses = useMemo(() => {
         const set = new Set();
         (distinctStatuses || []).forEach(s => s && set.add(String(s).trim()));
-        Object.values(auditMap || {}).forEach(a => a?.statusAccount && set.add(String(a.statusAccount).trim()));
-        Object.values(latestAuditMap || {}).forEach(a => a?.statusAccount && set.add(String(a.statusAccount).trim()));
+        Object.values(auditMap || {}).forEach(a => {
+            if (a?.statusAccount) set.add(String(a.statusAccount).trim());
+            if (a?.statusAccount2) set.add(String(a.statusAccount2).trim());
+        });
+        Object.values(latestAuditMap || {}).forEach(a => {
+            if (a?.statusAccount) set.add(String(a.statusAccount).trim());
+            if (a?.statusAccount2) set.add(String(a.statusAccount2).trim());
+        });
         return Array.from(set).filter(Boolean);
     }, [distinctStatuses, auditMap, latestAuditMap]);
 
@@ -275,13 +303,16 @@ const AuditTelegram = () => {
             if (res.ok) {
                 const data = await res.json();
                 if (data.success) {
+                    const round = data.currentRound || getAuditRound();
+                    setCurrentRound(round);
+                    setAuditedDates(Array.isArray(data.auditedDates) ? data.auditedDates : []);
                     setContactMap(data.contactMap || {});
                     setContactByName(data.contactByName || {});
                     setAuditMap(data.auditMap || {});
                     setLatestAuditMap(data.latestAuditMap || {});
 
                     const serverSubmitted = Boolean(data.isSubmitted);
-                    const localSubmitted = localStorage.getItem(`telegram_audit_submitted_${targetDate}`) === 'true';
+                    const localSubmitted = isRoundLocallyLocked(targetDate, round);
                     const locked = serverSubmitted || localSubmitted;
 
                     setIsSubmitted(locked);
@@ -289,7 +320,7 @@ const AuditTelegram = () => {
 
                     if (locked) {
                         try {
-                            localStorage.setItem(`telegram_audit_submitted_${targetDate}`, 'true');
+                            localStorage.setItem(`telegram_audit_submitted_${targetDate}_${round}`, 'true');
                         } catch {}
                     }
 
@@ -304,7 +335,7 @@ const AuditTelegram = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 400);
         }
-    }, [API_BASE, selectedDate, user]);
+    }, [API_BASE, selectedDate, user, isRoundLocallyLocked]);
 
     // Initial Load & on selectedDate Change
     useEffect(() => {
@@ -314,6 +345,17 @@ const AuditTelegram = () => {
     useEffect(() => {
         fetchAuditState(selectedDate);
     }, [fetchAuditState, selectedDate]);
+
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            const round = getAuditRound();
+            if (round !== currentRound) {
+                setCurrentRound(round);
+                fetchAuditState(selectedDate);
+            }
+        }, 30000);
+        return () => window.clearInterval(interval);
+    }, [currentRound, fetchAuditState, selectedDate]);
 
     // Close open menu on outside click
     useEffect(() => {
@@ -357,6 +399,14 @@ const AuditTelegram = () => {
             const accountActivity = audit.accountActivity || '';
             const noteAudit = audit.noteAudit || '';
             const auditDateTime = audit.auditDateTime || '';
+            const statusAccount2 = audit.statusAccount2 || '';
+            const accountActivity2 = audit.accountActivity2 || '';
+            const noteAudit2 = audit.noteAudit2 || '';
+            const auditDate2 = audit.auditDate2 || '';
+            const auditDateTime2 = audit.auditDateTime2 || '';
+            const activeStatusAccount = currentRound === 'PM' ? statusAccount2 : statusAccount;
+            const activeAccountActivity = currentRound === 'PM' ? accountActivity2 : accountActivity;
+            const activeNoteAudit = currentRound === 'PM' ? noteAudit2 : noteAudit;
 
             const previousStatusAccount = latestAudit.statusAccount || '';
             const previousAccountActivity = latestAudit.accountActivity || '';
@@ -364,7 +414,7 @@ const AuditTelegram = () => {
             const previousAuditDate = latestAudit.auditDate || '';
 
             const hasContactInfo = Boolean(contactName || username || phoneNumber);
-            const isAudited = Boolean(statusAccount || accountActivity || noteAudit);
+            const isAudited = Boolean(activeStatusAccount || activeAccountActivity || activeNoteAudit);
 
             return {
                 ...contract,
@@ -379,6 +429,14 @@ const AuditTelegram = () => {
                 accountActivity,
                 noteAudit,
                 auditDateTime,
+                statusAccount2,
+                accountActivity2,
+                noteAudit2,
+                auditDate2,
+                auditDateTime2,
+                activeStatusAccount,
+                activeAccountActivity,
+                activeNoteAudit,
                 previousStatusAccount,
                 previousAccountActivity,
                 previousNoteAudit,
@@ -397,8 +455,11 @@ const AuditTelegram = () => {
                     String(item.username).toLowerCase().includes(s) ||
                     String(item.phoneNumber).toLowerCase().includes(s) ||
                     String(item.statusAccount || item.previousStatusAccount).toLowerCase().includes(s) ||
+                    String(item.statusAccount2).toLowerCase().includes(s) ||
                     String(item.accountActivity).toLowerCase().includes(s) ||
-                    String(item.noteAudit).toLowerCase().includes(s);
+                    String(item.noteAudit).toLowerCase().includes(s) ||
+                    String(item.accountActivity2).toLowerCase().includes(s) ||
+                    String(item.noteAudit2).toLowerCase().includes(s);
                 if (!matchSearch) return false;
             }
 
@@ -406,12 +467,12 @@ const AuditTelegram = () => {
             if (statusFilter !== 'All') {
                 if (statusFilter === 'Audited' && !item.isAudited) return false;
                 if (statusFilter === 'Pending' && item.isAudited) return false;
-                if (statusFilter !== 'Audited' && statusFilter !== 'Pending' && item.statusAccount !== statusFilter && item.previousStatusAccount !== statusFilter) return false;
+                if (statusFilter !== 'Audited' && statusFilter !== 'Pending' && item.statusAccount !== statusFilter && item.statusAccount2 !== statusFilter && item.previousStatusAccount !== statusFilter) return false;
             }
 
             return true;
         });
-    }, [contracts, contactMap, auditMap, latestAuditMap, searchTerm, statusFilter]);
+    }, [contracts, contactMap, auditMap, latestAuditMap, searchTerm, statusFilter, currentRound]);
 
     // Pagination slice
     const totalItems = filteredRows.length;
@@ -427,7 +488,7 @@ const AuditTelegram = () => {
 
     // ─── Open Audit Modal ────────────────────────────────────────────
     const handleOpenAuditModal = (row) => {
-        const isLocallyLocked = localStorage.getItem(`telegram_audit_submitted_${selectedDate}`) === 'true';
+        const isLocallyLocked = isRoundLocallyLocked(selectedDate);
         if (isSubmitted || isLocallyLocked) {
             alert(t('auditLockedAlert'));
             return;
@@ -435,9 +496,9 @@ const AuditTelegram = () => {
         setAuditModalItem(row);
 
         // If already audited today, load today's values; otherwise leave empty so auditor must fill Status Account first
-        const currentStatus = row.statusAccount || '';
-        const currentActivity = row.statusAccount ? (row.accountActivity || '') : '';
-        const currentNote = row.statusAccount ? (row.noteAudit || '') : '';
+        const currentStatus = row.activeStatusAccount || '';
+        const currentActivity = currentStatus ? (row.activeAccountActivity || '') : '';
+        const currentNote = currentStatus ? (row.activeNoteAudit || '') : '';
 
         const existsInSuggestions = availableStatuses.includes(currentStatus);
         const hasOptions = availableStatuses.length > 0;
@@ -453,7 +514,7 @@ const AuditTelegram = () => {
     // ─── Save Audit Record ───────────────────────────────────────────
     const handleSaveAudit = async (e) => {
         e?.preventDefault();
-        const isLocallyLocked = localStorage.getItem(`telegram_audit_submitted_${selectedDate}`) === 'true';
+        const isLocallyLocked = isRoundLocallyLocked(selectedDate);
         if (isSubmitted || isLocallyLocked) {
             alert(t('auditLockedAlert'));
             return;
@@ -494,20 +555,18 @@ const AuditTelegram = () => {
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                setAuditMap(prev => ({
-                    ...prev,
-                    [auditModalItem.rawContractId]: data.data
-                }));
-                setLatestAuditMap(prev => ({
-                    ...prev,
-                    [auditModalItem.rawContractId]: {
-                        statusAccount: finalStatus,
-                        accountActivity: auditForm.accountActivity.trim(),
-                        noteAudit: auditForm.noteAudit.trim(),
-                        auditDate: selectedDate,
-                        auditDateTime: data.data?.auditDateTime || clientDateTime
-                    }
-                }));
+            if (data.auditRound) setCurrentRound(data.auditRound);
+            setAuditMap(prev => ({
+                ...prev,
+                [auditModalItem.rawContractId]: data.data
+            }));
+            setLatestAuditMap(prev => ({
+                ...prev,
+                [auditModalItem.rawContractId]: {
+                    ...prev[auditModalItem.rawContractId],
+                    ...data.data
+                }
+            }));
                 if (finalStatus && !distinctStatuses.includes(finalStatus)) {
                     setDistinctStatuses(prev => [...prev, finalStatus]);
                 }
@@ -656,7 +715,7 @@ const AuditTelegram = () => {
                 setIsSubmitted(true);
                 setSubmissionInfo(data.data);
                 try {
-                    localStorage.setItem(`telegram_audit_submitted_${selectedDate}`, 'true');
+                    localStorage.setItem(`telegram_audit_submitted_${selectedDate}_${data.auditRound || currentRound}`, 'true');
                 } catch {}
                 setConfirmSubmitModal(false);
                 alert(data.message || `${t('auditSubmitSuccess')}${selectedDate}!`);
@@ -702,12 +761,21 @@ const AuditTelegram = () => {
                         <input
                             type="date"
                             value={selectedDate}
+                            max={todayStr}
                             onChange={(e) => {
-                                setSelectedDate(e.target.value);
+                                const value = e.target.value;
+                                if (value > todayStr || (value !== todayStr && !auditedDates.includes(value))) {
+                                    alert(t('auditDateUnavailable', 'You can only select today or a date with audit records.'));
+                                    return;
+                                }
+                                setSelectedDate(value);
                                 setCurrentPage(1);
                             }}
                             className="text-xs font-bold text-slate-800 bg-transparent border-0 focus:outline-none focus:ring-0 cursor-pointer"
                         />
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+                            {currentRound}
+                        </span>
                         {selectedDate !== todayStr && (
                             <button
                                 onClick={() => setSelectedDate(todayStr)}
@@ -881,13 +949,17 @@ const AuditTelegram = () => {
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditAccountActivity')}</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditNote')}</th>
                                 <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('auditDate')}</th>
+                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('accountStatus2')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditAccountActivity2')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditNote2')}</th>
+                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('auditDate2')}</th>
                                 <th className="px-2.5 py-2 text-center w-28 bg-slate-100/90 border-b border-slate-200 last:rounded-r-[5px]">{t('actionLabel')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={13} className="px-4 py-12 text-center text-slate-400 font-medium">
+                                    <td colSpan={17} className="px-4 py-12 text-center text-slate-400 font-medium">
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center gap-2">
                                                 <FaSpinner className="animate-spin text-2xl text-emerald-600" />
@@ -1038,6 +1110,28 @@ const AuditTelegram = () => {
                                                 ) : (
                                                     <span className="text-slate-300">—</span>
                                                 )}
+                                            </td>
+
+                                            {/* Afternoon Audit */}
+                                            <td className={`px-3.5 ${rowCellClass} text-center`}>
+                                                {row.statusAccount2 ? (
+                                                    <span className={`inline-block px-2.5 py-0.5 rounded-[5px] text-[11px] font-bold border ${getStatusBadgeClass(row.statusAccount2)}`}>
+                                                        {row.statusAccount2}
+                                                    </span>
+                                                ) : <span className="text-slate-300">—</span>}
+                                            </td>
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-600 max-w-xs truncate`} title={row.accountActivity2}>
+                                                {row.accountActivity2 || <span className="text-slate-300">—</span>}
+                                            </td>
+                                            <td className={`px-3.5 ${rowCellClass} text-slate-600 max-w-xs truncate`} title={row.noteAudit2}>
+                                                {row.noteAudit2 || <span className="text-slate-300">—</span>}
+                                            </td>
+                                            <td className={`px-3.5 ${rowCellClass} text-center font-mono text-[11px] text-slate-600 whitespace-nowrap`}>
+                                                {row.auditDate2 ? (
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-[5px] font-bold text-slate-700 border border-slate-200">
+                                                        {formatAuditDateTimeDisplay(row.auditDateTime2 || row.auditDate2)}
+                                                    </span>
+                                                ) : <span className="text-slate-300">—</span>}
                                             </td>
 
                                             {/* Action Column */}

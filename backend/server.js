@@ -55,6 +55,11 @@ import followUpRoutes from './routes/followUpRoutes.js';
 import followUp2Routes from './routes/followUp2Routes.js';
 import followUpSenSokRoutes from './routes/followUpSenSokRoutes.js';
 import followUp4Routes from './routes/followUp4Routes.js';
+import {
+    followUp1Routes,
+    followUp2WorkspaceRoutes,
+    followUp3Routes
+} from './routes/followUpWorkspaceRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
 import salaryRoutes from './routes/salaryRoutes.js';
 import savedUrlRoutes from './routes/savedUrlRoutes.js';
@@ -64,6 +69,7 @@ import calendarEventRoutes from './routes/calendarEventRoutes.js';
 import { initTelegramBotService } from './services/telegramBotService.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 import telegramAuditRoutes from './routes/telegramAuditRoutes.js';
+import deviceAuditRoutes from './routes/deviceAuditRoutes.js';
 import cashFlowTraderRoutes from './routes/cashFlowTraderRoutes.js';
 import { installTelegramSendRetry } from './utils/telegramSendRetry.js';
 
@@ -174,10 +180,11 @@ app.use('/api', wallpaperRoutes);
 app.use('/api/history', createHistoryRoutes(bot));
 app.use('/api', cashTransactionRoutes);
 app.use('/api/follow-up', followUpRoutes);
-app.use('/api/follow-up-2', followUp2Routes);
+app.use('/api/follow-up-1', followUp1Routes);
+app.use('/api/follow-up-2', followUp2WorkspaceRoutes);
 app.use('/api/followup2', followUp2Routes);
-app.use('/api/follow-up-3', followUpSenSokRoutes);
-app.use('/api/followup-3', followUpSenSokRoutes);
+app.use('/api/follow-up-3', followUp3Routes);
+app.use('/api/followup-3', followUp3Routes);
 app.use('/api/follow-up-4', followUp4Routes);
 app.use('/api/followup-4', followUp4Routes);
 app.use('/api/followup3', followUpSenSokRoutes);
@@ -195,6 +202,7 @@ app.use('/calculate-schedules', calculateScheduleRoutes);
 app.use('/api/calendar-events', calendarEventRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/telegram-audit', telegramAuditRoutes);
+app.use('/api/device-audit', deviceAuditRoutes);
 app.use('/telegram-audit', telegramAuditRoutes);
 app.use('/api/cashflow-trader', cashFlowTraderRoutes);
 app.use('/cashflow-trader', cashFlowTraderRoutes);

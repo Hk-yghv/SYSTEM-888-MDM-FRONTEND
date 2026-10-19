@@ -47,7 +47,6 @@ export const MEM_DB = {
             { category: 'Brands', items: ['MDM', 'ECloud', '888MDM'] },
             { category: 'Follow Up 4 Sources', items: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'] },
             { category: 'Follow Up 4 Contact Types', items: ['Call', 'Chat', 'Telegram', 'Walk-in', 'Other'] },
-            { category: 'Follow Up 4 Statuses', items: ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'] },
             { category: 'Follow Up 4 Asset Types', items: ['ទូរស័ព្ទ (Smart Phone)', 'ម៉ូតូ (Motorcycle)', 'រថយន្ត (Car)', 'ប្លង់ដី/ផ្ទះ (Real Estate)', 'មាស/គ្រឿងអលង្ការ (Jewelry)', 'កុំព្យូទ័រ (Laptop/PC)', 'ផ្សេងៗ (Other)'] },
             { category: 'Reject Submit Reasons', items: [] },
             { category: 'Reject CS Reasons', items: [] }
@@ -78,7 +77,7 @@ const SYSTEM_PAGES = [
     '/history/login-history', '/history/device-history',
     '/report/all', '/report/activated', '/report/redeem', '/report/lock-phone', '/report/set-wallpaper', '/report/installment', '/report/follow-up',
     '/follow-up/follow-up-1', '/follow-up/follow-up-2', '/follow-up/follow-up-3', '/follow-up/sen-sok',
-    '/settings/all-account', '/settings/control-system', '/calendar', '/profile'
+    '/settings/all-account', '/settings/control-system', '/calendar', '/profile', '/audit/device'
 ];
 
 export const ensureMasterAdmin = async () => {

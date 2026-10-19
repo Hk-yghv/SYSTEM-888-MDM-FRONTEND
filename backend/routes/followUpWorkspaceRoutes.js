@@ -1,0 +1,678 @@
+import express from 'express';
+import { FollowUp4Workspace, FollowUp1Workspace, FollowUp2Workspace, FollowUp3Workspace } from '../models/FollowUp4.js';
+import ControlSystem from '../models/ControlSystem.js';
+import { isMongoConnected, MEM_DB } from '../config/db.js';
+import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation, applyIsolationFilter, filterInMemoryRecords } from '../utils/brandIsolation.js';
+
+const createWorkspaceRouter = (models, workspaceId) => {
+const router = express.Router();
+const memory = { submits: [], rejectSubmits: [], rejectCs: [], details: [] };
+
+const checkMasterAdmin = (username, userRole, isImmutable) => {
+    return (
+        username === '@hakyonghouv' ||
+        username === 'hakyonghouv' ||
+        isImmutable === 'true' ||
+        userRole === 'Administrator' ||
+        userRole === 'Admin'
+    );
+};
+
+// Memory fallback arrays
+const FOLLOW_UP_STATUS_KEY = `follow_up_${workspaceId}_statuses`;
+const getStoredStatuses = async (brand) => {
+    if (isMongoConnected) {
+        const results = await queryAllDBs(ControlSystem, M =>
+            M.find({ key: FOLLOW_UP_STATUS_KEY, brand }).select('value').lean()
+        );
+        return (Array.isArray(results) ? results : [results])
+            .flatMap(doc => Array.isArray(doc?.value) ? doc.value : [])
+            .map(value => String(value || '').trim())
+            .filter(Boolean);
+    }
+    return [...(MEM_DB.followUpWorkspaceStatuses?.[workspaceId]?.[brand] || [])];
+};
+
+const getFirstSubBrand = async (brand) => {
+    let brandSubBrands = MEM_DB.controlSystem?.brand_subbrands || {};
+    if (isMongoConnected) {
+        const config = await queryAllDBs(ControlSystem, M =>
+            M.findOne({
+                key: 'brand_subbrands',
+                $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }]
+            }).lean()
+        );
+        const doc = Array.isArray(config) ? config.find(Boolean) : config;
+        if (doc?.value) brandSubBrands = doc.value;
+    }
+
+    if (brandSubBrands instanceof Map) {
+        brandSubBrands = Object.fromEntries(brandSubBrands);
+    }
+    const subBrands = brandSubBrands?.[brand];
+    return Array.isArray(subBrands) ? String(subBrands[0] || '').trim() : '';
+};
+
+router.get('/statuses', async (req, res) => {
+    try {
+        const isolation = await resolveUserIsolation(req);
+        const brand = isolation.isMasterAdmin
+            ? String(req.query.brand || '').trim()
+            : String(isolation.brand || '').trim();
+        const filter = { key: FOLLOW_UP_STATUS_KEY, brand };
+        const statusLists = isMongoConnected
+            ? await queryAllDBs(ControlSystem, M => M.find(filter).select('value').lean())
+            : [];
+        const statuses = new Set();
+        (Array.isArray(statusLists) ? statusLists : [statusLists]).forEach(doc => {
+            if (Array.isArray(doc?.value)) {
+                doc.value.forEach(value => {
+                    const status = String(value || '').trim();
+                    if (status) statuses.add(status);
+                });
+            }
+        });
+        if (!isMongoConnected) {
+            (MEM_DB.followUpWorkspaceStatuses?.[workspaceId]?.[brand] || []).forEach(status => statuses.add(status));
+        }
+        res.json({ success: true, data: Array.from(statuses) });
+    } catch (err) {
+        console.error('Error fetching Follow Up 4 statuses:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.post('/statuses', async (req, res) => {
+    try {
+        const isolation = await resolveUserIsolation(req);
+        const brand = isolation.isMasterAdmin
+            ? String(req.body.brand || '').trim()
+            : String(isolation.brand || '').trim();
+        const status = String(req.body.status || '').trim();
+        if (!brand || !status) {
+            return res.status(400).json({ success: false, message: 'Brand and status are required' });
+        }
+
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(ControlSystem) || ControlSystem;
+            await WriteModel.findOneAndUpdate(
+                { key: FOLLOW_UP_STATUS_KEY, brand },
+                { $addToSet: { value: status } },
+                { upsert: true, new: true }
+            );
+        } else {
+            MEM_DB.followUpWorkspaceStatuses ||= {};
+            MEM_DB.followUpWorkspaceStatuses[workspaceId] ||= {};
+            MEM_DB.followUpWorkspaceStatuses[workspaceId][brand] ||= [];
+            if (!MEM_DB.followUpWorkspaceStatuses[workspaceId][brand].includes(status)) {
+                MEM_DB.followUpWorkspaceStatuses[workspaceId][brand].push(status);
+            }
+        }
+
+        recordSystemAudit(req, `CREATE_FOLLOWUP${workspaceId}_STATUS`, `Created Follow Up 4 status "${status}" for ${brand}`);
+        res.json({ success: true, data: { brand, status } });
+    } catch (err) {
+        console.error('Error saving Follow Up 4 status:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+const backfillWorkspaceSubmitSubBrands = async (brand, defaultSubBrand) => {
+    const normalizedBrand = String(brand || '').trim();
+    const normalizedSubBrand = String(defaultSubBrand || '').trim();
+    if (!normalizedBrand || !normalizedSubBrand) return 0;
+
+    let backfilledCount = 0;
+    const brandRegex = new RegExp(`^${normalizedBrand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+
+    if (isMongoConnected) {
+        await queryAllDBs(models.submit, async (M) => {
+            const result = await M.updateMany(
+                {
+                    brand: brandRegex,
+                    $or: [
+                        { subBrand: { $exists: false } },
+                        { subBrand: null },
+                        { subBrand: /^\s*$/ }
+                    ]
+                },
+                { $set: { subBrand: normalizedSubBrand } }
+            );
+            backfilledCount += result.modifiedCount || 0;
+            return [];
+        });
+    }
+
+    memory.submits.forEach(item => {
+        if (
+            String(item.brand || '').trim().toLowerCase() === normalizedBrand.toLowerCase() &&
+            !String(item.subBrand || '').trim()
+        ) {
+            item.subBrand = normalizedSubBrand;
+            backfilledCount++;
+        }
+    });
+    return backfilledCount;
+};
+
+// ==========================================
+// 1. FOLLOW UP SUBMIT ENDPOINTS
+// ==========================================
+
+// GET Submit records
+router.get('/submit', async (req, res) => {
+    try {
+        const {
+            userBrand = '',
+            userRole = '',
+            username = '',
+            isImmutable = 'false',
+            brand = '',
+            startDate = '',
+            endDate = '',
+            date = '',
+            search = ''
+        } = req.query;
+
+        const isolation = await resolveUserIsolation(req);
+        if (!isolation.isMasterAdmin && isolation.brand) {
+            const firstSubBrand = await getFirstSubBrand(isolation.brand);
+            if (firstSubBrand) {
+                await backfillWorkspaceSubmitSubBrands(isolation.brand, firstSubBrand);
+            }
+        }
+
+        let filter = {};
+        if (isolation.isMasterAdmin) {
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
+        } else {
+            applyIsolationFilter(filter, isolation);
+        }
+
+        if (date) {
+            filter.date = date;
+        } else if (startDate || endDate) {
+            filter.date = {};
+            if (startDate) filter.date.$gte = startDate;
+            if (endDate) filter.date.$lte = endDate;
+        }
+
+        if (search) {
+            const searchRegex = new RegExp(search.trim(), 'i');
+            filter.$or = [
+                { name: searchRegex },
+                { userName: searchRegex },
+                { phone: searchRegex },
+                { nameTelegram: searchRegex },
+                { model: searchRegex },
+                { description: searchRegex }
+            ];
+        }
+
+        let items = [];
+        if (isMongoConnected) {
+            items = await queryAllDBs(models.submit, (M) => M.find(filter).sort({ date: -1, createdAt: -1 }));
+        } else {
+            items = filterInMemoryRecords(memory.submits.filter(item => {
+                if (brand && brand !== 'ALL' && brand !== 'All' && item.brand?.toLowerCase() !== brand.trim().toLowerCase()) return false;
+                if (!isolation.isMasterAdmin && isolation.brand && item.brand?.toLowerCase() !== isolation.brand.toLowerCase()) return false;
+                if (date && item.date !== date) return false;
+                if (startDate && item.date < startDate) return false;
+                if (endDate && item.date > endDate) return false;
+                if (search) {
+                    const searchTerm = search.trim().toLowerCase();
+                    const searchableFields = [item.name, item.userName, item.phone, item.nameTelegram, item.model, item.description];
+                    if (!searchableFields.some(value => String(value || '').toLowerCase().includes(searchTerm))) return false;
+                }
+                return true;
+            }), isolation);
+        }
+        res.json({ success: true, data: items });
+    } catch (err) {
+        console.error('Error fetching FollowUp4 Submit:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// POST Submit record
+router.post('/submit', async (req, res) => {
+    try {
+        const {
+            date,
+            name = '',
+            userName = '',
+            phone = '',
+            nameTelegram = '',
+            fromSource = '',
+            namePgTlFrom = '',
+            contactType = '',
+            namePgTlContact = '',
+            appraisal = '',
+            requested = '',
+            assetType = '',
+            model = '',
+            status = 'PENDING',
+            description = '',
+            brand,
+            createdBy = ''
+        } = req.body;
+
+        const isolation = await resolveUserIsolation(req);
+        const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : brand;
+        const effectiveSubBrand = req.body.subBrand || (isolation.allowedSubBrands[0] || '');
+
+        if (!effectiveBrand || !date) {
+            return res.status(400).json({ success: false, message: 'Date and Brand are required' });
+        }
+        const statuses = await getStoredStatuses(effectiveBrand);
+        if (!statuses.includes(String(status || '').trim())) {
+            return res.status(400).json({ success: false, message: 'Select a status saved for this brand first.' });
+        }
+
+        const recordData = {
+            date,
+            name,
+            userName,
+            phone,
+            nameTelegram,
+            fromSource,
+            namePgTlFrom,
+            contactType,
+            namePgTlContact,
+            appraisal,
+            requested,
+            assetType,
+            model,
+            status,
+            description,
+            brand: effectiveBrand,
+            subBrand: effectiveSubBrand,
+            createdBy: createdBy || isolation.username || ''
+        };
+
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(models.submit) || models.submit;
+            const newRecord = new WriteModel(recordData);
+            await newRecord.save();
+            recordSystemAudit(req, `CREATE_FOLLOWUP${workspaceId}_SUBMIT`, `Created FollowUp4 submit record for ${name} (${brand})`);
+            return res.json({ success: true, data: newRecord });
+        } else {
+            const memRecord = { _id: 'fu4_' + Date.now(), ...recordData, createdAt: new Date() };
+            memory.submits.unshift(memRecord);
+            return res.json({ success: true, data: memRecord });
+        }
+    } catch (err) {
+        console.error('Error creating FollowUp4 Submit:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// PUT Submit record
+router.put('/submit/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (Object.prototype.hasOwnProperty.call(req.body, 'status')) {
+            const isolation = await resolveUserIsolation(req);
+            const effectiveBrand = isolation.isMasterAdmin ? req.body.brand : isolation.brand;
+            const statuses = await getStoredStatuses(String(effectiveBrand || '').trim());
+            if (!statuses.includes(String(req.body.status || '').trim())) {
+                return res.status(400).json({ success: false, message: 'Select a status saved for this brand first.' });
+            }
+        }
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(models.submit) || models.submit;
+            const updated = await WriteModel.findByIdAndUpdate(id, req.body, { new: true });
+            recordSystemAudit(req, `UPDATE_FOLLOWUP${workspaceId}_SUBMIT`, `Updated FollowUp4 submit ID: ${id}`);
+            return res.json({ success: true, data: updated });
+        } else {
+            const idx = memory.submits.findIndex(s => s._id === id);
+            if (idx !== -1) {
+                memory.submits[idx] = { ...memory.submits[idx], ...req.body };
+                return res.json({ success: true, data: memory.submits[idx] });
+            }
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+    } catch (err) {
+        console.error('Error updating FollowUp4 Submit:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// DELETE Submit record
+router.delete('/submit/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(models.submit) || models.submit;
+            await WriteModel.findByIdAndDelete(id);
+            recordSystemAudit(req, `DELETE_FOLLOWUP${workspaceId}_SUBMIT`, `Deleted FollowUp4 submit ID: ${id}`);
+            return res.json({ success: true, message: 'Deleted successfully' });
+        } else {
+            const idx = memory.submits.findIndex(s => s._id === id);
+            if (idx !== -1) memory.submits.splice(idx, 1);
+            return res.json({ success: true, message: 'Deleted successfully' });
+        }
+    } catch (err) {
+        console.error('Error deleting FollowUp4 Submit:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ==========================================
+// 2. REJECT SUBMIT ENDPOINTS
+// ==========================================
+
+// GET Reject Submit records by date range and brand
+router.get('/reject-submit', async (req, res) => {
+    try {
+        const {
+            userBrand = '',
+            userRole = '',
+            username = '',
+            isImmutable = 'false',
+            date,
+            brand = '',
+            startDate = '',
+            endDate = ''
+        } = req.query;
+
+        const isMaster = checkMasterAdmin(username, userRole, isImmutable);
+
+        let filter = {};
+        if (isMaster) {
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
+        } else {
+            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
+                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
+            }
+        }
+
+        if (date) {
+            filter.date = date;
+        } else if (startDate || endDate) {
+            filter.date = {};
+            if (startDate) filter.date.$gte = startDate;
+            if (endDate) filter.date.$lte = endDate;
+        }
+
+        let items = [];
+        if (isMongoConnected) {
+            items = await queryAllDBs(models.rejectSubmit, (M) => M.find(filter).sort({ date: -1 }));
+        } else {
+            items = memory.rejectSubmits.filter(r => {
+                if (filter.brand && r.brand !== filter.brand) return false;
+                if (date && r.date !== date) return false;
+                if (startDate && r.date < startDate) return false;
+                if (endDate && r.date > endDate) return false;
+                return true;
+            });
+        }
+        res.json({ success: true, data: items });
+    } catch (err) {
+        console.error('Error fetching Reject Submit:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// POST Batch Save Reject Submit counts for a date and brand
+router.post('/reject-submit/save', async (req, res) => {
+    try {
+        const { date, brand, entries, createdBy = '' } = req.body;
+        if (!date || !brand || !Array.isArray(entries)) {
+            return res.status(400).json({ success: false, message: 'date, brand, and entries array required' });
+        }
+
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(models.rejectSubmit) || models.rejectSubmit;
+            for (const item of entries) {
+                await WriteModel.findOneAndUpdate(
+                    { date, brand, reason: item.reason },
+                    { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy },
+                    { upsert: true, new: true }
+                );
+            }
+        } else {
+            for (const item of entries) {
+                const idx = memory.rejectSubmits.findIndex(r => r.date === date && r.brand === brand && r.reason === item.reason);
+                const rec = { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy };
+                if (idx !== -1) memory.rejectSubmits[idx] = rec;
+                else memory.rejectSubmits.push(rec);
+            }
+        }
+
+        recordSystemAudit(req, 'SAVE_REJECT_SUBMIT', `Saved Reject Submit counts for ${date} brand ${brand}`);
+        res.json({ success: true, message: 'Saved successfully' });
+    } catch (err) {
+        console.error('Error saving Reject Submit:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ==========================================
+// 3. REJECT CS ENDPOINTS
+// ==========================================
+
+// GET Reject CS records by date range and brand
+router.get('/reject-cs', async (req, res) => {
+    try {
+        const {
+            userBrand = '',
+            userRole = '',
+            username = '',
+            isImmutable = 'false',
+            date,
+            brand = '',
+            startDate = '',
+            endDate = ''
+        } = req.query;
+
+        const isMaster = checkMasterAdmin(username, userRole, isImmutable);
+
+        let filter = {};
+        if (isMaster) {
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
+        } else {
+            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
+                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
+            }
+        }
+
+        if (date) {
+            filter.date = date;
+        } else if (startDate || endDate) {
+            filter.date = {};
+            if (startDate) filter.date.$gte = startDate;
+            if (endDate) filter.date.$lte = endDate;
+        }
+
+        let items = [];
+        if (isMongoConnected) {
+            items = await queryAllDBs(models.rejectCs, (M) => M.find(filter).sort({ date: -1 }));
+        } else {
+            items = memory.rejectCs.filter(r => {
+                if (filter.brand && r.brand !== filter.brand) return false;
+                if (date && r.date !== date) return false;
+                if (startDate && r.date < startDate) return false;
+                if (endDate && r.date > endDate) return false;
+                return true;
+            });
+        }
+        res.json({ success: true, data: items });
+    } catch (err) {
+        console.error('Error fetching Reject CS:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// POST Batch Save Reject CS counts for a date and brand
+router.post('/reject-cs/save', async (req, res) => {
+    try {
+        const { date, brand, entries, createdBy = '' } = req.body;
+        if (!date || !brand || !Array.isArray(entries)) {
+            return res.status(400).json({ success: false, message: 'date, brand, and entries array required' });
+        }
+
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(models.rejectCs) || models.rejectCs;
+            for (const item of entries) {
+                await WriteModel.findOneAndUpdate(
+                    { date, brand, reason: item.reason },
+                    { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy },
+                    { upsert: true, new: true }
+                );
+            }
+        } else {
+            for (const item of entries) {
+                const idx = memory.rejectCs.findIndex(r => r.date === date && r.brand === brand && r.reason === item.reason);
+                const rec = { date, brand, reason: item.reason, count: Number(item.count) || 0, createdBy };
+                if (idx !== -1) memory.rejectCs[idx] = rec;
+                else memory.rejectCs.push(rec);
+            }
+        }
+
+        recordSystemAudit(req, 'SAVE_REJECT_CS', `Saved Reject CS counts for ${date} brand ${brand}`);
+        res.json({ success: true, message: 'Saved successfully' });
+    } catch (err) {
+        console.error('Error saving Reject CS:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ==========================================
+// 4. DETAIL ENDPOINTS
+// ==========================================
+
+// GET Detail metrics by date and brand or date range
+router.get('/detail', async (req, res) => {
+    try {
+        const {
+            userBrand = '',
+            userRole = '',
+            username = '',
+            isImmutable = 'false',
+            brand = '',
+            date = '',
+            startDate = '',
+            endDate = ''
+        } = req.query;
+
+        const isMaster = checkMasterAdmin(username, userRole, isImmutable);
+
+        let filter = {};
+        if (isMaster) {
+            if (brand && brand !== 'ALL' && brand !== 'All') {
+                filter.brand = { $in: [brand, new RegExp(`^${brand.trim()}$`, 'i')] };
+            }
+        } else {
+            if (userBrand && userBrand !== 'ALL' && userBrand !== 'All') {
+                filter.brand = { $in: [userBrand, '', null, new RegExp(`^${userBrand.trim()}$`, 'i')] };
+            }
+        }
+
+        if (date) {
+            filter.date = date;
+        } else if (startDate || endDate) {
+            filter.date = {};
+            if (startDate) filter.date.$gte = startDate;
+            if (endDate) filter.date.$lte = endDate;
+        }
+
+        let items = [];
+        if (isMongoConnected) {
+            items = await queryAllDBs(models.detail, (M) => M.find(filter).sort({ date: -1 }));
+        } else {
+            items = memory.details.filter(d => (!date || d.date === date) && (!brand || d.brand === brand));
+        }
+        res.json({ success: true, data: items });
+    } catch (err) {
+        console.error('Error fetching Detail metrics:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// POST Save Detail metrics for a single date & brand
+router.post('/detail/save', async (req, res) => {
+    try {
+        const {
+            date,
+            brand,
+            message = 0,
+            page = 0,
+            telegram = 0,
+            noReply = 0,
+            inquire = 0,
+            rejectCs = 0,
+            more = 0,
+            pageSubmit = 0,
+            telegramSubmit = 0,
+            call = 0,
+            review = 0,
+            reject = 0,
+            reject2 = 0,
+            success1 = 0,
+            success2 = 0,
+            createdBy = ''
+        } = req.body;
+
+        if (!date || !brand) {
+            return res.status(400).json({ success: false, message: 'date and brand required' });
+        }
+
+        const metricsData = {
+            date,
+            brand,
+            message: Number(message) || 0,
+            page: Number(page) || 0,
+            telegram: Number(telegram) || 0,
+            noReply: Number(noReply) || 0,
+            inquire: Number(inquire) || 0,
+            rejectCs: Number(rejectCs) || 0,
+            more: Number(more) || 0,
+            pageSubmit: Number(pageSubmit) || 0,
+            telegramSubmit: Number(telegramSubmit) || 0,
+            call: Number(call) || 0,
+            review: Number(review) || 0,
+            reject: Number(reject) || 0,
+            reject2: Number(reject2) || 0,
+            success1: Number(success1) || 0,
+            success2: Number(success2) || 0,
+            createdBy
+        };
+
+        if (isMongoConnected) {
+            const WriteModel = getWriteModel(models.detail) || models.detail;
+            const updated = await WriteModel.findOneAndUpdate(
+                { date, brand },
+                metricsData,
+                { upsert: true, new: true }
+            );
+            recordSystemAudit(req, 'SAVE_FOLLOWUP4_DETAIL', `Saved Detail metrics for ${date} brand ${brand}`);
+            return res.json({ success: true, data: updated });
+        } else {
+            const idx = memory.details.findIndex(d => d.date === date && d.brand === brand);
+            if (idx !== -1) memory.details[idx] = metricsData;
+            else memory.details.push(metricsData);
+            return res.json({ success: true, data: metricsData });
+        }
+    } catch (err) {
+        console.error('Error saving Detail metrics:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+return router;
+};
+
+export const followUp1Routes = createWorkspaceRouter(FollowUp1Workspace, 1);
+export const followUp2WorkspaceRoutes = createWorkspaceRouter(FollowUp2Workspace, 2);
+export const followUp3Routes = createWorkspaceRouter(FollowUp3Workspace, 3);
+const followUp4Routes = createWorkspaceRouter(FollowUp4Workspace, 4);
+export default followUp4Routes;

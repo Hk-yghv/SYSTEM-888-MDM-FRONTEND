@@ -22,6 +22,11 @@ const telegramAuditLogSchema = new mongoose.Schema({
     statusAccount: { type: String, default: '', index: true },
     accountActivity: { type: String, default: '' },
     noteAudit: { type: String, default: '' },
+    statusAccount2: { type: String, default: '', index: true },
+    accountActivity2: { type: String, default: '' },
+    noteAudit2: { type: String, default: '' },
+    auditDate2: { type: String, default: '' },
+    auditDateTime2: { type: String, default: '' },
     auditedBy: { type: String, default: 'Staff' },
     brand: { type: String, default: '' },
     subBrand: { type: String, default: '' }
@@ -30,6 +35,7 @@ const telegramAuditLogSchema = new mongoose.Schema({
 // 3. Daily Submission Tracker
 const telegramAuditSubmissionSchema = new mongoose.Schema({
     auditDate: { type: String, required: true, index: true }, // Format: YYYY-MM-DD
+    auditRound: { type: String, default: 'AM', enum: ['AM', 'PM'] },
     isSubmitted: { type: Boolean, default: false },
     submittedAt: { type: Date, default: null },
     submittedBy: { type: String, default: '' },

@@ -647,7 +647,8 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 )}
 
                 {/* Audit */}
-                {hasPermission(json.audit?.telegram || '/audit/telegram', 'read') && (
+                {(hasPermission(json.audit?.telegram || '/audit/telegram', 'read') ||
+                    hasPermission(json.audit?.device || '/audit/device', 'read')) && (
                     <div className="flex-shrink-0">
                         <div onClick={() => toggleMenu("audit")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("audit")}>
                             <span className="flex items-center gap-3">
@@ -661,6 +662,12 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 <Link to={json.audit?.telegram || '/audit/telegram'} className={subItemClass(json.audit?.telegram || '/audit/telegram')} style={subItemStyle(json.audit?.telegram || '/audit/telegram')}>
                                     <FaFileAlt size={12} />
                                     {t('auditTelegram')}
+                                </Link>
+                            )}
+                            {hasPermission(json.audit?.device || '/audit/device', 'read') && (
+                                <Link to={json.audit?.device || '/audit/device'} className={subItemClass(json.audit?.device || '/audit/device')} style={subItemStyle(json.audit?.device || '/audit/device')}>
+                                    <FaFileAlt size={12} />
+                                    {t('auditDevice')}
                                 </Link>
                             )}
                         </div>

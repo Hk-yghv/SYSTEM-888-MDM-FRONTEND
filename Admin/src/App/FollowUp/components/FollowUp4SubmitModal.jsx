@@ -1,6 +1,6 @@
 import { useLanguage } from '../../../context/LanguageContext';
 import React, { useRef, useState } from 'react';
-import { FaPlusCircle, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+import { FaPlusCircle, FaEdit, FaSave, FaTimes, FaPlus, FaSpinner } from 'react-icons/fa';
 
 const SuggestionField = ({ id, value, onChange, options = [], placeholder, textarea = false }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -90,10 +90,11 @@ const FollowUp4SubmitModal = ({
     setFormData,
     onSubmit,
     submitting = false,
+    onCreateStatus,
     droplists = {
         sources: ['PAGE', 'TELEGRAM', 'TikTok', 'FB Page', 'Walk-in', 'Other'],
         contactTypes: ['Telegram', 'Page', 'Call', 'Walk-in', 'Other'],
-        statuses: ['PENDING', 'REVIEW', 'REJECT1', 'REJECT2', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'],
+        statuses: [],
         assetTypes: ['Smart Phone', 'Motorcycle', 'Car', 'Real Estate', 'Jewelry', 'Laptop/PC', 'Other'],
         pgTlNames: [],
         descriptions: []
@@ -103,6 +104,9 @@ const FollowUp4SubmitModal = ({
 }) => {
     const { t } = useLanguage();
     const [isModelOptionsOpen, setIsModelOptionsOpen] = useState(false);
+    const [newStatus, setNewStatus] = useState('');
+    const [creatingStatus, setCreatingStatus] = useState(false);
+    const [statusError, setStatusError] = useState('');
     if (!isOpen) return null;
 
     const sources = droplists.sources && droplists.sources.length > 0
@@ -113,9 +117,7 @@ const FollowUp4SubmitModal = ({
         ? droplists.contactTypes
         : ['Telegram', 'Page', 'Call', 'Walk-in', 'Other'];
 
-    const statuses = droplists.statuses && droplists.statuses.length > 0
-        ? droplists.statuses
-        : ['PENDING', 'REVIEW', 'REJECT', 'SUCCESS 1', 'SUCCESS 2', 'INQUIRE'];
+    const statuses = Array.isArray(droplists.statuses) ? droplists.statuses : [];
 
     const assetTypes = droplists.assetTypes && droplists.assetTypes.length > 0
         ? droplists.assetTypes
@@ -127,6 +129,20 @@ const FollowUp4SubmitModal = ({
     const filteredModelOptions = modelOptions.filter(model =>
         model.toLowerCase().includes((formData.model || '').trim().toLowerCase())
     );
+    const handleCreateStatus = async () => {
+        const status = newStatus.trim();
+        if (!status || !onCreateStatus) return;
+        setCreatingStatus(true);
+        setStatusError('');
+        try {
+            await onCreateStatus(status);
+            setNewStatus('');
+        } catch (error) {
+            setStatusError(error.message || t('failedToSave'));
+        } finally {
+            setCreatingStatus(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
@@ -376,15 +392,42 @@ const FollowUp4SubmitModal = ({
 
                         <div>
                             <label className="block text-xs font-semibold text-black mb-1">{t('status')}</label>
-                            <select
-                                value={formData.status}
-                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                className="w-full bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer font-bold text-amber-400"
-                            >
-                                {statuses.map((st, i) => (
-                                    <option key={i} value={st}>{st}</option>
-                                ))}
-                            </select>
+                            <div className="flex gap-2">
+                                <select
+                                    required
+                                    value={formData.status}
+                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                    className="min-w-0 flex-1 bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500 cursor-pointer font-bold"
+                                >
+                                    <option value="">{statuses.length ? t('selectOrType') : t('createStatus')}</option>
+                                    {statuses.map((st, i) => (
+                                        <option key={`${st}-${i}`} value={st}>{st}</option>
+                                    ))}
+                                </select>
+                                <input
+                                    type="text"
+                                    value={newStatus}
+                                    onChange={(event) => setNewStatus(event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter') {
+                                            event.preventDefault();
+                                            handleCreateStatus();
+                                        }
+                                    }}
+                                    placeholder={t('createStatus')}
+                                    className="min-w-0 flex-1 bg-slate-200 text-black text-xs px-3 py-2 rounded border border-slate-600 outline-none focus:border-emerald-500"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleCreateStatus}
+                                    disabled={!newStatus.trim() || creatingStatus}
+                                    className="inline-flex items-center gap-1 rounded bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {creatingStatus ? <FaSpinner className="animate-spin" /> : <FaPlus />}
+                                    {t('createStatus')}
+                                </button>
+                            </div>
+                            {statusError && <p className="mt-1 text-xs text-rose-600">{statusError}</p>}
                         </div>
                     </div>
 
