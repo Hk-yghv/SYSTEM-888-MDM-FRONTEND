@@ -6,6 +6,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/telegram',
     '/customer',
     '/device',
+    '/device/enrolment',
     '/contract/application',
     '/contract/activated',
     '/contract/check',

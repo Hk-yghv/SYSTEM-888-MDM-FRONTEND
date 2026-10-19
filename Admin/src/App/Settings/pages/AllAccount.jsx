@@ -29,6 +29,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/cashflow/monitor', label: 'Cash Flow Trader (លំហូរសាច់ប្រាក់)', actions: ['read', 'export'] },
     { category: 'Main Systems', path: '/customer', label: 'Customer Directory', actions: ['read', 'export', 'seePhoto', 'detail', 'qrcode'] },
     { category: 'Main Systems', path: '/device', label: 'Device List & Actions', actions: ['read', 'export', 'information', 'deviceAction'] },
+    { category: 'Main Systems', path: '/device/enrolment', label: 'Device Enrolment (Phone Models)', actions: ['read', 'information'] },
     { category: 'Main Systems', path: '/telegram', label: 'Telegram Web (Multi-Account)', actions: ['read'] },
 
     { category: 'Contract Management', path: '/contract/application', label: 'Contract Application', actions: ['read', 'export', 'create', 'edit', 'delete', 'information', 'activate'] },

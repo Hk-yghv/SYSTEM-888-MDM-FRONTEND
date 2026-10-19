@@ -15,7 +15,7 @@ const DeviceEnrolment = () => {
     const [expandedModel, setExpandedModel] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const canViewCustomerInformation = hasPermission('/device', 'information');
+    const canViewCustomerInformation = hasPermission('/device/enrolment', 'information');
     const isMasterAdmin = user?.username === '@hakyonghouv'
         || user?.username === 'hakyonghouv'
         || user?.isImmutable

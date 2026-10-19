@@ -285,22 +285,26 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 )}
 
                 {/* Device */}
-                {hasPermission('/device', 'read') && (
+                {(hasPermission('/device', 'read') || hasPermission(json.deviceEnrolment || '/device/enrolment', 'read')) && (
                     <>
-                        <Link to={json.device} className={navItemClass(json.device)} style={navItemStyle(json.device)}>
-                            <MdOutlinePhoneIphone size={18} className={isActive(json.device) ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
-                            {t('device')}
-                            {isActive(json.device) && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
-                        </Link>
-                        <Link
-                            to={json.deviceEnrolment || "/device/enrolment"}
-                            className={subItemClass(json.deviceEnrolment || "/device/enrolment")}
-                            style={subItemStyle(json.deviceEnrolment || "/device/enrolment")}
-                        >
-                            <FaMobileAlt size={13} />
-                            {t('deviceEnrolment')}
-                            {isActive(json.deviceEnrolment || "/device/enrolment") && <span className="ml-auto w-1 h-4 rounded-full bg-emerald-400 opacity-80" />}
-                        </Link>
+                        {hasPermission('/device', 'read') && (
+                            <Link to={json.device} className={navItemClass(json.device)} style={navItemStyle(json.device)}>
+                                <MdOutlinePhoneIphone size={18} className={isActive(json.device) ? "text-white" : "text-emerald-600 group-hover:text-emerald-700 transition-colors"} />
+                                {t('device')}
+                                {isActive(json.device) && <span className="ml-auto w-1 h-5 rounded-full bg-emerald-400 opacity-80" />}
+                            </Link>
+                        )}
+                        {hasPermission(json.deviceEnrolment || '/device/enrolment', 'read') && (
+                            <Link
+                                to={json.deviceEnrolment || "/device/enrolment"}
+                                className={subItemClass(json.deviceEnrolment || "/device/enrolment")}
+                                style={subItemStyle(json.deviceEnrolment || "/device/enrolment")}
+                            >
+                                <FaMobileAlt size={13} />
+                                {t('deviceEnrolment')}
+                                {isActive(json.deviceEnrolment || "/device/enrolment") && <span className="ml-auto w-1 h-4 rounded-full bg-emerald-400 opacity-80" />}
+                            </Link>
+                        )}
                     </>
                 )}
 

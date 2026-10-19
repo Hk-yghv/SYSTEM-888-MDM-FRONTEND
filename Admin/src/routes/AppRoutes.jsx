@@ -119,7 +119,7 @@ const AppRoutes = () => {
       {/* Customer & Device */}
       <Route path={json.customer} element={renderProtected(json.customer, Customer)} />
       <Route path={json.device} element={renderProtected(json.device, Device)} />
-      <Route path={json.deviceEnrolment || "/device/enrolment"} element={renderProtected(json.device, DeviceEnrolment)} />
+      <Route path={json.deviceEnrolment || "/device/enrolment"} element={renderProtected(json.deviceEnrolment || "/device/enrolment", DeviceEnrolment)} />
 
       {/* Contracts */}
       <Route path={json.contract.application} element={renderProtected(json.contract.application, Application)} />
