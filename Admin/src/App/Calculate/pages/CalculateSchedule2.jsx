@@ -38,6 +38,7 @@ const CalculateSchedule2 = () => {
     const [historyLoadError, setHistoryLoadError] = useState(false);
     const [historySearch, setHistorySearch] = useState('');
     const [saving, setSaving] = useState(false);
+    const [pdfExporting, setPdfExporting] = useState(false);
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const [activeRecordId, setActiveRecordId] = useState(null);
     const [newlyAddedId, setNewlyAddedId] = useState(null);
@@ -459,6 +460,125 @@ const CalculateSchedule2 = () => {
         window.print();
     };
 
+    const handleExportPDF = async () => {
+        const printArea = document.getElementById('cs2-print-area');
+        if (!printArea || !result || pdfExporting) return;
+
+        try {
+            setPdfExporting(true);
+            await document.fonts.ready;
+            const { default: html2pdf } = await import('html2pdf.js');
+            const isLandscape = printOrientation === 'landscape';
+            const pageWidth = isLandscape ? '297mm' : '210mm';
+            const pdfTitle = [result.contractNumber, result.customerName, 'Calculate_Schedule_2']
+                .filter(Boolean)
+                .join('_')
+                .replace(/[<>:"/\\|?*]/g, '_');
+
+            await html2pdf()
+                .set({
+                    margin: isLandscape ? [8, 0, 8, 0] : [10, 0, 10, 0],
+                    filename: `${pdfTitle}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        windowWidth: isLandscape ? 1123 : 794,
+                        onclone: (clonedDocument) => {
+                            const clonedPrintArea = clonedDocument.getElementById('cs2-print-area');
+                            if (!clonedPrintArea) return;
+
+                            const printStyles = clonedDocument.createElement('style');
+                            printStyles.textContent = `
+                                #cs2-print-area {
+                                    display: block !important;
+                                    position: relative !important;
+                                    width: 100% !important;
+                                    max-width: ${pageWidth} !important;
+                                    margin: 0 auto !important;
+                                    padding: 0 !important;
+                                    box-shadow: none !important;
+                                    border: none !important;
+                                    background: #fff !important;
+                                    overflow: visible !important;
+                                }
+                                #cs2-print-area div[class*="overflow-x-auto"] {
+                                    min-height: auto !important;
+                                    padding-bottom: 0 !important;
+                                    overflow: visible !important;
+                                    display: block !important;
+                                }
+                                #cs2-print-area table {
+                                    width: 100% !important;
+                                    border-collapse: collapse !important;
+                                    margin: 0 auto !important;
+                                }
+                                #cs2-print-area tr {
+                                    break-inside: avoid !important;
+                                }
+                                #cs2-print-area table th,
+                                #cs2-print-area table td {
+                                    border: 1px solid #000 !important;
+                                    color: #000 !important;
+                                    print-color-adjust: exact !important;
+                                }
+                                #cs2-print-area .cs2-meta-grid {
+                                    display: grid !important;
+                                    grid-template-columns: 1fr 1fr !important;
+                                    width: 100% !important;
+                                    column-gap: 32px !important;
+                                }
+                                #cs2-print-area .cs2-meta-row {
+                                    display: flex !important;
+                                    justify-content: space-between !important;
+                                    align-items: center !important;
+                                    width: 100% !important;
+                                }
+                                #cs2-print-area .cs2-page-margin {
+                                    padding-left: 150px !important;
+                                    padding-right: 150px !important;
+                                }
+                                #cs2-print-area .cs2-signature-grid {
+                                    display: grid !important;
+                                    grid-template-columns: 1fr 1fr !important;
+                                    width: 100% !important;
+                                    column-gap: 32px !important;
+                                    text-align: center !important;
+                                    break-inside: avoid !important;
+                                }
+                                #cs2-print-area .cs2-signature-col {
+                                    display: flex !important;
+                                    flex-direction: column !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    text-align: center !important;
+                                    width: 100% !important;
+                                }
+                                #cs2-print-area .cs2-signature-line {
+                                    width: 180px !important;
+                                    margin: 48px auto 0 !important;
+                                    border-bottom: 1px dotted #94a3b8 !important;
+                                }
+                                #cs2-print-area .cs2-address-footer {
+                                    break-inside: avoid !important;
+                                }
+                            `;
+                            clonedDocument.head.appendChild(printStyles);
+                        }
+                    },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.cs2-signature-grid', '.cs2-address-footer'] },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: printOrientation }
+                })
+                .from(printArea)
+                .save();
+        } catch (error) {
+            console.error('Calculate Schedule 2 PDF export failed:', error);
+            alert(`PDF export failed: ${error.message}`);
+        } finally {
+            setPdfExporting(false);
+        }
+    };
+
     const filteredHistory = savedHistory.filter(item => {
         if (!historySearch.trim()) return true;
         const q = historySearch.toLowerCase();
@@ -721,14 +841,16 @@ const CalculateSchedule2 = () => {
                                 <button
                                     type="button"
                                     onClick={handlePrint}
-                                    className="px-4 py-2.5 rounded-[5px] bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
-                                    <FaFilePdf /> Export PDF
+                                    className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
+                                    <FaPrint /> បោះពុម្ព
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={handlePrint}
-                                    className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
-                                    <FaPrint /> បោះពុម្ព
+                                    onClick={handleExportPDF}
+                                    disabled={pdfExporting}
+                                    className="px-4 py-2.5 rounded-[5px] bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
+                                    {pdfExporting ? <FaSpinner className="animate-spin" /> : <FaFilePdf />}
+                                    {pdfExporting ? 'កំពុងបង្កើត PDF...' : 'Export PDF'}
                                 </button>
                             </>
                         )}

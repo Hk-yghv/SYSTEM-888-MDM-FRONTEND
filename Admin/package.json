@@ -12,6 +12,7 @@
   "dependencies": {
     "emoji-picker-react": "^4.22.3",
     "exceljs": "^4.4.0",
+    "html2pdf.js": "^0.14.0",
     "jsqr": "^1.4.0",
     "khmer-chhankitek-calendar": "^1.2.1",
     "qrcode.react": "^4.2.0",
