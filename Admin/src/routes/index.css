@@ -120,6 +120,15 @@ table tbody tr.table-scroll-row:hover {
     cursor: pointer;
 }
 
+table tbody tr.table-scroll-row:focus-within,
+table tbody tr.table-scroll-row:focus-within:hover {
+    transform: none !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 9998 !important;
+    filter: none !important;
+}
+
 table tbody tr.table-scroll-row:hover > td,
 table tbody tr.table-scroll-row:hover > th {
     background-color: var(--table-row-hover-bg, #f0fdf4) !important;
@@ -147,7 +156,7 @@ table tbody tr.table-scroll-row:hover > th:last-child {
     }
     to {
         opacity: 1;
-        translate: 0 0;
+        translate: none;
     }
 }
 
@@ -196,14 +205,8 @@ table tbody tr.table-scroll-row:hover > th:last-child {
     overscroll-behavior: contain;
 }
 
-/* Modals inside main content area fill full available height (no bottom gaps, never overlap header/leftmenu) */
 .mobile-content-area .fixed.inset-0:not(:has(.cursor-grab)):not(:has(input[type="range"])) {
     padding: 0.5rem;
-}
-
-.mobile-content-area .fixed.inset-0:not(:has(.cursor-grab)):not(:has(input[type="range"])) > div:is(.max-w-2xl, .max-w-3xl, .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl) {
-    height: 100% !important;
-    max-height: 100% !important;
 }
 
 /* ==========================================================================
@@ -599,8 +602,8 @@ table tbody tr.table-scroll-row:hover > th:last-child {
 
     .mobile-content-area .table-container,
     .mobile-content-area div.overflow-x-auto {
-        min-height: 250px !important;
-        padding-bottom: 1.5rem !important;
+        min-height: 0 !important;
+        padding-bottom: 0.5rem !important;
     }
 }
 
@@ -692,8 +695,8 @@ table td {
 /* Table Container & Non-Clipping Dropdown Popovers */
 .table-container,
 div.overflow-x-auto {
-    min-height: 380px !important;
-    padding-bottom: 3.5rem !important;
+    min-height: 0 !important;
+    padding-bottom: 0.5rem !important;
 }
 
 td .absolute,
@@ -706,12 +709,12 @@ td .absolute,
 
 tbody tr:focus-within {
     position: relative;
-    z-index: 9998;
+    z-index: 9998 !important;
 }
 
 tbody td:focus-within {
     position: relative;
-    z-index: 9999;
+    z-index: 9999 !important;
 }
 
 .activated-installment-due-today > td {
