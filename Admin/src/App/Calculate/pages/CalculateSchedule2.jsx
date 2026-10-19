@@ -9,6 +9,76 @@ import {
 import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 
+const oklchToRgba = (value) => {
+    const [channelText, alphaText] = value.split(/\s*\/\s*/);
+    const channels = channelText.trim().split(/\s+/);
+    if (channels.length !== 3) throw new Error(`Unsupported OKLCH color: ${value}`);
+
+    const lightness = channels[0].endsWith('%')
+        ? parseFloat(channels[0]) / 100
+        : parseFloat(channels[0]);
+    const chroma = channels[1].endsWith('%')
+        ? parseFloat(channels[1]) * 0.004
+        : parseFloat(channels[1]);
+    let hue = parseFloat(channels[2]);
+    if (channels[2].endsWith('turn')) hue *= 360;
+    else if (channels[2].endsWith('rad')) hue = (hue * 180) / Math.PI;
+    else if (channels[2].endsWith('grad')) hue *= 0.9;
+    const alpha = alphaText
+        ? (alphaText.endsWith('%') ? parseFloat(alphaText) / 100 : parseFloat(alphaText))
+        : 1;
+    const radians = (hue * Math.PI) / 180;
+    const a = chroma * Math.cos(radians);
+    const b = chroma * Math.sin(radians);
+    const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    const linearRgb = [
+        4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+        -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+        -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s
+    ];
+    const rgb = linearRgb.map(channel => {
+        const clamped = Math.min(1, Math.max(0, channel));
+        return Math.round((clamped <= 0.0031308
+            ? clamped * 12.92
+            : 1.055 * (clamped ** (1 / 2.4)) - 0.055) * 255);
+    });
+
+    return `rgba(${rgb.join(', ')}, ${Math.min(1, Math.max(0, alpha))})`;
+};
+
+const sanitizePdfColors = (clonedDocument) => {
+    const sanitizeStyle = (style) => {
+        for (let index = 0; index < style.length; index++) {
+            const property = style[index];
+            const value = style.getPropertyValue(property);
+            if (!value.toLowerCase().includes('oklch(')) continue;
+
+            style.setProperty(
+                property,
+                value.replace(/oklch\(([^)]*)\)/gi, (_, color) => oklchToRgba(color)),
+                style.getPropertyPriority(property)
+            );
+        }
+    };
+    const sanitizeRules = (rules) => {
+        for (const rule of rules) {
+            if (rule.style) sanitizeStyle(rule.style);
+            if (rule.cssRules) sanitizeRules(rule.cssRules);
+        }
+    };
+
+    clonedDocument.querySelectorAll('[style]').forEach(element => sanitizeStyle(element.style));
+    for (const stylesheet of clonedDocument.styleSheets) {
+        try {
+            sanitizeRules(stylesheet.cssRules);
+        } catch (error) {
+            if (error.name !== 'SecurityError') throw error;
+        }
+    }
+};
+
 const CalculateSchedule2 = () => {
     const { user, API_BASE } = useAuth();
 
@@ -129,35 +199,7 @@ const CalculateSchedule2 = () => {
         // Initial fetch with spinner
         fetchHistory(false);
 
-        // Instant Realtime SSE (Server-Sent Events) push
-        let eventSource = null;
-        try {
-            const streamUrl = `${API_BASE}/calculate-schedules/stream`;
-            eventSource = new EventSource(streamUrl);
-
-            eventSource.onmessage = (e) => {
-                try {
-                    const eventData = JSON.parse(e.data);
-                    if (eventData.type === 'CREATED' && eventData.data) {
-                        const newDoc = eventData.data;
-                        setSavedHistory(prev => [newDoc, ...prev.filter(item => String(item._id) !== String(newDoc._id))]);
-                        setNewlyAddedId(newDoc._id);
-                        setTimeout(() => {
-                            setNewlyAddedId(null);
-                        }, 5000);
-                        fetchHistory(true);
-                    } else if (eventData.type === 'DELETED' && eventData.id) {
-                        setSavedHistory(prev => prev.filter(item => String(item._id) !== String(eventData.id)));
-                    }
-                } catch (err) {
-                    // Ignore non-json heartbeats
-                }
-            };
-        } catch (err) {
-            console.warn('SSE initialization notice:', err);
-        }
-
-        // Realtime fallback polling every 2.5 seconds silently
+        // Poll for updates because the deployed stream endpoint may be unavailable.
         const pollInterval = setInterval(() => {
             fetchHistory(true);
         }, 2500);
@@ -181,9 +223,6 @@ const CalculateSchedule2 = () => {
         window.addEventListener('storage', handleStorage);
 
         return () => {
-            if (eventSource) {
-                eventSource.close();
-            }
             clearInterval(pollInterval);
             window.removeEventListener('focus', handleSync);
             document.removeEventListener('visibilitychange', handleSync);
@@ -488,6 +527,7 @@ const CalculateSchedule2 = () => {
                             const clonedPrintArea = clonedDocument.getElementById('cs2-print-area');
                             if (!clonedPrintArea) return;
 
+                            sanitizePdfColors(clonedDocument);
                             const printStyles = clonedDocument.createElement('style');
                             printStyles.textContent = `
                                 #cs2-print-area {

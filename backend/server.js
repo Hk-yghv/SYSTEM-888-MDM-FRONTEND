@@ -182,6 +182,7 @@ app.use('/api', cashTransactionRoutes);
 app.use('/api/follow-up', followUpRoutes);
 app.use('/api/follow-up-1', followUp1Routes);
 app.use('/api/follow-up-2', followUp2WorkspaceRoutes);
+app.use('/api/follow-up-2', followUp2Routes);
 app.use('/api/followup2', followUp2Routes);
 app.use('/api/follow-up-3', followUp3Routes);
 app.use('/api/followup-3', followUp3Routes);
