@@ -86,6 +86,7 @@ const ALL_SYSTEM_PAGES = [
 
     { category: 'Tools & Utilities', path: '/save-url', label: 'Save URL (រក្សាទុក URL)', actions: ['read', 'create', 'edit', 'delete'] },
     { category: 'Audit System', path: '/audit/telegram', label: 'Audit Telegram (សវនកម្មតេឡេក្រាម)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Audit System', path: '/audit/device', label: 'Audit Device (សវនកម្មឧបករណ៍)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Print System', path: '/print/id-card', label: 'Print ID Card (A4 ព្រីនកាតសម្គាល់ខ្លួន)', actions: ['read', 'print'] },
 
