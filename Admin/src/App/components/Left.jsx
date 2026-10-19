@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronRight, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping, FaShieldAlt } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronRight, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping, FaShieldAlt, FaMobileAlt } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
