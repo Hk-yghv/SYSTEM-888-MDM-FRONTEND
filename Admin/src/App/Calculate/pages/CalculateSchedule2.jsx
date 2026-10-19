@@ -8,7 +8,6 @@ import {
 } from 'react-icons/fa';
 import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
-import { exportToPDF } from '../../../utils/exportUtils';
 
 const CalculateSchedule2 = () => {
     const { user, API_BASE } = useAuth();
@@ -460,53 +459,6 @@ const CalculateSchedule2 = () => {
         window.print();
     };
 
-    const handleExportPDF = () => {
-        if (!result) return;
-
-        const columns = [
-            { header: 'លេខកិច្ចសន្យា', accessor: 'contractNumber' },
-            { header: 'ឈ្មោះអតិថិជន', accessor: 'customerName' },
-            { header: 'ប្រភេទទ្រព្យ', accessor: 'assetName' },
-            { header: 'ល.រ', accessor: 'no' },
-            { header: 'ថ្ងៃត្រូវបង់', accessor: 'dueDate' },
-            { header: 'ប្រាក់ដើម ($)', accessor: 'principal' },
-            { header: 'ការប្រាក់/សេវា ($)', accessor: 'interest' },
-            { header: 'សរុបត្រូវបង់ ($)', accessor: 'totalDue' },
-            { header: 'ប្រាក់ដើមនៅសល់ ($)', accessor: 'remainingBalance' }
-        ];
-        const data = result.schedule.map(row => ({
-            contractNumber: result.contractNumber || '',
-            customerName: result.customerName || '',
-            assetName: result.assetName || '',
-            no: row.no,
-            dueDate: formatDate(row.dueDate),
-            principal: formatMoney(row.monthlyPrincipal),
-            interest: formatMoney(row.interestAndFee),
-            totalDue: formatMoney(row.totalDueMonth),
-            remainingBalance: formatMoney(row.remainingBalance)
-        }));
-        data.push({
-            contractNumber: result.contractNumber || '',
-            customerName: result.customerName || '',
-            assetName: result.assetName || '',
-            no: 'សរុប',
-            dueDate: '—',
-            principal: formatMoney(result.principal),
-            interest: formatMoney(result.totalInterest),
-            totalDue: formatMoney(result.totalRepayment),
-            remainingBalance: formatMoney(0),
-            isTotalRow: true
-        });
-
-        exportToPDF(
-            'Calculate_Schedule_2',
-            columns,
-            data,
-            user?.brand || '',
-            printOrientation
-        );
-    };
-
     const filteredHistory = savedHistory.filter(item => {
         if (!historySearch.trim()) return true;
         const q = historySearch.toLowerCase();
@@ -768,7 +720,7 @@ const CalculateSchedule2 = () => {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={handleExportPDF}
+                                    onClick={handlePrint}
                                     className="px-4 py-2.5 rounded-[5px] bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
                                     <FaFilePdf /> Export PDF
                                 </button>
