@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import {
     FaPrint,
@@ -47,6 +48,17 @@ const PrintIdCard = () => {
 
     const fileInputRef = useRef(null);
     const dropzoneRef = useRef(null);
+
+    useEffect(() => {
+        if (!showConfirmModal) return undefined;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [showConfirmModal]);
 
     // Process a loaded file
     const processFile = useCallback((file) => {
@@ -731,8 +743,8 @@ const PrintIdCard = () => {
             </div>
 
             {/* 4. CUSTOM ALERT UI - CONFIRM PRINT MODAL (ជំនួសឱ្យ Alert ធម្មតា) */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[999999] p-4 animate-in fade-in duration-200">
+            {showConfirmModal && createPortal(
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[999999] p-4 overflow-y-auto overscroll-none animate-in fade-in duration-200">
                     <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -809,7 +821,8 @@ const PrintIdCard = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* 5. CUSTOM ALERT UI - WARNING / NOTICE MODAL */}
