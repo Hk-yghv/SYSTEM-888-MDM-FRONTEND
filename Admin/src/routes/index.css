@@ -129,6 +129,16 @@ table tbody tr.table-scroll-row:focus-within:hover {
     filter: none !important;
 }
 
+table tbody tr.table-scroll-row.row-action-menu-open,
+table tbody tr.table-scroll-row.row-action-menu-open:hover {
+    transform: none !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 9998 !important;
+    filter: none !important;
+    will-change: auto !important;
+}
+
 table tbody tr.table-scroll-row:hover > td,
 table tbody tr.table-scroll-row:hover > th {
     background-color: var(--table-row-hover-bg, #f0fdf4) !important;

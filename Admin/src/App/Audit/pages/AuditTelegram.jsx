@@ -179,6 +179,7 @@ const AuditTelegram = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [menuPlacement, setMenuPlacement] = useState('above');
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -672,7 +673,7 @@ const AuditTelegram = () => {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-4 bg-slate-50 min-h-screen font-sans">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden p-2 sm:p-3 space-y-2.5 bg-slate-50 font-sans">
             {/* Header & Page Title */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-[5px] border border-slate-200 shadow-xs">
                 <div className="flex items-center gap-3">
@@ -863,24 +864,24 @@ const AuditTelegram = () => {
             </div>
 
             {/* Main Data Table */}
-            <div className="bg-white rounded-[5px] border border-slate-200 shadow-xs overflow-hidden">
-                <div className="overflow-x-auto p-2">
-                    <table className="w-full text-left border-separate border-spacing-y-1.5 border-spacing-x-0 text-xs">
+            <div className="bg-white rounded-[5px] border border-slate-200 shadow-xs overflow-hidden flex min-h-0 flex-1 flex-col">
+                <div className="audit-telegram-table-scroll min-h-0 flex-1 overflow-auto p-1">
+                    <table className="w-full text-left border-separate border-spacing-y-1 border-spacing-x-0 text-xs">
                         <thead>
                             <tr className="text-slate-700 font-black tracking-wider uppercase text-[11px]">
-                                <th className="px-3.5 py-3 text-center w-12 bg-slate-100/90 border-b border-slate-200 first:rounded-l-[5px]">#</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('customerName')}</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">{t('contract')}</th>
-                                <th className="px-3.5 py-3 text-right bg-slate-100/90 border-b border-slate-200">{t('amount')}</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('auditContactName')}</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('username')}</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('phone')}</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200 whitespace-nowrap">{t('auditStatusAudit')}</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">{t('accountStatus')}</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('auditAccountActivity')}</th>
-                                <th className="px-3.5 py-3 bg-slate-100/90 border-b border-slate-200">{t('auditNote')}</th>
-                                <th className="px-3.5 py-3 text-center bg-slate-100/90 border-b border-slate-200">{t('auditDate')}</th>
-                                <th className="px-3.5 py-3 text-center w-28 bg-slate-100/90 border-b border-slate-200 last:rounded-r-[5px]">{t('actionLabel')}</th>
+                                <th className="px-2.5 py-2 text-center w-12 bg-slate-100/90 border-b border-slate-200 first:rounded-l-[5px]">#</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('customerName')}</th>
+                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('contract')}</th>
+                                <th className="px-2.5 py-2 text-right bg-slate-100/90 border-b border-slate-200">{t('amount')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditContactName')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('username')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('phone')}</th>
+                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200 whitespace-nowrap">{t('auditStatusAudit')}</th>
+                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('accountStatus')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditAccountActivity')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditNote')}</th>
+                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('auditDate')}</th>
+                                <th className="px-2.5 py-2 text-center w-28 bg-slate-100/90 border-b border-slate-200 last:rounded-r-[5px]">{t('actionLabel')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -903,12 +904,12 @@ const AuditTelegram = () => {
                                     const isRowMenuOpen = openMenuId === row.rawContractId;
                                     const rowBorderColor = row.isAudited ? 'border-blue-500' : 'border-rose-400';
                                     const rowBgColor = row.isAudited ? 'bg-blue-50/20 hover:bg-blue-50/45' : 'bg-rose-50/15 hover:bg-rose-50/40';
-                                    const rowCellClass = `py-2.5 border-y-2 ${rowBorderColor} first:border-l-2 first:rounded-l-[5px] last:border-r-2 last:rounded-r-[5px] transition-colors`;
+                                    const rowCellClass = `py-1.5 border-y-2 ${rowBorderColor} first:border-l-2 first:rounded-l-[5px] last:border-r-2 last:rounded-r-[5px] transition-colors`;
 
                                     return (
                                         <tr
                                             key={row.rawContractId}
-                                            className={`${rowBgColor} transition-colors group`}
+                                            className={`${rowBgColor} transition-colors group ${isRowMenuOpen ? 'row-action-menu-open' : ''}`}
                                         >
                                             {/* No. with Status Indicator Dot */}
                                             <td className={`px-3.5 ${rowCellClass} text-center font-mono font-bold`}>
@@ -1062,7 +1063,18 @@ const AuditTelegram = () => {
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setOpenMenuId(isRowMenuOpen ? null : row.rawContractId);
+                                                                if (isRowMenuOpen) {
+                                                                    setOpenMenuId(null);
+                                                                    return;
+                                                                }
+                                                                const triggerRect = e.currentTarget.getBoundingClientRect();
+                                                                const scrollRect = e.currentTarget.closest('.audit-telegram-table-scroll')?.getBoundingClientRect();
+                                                                const topBoundary = Math.max(0, scrollRect?.top ?? 0);
+                                                                const bottomBoundary = Math.min(window.innerHeight, scrollRect?.bottom ?? window.innerHeight);
+                                                                const roomAbove = triggerRect.top - topBoundary;
+                                                                const roomBelow = bottomBoundary - triggerRect.bottom;
+                                                                setMenuPlacement(roomAbove >= 150 || roomAbove > roomBelow ? 'above' : 'below');
+                                                                setOpenMenuId(row.rawContractId);
                                                             }}
                                                             title={t('auditMenu')}
                                                             className="w-8 h-8 rounded-[5px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
@@ -1072,7 +1084,7 @@ const AuditTelegram = () => {
 
                                                         {/* Droplist Menu Popup */}
                                                         {isRowMenuOpen && (
-                                                            <div className="absolute right-0 mt-1 w-44 bg-white border border-slate-200 rounded-[5px] shadow-xl z-50 p-1.5 space-y-1 animate-in fade-in duration-150">
+                                                            <div className={`absolute right-0 w-48 bg-white border border-slate-200 rounded-[5px] shadow-xl z-50 p-1.5 space-y-1 animate-in fade-in duration-150 ${menuPlacement === 'above' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                                                                 {/* Activity Log */}
                                                                 <button
                                                                     onClick={() => handleOpenHistoryModal(row)}
@@ -1105,7 +1117,7 @@ const AuditTelegram = () => {
                                                                         title={t('auditContactAdminOnly')}
                                                                     >
                                                                         <FaLock className="text-slate-400" size={12} />
-                                                                        <span>{t('auditContactLocked')}</span>
+                                                                        <span className="min-w-0 whitespace-normal break-words leading-tight">{t('auditContactLocked')}</span>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1552,7 +1564,7 @@ const AuditTelegram = () => {
                                                 <span className="text-[11px] font-bold text-slate-400 block mb-0.5">
                                                     {t('auditAccountActivity')}:
                                                 </span>
-                                                <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
+                                                <p className="min-w-0 whitespace-pre-wrap break-words text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
                                                     {log.accountActivity || '—'}
                                                 </p>
                                             </div>
@@ -1561,7 +1573,7 @@ const AuditTelegram = () => {
                                                 <span className="text-[11px] font-bold text-slate-400 block mb-0.5">
                                                     {t('auditNote')}:
                                                 </span>
-                                                <p className="text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
+                                                <p className="min-w-0 whitespace-pre-wrap break-words text-slate-700 font-medium bg-slate-50 p-2 rounded-[5px] border border-slate-100">
                                                     {log.noteAudit || '—'}
                                                 </p>
                                             </div>
