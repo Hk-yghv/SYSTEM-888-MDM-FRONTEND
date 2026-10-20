@@ -1116,7 +1116,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
     };
 
     return (
-        <div className="p-2 md:p-2 bg-slate-900 text-slate-100 min-h-screen">
+        <div className="p-2 md:p-2 bg-slate-900 text-slate-100">
             {/* Header & Brand Switcher */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-2 rounded-[5px] border border-slate-700/60 shadow-xl">
                 <div>

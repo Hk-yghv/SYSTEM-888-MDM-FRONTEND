@@ -22,6 +22,7 @@ const getFormattedDate = (date) => {
     const [year, month, day] = date.split('-');
     return year && month && day ? `${day}/${month}/${year}` : date;
 };
+const getReportLabel = (t, key, fallback) => String(t(key, fallback)).replace(/^follow up\s+/i, '');
 
 const detailFields = [
     ['message', 'MESSAGE'],
@@ -70,14 +71,14 @@ const getDailyReportText = (date, detail, rejectSubmitRows, t, lang) => {
 
     return [
         getFormattedDate(date),
-        `${t('followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages')} ${getCount(detail.message)}`,
-        `${t('followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply')} ${getCount(detail.noReply)}`,
-        `${t('followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied')} ${Math.max(0, getCount(detail.message) - getCount(detail.noReply))}`,
-        `${t('followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries')} ${getCount(detail.inquire)}`,
-        `${t('followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted')} ${totalSubmit}`,
-        `${t('followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review')} ${getCount(detail.review)}`,
-        `${t('followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected')} ${totalReject}`,
-        `${t('followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful')} ${totalSuccess}`,
+        `${getReportLabel(t, 'followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages')} ${getCount(detail.message)}`,
+        `${getReportLabel(t, 'followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply')} ${getCount(detail.noReply)}`,
+        `${getReportLabel(t, 'followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied')} ${Math.max(0, getCount(detail.message) - getCount(detail.noReply))}`,
+        `${getReportLabel(t, 'followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries')} ${getCount(detail.inquire)}`,
+        `${getReportLabel(t, 'followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted')} ${totalSubmit}`,
+        `${getReportLabel(t, 'followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review')} ${getCount(detail.review)}`,
+        `${getReportLabel(t, 'followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected')} ${totalReject}`,
+        `${getReportLabel(t, 'followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful')} ${totalSuccess}`,
         ...reasons.map((reason) => `- ${reason}`)
     ].join('\n');
 };
@@ -260,26 +261,26 @@ const FollowUp4Report = () => {
             .filter((reason) => groupedRejectSubmit.reasonTotals[reason] > 0);
         const totalReportText = [
             reportDate,
-            `${t('followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages')} ${detailTotals.message}`,
-            `${t('followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply')} ${detailTotals.noReply}`,
-            `${t('followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied')} ${Math.max(0, detailTotals.message - detailTotals.noReply)}`,
-            `${t('followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries')} ${detailTotals.inquire}`,
-            `${t('followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted')} ${detailTotals.totalSubmit}`,
-            `${t('followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review')} ${detailTotals.review}`,
-            `${t('followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected')} ${detailTotals.totalReject}`,
-            `${t('followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful')} ${detailTotals.totalSuccess}`,
+            `${getReportLabel(t, 'followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages')} ${detailTotals.message}`,
+            `${getReportLabel(t, 'followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply')} ${detailTotals.noReply}`,
+            `${getReportLabel(t, 'followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied')} ${Math.max(0, detailTotals.message - detailTotals.noReply)}`,
+            `${getReportLabel(t, 'followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries')} ${detailTotals.inquire}`,
+            `${getReportLabel(t, 'followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted')} ${detailTotals.totalSubmit}`,
+            `${getReportLabel(t, 'followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review')} ${detailTotals.review}`,
+            `${getReportLabel(t, 'followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected')} ${detailTotals.totalReject}`,
+            `${getReportLabel(t, 'followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful')} ${detailTotals.totalSuccess}`,
             ...reasons.map((reason) => `- ${reason}`)
         ].join('\n');
         const rows = [
             { label: t('dateRange', lang === 'km' ? 'ចន្លោះកាលបរិច្ឆេទ' : 'Date range'), value: reportDate },
-            { label: t('followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages'), value: detailTotals.message },
-            { label: t('followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply'), value: detailTotals.noReply },
-            { label: t('followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied'), value: Math.max(0, detailTotals.message - detailTotals.noReply) },
-            { label: t('followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries'), value: detailTotals.inquire },
-            { label: t('followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted'), value: detailTotals.totalSubmit },
-            { label: t('followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review'), value: detailTotals.review },
-            { label: t('followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected'), value: detailTotals.totalReject },
-            { label: t('followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful'), value: detailTotals.totalSuccess },
+            { label: getReportLabel(t, 'followUpTotalMessages', lang === 'km' ? 'សារសរុប' : 'Total messages'), value: detailTotals.message },
+            { label: getReportLabel(t, 'followUpNoReply', lang === 'km' ? 'មិនឆ្លើយតប' : 'No reply'), value: detailTotals.noReply },
+            { label: getReportLabel(t, 'followUpReplied', lang === 'km' ? 'ឆ្លើយតប' : 'Replied'), value: Math.max(0, detailTotals.message - detailTotals.noReply) },
+            { label: getReportLabel(t, 'followUpInquiries', lang === 'km' ? 'សាកសួរ' : 'Inquiries'), value: detailTotals.inquire },
+            { label: getReportLabel(t, 'followUpSubmitted', lang === 'km' ? 'ដាក់ស្នើ' : 'Submitted'), value: detailTotals.totalSubmit },
+            { label: getReportLabel(t, 'followUpReview', lang === 'km' ? 'ពិនិត្យ' : 'Review'), value: detailTotals.review },
+            { label: getReportLabel(t, 'followUpRejected', lang === 'km' ? 'បរាជ័យ' : 'Rejected'), value: detailTotals.totalReject },
+            { label: getReportLabel(t, 'followUpSuccessful', lang === 'km' ? 'ជោគជ័យ' : 'Successful'), value: detailTotals.totalSuccess },
             ...reasons.map((reason) => ({ label: reason, value: groupedRejectSubmit.reasonTotals[reason] || 0 }))
         ];
         const numericTotal = rows.reduce((sum, row) => sum + (typeof row.value === 'number' ? row.value : 0), 0);
