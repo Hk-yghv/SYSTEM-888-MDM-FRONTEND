@@ -1263,7 +1263,7 @@ const AuditTelegram = () => {
             {/* AUDIT MODAL (Edit Status Account, Account Activity, Note)     */}
             {/* ═════════════════════════════════════════════════════════════ */}
             {auditModalItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200 z-9999">
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
                         <div className="px-5 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
