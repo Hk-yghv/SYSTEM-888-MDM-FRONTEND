@@ -39,7 +39,7 @@ const FollowUp4DetailModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200 z-9999">
             <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden flex flex-col">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-700 bg-slate-900/80">

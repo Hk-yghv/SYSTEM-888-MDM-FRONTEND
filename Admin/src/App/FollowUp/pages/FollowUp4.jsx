@@ -1904,7 +1904,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
 
             {/* 5. Delete Confirmation Modal */}
             {deleteModalItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/80 backdrop-blur-xs z-9999">
                     <div className="bg-slate-800 border border-slate-700 rounded-[5px] shadow-2xl p-6 max-w-sm w-full text-center">
                         <FaTrashAlt className="text-rose-500 text-3xl mx-auto mb-3" />
                         <h4 className="text-base font-bold text-slate-100 mb-1">{t('confirmDelete')}</h4>
