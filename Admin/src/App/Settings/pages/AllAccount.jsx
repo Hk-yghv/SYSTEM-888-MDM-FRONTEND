@@ -560,7 +560,7 @@ const AllAccount = () => {
     });
 
     return (
-        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4'>
+        <div className='w-full bg-[#f4f6f8] p-2 select-none space-y-4 h-[calc(100vh-100px)] overflow-y-auto'>
             {/* Header */}
             <header className='p-2.5 w-full border border-slate-200 bg-white rounded-[5px] flex items-center justify-between shadow-xs'>
                 <div>
@@ -944,22 +944,20 @@ const AllAccount = () => {
                                                     setModalStep(st.num);
                                                 }
                                             }}
-                                            className={`flex items-center gap-2 cursor-pointer transition-all ${
-                                                modalStep === st.num
+                                            className={`flex items-center gap-2 cursor-pointer transition-all ${modalStep === st.num
                                                     ? 'text-emerald-400 font-bold'
                                                     : modalStep > st.num
-                                                    ? 'text-slate-300'
-                                                    : 'text-slate-500 opacity-60'
-                                            }`}
+                                                        ? 'text-slate-300'
+                                                        : 'text-slate-500 opacity-60'
+                                                }`}
                                         >
                                             <div
-                                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                                    modalStep === st.num
+                                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${modalStep === st.num
                                                         ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
                                                         : modalStep > st.num
-                                                        ? 'bg-emerald-800 text-white'
-                                                        : 'bg-slate-800 text-slate-400'
-                                                }`}
+                                                            ? 'bg-emerald-800 text-white'
+                                                            : 'bg-slate-800 text-slate-400'
+                                                    }`}
                                             >
                                                 {modalStep > st.num ? '✓' : st.num}
                                             </div>
@@ -1055,11 +1053,10 @@ const AllAccount = () => {
                                             value={formData.role?.toLowerCase() === 'salary' ? '' : formData.brand}
                                             disabled={formData.role?.toLowerCase() === 'salary'}
                                             onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                            className={`w-full h-10 px-3 border rounded-lg font-semibold outline-none focus:border-emerald-500 ${
-                                                formData.role?.toLowerCase() === 'salary'
+                                            className={`w-full h-10 px-3 border rounded-lg font-semibold outline-none focus:border-emerald-500 ${formData.role?.toLowerCase() === 'salary'
                                                     ? 'bg-slate-800 text-slate-400 cursor-not-allowed italic border-slate-700'
                                                     : 'bg-slate-900 border-slate-700 text-slate-100'
-                                            }`}
+                                                }`}
                                         >
                                             {formData.role?.toLowerCase() === 'salary' ? (
                                                 <option value="">{t('allBrands')} (No Brand)</option>
@@ -1113,11 +1110,10 @@ const AllAccount = () => {
                                                         return (
                                                             <label
                                                                 key={sbIdx}
-                                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
-                                                                    isChecked
+                                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${isChecked
                                                                         ? 'bg-sky-600/30 border-sky-500 text-sky-200 shadow-sm'
                                                                         : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                                                                }`}
+                                                                    }`}
                                                             >
                                                                 <input
                                                                     type="checkbox"
@@ -1207,11 +1203,10 @@ const AllAccount = () => {
                                                     return (
                                                         <div
                                                             key={pg.path}
-                                                            className={`p-2.5 rounded-lg border transition-all ${
-                                                                isPageEnabled
+                                                            className={`p-2.5 rounded-lg border transition-all ${isPageEnabled
                                                                     ? 'bg-slate-950 border-emerald-500/40'
                                                                     : 'bg-slate-950/40 border-slate-800/80 opacity-70'
-                                                            }`}
+                                                                }`}
                                                         >
                                                             <div className="flex items-center justify-between gap-3">
                                                                 <div>
@@ -1225,14 +1220,12 @@ const AllAccount = () => {
                                                                     role="switch"
                                                                     aria-checked={isPageEnabled}
                                                                     onClick={() => handleTogglePageSwitch(pg)}
-                                                                    className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                                                        isPageEnabled ? 'bg-emerald-500' : 'bg-slate-700'
-                                                                    }`}
+                                                                    className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isPageEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+                                                                        }`}
                                                                 >
                                                                     <span
-                                                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                                                                            isPageEnabled ? 'translate-x-5' : 'translate-x-0'
-                                                                        }`}
+                                                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${isPageEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                                            }`}
                                                                     />
                                                                 </button>
                                                             </div>
@@ -1246,11 +1239,10 @@ const AllAccount = () => {
                                                                         return (
                                                                             <label
                                                                                 key={act}
-                                                                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded cursor-pointer text-[10px] font-bold border transition-all ${
-                                                                                    isChecked
+                                                                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded cursor-pointer text-[10px] font-bold border transition-all ${isChecked
                                                                                         ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
                                                                                         : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
-                                                                                }`}
+                                                                                    }`}
                                                                             >
                                                                                 <input
                                                                                     type="checkbox"
@@ -1329,11 +1321,10 @@ const AllAccount = () => {
                                                     <div
                                                         key={pg.path}
                                                         onClick={() => setPreviewSelectedPage(pg.path)}
-                                                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                                                            previewSelectedPage === pg.path
+                                                        className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${previewSelectedPage === pg.path
                                                                 ? 'bg-emerald-900/50 border border-emerald-500/50 text-emerald-300'
                                                                 : 'bg-slate-900/60 hover:bg-slate-900 text-slate-300 border border-transparent'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <span className="text-xs truncate">{getPermissionPageLabel(pg)}</span>
                                                         <span className="text-[10px] font-mono text-slate-400">{pg.path}</span>
@@ -1364,11 +1355,10 @@ const AllAccount = () => {
                                                             return (
                                                                 <div
                                                                     key={act}
-                                                                    className={`p-2 rounded-lg border flex items-center justify-between text-xs font-bold ${
-                                                                        isGranted
+                                                                    className={`p-2 rounded-lg border flex items-center justify-between text-xs font-bold ${isGranted
                                                                             ? 'bg-emerald-950/50 border-emerald-600 text-emerald-300'
                                                                             : 'bg-rose-950/20 border-rose-900/50 text-rose-400'
-                                                                    }`}
+                                                                        }`}
                                                                 >
                                                                     <span>{getPermissionActionLabel(act)}</span>
                                                                     <span>{isGranted ? `✅ ${t('allowed')}` : `❌ ${t('permissionDisabled')}`}</span>
@@ -1449,13 +1439,12 @@ const AllAccount = () => {
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-xs p-3">
                     <div className="relative w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5 shadow-2xl space-y-4 text-white">
                         <div className="flex items-start gap-3">
-                            <div className={`p-2.5 rounded-xl shrink-0 ${
-                                customDialog.type === 'danger'
+                            <div className={`p-2.5 rounded-xl shrink-0 ${customDialog.type === 'danger'
                                     ? 'bg-rose-500/20 text-rose-400'
                                     : customDialog.type === 'alert'
-                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                    : 'bg-amber-500/20 text-amber-400'
-                            }`}>
+                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                        : 'bg-amber-500/20 text-amber-400'
+                                }`}>
                                 {customDialog.type === 'danger' ? (
                                     <FaExclamationTriangle size={20} />
                                 ) : (
@@ -1481,11 +1470,10 @@ const AllAccount = () => {
                             <button
                                 type="button"
                                 onClick={customDialog.onConfirm}
-                                className={`px-5 py-2 rounded-lg text-xs font-bold text-white shadow-md transition-all ${
-                                    customDialog.type === 'danger'
+                                className={`px-5 py-2 rounded-lg text-xs font-bold text-white shadow-md transition-all ${customDialog.type === 'danger'
                                         ? 'bg-rose-600 hover:bg-rose-500'
                                         : 'bg-emerald-600 hover:bg-emerald-500'
-                                }`}
+                                    }`}
                             >
                                 {customDialog.confirmText}
                             </button>
