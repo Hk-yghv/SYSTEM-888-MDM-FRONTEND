@@ -50,7 +50,7 @@ const DateRangeDropdown = ({
     };
 
     return (
-        <div ref={rootRef} className="relative inline-flex">
+        <div ref={rootRef} className={`relative inline-flex ${open ? 'z-[100]' : 'z-10'}`}>
             <button
                 type="button"
                 aria-haspopup="dialog"
@@ -67,7 +67,7 @@ const DateRangeDropdown = ({
                 <div
                     role="dialog"
                     aria-label={defaultLabel}
-                    className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[5px] border border-slate-200 bg-white p-2 shadow-xl"
+                    className="absolute right-0 top-full z-[100] mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-[5px] border border-slate-200 bg-white p-2 shadow-xl"
                 >
                     <div className="grid grid-cols-2 gap-2">
                         <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-slate-600">
@@ -116,4 +116,4 @@ const DateRangeDropdown = ({
     );
 };
 
-export default DateRangeDropdown;
+export default DateRangeDropdown;

@@ -14,7 +14,9 @@ dist-ssr
 
 # Encrypt File Code
 NOTED.houv
-
+.env
+.env.local
+.env.production.local
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,3 +27,5 @@ NOTED.houv
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*

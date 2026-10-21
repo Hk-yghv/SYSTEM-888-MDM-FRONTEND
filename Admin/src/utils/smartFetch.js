@@ -1,4 +1,5 @@
 // High-Availability Multi-API Real-Time Failover & Smart Cache Engine for SYSTEM MDM
+import { getAuthToken } from './authToken';
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
 const rawApiPool = import.meta.env.DEV ? [
@@ -8,12 +9,23 @@ const rawApiPool = import.meta.env.DEV ? [
     import.meta.env.VITE_API_BACKEND3,
 ].map(normalizeUrl).filter(Boolean) : [];
 
-export const API_POOL = rawApiPool.length > 0 ? rawApiPool : import.meta.env.DEV ? [
-    '/api',
-    'http://localhost:5000/api',
-    'http://localhost:5001/api',
-    'http://localhost:5002/api'
-] : ['/api'];
+const getResolvedApiPool = () => {
+    let pool = rawApiPool.length > 0 ? [...rawApiPool] : (import.meta.env.DEV ? [
+        '/api',
+        'http://localhost:5000/api',
+        'http://localhost:5001/api',
+        'http://localhost:5002/api'
+    ] : ['/api']);
+
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+        // When on HTTPS (e.g. Cloudflare tunnel), prioritize HTTPS backends
+        const httpsPool = pool.filter(url => url.startsWith('https:') || url.startsWith('/'));
+        if (httpsPool.length > 0) return httpsPool;
+    }
+    return pool;
+};
+
+export const API_POOL = getResolvedApiPool();
 
 let activeApiIndex = 0;
 
@@ -105,8 +117,10 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
             delete sanitizedHeaders['x-system-api-key'];
             delete sanitizedHeaders['X-System-Api-Key'];
 
+            const token = getAuthToken();
             const mergedHeaders = {
-                ...sanitizedHeaders
+                ...sanitizedHeaders,
+                ...(token && !sanitizedHeaders['Authorization'] && !sanitizedHeaders['authorization'] ? { 'Authorization': `Bearer ${token}` } : {})
             };
 
             const requestOptions = {

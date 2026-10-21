@@ -2,14 +2,28 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { FaBan } from 'react-icons/fa';
 import { smartFetch, getActiveApiBase, API_POOL, invalidateApiCache } from '../utils/smartFetch';
 import { clearSecureAuth } from '../utils/secureStorage';
+import { getAuthToken, setAuthToken, clearAuthToken } from '../utils/authToken';
 import { CONTROL_SYSTEM_PATH, CONTROL_SYSTEM_SECTIONS } from '../utils/controlSystemPermissions';
 
 const AuthContext = createContext();
 
-// Production requests go through Vercel's same-origin proxy; local development uses the backend directly.
-const API_BASE = import.meta.env.DEV
-    ? (import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api')
-    : '/api';
+export const getDynamicApiBase = () => {
+    if (typeof window !== 'undefined') {
+        if (window.location.protocol === 'https:') {
+            // When accessed via Cloudflare HTTPS (e.g., systemmdm.houv.online)
+            if (window.location.hostname.includes('houv.online')) {
+                return 'https://apisystemmdm.houv.online/api';
+            }
+            return import.meta.env.VITE_API_BACKEND1 || '/api';
+        }
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
+        }
+    }
+    return import.meta.env.VITE_API_BACKEND || '/api';
+};
+
+const API_BASE = getDynamicApiBase();
 const API_BASE1 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND1 || API_BASE) : API_BASE;
 const API_BASE2 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND2 || API_BASE) : API_BASE;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -17,54 +31,89 @@ const TEN_MINUTES_MS = 10 * 60 * 1000;
 
 export const AuthProvider = ({ children }) => {
     const authOperationRef = useRef(0);
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        if (typeof window === 'undefined') return null;
+        try {
+            const raw = localStorage.getItem('mdm_user');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    });
     const [authInitialized, setAuthInitialized] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isBackendRecovering, setIsBackendRecovering] = useState(false);
     const [isBlocked, setIsBlocked] = useState(false);
 
+    const saveUser = useCallback((newUser) => {
+        setUser(newUser);
+        try {
+            if (newUser) {
+                localStorage.setItem('mdm_user', JSON.stringify(newUser));
+            } else {
+                localStorage.removeItem('mdm_user');
+            }
+        } catch { }
+    }, []);
+
     const logout = useCallback(() => {
         authOperationRef.current += 1;
+        const token = getAuthToken();
         fetch(`${API_BASE}/auth/logout`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
             credentials: 'include',
             body: JSON.stringify({})
         }).catch(() => { });
-        setUser(null);
+        saveUser(null);
         invalidateApiCache();
         setIsBackendRecovering(false);
         clearSecureAuth();
-    }, []);
+        clearAuthToken();
+    }, [saveUser]);
 
     useEffect(() => {
         let isActive = true;
         const operationAtStart = authOperationRef.current;
         const restoreSession = async () => {
             try {
+                const token = getAuthToken();
+                const headers = {};
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
                 const response = await fetch(`${API_BASE}/auth/session`, {
                     credentials: 'include',
+                    headers,
                     cache: 'no-store'
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    if (isActive && operationAtStart === authOperationRef.current) setUser(data.user || null);
+                    if (data.token) setAuthToken(data.token);
+                    if (isActive && operationAtStart === authOperationRef.current && data.user) {
+                        saveUser(data.user);
+                    }
                 } else if (response.status === 423 && isActive && operationAtStart === authOperationRef.current) {
                     setIsBlocked(true);
                     window.setTimeout(() => {
                         logout();
                         setIsBlocked(false);
                     }, 4000);
+                } else if (response.status === 401 && token) {
+                    clearAuthToken();
+                    saveUser(null);
                 }
             } catch (error) {
-                
+                // Server reboot or network offline: keep user so reload never logs out
             } finally {
                 if (isActive) setAuthInitialized(true);
             }
         };
         void restoreSession();
         return () => { isActive = false; };
-    }, [logout]);
+    }, [logout, saveUser]);
 
     // Keep the authenticated session alive and recover from temporary backend outages.
     useEffect(() => {
@@ -94,10 +143,12 @@ export const AuthProvider = ({ children }) => {
             try {
                 while (isActive) {
                     try {
+                        const token = getAuthToken();
                         const response = await request(API_BASE + '/auth/heartbeat', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                             },
                             credentials: 'include',
                             body: JSON.stringify({ username: user.username }),
@@ -186,6 +237,7 @@ export const AuthProvider = ({ children }) => {
             const res = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ username, password })
             });
             const data = await res.json();
@@ -204,7 +256,8 @@ export const AuthProvider = ({ children }) => {
                 return { require2FA: true, username: data.username };
             }
 
-            setUser(data.user);
+            if (data.token) setAuthToken(data.token);
+            saveUser(data.user);
             invalidateApiCache();
             return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
@@ -220,6 +273,7 @@ export const AuthProvider = ({ children }) => {
             const res = await fetch(`${API_BASE}/auth/verify-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ username, otp, secondPassword })
             });
             const data = await res.json();
@@ -229,7 +283,8 @@ export const AuthProvider = ({ children }) => {
                 throw new Error(data.error || 'OTP Verification failed');
             }
 
-            setUser(data.user);
+            if (data.token) setAuthToken(data.token);
+            saveUser(data.user);
             invalidateApiCache();
             return { success: true, user: data.user, deviceInfo: data.deviceInfo };
         } catch (err) {
@@ -243,7 +298,8 @@ export const AuthProvider = ({ children }) => {
         if (!data || !data.user) {
             throw new Error('Invalid authentication response');
         }
-        setUser(data.user);
+        if (data.token) setAuthToken(data.token);
+        saveUser(data.user);
         invalidateApiCache();
         return { success: true, user: data.user, deviceInfo: data.deviceInfo };
     };

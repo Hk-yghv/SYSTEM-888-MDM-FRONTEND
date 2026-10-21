@@ -1208,7 +1208,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
             {activeTab === 'submit' && (
                 <div className="space-y-4">
                     {/* Filters & Actions Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-2 rounded-[5px] border border-slate-700/50">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-2 rounded-[5px] border border-slate-700/50 relative z-40">
                         <div className="flex flex-wrap items-center gap-3 flex-1">
                             {/* Search */}
                             <div className="relative flex-1 min-w-[200px]">
@@ -1419,7 +1419,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
             {activeTab === 'rejectSubmit' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg relative z-40">
                         <div>
                             <h2 className="text-base font-bold text-rose-400 flex items-center gap-2">
                                 <FaBan /> <span>{t('rejectSubmitSummary')}</span>
@@ -1548,7 +1548,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
             {activeTab === 'rejectCs' && (
                 <div className="space-y-4">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg relative z-40">
                         <div>
                             <h2 className="text-base font-bold text-amber-400 flex items-center gap-2">
                                 <FaBan /> <span>{t('rejectCsSummary')}</span>
@@ -1677,7 +1677,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
             {activeTab === 'detail' && (
                 <div className="space-y-6">
                     {/* Top Action Bar */}
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg relative z-40">
                         <div>
                             <h2 className="text-base font-bold text-sky-400 flex items-center gap-2">
                                 <FaCalculator /> <span>{t('detailMetricsAndAutomatedFormulas')}</span>

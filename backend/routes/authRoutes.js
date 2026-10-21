@@ -15,23 +15,42 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const QR_ENCRYPTION_KEY = createHash('sha256')
     .update(process.env.ENCRYPTION_KEY || JWT_SECRET || randomBytes(32))
     .digest();
+const isProduction = process.env.NODE_ENV === 'production';
 const AUTH_COOKIE_NAME = 'mdm_session';
+
+// Dynamically resolve cookie options per-request so localhost (HTTP) and
+// Cloudflare tunnel (HTTPS) both work without code changes.
+const getAuthCookieOptions = (req) => {
+    const proto = (req?.headers?.['x-forwarded-proto'] || 'http').split(',')[0].trim();
+    const isHttps = proto === 'https' || isProduction;
+    return {
+        httpOnly: true,
+        secure: isHttps,
+        // sameSite:'none' required for cross-origin (systemmdm.houv.online <-> apisystemmdm.houv.online)
+        // sameSite:'lax' used on plain HTTP localhost to avoid browser warnings
+        sameSite: isHttps ? 'none' : 'lax',
+        path: '/api'
+    };
+};
+
+// Legacy static options (kept for clearCookie on logout where req may not be passed)
 const AUTH_COOKIE_OPTIONS = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/api'
 };
 const AUTH_COOKIE_CLEAR_OPTIONS = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/api'
 };
 
-const setAuthCookie = (res, token) => {
-    res.cookie(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
+const setAuthCookie = (res, token, req) => {
+    res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions(req));
 };
+
 
 const clearAuthCookie = (res) => {
     res.clearCookie(AUTH_COOKIE_NAME, AUTH_COOKIE_CLEAR_OPTIONS);
@@ -249,12 +268,29 @@ export default function createAuthRoutes(bot) {
             const { os, browser } = parseUserAgent(ua);
             const deviceInfo = `${browser} on ${os}`;
 
+            const trimmedUsername = (username || '').trim();
+            const withAt = trimmedUsername.startsWith('@') ? trimmedUsername : `@${trimmedUsername}`;
+            const withoutAt = trimmedUsername.startsWith('@') ? trimmedUsername.substring(1) : trimmedUsername;
+            const escapedWithAt = withAt.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const escapedWithoutAt = withoutAt.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
             let user = null;
             if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                const users = await queryAllDBs(User, (M) => M.find({
+                    $or: [
+                        { username: { $regex: new RegExp(`^(${escapedWithAt}|${escapedWithoutAt})$`, 'i') } },
+                        { email: trimmedUsername.toLowerCase() },
+                        { userId: trimmedUsername }
+                    ]
+                }));
                 user = users[0] || null;
             } else {
-                user = MEM_DB.users.find(u => u.username === username);
+                user = MEM_DB.users.find(u => 
+                    u.username?.toLowerCase() === withAt.toLowerCase() ||
+                    u.username?.toLowerCase() === withoutAt.toLowerCase() ||
+                    u.email?.toLowerCase() === trimmedUsername.toLowerCase() ||
+                    u.userId === trimmedUsername
+                );
             }
 
             if (!user) {
@@ -408,12 +444,13 @@ export default function createAuthRoutes(bot) {
             }
 
             const token = jwt.sign(
-                { userId: user.userId, username: user.username, sessionVersion: 2 },
+                { userId: user.userId, username: user.username, role: user.role, sessionVersion: 2 },
                 JWT_SECRET,
                 { expiresIn: '30d' }
             );
-            setAuthCookie(res, token);
+            setAuthCookie(res, token, req);
             res.json({
+                token,
                 deviceInfo: { ip, os, browser },
                 user: formatAuthUser(user)
             });
@@ -425,12 +462,29 @@ export default function createAuthRoutes(bot) {
     router.post('/verify-otp', async (req, res) => {
         try {
             const { username, otp, secondPassword } = req.body;
+            const trimmedUsername = (username || '').trim();
+            const withAt = trimmedUsername.startsWith('@') ? trimmedUsername : `@${trimmedUsername}`;
+            const withoutAt = trimmedUsername.startsWith('@') ? trimmedUsername.substring(1) : trimmedUsername;
+            const escapedWithAt = withAt.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const escapedWithoutAt = withoutAt.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
             let user = null;
             if (isMongoConnected) {
-                const users = await queryAllDBs(User, (M) => M.find({ username }));
+                const users = await queryAllDBs(User, (M) => M.find({
+                    $or: [
+                        { username: { $regex: new RegExp(`^(${escapedWithAt}|${escapedWithoutAt})$`, 'i') } },
+                        { email: trimmedUsername.toLowerCase() },
+                        { userId: trimmedUsername }
+                    ]
+                }));
                 user = users[0] || null;
             } else {
-                user = MEM_DB.users.find(u => u.username === username);
+                user = MEM_DB.users.find(u => 
+                    u.username?.toLowerCase() === withAt.toLowerCase() ||
+                    u.username?.toLowerCase() === withoutAt.toLowerCase() ||
+                    u.email?.toLowerCase() === trimmedUsername.toLowerCase() ||
+                    u.userId === trimmedUsername
+                );
             }
             if (!user || user.lastOtp !== otp) {
                 return res.status(400).json({ error: 'Invalid OTP Verification Code' });
@@ -513,12 +567,13 @@ export default function createAuthRoutes(bot) {
             }).catch(() => { });
 
             const token = jwt.sign(
-                { userId: user.userId, username: user.username, sessionVersion: 2 },
+                { userId: user.userId, username: user.username, role: user.role, sessionVersion: 2 },
                 JWT_SECRET,
                 { expiresIn: '30d' }
             );
-            setAuthCookie(res, token);
+            setAuthCookie(res, token, req);
             res.json({
+                token,
                 deviceInfo: { ip, os, browser },
                 user: formatAuthUser(user)
             });
@@ -530,15 +585,31 @@ export default function createAuthRoutes(bot) {
     router.get('/session', async (req, res) => {
         try {
             const { username, userId } = req.user || {};
-            if (!username || !userId) {
+            if (!username && !userId) {
                 return res.status(401).json({ error: 'Authenticated session is invalid' });
             }
 
+            const trimmedUsername = (username || '').trim();
+            const withAt = trimmedUsername.startsWith('@') ? trimmedUsername : `@${trimmedUsername}`;
+            const withoutAt = trimmedUsername.startsWith('@') ? trimmedUsername.substring(1) : trimmedUsername;
+
             let users = [];
             if (isMongoConnected) {
-                users = await queryAllDBs(User, (Model) => Model.find({ username, userId }));
+                const queryConditions = [];
+                if (userId) queryConditions.push({ userId });
+                if (trimmedUsername) {
+                    queryConditions.push({ username: withAt });
+                    queryConditions.push({ username: withoutAt });
+                }
+                users = await queryAllDBs(User, (Model) => Model.find({ $or: queryConditions }));
             } else {
-                const memoryUser = MEM_DB.users.find((user) => user.username === username && user.userId === userId);
+                const memoryUser = MEM_DB.users.find((u) => 
+                    (userId && u.userId === userId) ||
+                    (trimmedUsername && (
+                        u.username?.toLowerCase() === withAt.toLowerCase() ||
+                        u.username?.toLowerCase() === withoutAt.toLowerCase()
+                    ))
+                );
                 if (memoryUser) users = [memoryUser];
             }
 
@@ -770,13 +841,14 @@ export default function createAuthRoutes(bot) {
         }
 
         const token = jwt.sign(
-            { userId: user.userId, username: user.username, sessionVersion: 2 },
+            { userId: user.userId, username: user.username, role: user.role, sessionVersion: 2 },
             JWT_SECRET,
             { expiresIn: '30d' }
         );
-        setAuthCookie(res, token);
+        setAuthCookie(res, token, req);
 
         return res.json({
+            token,
             deviceInfo: { ip, os, browser },
             user: formatAuthUser(user)
         });

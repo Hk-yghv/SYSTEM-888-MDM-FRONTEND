@@ -1,16 +1,14 @@
 const memoryVault = new Map();
 const LEGACY_STORAGE_KEYS = [
-    'mdm_token',
-    'mdm_user',
     '__sys_session_v:',
-    'recent_login_device',
-    'show_login_toast',
     '_sys_stk_',
     '_sys_suk_',
     '_sys_sdk_',
     '_sys_stk_t'
 ];
 const LEGACY_VAULT_PREFIX = '__sys_sec_v:';
+
+export { setAuthToken, getAuthToken, clearAuthToken } from './authToken.js';
 
 const purgeLegacyAuthStorage = () => {
     if (typeof window === 'undefined') return;

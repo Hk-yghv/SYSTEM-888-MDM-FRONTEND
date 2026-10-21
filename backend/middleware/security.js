@@ -58,7 +58,20 @@ export const securityHeadersMiddleware = (req, res, next) => {
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self';");
+    // CSP: Allow styles, fonts, and connections from Cloudflare tunnel domains & CDNs
+    res.setHeader('Content-Security-Policy', [
+        "default-src 'self' https: http: data: blob:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://systemmdm.houv.online https://apisystemmdm.houv.online",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://systemmdm.houv.online https://apisystemmdm.houv.online",
+        "connect-src 'self' https: http: ws: wss:",
+        "worker-src 'self' blob:",
+        "media-src 'self' blob: https:",
+        "frame-ancestors 'none'",
+        "object-src 'none'",
+        "base-uri 'self'"
+    ].join('; '));
     next();
 };
 

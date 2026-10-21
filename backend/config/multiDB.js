@@ -6,11 +6,15 @@
  *   READ : Merge ទិន្នន័យចេញពី DB ទាំងបី (deduplicate by _id)
  */
 
+// ⚠️ Must import dotenv FIRST — ESM hoisting causes this module to run before
+// dotenv.config() in server.js, so env vars would be empty without this import.
+import 'dotenv/config';
 import mongoose from 'mongoose';
 
 // ── Connection Registry ──────────────────────────────────────────────────────
 
-const DB_CONFIGS = [
+// Read lazily inside connectAllDBs() to ensure .env is loaded first
+const getDbConfigs = () => [
     { name: 'DB1', uri: process.env.MONGO_URI_1 },
     { name: 'DB2', uri: process.env.MONGO_URI_2 },
     { name: 'DB3', uri: process.env.MONGO_URI_3 },
@@ -28,7 +32,7 @@ export const dbInstances = [];
 export const connectAllDBs = async () => {
     let anyConnected = false;
 
-    for (const cfg of DB_CONFIGS) {
+    for (const cfg of getDbConfigs()) {
         const instance = { name: cfg.name, uri: cfg.uri, conn: null, status: 'pending' };
         dbInstances.push(instance);
 
