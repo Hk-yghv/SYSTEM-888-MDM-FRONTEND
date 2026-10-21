@@ -677,7 +677,7 @@ const AllAccount = () => {
                                 ← {t('back')}
                             </button>
                             <div className={`w-10 h-10 rounded-[5px] flex items-center justify-center text-lg font-black text-white shadow-md
-                                ${selectedAccount.isImmutable ? 'bg-gradient-to-br from-purple-500 to-indigo-600' : selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'}`}>
+                                ${selectedAccount.isImmutable ? 'bg-linear-to-br from-purple-500 to-indigo-600' : selectedAccount.role?.toLowerCase() === 'salary' ? 'bg-linear-to-br from-emerald-500 to-teal-600' : 'bg-linear-to-br from-slate-500 to-slate-700'}`}>
                                 {(selectedAccount.name || selectedAccount.username || '?')[0].toUpperCase()}
                             </div>
                             <div>
@@ -945,18 +945,18 @@ const AllAccount = () => {
                                                 }
                                             }}
                                             className={`flex items-center gap-2 cursor-pointer transition-all ${modalStep === st.num
-                                                    ? 'text-emerald-400 font-bold'
-                                                    : modalStep > st.num
-                                                        ? 'text-slate-300'
-                                                        : 'text-slate-500 opacity-60'
+                                                ? 'text-emerald-400 font-bold'
+                                                : modalStep > st.num
+                                                    ? 'text-slate-300'
+                                                    : 'text-slate-500 opacity-60'
                                                 }`}
                                         >
                                             <div
                                                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${modalStep === st.num
-                                                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
-                                                        : modalStep > st.num
-                                                            ? 'bg-emerald-800 text-white'
-                                                            : 'bg-slate-800 text-slate-400'
+                                                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                                                    : modalStep > st.num
+                                                        ? 'bg-emerald-800 text-white'
+                                                        : 'bg-slate-800 text-slate-400'
                                                     }`}
                                             >
                                                 {modalStep > st.num ? '✓' : st.num}
@@ -1054,8 +1054,8 @@ const AllAccount = () => {
                                             disabled={formData.role?.toLowerCase() === 'salary'}
                                             onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                                             className={`w-full h-10 px-3 border rounded-lg font-semibold outline-none focus:border-emerald-500 ${formData.role?.toLowerCase() === 'salary'
-                                                    ? 'bg-slate-800 text-slate-400 cursor-not-allowed italic border-slate-700'
-                                                    : 'bg-slate-900 border-slate-700 text-slate-100'
+                                                ? 'bg-slate-800 text-slate-400 cursor-not-allowed italic border-slate-700'
+                                                : 'bg-slate-900 border-slate-700 text-slate-100'
                                                 }`}
                                         >
                                             {formData.role?.toLowerCase() === 'salary' ? (
@@ -1111,8 +1111,8 @@ const AllAccount = () => {
                                                             <label
                                                                 key={sbIdx}
                                                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${isChecked
-                                                                        ? 'bg-sky-600/30 border-sky-500 text-sky-200 shadow-sm'
-                                                                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                                                                    ? 'bg-sky-600/30 border-sky-500 text-sky-200 shadow-sm'
+                                                                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
                                                                     }`}
                                                             >
                                                                 <input
@@ -1204,8 +1204,8 @@ const AllAccount = () => {
                                                         <div
                                                             key={pg.path}
                                                             className={`p-2.5 rounded-lg border transition-all ${isPageEnabled
-                                                                    ? 'bg-slate-950 border-emerald-500/40'
-                                                                    : 'bg-slate-950/40 border-slate-800/80 opacity-70'
+                                                                ? 'bg-slate-950 border-emerald-500/40'
+                                                                : 'bg-slate-950/40 border-slate-800/80 opacity-70'
                                                                 }`}
                                                         >
                                                             <div className="flex items-center justify-between gap-3">
@@ -1240,8 +1240,8 @@ const AllAccount = () => {
                                                                             <label
                                                                                 key={act}
                                                                                 className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded cursor-pointer text-[10px] font-bold border transition-all ${isChecked
-                                                                                        ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
-                                                                                        : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                                                                                    ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
+                                                                                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
                                                                                     }`}
                                                                             >
                                                                                 <input
@@ -1322,8 +1322,8 @@ const AllAccount = () => {
                                                         key={pg.path}
                                                         onClick={() => setPreviewSelectedPage(pg.path)}
                                                         className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${previewSelectedPage === pg.path
-                                                                ? 'bg-emerald-900/50 border border-emerald-500/50 text-emerald-300'
-                                                                : 'bg-slate-900/60 hover:bg-slate-900 text-slate-300 border border-transparent'
+                                                            ? 'bg-emerald-900/50 border border-emerald-500/50 text-emerald-300'
+                                                            : 'bg-slate-900/60 hover:bg-slate-900 text-slate-300 border border-transparent'
                                                             }`}
                                                     >
                                                         <span className="text-xs truncate">{getPermissionPageLabel(pg)}</span>
@@ -1356,8 +1356,8 @@ const AllAccount = () => {
                                                                 <div
                                                                     key={act}
                                                                     className={`p-2 rounded-lg border flex items-center justify-between text-xs font-bold ${isGranted
-                                                                            ? 'bg-emerald-950/50 border-emerald-600 text-emerald-300'
-                                                                            : 'bg-rose-950/20 border-rose-900/50 text-rose-400'
+                                                                        ? 'bg-emerald-950/50 border-emerald-600 text-emerald-300'
+                                                                        : 'bg-rose-950/20 border-rose-900/50 text-rose-400'
                                                                         }`}
                                                                 >
                                                                     <span>{getPermissionActionLabel(act)}</span>
@@ -1440,10 +1440,10 @@ const AllAccount = () => {
                     <div className="relative w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-5 shadow-2xl space-y-4 text-white">
                         <div className="flex items-start gap-3">
                             <div className={`p-2.5 rounded-xl shrink-0 ${customDialog.type === 'danger'
-                                    ? 'bg-rose-500/20 text-rose-400'
-                                    : customDialog.type === 'alert'
-                                        ? 'bg-emerald-500/20 text-emerald-400'
-                                        : 'bg-amber-500/20 text-amber-400'
+                                ? 'bg-rose-500/20 text-rose-400'
+                                : customDialog.type === 'alert'
+                                    ? 'bg-emerald-500/20 text-emerald-400'
+                                    : 'bg-amber-500/20 text-amber-400'
                                 }`}>
                                 {customDialog.type === 'danger' ? (
                                     <FaExclamationTriangle size={20} />
@@ -1471,8 +1471,8 @@ const AllAccount = () => {
                                 type="button"
                                 onClick={customDialog.onConfirm}
                                 className={`px-5 py-2 rounded-lg text-xs font-bold text-white shadow-md transition-all ${customDialog.type === 'danger'
-                                        ? 'bg-rose-600 hover:bg-rose-500'
-                                        : 'bg-emerald-600 hover:bg-emerald-500'
+                                    ? 'bg-rose-600 hover:bg-rose-500'
+                                    : 'bg-emerald-600 hover:bg-emerald-500'
                                     }`}
                             >
                                 {customDialog.confirmText}
