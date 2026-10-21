@@ -56,16 +56,7 @@ export default async function handler(req, res) {
     const requestOrigin = req.headers.origin;
     const requestHost = req.headers['x-forwarded-host'] || req.headers.host;
     const sameHostOrigins = requestHost ? [`https://${requestHost}`, `http://${requestHost}`] : [];
-    const defaultAllowedHosts = ['.houv.online', '.hou.online'];
-    const isAllowedCloudflareHost = (origin) => {
-        try {
-            const hostname = new URL(origin).hostname.toLowerCase();
-            return defaultAllowedHosts.some(suffix => hostname === suffix.replace(/^\./, '') || hostname.endsWith(suffix));
-        } catch {
-            return false;
-        }
-    };
-    if (requestOrigin && (configuredOrigins.includes(requestOrigin) || sameHostOrigins.includes(requestOrigin) || isAllowedCloudflareHost(requestOrigin))) {
+    if (requestOrigin && (configuredOrigins.includes(requestOrigin) || sameHostOrigins.includes(requestOrigin))) {
         res.setHeader('Access-Control-Allow-Origin', requestOrigin);
         res.setHeader('Vary', 'Origin');
     }
@@ -86,24 +77,24 @@ export default async function handler(req, res) {
         .find(cookie => cookie.startsWith('mdm_session='));
     const sessionCookieToken = sessionCookie ? sessionCookie.slice('mdm_session='.length) : null;
 
-    // 2. High-Availability Multi-API Pool (Checks Server Environment Variables or defaults to 3 Render Backends)
+    // 2. High-Availability Multi-API Pool from deployment environment variables
     const rawPool = [
+        process.env.MDM_API_URL_1,
+        process.env.MDM_API_URL_2,
+        process.env.MDM_API_URL_3,
+        process.env.MDM_API_URL_4,
         process.env.MDM_API_URL,
         process.env.MDM_API_URL1,
         process.env.MDM_API_URL2,
         process.env.MDM_API_URL3,
         process.env.BACKEND_API_URL,
-        process.env.VITE_API_BACKEND,
-        process.env.VITE_API_BACKEND1,
-        process.env.VITE_API_BACKEND2,
-        process.env.VITE_API_BACKEND3,
     ].filter(Boolean).map(url => url.replace(/\/$/, ''));
 
-    const API_POOL = rawPool.length > 0 ? Array.from(new Set(rawPool)) : [
-        'https://system-mdm.onrender.com/api',
-        'https://system-mdm-1.onrender.com/api',
-        'https://system-mdm-2.onrender.com/api'
-    ];
+    const API_POOL = Array.from(new Set(rawPool));
+    if (API_POOL.length === 0) {
+        console.error('No API backends are configured. Set MDM_API_URL or BACKEND_API_URL in the Vercel environment.');
+        return res.status(503).json({ error: 'API backend is not configured.' });
+    }
 
     // 4. Extract Path & Query accurately from req.url
     let rawUrl = req.url || '';

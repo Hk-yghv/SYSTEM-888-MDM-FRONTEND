@@ -6,9 +6,7 @@
  *   READ : Merge ទិន្នន័យចេញពី DB ទាំងបី (deduplicate by _id)
  */
 
-// ⚠️ Must import dotenv FIRST — ESM hoisting causes this module to run before
-// dotenv.config() in server.js, so env vars would be empty without this import.
-import 'dotenv/config';
+import './loadEnv.js';
 import mongoose from 'mongoose';
 
 // ── Connection Registry ──────────────────────────────────────────────────────

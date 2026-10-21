@@ -8,21 +8,10 @@ import { CONTROL_SYSTEM_PATH, CONTROL_SYSTEM_SECTIONS } from '../utils/controlSy
 const AuthContext = createContext();
 
 export const getDynamicApiBase = () => {
-    if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname.toLowerCase();
-        if (window.location.protocol === 'https:') {
-            // When accessed via Cloudflare HTTPS (e.g., systemmdm.houv.online / system-mdm.hou.online)
-            if (hostname.includes('houv.online') || hostname.includes('hou.online')) {
-                const apiHost = hostname.includes('hou.online') ? 'apisystemmdm.hou.online' : 'apisystemmdm.houv.online';
-                return `https://${apiHost}/api`;
-            }
-            return import.meta.env.VITE_API_BACKEND1 || '/api';
-        }
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
-        }
-    }
-    return import.meta.env.VITE_API_BACKEND || '/api';
+    const configuredApiBase = import.meta.env.VITE_API_BACKEND;
+    if (configuredApiBase) return configuredApiBase.replace(/\/+$/, '');
+    if (import.meta.env.DEV) return 'http://localhost:5000/api';
+    return '/api';
 };
 
 const API_BASE = getDynamicApiBase();

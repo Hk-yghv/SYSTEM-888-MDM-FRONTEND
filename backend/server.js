@@ -1,6 +1,6 @@
+import './config/loadEnv.js';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
 import dns from 'dns';
 import path from 'path';
@@ -16,8 +16,6 @@ try {
 } catch (e) {
     console.warn('DNS server override failed:', e.message);
 }
-
-dotenv.config();
 
 import { connectDB } from './config/db.js';
 import { getDBStatus } from './config/multiDB.js';
@@ -77,17 +75,11 @@ const app = express();
 app.disable('x-powered-by');
 
 // CORS Hardening
-const defaultAllowedOrigins = [
+const defaultAllowedOrigins = process.env.NODE_ENV === 'production' ? [] : [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:4173',
-    'http://127.0.0.1:4173',
-    'https://systemmdm.houv.online',
-    'https://system-mdm.houv.online',
-    'https://systemmdm.hou.online',
-    'https://system-mdm.hou.online',
-    'https://apisystemmdm.houv.online',
-    'https://apisystemmdm.hou.online'
+    'http://127.0.0.1:4173'
 ];
 const configuredOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(origin => origin && origin !== '*')
@@ -95,13 +87,7 @@ const configuredOrigins = process.env.ALLOWED_ORIGINS
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 const isAllowedOrigin = (origin) => {
     if (!origin) return true;
-    if (allowedOrigins.includes(origin)) return true;
-    try {
-        const host = new URL(origin).hostname.toLowerCase();
-        return host.endsWith('.houv.online') || host.endsWith('.hou.online') || host === 'houv.online' || host === 'hou.online';
-    } catch {
-        return false;
-    }
+    return allowedOrigins.includes(origin);
 };
 app.use(cors({
     origin: (origin, callback) => {
