@@ -77,15 +77,35 @@ const app = express();
 app.disable('x-powered-by');
 
 // CORS Hardening
+const defaultAllowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+    'https://systemmdm.houv.online',
+    'https://system-mdm.houv.online',
+    'https://systemmdm.hou.online',
+    'https://system-mdm.hou.online',
+    'https://apisystemmdm.houv.online',
+    'https://apisystemmdm.hou.online'
+];
 const configuredOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(origin => origin && origin !== '*')
     : [];
-const allowedOrigins = configuredOrigins.length > 0
-    ? configuredOrigins
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173', 'http://127.0.0.1:4173'];
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    try {
+        const host = new URL(origin).hostname.toLowerCase();
+        return host.endsWith('.houv.online') || host.endsWith('.hou.online') || host === 'houv.online' || host === 'hou.online';
+    } catch {
+        return false;
+    }
+};
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        if (isAllowedOrigin(origin)) return callback(null, true);
         return callback(new Error('Origin is not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

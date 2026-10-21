@@ -9,14 +9,16 @@ const AuthContext = createContext();
 
 export const getDynamicApiBase = () => {
     if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname.toLowerCase();
         if (window.location.protocol === 'https:') {
-            // When accessed via Cloudflare HTTPS (e.g., systemmdm.houv.online)
-            if (window.location.hostname.includes('houv.online')) {
-                return 'https://apisystemmdm.houv.online/api';
+            // When accessed via Cloudflare HTTPS (e.g., systemmdm.houv.online / system-mdm.hou.online)
+            if (hostname.includes('houv.online') || hostname.includes('hou.online')) {
+                const apiHost = hostname.includes('hou.online') ? 'apisystemmdm.hou.online' : 'apisystemmdm.houv.online';
+                return `https://${apiHost}/api`;
             }
             return import.meta.env.VITE_API_BACKEND1 || '/api';
         }
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return import.meta.env.VITE_API_BACKEND || 'http://localhost:5000/api';
         }
     }

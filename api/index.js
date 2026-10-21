@@ -56,7 +56,16 @@ export default async function handler(req, res) {
     const requestOrigin = req.headers.origin;
     const requestHost = req.headers['x-forwarded-host'] || req.headers.host;
     const sameHostOrigins = requestHost ? [`https://${requestHost}`, `http://${requestHost}`] : [];
-    if (requestOrigin && (configuredOrigins.includes(requestOrigin) || sameHostOrigins.includes(requestOrigin))) {
+    const defaultAllowedHosts = ['.houv.online', '.hou.online'];
+    const isAllowedCloudflareHost = (origin) => {
+        try {
+            const hostname = new URL(origin).hostname.toLowerCase();
+            return defaultAllowedHosts.some(suffix => hostname === suffix.replace(/^\./, '') || hostname.endsWith(suffix));
+        } catch {
+            return false;
+        }
+    };
+    if (requestOrigin && (configuredOrigins.includes(requestOrigin) || sameHostOrigins.includes(requestOrigin) || isAllowedCloudflareHost(requestOrigin))) {
         res.setHeader('Access-Control-Allow-Origin', requestOrigin);
         res.setHeader('Vary', 'Origin');
     }

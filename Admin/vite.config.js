@@ -30,8 +30,12 @@ export default defineConfig({
       'localhost',
       '127.0.0.1',
       'systemmdm.houv.online',
+      'systemmdm.hou.online',
+      'system-mdm.hou.online',
       'apisystemmdm.houv.online',
-      '.houv.online',  // Allow all *.houv.online subdomains
+      'apisystemmdm.hou.online',
+      '.houv.online',
+      '.hou.online', // Allow all *.hou.online/*.houv.online subdomains
     ],
     proxy: {
       '/api': {
