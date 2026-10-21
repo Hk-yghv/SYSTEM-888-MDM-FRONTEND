@@ -3,6 +3,7 @@ import React, { useRef, useState } from 'react';
 import { FaPlusCircle, FaEdit, FaSave, FaTimes, FaPlus, FaSpinner } from 'react-icons/fa';
 
 const SuggestionField = ({ id, value, onChange, options = [], placeholder, textarea = false }) => {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const [opensAbove, setOpensAbove] = useState(false);
     const fieldRef = useRef(null);
