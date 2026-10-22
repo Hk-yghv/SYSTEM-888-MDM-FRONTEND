@@ -64,7 +64,39 @@ const reserveNextContractORSequence = async (parts) => {
     return counter.sequence;
 };
 
+const advanceContractORSequence = async (parts, contractOR) => {
+    if (!contractOR.startsWith(parts.prefix)) return;
+    const sequence = Number(contractOR.slice(parts.prefix.length));
+    if (!Number.isSafeInteger(sequence) || sequence < 1) return;
+    if (!isMongoConnected) return;
+
+    const Counter = getWriteModel(CashTransactionCounter);
+    if (!Counter) throw new Error('No database is available to update Contract.OR sequence.');
+    await Counter.findOneAndUpdate(
+        { key: parts.key },
+        { $max: { sequence } },
+        { upsert: true, setDefaultsOnInsert: true }
+    );
+};
+
 const formatContractOR = (parts, sequence) => `${parts.prefix}${String(sequence).padStart(8, '0')}`;
+
+const findContractORConflict = async (contractOR, excludeId = '') => {
+    if (!contractOR) return null;
+    if (!isMongoConnected) {
+        return MEM_DB.cashTransactions.find(record =>
+            record.contractOR === contractOR &&
+            record._id !== excludeId &&
+            record.transactionId !== excludeId
+        ) || null;
+    }
+
+    const records = await queryAllDBs(CashTransaction, M => M.find({ contractOR }));
+    return records.find(record =>
+        String(record._id) !== excludeId &&
+        record.transactionId !== excludeId
+    ) || null;
+};
 
 router.get('/cash-transactions/contract-or/next', async (req, res) => {
     try {
@@ -196,9 +228,13 @@ router.post('/cash-transactions', async (req, res) => {
         // 1 USD = 4000 KHR for unified reporting estimate
         const amountUSD = cur === 'KHR' ? (numAmount / 4000) : numAmount;
         const transactionId = `TX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        const contractORSequence = contractORParts
-            ? await reserveNextContractORSequence(contractORParts)
-            : null;
+        const contractORSequence = await reserveNextContractORSequence(contractORParts);
+        const contractOR = String(req.body.contractOR || formatContractOR(contractORParts, contractORSequence)).trim();
+        const contractORConflict = await findContractORConflict(contractOR);
+        if (contractORConflict) {
+            return res.status(409).json({ error: 'This Contract.OR is already assigned to another transaction.' });
+        }
+        await advanceContractORSequence(contractORParts, contractOR);
 
         const newDoc = {
             transactionId,
@@ -215,7 +251,7 @@ router.post('/cash-transactions', async (req, res) => {
             performedBy: performedBy || 'Admin',
             brand: brand || 'SYSTEM',
             subBrand: contractORParts?.subBrand || '',
-            contractOR: contractORParts ? formatContractOR(contractORParts, contractORSequence) : '',
+            contractOR,
             createdAt: new Date().toISOString()
         };
 
@@ -238,7 +274,7 @@ router.post('/cash-transactions', async (req, res) => {
 router.put('/cash-transactions/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy } = req.body;
+        const { date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy, contractOR, subBrand } = req.body;
         const numAmount = Number(amount) || 0;
         const cur = currency === 'KHR' ? 'KHR' : 'USD';
         const amountUSD = cur === 'KHR' ? (numAmount / 4000) : numAmount;
@@ -259,6 +295,20 @@ router.put('/cash-transactions/:id', async (req, res) => {
             photoUrls: images,
             performedBy
         };
+        if (Object.prototype.hasOwnProperty.call(req.body, 'contractOR')) {
+            const normalizedContractOR = String(contractOR || '').trim();
+            if (!normalizedContractOR) {
+                return res.status(400).json({ error: 'Contract.OR is required.' });
+            }
+            const conflict = await findContractORConflict(normalizedContractOR, id);
+            if (conflict) {
+                return res.status(409).json({ error: 'This Contract.OR is already assigned to another transaction.' });
+            }
+            updateData.contractOR = normalizedContractOR;
+            updateData.subBrand = String(subBrand || '').trim();
+            const parts = getContractORParts(subBrand);
+            if (parts && normalizedContractOR) await advanceContractORSequence(parts, normalizedContractOR);
+        }
 
         if (isMongoConnected) {
             const Model = getWriteModel(CashTransaction);

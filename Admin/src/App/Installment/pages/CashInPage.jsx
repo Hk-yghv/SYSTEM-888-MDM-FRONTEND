@@ -58,7 +58,6 @@ const CashInPage = () => {
         photoUrls: []
     });
     const [subBrandOptions, setSubBrandOptions] = useState([]);
-    const [contractORPreview, setContractORPreview] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [imageStorageType, setImageStorageType] = useState('cloudinary');
@@ -102,8 +101,7 @@ const CashInPage = () => {
     }, [isFormOpen, editingItem, formData.subBrand, subBrandOptions]);
 
     useEffect(() => {
-        if (!isFormOpen || editingItem || !formData.subBrand) {
-            setContractORPreview(editingItem?.contractOR || '');
+        if (!isFormOpen || !formData.subBrand || (editingItem && formData.contractOR)) {
             return;
         }
 
@@ -117,10 +115,11 @@ const CashInPage = () => {
                     throw new Error(result.error || `Failed to preview Contract.OR: ${res.status}`);
                 }
                 const result = await res.json();
-                if (active) setContractORPreview(result.contractOR || '');
+                if (active) {
+                    setFormData(prev => prev.contractOR ? prev : { ...prev, contractOR: result.contractOR || '' });
+                }
             } catch (err) {
                 console.error('Preview cash-in Contract.OR error:', err);
-                if (active) setContractORPreview('');
             }
         };
         fetchContractORPreview();
@@ -223,6 +222,7 @@ const CashInPage = () => {
                 photoUrl: formData.photoUrls[0] || '',
                 photoUrls: formData.photoUrls,
                 subBrand: formData.subBrand,
+                contractOR: formData.contractOR,
                 performedBy: user?.name || user?.username || 'Admin',
                 brand: user?.brand || 'SYSTEM'
             };
@@ -618,9 +618,9 @@ const CashInPage = () => {
                                     <label className="block text-slate-700 font-bold mb-1">Subbrand</label>
                                     <select
                                         value={formData.subBrand}
-                                        disabled={Boolean(editingItem)}
-                                        required={!editingItem}
-                                        onChange={(e) => setFormData({ ...formData, subBrand: e.target.value })}
+                                        disabled={Boolean(editingItem?.subBrand)}
+                                        required={!editingItem || !editingItem.subBrand}
+                                        onChange={(e) => setFormData({ ...formData, subBrand: e.target.value, contractOR: '' })}
                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-emerald-500 disabled:opacity-70"
                                     >
                                         <option value="">Select Subbrand</option>
@@ -631,8 +631,9 @@ const CashInPage = () => {
                                     <label className="block text-slate-700 font-bold mb-1">Contract.OR</label>
                                     <input
                                         type="text"
-                                        readOnly
-                                        value={editingItem ? formData.contractOR : contractORPreview}
+                                        required
+                                        value={formData.contractOR}
+                                        onChange={(e) => setFormData({ ...formData, contractOR: e.target.value })}
                                         placeholder="Auto-generated"
                                         className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-[5px] font-mono font-bold text-indigo-700"
                                     />
