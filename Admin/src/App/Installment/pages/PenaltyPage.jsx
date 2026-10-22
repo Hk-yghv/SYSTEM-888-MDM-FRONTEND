@@ -109,7 +109,7 @@ const PenaltyPage = () => {
         let active = true;
         const fetchContractORPreview = async () => {
             try {
-                const params = new URLSearchParams({ subBrand: formData.subBrand });
+                const params = new URLSearchParams({ type: 'penalty', subBrand: formData.subBrand });
                 const res = await fetch(`${API_BASE}/cash-transactions/contract-or/next?${params.toString()}`);
                 if (!res.ok) {
                     const result = await res.json();

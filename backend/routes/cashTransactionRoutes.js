@@ -21,24 +21,40 @@ const normalizeCashTransaction = (record) => {
     return normalized;
 };
 
-const getContractORParts = (subBrand, now = new Date()) => {
+const getContractORParts = (type, subBrand, now = new Date()) => {
     const normalizedSubBrand = String(subBrand || '').trim();
-    if (!normalizedSubBrand) return null;
+    if (!['cash_out', 'cash_in', 'penalty'].includes(type) || !normalizedSubBrand) return null;
     const year = now.getFullYear();
     return {
         year,
+        type,
         subBrand: normalizedSubBrand,
-        key: `${year}:${normalizedSubBrand.toLowerCase()}`,
+        key: `${year}:${type}:${normalizedSubBrand.toLowerCase()}`,
         prefix: `${year}-${normalizedSubBrand}-`
     };
 };
 
-const getNextMemoryContractORSequence = ({ prefix }) => {
-    const maxSequence = MEM_DB.cashTransactions.reduce((max, record) => {
-        if (!record.contractOR?.startsWith(prefix)) return max;
+const getExistingContractORSequence = async ({ type, prefix }) => {
+    if (!isMongoConnected) {
+        return MEM_DB.cashTransactions.reduce((max, record) => {
+            if (record.type !== type || !record.contractOR?.startsWith(prefix)) return max;
+            const sequence = Number(record.contractOR.slice(prefix.length));
+            return Number.isSafeInteger(sequence) ? Math.max(max, sequence) : max;
+        }, 0);
+    }
+
+    const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const records = await queryAllDBs(CashTransaction, M =>
+        M.find({ type, contractOR: { $regex: `^${escapedPrefix}` } }).select('contractOR').lean()
+    );
+    return records.reduce((max, record) => {
         const sequence = Number(record.contractOR.slice(prefix.length));
         return Number.isSafeInteger(sequence) ? Math.max(max, sequence) : max;
     }, 0);
+};
+
+const getNextMemoryContractORSequence = async (parts) => {
+    const maxSequence = await getExistingContractORSequence(parts);
     return maxSequence + 1;
 };
 
@@ -47,8 +63,11 @@ const getNextContractORPreview = async (parts) => {
 
     const Counter = getWriteModel(CashTransactionCounter);
     if (!Counter) throw new Error('No database is available to generate Contract.OR.');
-    const counter = await Counter.findOne({ key: parts.key }).select('sequence').lean();
-    return (counter?.sequence || 0) + 1;
+    const [counter, existingSequence] = await Promise.all([
+        Counter.findOne({ key: parts.key }).select('sequence').lean(),
+        getExistingContractORSequence(parts)
+    ]);
+    return Math.max(counter?.sequence || 0, existingSequence) + 1;
 };
 
 const reserveNextContractORSequence = async (parts) => {
@@ -56,6 +75,12 @@ const reserveNextContractORSequence = async (parts) => {
 
     const Counter = getWriteModel(CashTransactionCounter);
     if (!Counter) throw new Error('No database is available to generate Contract.OR.');
+    const existingSequence = await getExistingContractORSequence(parts);
+    await Counter.findOneAndUpdate(
+        { key: parts.key },
+        { $max: { sequence: existingSequence } },
+        { upsert: true, setDefaultsOnInsert: true }
+    );
     const counter = await Counter.findOneAndUpdate(
         { key: parts.key },
         { $inc: { sequence: 1 } },
@@ -81,17 +106,19 @@ const advanceContractORSequence = async (parts, contractOR) => {
 
 const formatContractOR = (parts, sequence) => `${parts.prefix}${String(sequence).padStart(8, '0')}`;
 
-const findContractORConflict = async (contractOR, excludeId = '') => {
+const findContractORConflict = async (contractOR, type, excludeId = '') => {
+    const typeFilter = type ? { type } : {};
     if (!contractOR) return null;
     if (!isMongoConnected) {
         return MEM_DB.cashTransactions.find(record =>
+            (!type || record.type === type) &&
             record.contractOR === contractOR &&
             record._id !== excludeId &&
             record.transactionId !== excludeId
         ) || null;
     }
 
-    const records = await queryAllDBs(CashTransaction, M => M.find({ contractOR }));
+    const records = await queryAllDBs(CashTransaction, M => M.find({ contractOR, ...typeFilter }));
     return records.find(record =>
         String(record._id) !== excludeId &&
         record.transactionId !== excludeId
@@ -100,8 +127,8 @@ const findContractORConflict = async (contractOR, excludeId = '') => {
 
 router.get('/cash-transactions/contract-or/next', async (req, res) => {
     try {
-        const parts = getContractORParts(req.query.subBrand);
-        if (!parts) return res.status(400).json({ error: 'Subbrand is required to generate Contract.OR.' });
+        const parts = getContractORParts(req.query.type, req.query.subBrand);
+        if (!parts) return res.status(400).json({ error: 'Transaction type and subbrand are required to generate Contract.OR.' });
         const sequence = await getNextContractORPreview(parts);
         return res.json({ contractOR: formatContractOR(parts, sequence) });
     } catch (err) {
@@ -109,6 +136,11 @@ router.get('/cash-transactions/contract-or/next', async (req, res) => {
         return res.status(500).json({ error: err.message });
     }
 });
+
+/*
+ * Keep Contract.OR sequences isolated by transaction type. The printed OR
+ * format remains unchanged, so separate transaction types may share a number.
+ */
 
 // GET /api/cash-transactions
 router.get('/cash-transactions', async (req, res) => {
@@ -215,7 +247,7 @@ router.post('/cash-transactions', async (req, res) => {
         if (!['cash_out', 'cash_in', 'penalty'].includes(type) || !Number.isFinite(numAmount) || numAmount <= 0) {
             return res.status(400).json({ error: 'Type and Amount are required.' });
         }
-        const contractORParts = getContractORParts(subBrand);
+        const contractORParts = getContractORParts(type, subBrand);
         if (!contractORParts) {
             return res.status(400).json({ error: 'Subbrand is required to generate Contract.OR.' });
         }
@@ -230,7 +262,7 @@ router.post('/cash-transactions', async (req, res) => {
         const transactionId = `TX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const contractORSequence = await reserveNextContractORSequence(contractORParts);
         const contractOR = String(req.body.contractOR || formatContractOR(contractORParts, contractORSequence)).trim();
-        const contractORConflict = await findContractORConflict(contractOR);
+        const contractORConflict = await findContractORConflict(contractOR, type);
         if (contractORConflict) {
             return res.status(409).json({ error: 'This Contract.OR is already assigned to another transaction.' });
         }
@@ -274,7 +306,7 @@ router.post('/cash-transactions', async (req, res) => {
 router.put('/cash-transactions/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy, contractOR, subBrand } = req.body;
+        const { type, date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy, contractOR, subBrand } = req.body;
         const numAmount = Number(amount) || 0;
         const cur = currency === 'KHR' ? 'KHR' : 'USD';
         const amountUSD = cur === 'KHR' ? (numAmount / 4000) : numAmount;
@@ -300,13 +332,13 @@ router.put('/cash-transactions/:id', async (req, res) => {
             if (!normalizedContractOR) {
                 return res.status(400).json({ error: 'Contract.OR is required.' });
             }
-            const conflict = await findContractORConflict(normalizedContractOR, id);
+            const conflict = await findContractORConflict(normalizedContractOR, type, id);
             if (conflict) {
                 return res.status(409).json({ error: 'This Contract.OR is already assigned to another transaction.' });
             }
             updateData.contractOR = normalizedContractOR;
             updateData.subBrand = String(subBrand || '').trim();
-            const parts = getContractORParts(subBrand);
+            const parts = getContractORParts(type, subBrand);
             if (parts && normalizedContractOR) await advanceContractORSequence(parts, normalizedContractOR);
         }
 
