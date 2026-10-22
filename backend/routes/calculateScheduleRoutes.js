@@ -209,9 +209,13 @@ router.post('/', async (req, res) => {
         }
 
         const effectiveBrand = (!isolation.isMasterAdmin && isolation.brand) ? isolation.brand : brand;
-        const effectiveSubBrand = !isolation.isMasterAdmin && isolation.allowedSubBrands.length > 0
-            ? isolation.allowedSubBrands[0]
-            : subBrand;
+        let effectiveSubBrand = subBrand;
+        if (!isolation.isMasterAdmin && isolation.allowedSubBrands.length > 0) {
+            effectiveSubBrand = isolation.requestedSubBrand || isolation.allowedSubBrands[0];
+            if (!isolation.allowedSubBrands.includes(effectiveSubBrand)) {
+                return res.status(403).json({ success: false, error: 'You are not allowed to use this sub-brand.' });
+            }
+        }
 
         const newDoc = {
             contractNumber,
@@ -257,15 +261,28 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const isolation = await resolveUserIsolation(req);
         let targetSchedule = null;
 
         if (isMongoConnected) {
-            const results = await queryAllDBs(CalculateSchedule, (M) => M.findById(id));
-            targetSchedule = results.find(r => r != null) || null;
-            const Model = getWriteModel(CalculateSchedule);
-            await Model.findByIdAndDelete(id);
+            targetSchedule = await queryAllDBs(CalculateSchedule, M => M.findById(id));
         } else {
             targetSchedule = MEM_DB.calculateSchedules.find(item => String(item._id) === String(id)) || null;
+        }
+
+        if (!targetSchedule) {
+            return res.status(404).json({ success: false, error: 'Calculate schedule record not found.' });
+        }
+        if (filterInMemoryRecords([targetSchedule], isolation).length === 0) {
+            return res.status(404).json({ success: false, error: 'Calculate schedule record not found.' });
+        }
+
+        if (isMongoConnected) {
+            targetSchedule = await queryAllDBs(CalculateSchedule, M => M.findByIdAndDelete(id));
+            if (!targetSchedule) {
+                return res.status(404).json({ success: false, error: 'Calculate schedule record not found.' });
+            }
+        } else {
             MEM_DB.calculateSchedules = MEM_DB.calculateSchedules.filter(item => String(item._id) !== String(id));
         }
 

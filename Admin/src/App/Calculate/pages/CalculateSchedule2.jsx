@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import {
     FaCalculator, FaCalendarAlt, FaPrint, FaUndo, FaFileContract,
     FaGem, FaHashtag, FaUser, FaSave, FaHistory, FaTrash, FaEye,
-    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar, FaFilePdf
+    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar, FaFilePdf,
+    FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
@@ -81,6 +82,11 @@ const sanitizePdfColors = (clonedDocument) => {
 
 const CalculateSchedule2 = () => {
     const { user, API_BASE } = useAuth();
+    const allowedSubBrands = useMemo(() => (
+        Array.isArray(user?.subBrands)
+            ? user.subBrands.filter(subBrand => typeof subBrand === 'string' && subBrand.trim())
+            : []
+    ), [user?.subBrands]);
 
     const formatDateToYMD = (d) => {
         if (!d || !(d instanceof Date) || isNaN(d)) return '';
@@ -115,6 +121,14 @@ const CalculateSchedule2 = () => {
     const [displayLimit, setDisplayLimit] = useState(10);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
+    const [subBrandSwitchEnabled, setSubBrandSwitchEnabled] = useState(false);
+    const [selectedSubBrand, setSelectedSubBrand] = useState(() => allowedSubBrands[0] || '');
+
+    useEffect(() => {
+        setSelectedSubBrand(current =>
+            allowedSubBrands.includes(current) ? current : (allowedSubBrands[0] || '')
+        );
+    }, [allowedSubBrands]);
 
     const getNextContractNumber = (records) => {
         const maxNumber = records.reduce((max, record) => {
@@ -167,10 +181,21 @@ const CalculateSchedule2 = () => {
             const username = user?.username || '';
             const role = user?.role || '';
             const isImmutable = user?.isImmutable ? 'true' : 'false';
-            const userSubBrands = (user?.subBrands || []).join(',');
+            const userSubBrands = allowedSubBrands.join(',');
+            const params = new URLSearchParams({
+                userBrand: brand,
+                username,
+                userRole: role,
+                isImmutable,
+                userSubBrands,
+                _t: String(Date.now())
+            });
+            if (subBrandSwitchEnabled && selectedSubBrand) {
+                params.set('subBrand', selectedSubBrand);
+            }
 
             const res = await fetch(
-                `${API_BASE}/calculate-schedules?userBrand=${encodeURIComponent(brand)}&username=${encodeURIComponent(username)}&userRole=${encodeURIComponent(role)}&isImmutable=${isImmutable}&userSubBrands=${encodeURIComponent(userSubBrands)}&_t=${Date.now()}`
+                `${API_BASE}/calculate-schedules?${params.toString()}`
             );
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
@@ -188,7 +213,17 @@ const CalculateSchedule2 = () => {
         } finally {
             if (!isSilent) setHistoryLoading(false);
         }
-    }, [API_BASE, user?.brand, user?.username, user?.role, user?.isImmutable, user?.subBrands]);
+    }, [
+        API_BASE,
+        user?.brand,
+        user?.username,
+        user?.role,
+        user?.isImmutable,
+        user?.subBrands,
+        allowedSubBrands,
+        subBrandSwitchEnabled,
+        selectedSubBrand
+    ]);
 
     const [searchParams] = useSearchParams();
 
@@ -388,7 +423,9 @@ const CalculateSchedule2 = () => {
                 totalInterest: calcData.totalInterest,
                 schedule: calcData.schedule,
                 brand: user?.brand || '',
-                subBrand: user?.subBrands?.[0] || '',
+                subBrand: subBrandSwitchEnabled
+                    ? selectedSubBrand
+                    : (allowedSubBrands[0] || ''),
                 createdBy: user?.username || user?.name || 'Staff',
                 notes: notes.trim()
             };
@@ -466,18 +503,32 @@ const CalculateSchedule2 = () => {
         if (!window.confirm('តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?')) return;
 
         try {
-            const res = await fetch(`${API_BASE}/calculate-schedules/${id}`, {
+            const params = new URLSearchParams({
+                userBrand: user?.brand || '',
+                username: user?.username || '',
+                userRole: user?.role || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: allowedSubBrands.join(',')
+            });
+            if (subBrandSwitchEnabled && selectedSubBrand) {
+                params.set('subBrand', selectedSubBrand);
+            }
+
+            const res = await fetch(`${API_BASE}/calculate-schedules/${id}?${params.toString()}`, {
                 method: 'DELETE'
             });
-            if (res.ok) {
+            const data = await res.json();
+            if (res.ok && data.success) {
                 if (activeRecordId === id) setActiveRecordId(null);
                 setSavedHistory(prev => prev.filter(item => item._id !== id));
                 localStorage.setItem('calc_schedules_updated', Date.now().toString());
             } else {
-                alert('មិនអាចលុបទិន្នន័យបានទេ');
+                console.error('Failed to delete schedule:', data.error || `HTTP ${res.status}`);
+                alert(data.error || 'មិនអាចលុបទិន្នន័យបានទេ');
             }
         } catch (err) {
             console.error('Error deleting record:', err);
+            alert('មានបញ្ហាក្នុងការតភ្ជាប់ទៅម៉ាស៊ីនមេ!');
         }
     };
 
@@ -650,6 +701,9 @@ const CalculateSchedule2 = () => {
     };
 
     const filteredHistory = savedHistory.filter(item => {
+        if (subBrandSwitchEnabled && selectedSubBrand && item.subBrand !== selectedSubBrand) {
+            return false;
+        }
         if (!historySearch.trim()) return true;
         const q = historySearch.toLowerCase();
         return (
@@ -870,6 +924,37 @@ const CalculateSchedule2 = () => {
 
                     {/* Action buttons */}
                     <div className="flex flex-wrap items-center gap-2 no-print">
+                        {allowedSubBrands.length >= 2 && (
+                            <>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={subBrandSwitchEnabled}
+                                    onClick={() => setSubBrandSwitchEnabled(enabled => !enabled)}
+                                    className={`px-3 py-2.5 rounded-[5px] text-xs sm:text-sm flex items-center gap-2 border transition-all cursor-pointer ${
+                                        subBrandSwitchEnabled
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                            : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                                    }`}
+                                    title={subBrandSwitchEnabled ? 'បិទការប្តូរ Sub-brand' : 'បើកការប្តូរ Sub-brand'}
+                                >
+                                    {subBrandSwitchEnabled ? <FaChevronRight /> : <FaChevronLeft />}
+                                    <span>ប្តូរ Sub-brand</span>
+                                </button>
+                                {subBrandSwitchEnabled && (
+                                    <select
+                                        aria-label="ជ្រើសរើស Sub-brand"
+                                        value={selectedSubBrand}
+                                        onChange={(e) => setSelectedSubBrand(e.target.value)}
+                                        className="px-3 py-2.5 rounded-[5px] border border-slate-200 bg-white text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    >
+                                        {allowedSubBrands.map(subBrand => (
+                                            <option key={subBrand} value={subBrand}>{subBrand}</option>
+                                        ))}
+                                    </select>
+                                )}
+                            </>
+                        )}
                         {savedHistory.length > 0 && (
                             <button
                                 type="button"
