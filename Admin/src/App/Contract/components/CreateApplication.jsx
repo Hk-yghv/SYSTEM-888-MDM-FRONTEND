@@ -5,7 +5,7 @@ import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
 import { formatIMEI } from '../../../utils/imeiFormatter';
-import { getProxyImageUrl, storeImageFiles, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFiles } from '../../../utils/mediaUtils';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 
@@ -277,20 +277,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     meid: editData.meid || '',
                 });
 
-                // Auto-convert existing Cloudinary photos to Base64
-                const rawPhotos = Array.isArray(editData.photos) ? editData.photos : (editData.customerPhoto ? [editData.customerPhoto] : []);
-                if (rawPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
-                    ensureBase64List(rawPhotos).then(converted => {
-                        if (converted && converted.length) {
-                            setForm(prev => ({
-                                ...prev,
-                                photos: converted,
-                                customerPhoto: converted[0] || prev.customerPhoto,
-                                googleDrivePhotoUrl: converted[0] || prev.googleDrivePhotoUrl
-                            }));
-                        }
-                    }).catch(() => {});
-                }
+
             } else {
                 const initialBrand = form.brand || user?.brand || (brandsList.length > 0 ? brandsList[0] : 'M8');
                 const autoSuffix = computeNextSuffixForBrand(initialBrand, allCustomers);

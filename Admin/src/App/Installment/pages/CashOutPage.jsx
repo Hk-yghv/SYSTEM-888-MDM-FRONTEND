@@ -14,7 +14,7 @@ import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
-import { storeImageFiles, ensureBase64List } from '../../../utils/mediaUtils';
+import { storeImageFiles } from '../../../utils/mediaUtils';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const LIMIT = 10;
@@ -278,14 +278,6 @@ const CashOutPage = () => {
         });
         setIsFormOpen(true);
 
-        // Auto-convert any existing Cloudinary URLs to Base64
-        if (existingPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
-            ensureBase64List(existingPhotos).then(converted => {
-                if (converted && converted.length) {
-                    setFormData(prev => ({ ...prev, photoUrls: converted }));
-                }
-            }).catch(() => {});
-        }
     };
 
     const handleDelete = async (item) => {

@@ -33,7 +33,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import SalaryBarChart from '../../../components/SalaryBarChart';
 import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
-import { getProxyImageUrl, storeImageFile, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFile } from '../../../utils/mediaUtils';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
@@ -501,18 +501,6 @@ const SalaryPage = () => {
         });
         setOpenModal(true);
 
-        // Auto-convert existing Cloudinary photos to Base64
-        if (existingPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
-            ensureBase64List(existingPhotos).then(converted => {
-                if (converted && converted.length) {
-                    setFormData(prev => ({
-                        ...prev,
-                        proofPhotos: converted,
-                        proofPhoto: converted[0] || prev.proofPhoto
-                    }));
-                }
-            }).catch(() => {});
-        }
     };
 
     // Delete Record

@@ -13,7 +13,7 @@ import Pagination from '../../../components/Pagination';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import LineChart from '../../../components/LineChart';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
-import { getProxyImageUrl, storeImageFile, ensureBase64List } from '../../../utils/mediaUtils';
+import { getProxyImageUrl, storeImageFile } from '../../../utils/mediaUtils';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
@@ -292,18 +292,6 @@ const PenaltyPage = () => {
         });
         setIsFormOpen(true);
 
-        // Auto-convert existing Cloudinary URLs to Base64
-        if (existingPhotos.some(p => typeof p === 'string' && (p.includes('cloudinary') || p.startsWith('http')))) {
-            ensureBase64List(existingPhotos).then(converted => {
-                if (converted && converted.length) {
-                    setFormData(prev => ({
-                        ...prev,
-                        photoUrls: converted,
-                        photoUrl: converted[0] || prev.photoUrl
-                    }));
-                }
-            }).catch(() => {});
-        }
     };
 
     const handleDelete = async (item) => {
