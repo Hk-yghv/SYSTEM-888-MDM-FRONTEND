@@ -211,13 +211,6 @@ const AuditDevice = () => {
     });
     const [savingAudit, setSavingAudit] = useState(false);
 
-    const isRoundLocallyLocked = useCallback((date, round = currentRound) => {
-        const roundLock = localStorage.getItem(`device_audit_submitted_${date}_${round}`) === 'true';
-        const legacyMorningLock = round === 'AM' &&
-            localStorage.getItem(`device_audit_submitted_${date}`) === 'true';
-        return roundLock || legacyMorningLock;
-    }, [currentRound]);
-
     // Check if Status Account has been filled (cannot fill Account Activity or Note Audit if false)
     const isStatusFilled = useMemo(() => {
         if (auditForm.isCustomStatus) {
@@ -312,17 +305,8 @@ const AuditDevice = () => {
                     setLatestAuditMap(data.latestAuditMap || {});
 
                     const serverSubmitted = Boolean(data.isSubmitted);
-                    const localSubmitted = isRoundLocallyLocked(targetDate, round);
-                    const locked = serverSubmitted || localSubmitted;
-
-                    setIsSubmitted(locked);
-                    setSubmissionInfo(data.submissionInfo || (locked ? { isSubmitted: true, auditDate: targetDate } : null));
-
-                    if (locked) {
-                        try {
-                            localStorage.setItem(`device_audit_submitted_${targetDate}_${round}`, 'true');
-                        } catch {}
-                    }
+                    setIsSubmitted(serverSubmitted);
+                    setSubmissionInfo(data.submissionInfo || (serverSubmitted ? { isSubmitted: true, auditDate: targetDate } : null));
 
                     if (Array.isArray(data.distinctStatuses)) {
                         setDistinctStatuses(data.distinctStatuses);
@@ -335,7 +319,7 @@ const AuditDevice = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 400);
         }
-    }, [API_BASE, selectedDate, user, isRoundLocallyLocked]);
+    }, [API_BASE, selectedDate, user]);
 
     // Initial Load & on selectedDate Change
     useEffect(() => {
@@ -488,8 +472,7 @@ const AuditDevice = () => {
 
     // ─── Open Audit Modal ────────────────────────────────────────────
     const handleOpenAuditModal = (row) => {
-        const isLocallyLocked = isRoundLocallyLocked(selectedDate);
-        if (isSubmitted || isLocallyLocked) {
+        if (isSubmitted) {
             alert(t('auditLockedAlert'));
             return;
         }
@@ -514,8 +497,7 @@ const AuditDevice = () => {
     // ─── Save Audit Record ───────────────────────────────────────────
     const handleSaveAudit = async (e) => {
         e?.preventDefault();
-        const isLocallyLocked = isRoundLocallyLocked(selectedDate);
-        if (isSubmitted || isLocallyLocked) {
+        if (isSubmitted) {
             alert(t('auditLockedAlert'));
             return;
         }
@@ -714,9 +696,6 @@ const AuditDevice = () => {
             if (res.ok && data.success) {
                 setIsSubmitted(true);
                 setSubmissionInfo(data.data);
-                try {
-                    localStorage.setItem(`device_audit_submitted_${selectedDate}_${data.auditRound || currentRound}`, 'true');
-                } catch {}
                 setConfirmSubmitModal(false);
                 alert(data.message || `${t('auditSubmitSuccess')}${selectedDate}!`);
                 fetchAuditState(selectedDate);

@@ -39,7 +39,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'export', 'create', 'edit', 'delete', 'information'] },
     { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'export', 'create', 'edit', 'delete'] },
     { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1', actions: ['read', 'export'] },
-    { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2', actions: ['read', 'export', 'create', 'edit', 'delete'] },
+    { category: 'Calculation & Tools', path: '/calculate/schedule-2', label: 'Calculate Schedule 2', actions: ['read', 'create', 'edit', 'delete'] },
     { category: 'Calculation & Tools', path: '/calendar', label: 'Khmer Calendar', actions: ['read', 'create', 'edit', 'delete'] },
 
     { category: 'Installment & Payment', path: '/installment/schedule', label: 'Installment Schedule', actions: ['read', 'edit', 'export'] },
@@ -47,6 +47,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Installment & Payment', path: '/installment/history', label: 'Installment History', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/paymentHistory', label: 'Payment History', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/cash-out', label: 'Cash Out', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Installment & Payment', path: '/installment/cash-in', label: 'Cash In', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/penalty', label: 'Penalty', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Installment & Payment', path: '/installment/overdue', label: 'Overdue Customers', actions: ['read', 'export'] },
     { category: 'Installment & Payment', path: '/installment/due-today', label: 'Due Today', actions: ['read', 'export'] },

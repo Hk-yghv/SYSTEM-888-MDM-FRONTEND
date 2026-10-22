@@ -1,4 +1,6 @@
 import React, { useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { FaDownload, FaFileExcel } from 'react-icons/fa';
 import { MdKeyboardArrowDown, MdPictureAsPdf } from 'react-icons/md';
 import { useLanguage } from '../context/LanguageContext';
@@ -8,15 +10,20 @@ const ExportDropdown = ({
     onExportPDF,
     triggerLabel,
     excelLabel,
+    permissionPath,
     className = ''
 }) => {
     const { t } = useLanguage();
+    const { hasPermission } = useAuth();
+    const location = useLocation();
     const dropdownRef = useRef(null);
 
     const resolvedTrigger = triggerLabel || t('export');
     const resolvedExcel = excelLabel || t('exportExcel') || 'Excel';
     const resolvedPdfPortrait = t('pdfPortrait') || 'PDF (Portrait)';
     const resolvedPdfLandscape = t('pdfLandscape') || 'PDF (Landscape)';
+
+    if (!hasPermission(permissionPath || location.pathname, 'export')) return null;
 
     const runExport = (handler, arg) => {
         if (dropdownRef.current) dropdownRef.current.open = false;

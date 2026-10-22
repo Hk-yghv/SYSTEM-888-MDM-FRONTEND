@@ -4,81 +4,11 @@ import { useAuth } from '../../../context/AuthContext';
 import {
     FaCalculator, FaCalendarAlt, FaPrint, FaUndo, FaFileContract,
     FaGem, FaHashtag, FaUser, FaSave, FaHistory, FaTrash, FaEye,
-    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar, FaFilePdf,
+    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar,
     FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
-
-const oklchToRgba = (value) => {
-    const [channelText, alphaText] = value.split(/\s*\/\s*/);
-    const channels = channelText.trim().split(/\s+/);
-    if (channels.length !== 3) throw new Error(`Unsupported OKLCH color: ${value}`);
-
-    const lightness = channels[0].endsWith('%')
-        ? parseFloat(channels[0]) / 100
-        : parseFloat(channels[0]);
-    const chroma = channels[1].endsWith('%')
-        ? parseFloat(channels[1]) * 0.004
-        : parseFloat(channels[1]);
-    let hue = parseFloat(channels[2]);
-    if (channels[2].endsWith('turn')) hue *= 360;
-    else if (channels[2].endsWith('rad')) hue = (hue * 180) / Math.PI;
-    else if (channels[2].endsWith('grad')) hue *= 0.9;
-    const alpha = alphaText
-        ? (alphaText.endsWith('%') ? parseFloat(alphaText) / 100 : parseFloat(alphaText))
-        : 1;
-    const radians = (hue * Math.PI) / 180;
-    const a = chroma * Math.cos(radians);
-    const b = chroma * Math.sin(radians);
-    const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-    const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-    const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
-    const linearRgb = [
-        4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-        -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-        -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s
-    ];
-    const rgb = linearRgb.map(channel => {
-        const clamped = Math.min(1, Math.max(0, channel));
-        return Math.round((clamped <= 0.0031308
-            ? clamped * 12.92
-            : 1.055 * (clamped ** (1 / 2.4)) - 0.055) * 255);
-    });
-
-    return `rgba(${rgb.join(', ')}, ${Math.min(1, Math.max(0, alpha))})`;
-};
-
-const sanitizePdfColors = (clonedDocument) => {
-    const sanitizeStyle = (style) => {
-        for (let index = 0; index < style.length; index++) {
-            const property = style[index];
-            const value = style.getPropertyValue(property);
-            if (!value.toLowerCase().includes('oklch(')) continue;
-
-            style.setProperty(
-                property,
-                value.replace(/oklch\(([^)]*)\)/gi, (_, color) => oklchToRgba(color)),
-                style.getPropertyPriority(property)
-            );
-        }
-    };
-    const sanitizeRules = (rules) => {
-        for (const rule of rules) {
-            if (rule.style) sanitizeStyle(rule.style);
-            if (rule.cssRules) sanitizeRules(rule.cssRules);
-        }
-    };
-
-    clonedDocument.querySelectorAll('[style]').forEach(element => sanitizeStyle(element.style));
-    for (const stylesheet of clonedDocument.styleSheets) {
-        try {
-            sanitizeRules(stylesheet.cssRules);
-        } catch (error) {
-            if (error.name !== 'SecurityError') throw error;
-        }
-    }
-};
 
 const CalculateSchedule2 = () => {
     const { user, API_BASE } = useAuth();
@@ -114,7 +44,6 @@ const CalculateSchedule2 = () => {
     const [historyLoadError, setHistoryLoadError] = useState(false);
     const [historySearch, setHistorySearch] = useState('');
     const [saving, setSaving] = useState(false);
-    const [pdfExporting, setPdfExporting] = useState(false);
     const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
     const [activeRecordId, setActiveRecordId] = useState(null);
     const [newlyAddedId, setNewlyAddedId] = useState(null);
@@ -550,156 +479,6 @@ const CalculateSchedule2 = () => {
         window.print();
     };
 
-    const handleExportPDF = async () => {
-        const printArea = document.getElementById('cs2-print-area');
-        if (!printArea || !result || pdfExporting) return;
-
-        try {
-            setPdfExporting(true);
-            await document.fonts.ready;
-            const { default: html2pdf } = await import('html2pdf.js');
-            const isLandscape = printOrientation === 'landscape';
-            const pageWidth = isLandscape ? '1123px' : '794px';
-            const pdfTitle = [result.contractNumber, result.customerName, 'Calculate_Schedule_2']
-                .filter(Boolean)
-                .join('_')
-                .replace(/[<>:"/\\|?*]/g, '_');
-
-            await html2pdf()
-                .set({
-                    margin: isLandscape ? [8, 0, 8, 0] : [10, 0, 10, 0],
-                    filename: `${pdfTitle}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        windowWidth: isLandscape ? 1123 : 794,
-                        onclone: (clonedDocument) => {
-                            const clonedPrintArea = clonedDocument.getElementById('cs2-print-area');
-                            if (!clonedPrintArea) return;
-
-                            sanitizePdfColors(clonedDocument);
-                            for (let ancestor = clonedPrintArea; ancestor; ancestor = ancestor.parentElement) {
-                                Object.entries({
-                                    boxSizing: 'border-box',
-                                    display: 'block',
-                                    width: pageWidth,
-                                    maxWidth: pageWidth,
-                                    minWidth: pageWidth,
-                                    height: 'auto',
-                                    maxHeight: 'none',
-                                    minHeight: '0',
-                                    margin: '0',
-                                    padding: '0',
-                                    position: 'static',
-                                    overflow: 'visible',
-                                    transform: 'none'
-                                }).forEach(([property, value]) => {
-                                    ancestor.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, 'important');
-                                });
-                            }
-                            const printStyles = clonedDocument.createElement('style');
-                            printStyles.textContent = `
-                                #cs2-print-area {
-                                    display: block !important;
-                                    position: relative !important;
-                                    box-sizing: border-box !important;
-                                    width: ${pageWidth} !important;
-                                    max-width: ${pageWidth} !important;
-                                    min-width: ${pageWidth} !important;
-                                    margin: 0 auto !important;
-                                    padding: 0 !important;
-                                    box-shadow: none !important;
-                                    border: none !important;
-                                    background: #fff !important;
-                                    overflow: visible !important;
-                                }
-                                #cs2-print-area div[class*="overflow-x-auto"] {
-                                    box-sizing: border-box !important;
-                                    width: 100% !important;
-                                    min-height: auto !important;
-                                    padding-bottom: 0 !important;
-                                    overflow: visible !important;
-                                    display: block !important;
-                                }
-                                #cs2-print-area table {
-                                    box-sizing: border-box !important;
-                                    width: 100% !important;
-                                    border-collapse: collapse !important;
-                                    margin: 0 auto !important;
-                                }
-                                #cs2-print-area tr {
-                                    break-inside: avoid !important;
-                                }
-                                #cs2-print-area table th,
-                                #cs2-print-area table td {
-                                    border: 1px solid #000 !important;
-                                    color: #000 !important;
-                                    vertical-align: middle !important;
-                                    print-color-adjust: exact !important;
-                                }
-                                #cs2-print-area table th > span,
-                                #cs2-print-area table td > .cs2-cell-text {
-                                    position: relative !important;
-                                    top: -2px !important;
-                                }
-                                #cs2-print-area .cs2-meta-grid {
-                                    display: grid !important;
-                                    grid-template-columns: 1fr 1fr !important;
-                                    width: 100% !important;
-                                    column-gap: 32px !important;
-                                }
-                                #cs2-print-area .cs2-meta-row {
-                                    display: flex !important;
-                                    justify-content: space-between !important;
-                                    align-items: center !important;
-                                    width: 100% !important;
-                                }
-                                #cs2-print-area .cs2-page-margin {
-                                    padding-left: 150px !important;
-                                    padding-right: 150px !important;
-                                }
-                                #cs2-print-area .cs2-signature-grid {
-                                    display: grid !important;
-                                    grid-template-columns: 1fr 1fr !important;
-                                    width: 100% !important;
-                                    column-gap: 32px !important;
-                                    text-align: center !important;
-                                    break-inside: avoid !important;
-                                }
-                                #cs2-print-area .cs2-signature-col {
-                                    display: flex !important;
-                                    flex-direction: column !important;
-                                    align-items: center !important;
-                                    justify-content: center !important;
-                                    text-align: center !important;
-                                    width: 100% !important;
-                                }
-                                #cs2-print-area .cs2-signature-line {
-                                    width: 180px !important;
-                                    margin: 48px auto 0 !important;
-                                    border-bottom: 1px dotted #94a3b8 !important;
-                                }
-                                #cs2-print-area .cs2-address-footer {
-                                    break-inside: avoid !important;
-                                }
-                            `;
-                            clonedDocument.head.appendChild(printStyles);
-                        }
-                    },
-                    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.cs2-signature-grid', '.cs2-address-footer'] },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: printOrientation }
-                })
-                .from(printArea)
-                .save();
-        } catch (error) {
-            console.error('Calculate Schedule 2 PDF export failed:', error);
-            alert(`PDF export failed: ${error.message}`);
-        } finally {
-            setPdfExporting(false);
-        }
-    };
-
     const filteredHistory = savedHistory.filter(item => {
         if (subBrandSwitchEnabled && selectedSubBrand && item.subBrand !== selectedSubBrand) {
             return false;
@@ -1004,14 +783,6 @@ const CalculateSchedule2 = () => {
                                     onClick={handlePrint}
                                     className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
                                     <FaPrint /> បោះពុម្ព
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleExportPDF}
-                                    disabled={pdfExporting}
-                                    className="px-4 py-2.5 rounded-[5px] bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
-                                    {pdfExporting ? <FaSpinner className="animate-spin" /> : <FaFilePdf />}
-                                    {pdfExporting ? 'កំពុងបង្កើត PDF...' : 'Export PDF'}
                                 </button>
                             </>
                         )}
