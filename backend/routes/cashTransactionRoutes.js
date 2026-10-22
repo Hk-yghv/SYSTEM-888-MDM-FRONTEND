@@ -183,8 +183,8 @@ router.post('/cash-transactions', async (req, res) => {
         if (!['cash_out', 'cash_in', 'penalty'].includes(type) || !Number.isFinite(numAmount) || numAmount <= 0) {
             return res.status(400).json({ error: 'Type and Amount are required.' });
         }
-        const contractORParts = ['cash_in', 'penalty'].includes(type) ? getContractORParts(subBrand) : null;
-        if (['cash_in', 'penalty'].includes(type) && !contractORParts) {
+        const contractORParts = getContractORParts(subBrand);
+        if (!contractORParts) {
             return res.status(400).json({ error: 'Subbrand is required to generate Contract.OR.' });
         }
 
