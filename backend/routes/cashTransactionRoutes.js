@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import CashTransaction from '../models/CashTransaction.js';
+import CashTransactionCounter from '../models/CashTransactionCounter.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
@@ -19,6 +20,63 @@ const normalizeCashTransaction = (record) => {
     normalized.photoUrl = normalized.photoUrls[0] || '';
     return normalized;
 };
+
+const getContractORParts = (subBrand, now = new Date()) => {
+    const normalizedSubBrand = String(subBrand || '').trim();
+    if (!normalizedSubBrand) return null;
+    const year = now.getFullYear();
+    return {
+        year,
+        subBrand: normalizedSubBrand,
+        key: `${year}:${normalizedSubBrand.toLowerCase()}`,
+        prefix: `${year}-${normalizedSubBrand}-`
+    };
+};
+
+const getNextMemoryContractORSequence = ({ prefix }) => {
+    const maxSequence = MEM_DB.cashTransactions.reduce((max, record) => {
+        if (!record.contractOR?.startsWith(prefix)) return max;
+        const sequence = Number(record.contractOR.slice(prefix.length));
+        return Number.isSafeInteger(sequence) ? Math.max(max, sequence) : max;
+    }, 0);
+    return maxSequence + 1;
+};
+
+const getNextContractORPreview = async (parts) => {
+    if (!isMongoConnected) return getNextMemoryContractORSequence(parts);
+
+    const Counter = getWriteModel(CashTransactionCounter);
+    if (!Counter) throw new Error('No database is available to generate Contract.OR.');
+    const counter = await Counter.findOne({ key: parts.key }).select('sequence').lean();
+    return (counter?.sequence || 0) + 1;
+};
+
+const reserveNextContractORSequence = async (parts) => {
+    if (!isMongoConnected) return getNextMemoryContractORSequence(parts);
+
+    const Counter = getWriteModel(CashTransactionCounter);
+    if (!Counter) throw new Error('No database is available to generate Contract.OR.');
+    const counter = await Counter.findOneAndUpdate(
+        { key: parts.key },
+        { $inc: { sequence: 1 } },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    return counter.sequence;
+};
+
+const formatContractOR = (parts, sequence) => `${parts.prefix}${String(sequence).padStart(8, '0')}`;
+
+router.get('/cash-transactions/contract-or/next', async (req, res) => {
+    try {
+        const parts = getContractORParts(req.query.subBrand);
+        if (!parts) return res.status(400).json({ error: 'Subbrand is required to generate Contract.OR.' });
+        const sequence = await getNextContractORPreview(parts);
+        return res.json({ contractOR: formatContractOR(parts, sequence) });
+    } catch (err) {
+        console.error('Preview Contract.OR error:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
 
 // GET /api/cash-transactions
 router.get('/cash-transactions', async (req, res) => {
@@ -53,7 +111,8 @@ router.get('/cash-transactions', async (req, res) => {
                     f.$or = [
                         { category: { $regex: search, $options: 'i' } },
                         { description: { $regex: search, $options: 'i' } },
-                        { performedBy: { $regex: search, $options: 'i' } }
+                        { performedBy: { $regex: search, $options: 'i' } },
+                        { contractOR: { $regex: search, $options: 'i' } }
                     ];
                 }
                 if (startDate || endDate) {
@@ -61,7 +120,7 @@ router.get('/cash-transactions', async (req, res) => {
                     if (startDate) f.date.$gte = startDate;
                     if (endDate) f.date.$lte = endDate;
                 }
-                return M.find(f).sort({ date: -1, createdAt: -1 });
+                return M.find(f).sort({ createdAt: -1, _id: -1 });
             });
         } else {
             let list = MEM_DB.cashTransactions;
@@ -72,12 +131,13 @@ router.get('/cash-transactions', async (req, res) => {
                 list = list.filter(item =>
                     (item.category || '').toLowerCase().includes(s) ||
                     (item.description || '').toLowerCase().includes(s) ||
-                    (item.performedBy || '').toLowerCase().includes(s)
+                    (item.performedBy || '').toLowerCase().includes(s) ||
+                    (item.contractOR || '').toLowerCase().includes(s)
                 );
             }
             if (startDate) list = list.filter(item => item.date >= startDate);
             if (endDate) list = list.filter(item => item.date <= endDate);
-            allRecords = list.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+            allRecords = list.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
         }
 
         const total = allRecords.length;
@@ -118,10 +178,14 @@ router.get('/cash-transactions', async (req, res) => {
 // POST /api/cash-transactions (Create)
 router.post('/cash-transactions', async (req, res) => {
     try {
-        const { type, date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy, brand } = req.body;
+        const { type, date, amount, currency, paymentMethod, category, description, photoUrl, photoUrls, performedBy, brand, subBrand } = req.body;
         const numAmount = Number(amount);
         if (!['cash_out', 'cash_in', 'penalty'].includes(type) || !Number.isFinite(numAmount) || numAmount <= 0) {
             return res.status(400).json({ error: 'Type and Amount are required.' });
+        }
+        const contractORParts = ['cash_in', 'penalty'].includes(type) ? getContractORParts(subBrand) : null;
+        if (['cash_in', 'penalty'].includes(type) && !contractORParts) {
+            return res.status(400).json({ error: 'Subbrand is required to generate Contract.OR.' });
         }
 
         const images = [...new Set([
@@ -132,6 +196,9 @@ router.post('/cash-transactions', async (req, res) => {
         // 1 USD = 4000 KHR for unified reporting estimate
         const amountUSD = cur === 'KHR' ? (numAmount / 4000) : numAmount;
         const transactionId = `TX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const contractORSequence = contractORParts
+            ? await reserveNextContractORSequence(contractORParts)
+            : null;
 
         const newDoc = {
             transactionId,
@@ -147,6 +214,8 @@ router.post('/cash-transactions', async (req, res) => {
             photoUrls: images,
             performedBy: performedBy || 'Admin',
             brand: brand || 'SYSTEM',
+            subBrand: contractORParts?.subBrand || '',
+            contractOR: contractORParts ? formatContractOR(contractORParts, contractORSequence) : '',
             createdAt: new Date().toISOString()
         };
 

@@ -175,7 +175,7 @@ const RejectSubmitModal = ({
                                             <tbody className="divide-y divide-slate-700/60">
                                                 {followUpRows.map((item, idx) => (
                                                     <tr key={item._id || idx} className="hover:bg-slate-800/60">
-                                                        <td className="py-1.5 px-2 text-center text-slate-400">{idx + 1}</td>
+                                                        <td className="py-1.5 px-2 text-center text-slate-400">{followUpRows.length - idx}</td>
                                                         <td className="py-1.5 px-2 whitespace-nowrap font-mono text-emerald-300">{item.date || '-'}</td>
                                                         <td className="py-1.5 px-2 whitespace-nowrap font-medium text-slate-100">{item.name || '-'}</td>
                                                         <td className="py-1.5 px-2 whitespace-nowrap">{item.userName || '-'}</td>

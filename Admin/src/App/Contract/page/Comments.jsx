@@ -303,7 +303,7 @@ const Comments = () => {
                         ) : (
                             visibleContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-khmer text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-khmer text-slate-600 font-semibold'>{total - ((selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx)}</td>
                                     <td className='px-4 py-1 font-khmer text-slate-700 font-medium whitespace-nowrap'>
                                         {hasActiveCommentToday(item)
                                             ? formatCommentDate(item.commentDate, formatCommentDate(item.updatedAt, item.inputDate))

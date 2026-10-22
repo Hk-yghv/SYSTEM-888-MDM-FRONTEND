@@ -361,7 +361,7 @@ const LockPhoneReport = () => {
                             ) : (
                                 visibleDataList.map((item, idx) => (
                                     <tr key={item._id || idx} className='hover:bg-rose-50/40 transition-colors'>
-                                        <td className='px-4 py-1 text-center font-mono font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                        <td className='px-4 py-1 text-center font-mono font-semibold'>{total - ((page - 1) * LIMIT + idx)}</td>
                                         <td className='px-4 py-1 font-bold text-slate-900'><CopyCell text={item.customerName || '-'} className='font-bold text-slate-900' /></td>
                                         <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model || '-'} className='font-semibold text-slate-800' /></td>
                                         <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'><CopyCell text={item.serialNumber || '-'} className='font-mono text-emerald-700 font-semibold' /></td>
@@ -399,7 +399,7 @@ const LockPhoneReport = () => {
                             <tbody className='divide-y divide-slate-200 font-semibold text-slate-800'>
                                 {summaryBreakdown.rows.map((row, idx) => (
                                     <tr key={row.brand} className="hover:bg-rose-50/50 transition-colors">
-                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{summaryBreakdown.rows.length - idx}</td>
                                         <td className="px-3.5 py-1 font-black text-rose-900">
                                             <span className="px-2.5 py-1 bg-rose-50 border border-rose-200 rounded-lg text-rose-900 font-bold">
                                                 {row.brand}

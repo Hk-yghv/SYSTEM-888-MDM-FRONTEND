@@ -249,7 +249,7 @@ const Application = () => {
 
                                 return (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (currentPage - 1) * itemsPerPage) + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{total - ((selectedSearchRecord ? 0 : (currentPage - 1) * itemsPerPage) + idx)}</td>
                                     <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                     <td className='px-4 py-1'>
                                         <div className="flex items-center gap-1.5 flex-wrap">

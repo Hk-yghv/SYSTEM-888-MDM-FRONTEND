@@ -499,7 +499,7 @@ const FollowUp4Report = () => {
                                     <tbody>
                                         {activeReport.rows.map((row, index) => (
                                             <tr key={row.id || row.label || index} className={row.isGrandTotal ? 'border-t-2 border-emerald-600 bg-emerald-50 font-black text-emerald-900' : 'even:bg-slate-50'}>
-                                                <td className="border border-slate-200 px-3 py-2 text-center text-slate-500">{row.spacer || row.isGrandTotal ? '' : index + 1}</td>
+                                                <td className="border border-slate-200 px-3 py-2 text-center text-slate-500">{row.spacer || row.isGrandTotal ? '' : activeReport.rows.length - index}</td>
                                                 <td className="border border-slate-200 px-3 py-2"><CopyCell text={row.label} className="text-slate-800" /></td>
                                                 <td className="border border-slate-200 px-3 py-2 text-right font-mono"><CopyCell text={row.value === '' ? '' : String(row.value)} className="text-slate-800" /></td>
                                             </tr>

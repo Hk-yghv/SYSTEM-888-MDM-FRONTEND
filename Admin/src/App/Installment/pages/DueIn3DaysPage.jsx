@@ -291,7 +291,7 @@ const DueIn3DaysPage = () => {
                             const urgencyColor = daysLeft === 1 ? 'bg-red-100 border-red-300 text-red-700' : daysLeft === 2 ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-sky-100 border-sky-300 text-sky-700';
                             return (
                                 <tr key={id} className="hover:bg-sky-50/40 transition-colors">
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{dueIn3DaysContracts.length - idx}</td>
                                     <td className='px-4 py-1 font-mono text-slate-700'>{item.inputDate || '—'}</td>
                                     <td className='px-4 py-1'><CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' /><CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' /></td>
                                     <td className='px-4 py-1'><span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || '—'}</span></td>

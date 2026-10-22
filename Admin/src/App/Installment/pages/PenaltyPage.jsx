@@ -54,15 +54,80 @@ const PenaltyPage = () => {
         paymentMethod: 'Cash',
         category: 'General Penalty',
         description: '',
+        subBrand: user?.subBrands?.[0] || '',
+        contractOR: '',
         photoUrl: '',
         photoUrls: []
     });
+    const [subBrandOptions, setSubBrandOptions] = useState([]);
+    const [contractORPreview, setContractORPreview] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
+
+    useEffect(() => {
+        const accountSubBrands = Array.isArray(user?.subBrands)
+            ? [...new Set(user.subBrands.map(value => String(value || '').trim()).filter(Boolean))]
+            : [];
+        if (accountSubBrands.length > 0) {
+            setSubBrandOptions(accountSubBrands);
+            return;
+        }
+
+        let active = true;
+        const fetchSubBrands = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (!res.ok) throw new Error(`Failed to fetch subbrands: ${res.status}`);
+                const data = await res.json();
+                const brandSubBrands = data.brand_subbrands || {};
+                const options = user?.brand
+                    ? brandSubBrands[user.brand] || []
+                    : Object.values(brandSubBrands).flat();
+                if (active) setSubBrandOptions([...new Set(options.map(value => String(value || '').trim()).filter(Boolean))]);
+            } catch (err) {
+                console.error('Fetch penalty subbrands error:', err);
+                if (active) setSubBrandOptions([]);
+            }
+        };
+        fetchSubBrands();
+        return () => { active = false; };
+    }, [API_BASE, user?.brand, user?.subBrands]);
+
+    useEffect(() => {
+        if (!isFormOpen || editingItem || formData.subBrand || subBrandOptions.length === 0) return;
+        setFormData(prev => ({ ...prev, subBrand: subBrandOptions[0] }));
+    }, [isFormOpen, editingItem, formData.subBrand, subBrandOptions]);
+
+    useEffect(() => {
+        if (!isFormOpen || editingItem || !formData.subBrand) {
+            setContractORPreview(editingItem?.contractOR || '');
+            return;
+        }
+
+        let active = true;
+        const fetchContractORPreview = async () => {
+            try {
+                const params = new URLSearchParams({ subBrand: formData.subBrand });
+                const res = await fetch(`${API_BASE}/cash-transactions/contract-or/next?${params.toString()}`);
+                if (!res.ok) {
+                    const result = await res.json();
+                    throw new Error(result.error || `Failed to preview Contract.OR: ${res.status}`);
+                }
+                const result = await res.json();
+                if (active) setContractORPreview(result.contractOR || '');
+            } catch (err) {
+                console.error('Preview penalty Contract.OR error:', err);
+                if (active) setContractORPreview('');
+            }
+        };
+        fetchContractORPreview();
+        return () => { active = false; };
+    }, [API_BASE, isFormOpen, editingItem, formData.subBrand]);
+
     const openCreateForm = () => {
         setEditingItem(null);
         setFormData({
@@ -72,6 +137,8 @@ const PenaltyPage = () => {
             paymentMethod: 'Cash',
             category: 'General Penalty',
             description: '',
+            subBrand: user?.subBrands?.[0] || '',
+            contractOR: '',
             photoUrl: '',
             photoUrls: []
         });
@@ -148,6 +215,10 @@ const PenaltyPage = () => {
             alert(t('validAmountAlert'));
             return;
         }
+        if (!editingItem && !formData.subBrand) {
+            alert('Please select a subbrand to generate Contract.OR.');
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -161,6 +232,7 @@ const PenaltyPage = () => {
                 description: formData.description,
                 photoUrl: formData.photoUrls[0] || formData.photoUrl,
                 photoUrls: formData.photoUrls,
+                subBrand: formData.subBrand,
                 performedBy: user?.name || user?.username || 'Admin',
                 brand: user?.brand || 'SYSTEM'
             };
@@ -186,6 +258,8 @@ const PenaltyPage = () => {
                     paymentMethod: 'Cash',
                     category: 'General Penalty',
                     description: '',
+                    subBrand: user?.subBrands?.[0] || '',
+                    contractOR: '',
                     photoUrl: '',
                     photoUrls: []
                 });
@@ -211,6 +285,8 @@ const PenaltyPage = () => {
             paymentMethod: item.paymentMethod || 'Cash',
             category: item.category || 'General Penalty',
             description: item.description || '',
+            subBrand: item.subBrand || '',
+            contractOR: item.contractOR || '',
             photoUrl: item.photoUrl || '',
             photoUrls: existingPhotos
         });
@@ -281,8 +357,9 @@ const PenaltyPage = () => {
     const handleExportExcel = async () => {
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'No', cell: (_, idx) => allData.length - idx },
             { header: 'Date', accessor: 'date' },
+            { header: 'Contract.OR', accessor: 'contractOR' },
             { header: 'Payment Type', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
             { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
@@ -296,8 +373,9 @@ const PenaltyPage = () => {
     const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'No', cell: (_, idx) => allData.length - idx },
             { header: 'Date', accessor: 'date' },
+            { header: 'Contract.OR', accessor: 'contractOR' },
             { header: 'Payment Type', accessor: 'paymentMethod' },
             { header: 'Category', accessor: 'category' },
             { header: 'Amount', cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
@@ -457,8 +535,8 @@ const PenaltyPage = () => {
                                     setTotal(1);
                                     setPage(1);
                                 }}
-                                getLabel={(record) => record.description || record.category || record.transactionId || record._id}
-                                getDescription={(record) => [record.category, record.date, record.amount && `${record.currency || 'USD'} ${record.amount}`, record.performedBy].filter(Boolean).join(' · ')}
+                                getLabel={(record) => record.contractOR || record.description || record.category || record.transactionId || record._id}
+                                getDescription={(record) => [record.contractOR, record.category, record.date, record.amount && `${record.currency || 'USD'} ${record.amount}`, record.performedBy].filter(Boolean).join(' · ')}
                             />
                             <DateRangeDropdown
                                 from={startDate}
@@ -479,6 +557,7 @@ const PenaltyPage = () => {
                                 <tr>
                                     <th className='px-4 py-1 text-center'>{t('no')}</th>
                                     <th className='px-4 py-1'>{t('date')}</th>
+                                    <th className='px-4 py-1'>Contract.OR</th>
                                     <th className='px-4 py-1'>{t('paymentType')}</th>
                                     <th className='px-4 py-1'>{t('category')}</th>
                                     <th className='px-4 py-1 text-right'>{t('amount')}</th>
@@ -490,14 +569,15 @@ const PenaltyPage = () => {
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={9} className="text-center py-10 text-amber-600 font-semibold">{t('loading')}</td></tr>
+                                    <tr><td colSpan={10} className="text-center py-10 text-amber-600 font-semibold">{t('loading')}</td></tr>
                                 ) : visibleDataList.length === 0 ? (
-                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">{t('noPenaltyRecords')}</td></tr>
+                                    <tr><td colSpan={10} className="text-center py-8 text-slate-500 italic">{t('noPenaltyRecords')}</td></tr>
                                 ) : (
                                     visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-amber-50/40 transition-colors'>
-                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
+                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{total - ((page - 1) * LIMIT + idx)}</td>
                                             <td className='px-4 py-1 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
+                                            <td className='px-4 py-1 font-mono font-bold text-indigo-700'>{item.contractOR || '-'}</td>
                                             <td className='px-4 py-1'>
                                                 <span className={`px-2.5 py-1 rounded-lg font-bold ${item.paymentMethod === 'Bank' ? 'bg-blue-50 border border-blue-200 text-blue-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800'}`}>
                                                     {item.paymentMethod || 'Cash'}
@@ -561,6 +641,32 @@ const PenaltyPage = () => {
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500"
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-slate-700 font-bold mb-1">Subbrand</label>
+                                    <select
+                                        value={formData.subBrand}
+                                        disabled={Boolean(editingItem)}
+                                        required={!editingItem}
+                                        onChange={(e) => setFormData({ ...formData, subBrand: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-amber-500 disabled:opacity-70"
+                                    >
+                                        <option value="">Select Subbrand</option>
+                                        {subBrandOptions.map(subBrand => <option key={subBrand} value={subBrand}>{subBrand}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-slate-700 font-bold mb-1">Contract.OR</label>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={editingItem ? formData.contractOR : contractORPreview}
+                                        placeholder="Auto-generated"
+                                        className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-[5px] font-mono font-bold text-indigo-700"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-3 gap-2">

@@ -1598,7 +1598,7 @@ const Dashboard = () => {
                                     <tbody>
                                         {penaltyPaymentRows.map((p, idx) => (
                                             <tr key={p.id}>
-                                                <td data-label={t('no')}>{idx + 1}</td>
+                                                <td data-label={t('no')}>{penaltyPaymentRows.length - idx}</td>
                                                 <td data-label={t('date')}>{p.dueDate}</td>
                                                 <td data-label={t('type')}>{p.paymentMethod || '-'}</td>
                                                 <td data-label={t('customerName')}>{p.category || '-'}</td>
@@ -1751,7 +1751,7 @@ const CustomerTable = ({ rows = [], formatMoney, formatNumber, t }) => {
 
                         return (
                             <tr key={row.id}>
-                                <td data-label="#">{idx + 1}</td>
+                                <td data-label="#">{rows.length - idx}</td>
                                 <td data-label={t('customerName')} className="customer-name-cell">
                                     <strong style={{ display: 'block', color: '#0f172a' }}>
                                         {row.customerNameKh || row.customerName || row.customerNameEn || t('unknown')}

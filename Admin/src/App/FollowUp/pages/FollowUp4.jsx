@@ -1490,7 +1490,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
                                     ) : (
                                         groupedRejectSubmit.map((group, idx) => (
                                             <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
-                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
+                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{groupedRejectSubmit.length - idx}</td>
                                                 <td className="py-2.5 px-3 font-mono font-bold text-rose-300">{group.date}</td>
                                                 <td className="py-2.5 px-3 text-center font-mono font-extrabold text-rose-400 bg-rose-950/30">
                                                     {group.total}
@@ -1619,7 +1619,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
                                     ) : (
                                         groupedRejectCs.map((group, idx) => (
                                             <tr key={idx} className="hover:bg-slate-700/30 transition-colors">
-                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{idx + 1}</td>
+                                                <td className="py-2.5 px-3 text-center text-slate-400 font-mono">{groupedRejectCs.length - idx}</td>
                                                 <td className="py-2.5 px-3 font-mono font-bold text-amber-300">{group.date}</td>
                                                 <td className="py-2.5 px-3 text-center font-mono font-extrabold text-amber-400 bg-amber-950/30">
                                                     {group.total}

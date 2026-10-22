@@ -53,8 +53,12 @@ const CashInPage = () => {
         currency: 'USD',
         category: 'General Income',
         description: '',
+        subBrand: user?.subBrands?.[0] || '',
+        contractOR: '',
         photoUrls: []
     });
+    const [subBrandOptions, setSubBrandOptions] = useState([]);
+    const [contractORPreview, setContractORPreview] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [imageStorageType, setImageStorageType] = useState('cloudinary');
@@ -62,6 +66,81 @@ const CashInPage = () => {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     const visibleDataList = selectedRecord ? [selectedRecord] : dataList;
+
+    useEffect(() => {
+        const accountSubBrands = Array.isArray(user?.subBrands)
+            ? [...new Set(user.subBrands.map(value => String(value || '').trim()).filter(Boolean))]
+            : [];
+        if (accountSubBrands.length > 0) {
+            setSubBrandOptions(accountSubBrands);
+            return;
+        }
+
+        let active = true;
+        const fetchSubBrands = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/controlsystem?brand=`);
+                if (!res.ok) throw new Error(`Failed to fetch subbrands: ${res.status}`);
+                const data = await res.json();
+                const brandSubBrands = data.brand_subbrands || {};
+                const options = user?.brand
+                    ? brandSubBrands[user.brand] || []
+                    : Object.values(brandSubBrands).flat();
+                if (active) setSubBrandOptions([...new Set(options.map(value => String(value || '').trim()).filter(Boolean))]);
+            } catch (err) {
+                console.error('Fetch cash-in subbrands error:', err);
+                if (active) setSubBrandOptions([]);
+            }
+        };
+        fetchSubBrands();
+        return () => { active = false; };
+    }, [API_BASE, user?.brand, user?.subBrands]);
+
+    useEffect(() => {
+        if (!isFormOpen || editingItem || formData.subBrand || subBrandOptions.length === 0) return;
+        setFormData(prev => ({ ...prev, subBrand: subBrandOptions[0] }));
+    }, [isFormOpen, editingItem, formData.subBrand, subBrandOptions]);
+
+    useEffect(() => {
+        if (!isFormOpen || editingItem || !formData.subBrand) {
+            setContractORPreview(editingItem?.contractOR || '');
+            return;
+        }
+
+        let active = true;
+        const fetchContractORPreview = async () => {
+            try {
+                const params = new URLSearchParams({ subBrand: formData.subBrand });
+                const res = await fetch(`${API_BASE}/cash-transactions/contract-or/next?${params.toString()}`);
+                if (!res.ok) {
+                    const result = await res.json();
+                    throw new Error(result.error || `Failed to preview Contract.OR: ${res.status}`);
+                }
+                const result = await res.json();
+                if (active) setContractORPreview(result.contractOR || '');
+            } catch (err) {
+                console.error('Preview cash-in Contract.OR error:', err);
+                if (active) setContractORPreview('');
+            }
+        };
+        fetchContractORPreview();
+        return () => { active = false; };
+    }, [API_BASE, isFormOpen, editingItem, formData.subBrand]);
+
+    const openCreateForm = () => {
+        setEditingItem(null);
+        setFormData({
+            date: new Date().toISOString().split('T')[0],
+            amount: '',
+            currency: 'USD',
+            category: 'General Income',
+            description: '',
+            subBrand: user?.subBrands?.[0] || '',
+            contractOR: '',
+            photoUrls: []
+        });
+        setIsFormOpen(true);
+    };
 
     const handleFileUpload = async (e) => {
         const files = Array.from(e.target.files || []);
@@ -127,6 +206,10 @@ const CashInPage = () => {
             alert(t('enterValidAmount'));
             return;
         }
+        if (!editingItem && !formData.subBrand) {
+            alert('Please select a subbrand to generate Contract.OR.');
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -139,6 +222,7 @@ const CashInPage = () => {
                 description: formData.description,
                 photoUrl: formData.photoUrls[0] || '',
                 photoUrls: formData.photoUrls,
+                subBrand: formData.subBrand,
                 performedBy: user?.name || user?.username || 'Admin',
                 brand: user?.brand || 'SYSTEM'
             };
@@ -163,6 +247,8 @@ const CashInPage = () => {
                     currency: 'USD',
                     category: 'General Income',
                     description: '',
+                    subBrand: user?.subBrands?.[0] || '',
+                    contractOR: '',
                     photoUrls: []
                 });
                 fetchData(1, searchTerm, startDate, endDate);
@@ -186,6 +272,8 @@ const CashInPage = () => {
             currency: item.currency || 'USD',
             category: item.category || 'General Income',
             description: item.description || '',
+            subBrand: item.subBrand || '',
+            contractOR: item.contractOR || '',
             photoUrls: existingPhotos
         });
         setIsFormOpen(true);
@@ -247,8 +335,9 @@ const CashInPage = () => {
     const handleExportExcel = async () => {
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'No', cell: (_, idx) => allData.length - idx },
             { header: 'Date', accessor: 'date' },
+            { header: 'Contract.OR', accessor: 'contractOR' },
             { header: 'Category', accessor: 'category' },
             { header: t('amount'), cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Amount USD Est.', cell: (r) => `$${(r.amountUSD || 0).toFixed(2)}` },
@@ -261,8 +350,9 @@ const CashInPage = () => {
     const handleExportPDF = async (orientation = 'portrait') => {
         const allData = await fetchAllForExport();
         const columns = [
-            { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'No', cell: (_, idx) => allData.length - idx },
             { header: 'Date', accessor: 'date' },
+            { header: 'Contract.OR', accessor: 'contractOR' },
             { header: 'Category', accessor: 'category' },
             { header: t('amount'), cell: (r) => r.currency === 'KHR' ? `${r.amount?.toLocaleString()} ៛` : `$${r.amount?.toLocaleString()}` },
             { header: 'Description', accessor: 'description' },
@@ -299,7 +389,7 @@ const CashInPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
-                    <button onClick={() => { setEditingItem(null); setFormData({ date: new Date().toISOString().split('T')[0], amount: '', currency: 'USD', category: 'General Income', description: '', photoUrls: [] }); setIsFormOpen(true); }} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'>
+                    <button onClick={openCreateForm} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'>
                         <FaPlus className="text-xs" /><span>{t('createCashIn')}</span>
                     </button>
                     <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
@@ -421,8 +511,8 @@ const CashInPage = () => {
                                     setTotal(1);
                                     setPage(1);
                                 }}
-                                getLabel={(record) => record.description || record.category || record.transactionId || record._id}
-                                getDescription={(record) => [record.category, record.date, record.amount && `${record.currency || 'USD'} ${record.amount}`, record.performedBy].filter(Boolean).join(' · ')}
+                                getLabel={(record) => record.contractOR || record.description || record.category || record.transactionId || record._id}
+                                getDescription={(record) => [record.contractOR, record.category, record.date, record.amount && `${record.currency || 'USD'} ${record.amount}`, record.performedBy].filter(Boolean).join(' · ')}
                             />
                             <DateRangeDropdown
                                 from={startDate}
@@ -443,6 +533,7 @@ const CashInPage = () => {
                                 <tr>
                                     <th className='px-4 py-1 text-center'>{t('no')}</th>
                                     <th className='px-4 py-1'>{t('date')}</th>
+                                    <th className='px-4 py-1'>Contract.OR</th>
                                     <th className='px-4 py-1'>{t('category')}</th>
                                     <th className='px-4 py-1 text-right'>{t('amount')}</th>
                                     <th className='px-4 py-1'>{t('description')}</th>
@@ -453,14 +544,15 @@ const CashInPage = () => {
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={8} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                                 ) : visibleDataList.length === 0 ? (
-                                    <tr><td colSpan={8} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
+                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
                                 ) : (
                                     visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-emerald-50/40 transition-colors'>
-                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
+                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{total - ((page - 1) * LIMIT + idx)}</td>
                                             <td className='px-4 py-1 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
+                                            <td className='px-4 py-1 font-mono font-bold text-indigo-700'>{item.contractOR || '-'}</td>
                                             <td className='px-4 py-1 font-bold text-slate-900'>
                                                 <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 font-bold">
                                                     {item.category || 'General'}
@@ -519,6 +611,32 @@ const CashInPage = () => {
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-emerald-500"
                                 />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-slate-700 font-bold mb-1">Subbrand</label>
+                                    <select
+                                        value={formData.subBrand}
+                                        disabled={Boolean(editingItem)}
+                                        required={!editingItem}
+                                        onChange={(e) => setFormData({ ...formData, subBrand: e.target.value })}
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-[5px] font-medium focus:outline-none focus:border-emerald-500 disabled:opacity-70"
+                                    >
+                                        <option value="">Select Subbrand</option>
+                                        {subBrandOptions.map(subBrand => <option key={subBrand} value={subBrand}>{subBrand}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-slate-700 font-bold mb-1">Contract.OR</label>
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={editingItem ? formData.contractOR : contractORPreview}
+                                        placeholder="Auto-generated"
+                                        className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-[5px] font-mono font-bold text-indigo-700"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-3 gap-2">

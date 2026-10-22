@@ -1090,7 +1090,7 @@ const Activated = () => {
                                         key={item._id || idx}
                                         className={`hover:bg-emerald-50/50 transition-colors ${installmentUrgency === 'due-today' ? 'activated-installment-due-today' : installmentUrgency === 'overdue' ? 'activated-installment-overdue' : ''}`}
                                     >
-                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? locatedIndex + 1 : (currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? total - locatedIndex : total - ((currentPage - 1) * itemsPerPage + idx)}</td>
                                         <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
                                         <td className='px-4 py-1'>
                                             <div className="flex items-center gap-2">

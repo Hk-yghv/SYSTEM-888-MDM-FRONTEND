@@ -281,7 +281,7 @@ const DueTodayPage = () => {
                             const displayRow = getDisplayValues(getDisplayRow(item.repaymentSchedule || [], selectedMonthByContract[id] ?? null), item, latePenaltyRules);
                             return (
                                 <tr key={id} className="hover:bg-orange-50/40 transition-colors bg-orange-50/10">
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{dueTodayContracts.length - idx}</td>
                                     <td className='px-4 py-1 font-mono text-slate-700'>{item.inputDate || '—'}</td>
                                     <td className='px-4 py-1'><CopyCell text={item.customerNameEn} className='font-bold text-slate-900 block' /><CopyCell text={item.customerNameKh} className='text-emerald-700 font-khmer text-xs block font-semibold' /></td>
                                     <td className='px-4 py-1'><span className='px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-700 rounded-full font-bold text-[10px]'>{item.brand || '—'}</span></td>

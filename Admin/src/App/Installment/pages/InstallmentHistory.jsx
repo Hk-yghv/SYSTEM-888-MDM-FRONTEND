@@ -505,7 +505,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                                         : row.type === 'Payoff' ? 'border-indigo-300 bg-indigo-50 text-indigo-800'
                                             : 'border-emerald-300 bg-emerald-50 text-emerald-800';
                                     return <tr key={row._id} className={row.isPaid ? 'bg-emerald-50/20' : row.daysUntilDue < 0 ? 'bg-rose-50/30' : row.daysUntilDue === 0 ? 'bg-amber-50/40' : 'hover:bg-slate-50'}>
-                                        <td className="px-3 py-1 text-center font-mono text-slate-500">{(page - 1) * PAGE_SIZE + index + 1}</td>
+                                        <td className="px-3 py-1 text-center font-mono text-slate-500">{filteredRows.length - ((page - 1) * PAGE_SIZE + index)}</td>
                                         <td className="whitespace-nowrap px-3 py-1 font-mono text-slate-600">{row.loanDate || '—'}</td>
                                         <td className="px-3 py-1"><div className="font-bold text-slate-900">{row.customerName}</div><div className="font-mono text-[10px] text-slate-500">{row.contractIid || '—'}</div></td>
                                         <td className="px-3 py-1">{row.brand || '—'}</td>

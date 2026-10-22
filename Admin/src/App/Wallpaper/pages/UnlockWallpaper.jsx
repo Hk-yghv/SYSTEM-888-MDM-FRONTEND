@@ -78,7 +78,7 @@ const UnlockWallpaper = () => {
                         ) : (
                             logs.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{total - ((page - 1) * LIMIT + idx)}</td>
                                     <td className='px-4 py-1 font-mono text-blue-700 font-bold'>
                                         <CopyCell text={`${item.date} at ${item.time}`} className='font-mono text-blue-700 font-bold' />
                                     </td>

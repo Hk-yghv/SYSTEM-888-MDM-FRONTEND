@@ -630,7 +630,7 @@ const SaveUrlPage = () => {
                                             >
                                                 {/* Number */}
                                                 <td className="px-3 py-2.5 text-[11px] text-slate-400 font-mono">
-                                                    {idx + 1}
+                                                    {publicTotal - idx}
                                                 </td>
 
                                                 {/* Title */}
@@ -903,7 +903,7 @@ const SaveUrlPage = () => {
                                 return (
                                     <tr key={item._id || item.id || idx} className="hover:bg-emerald-50/40 h-9 transition-colors">
                                         <td className="px-4 py-1.5 text-center font-mono text-slate-500 font-semibold">
-                                            {(page - 1) * LIMIT + idx + 1}
+                                            {total - ((page - 1) * LIMIT + idx)}
                                         </td>
 
                                         {/* Title */}

@@ -972,7 +972,7 @@ const AuditDevice = () => {
                                 </tr>
                             ) : (
                                 paginatedRows.map((row, idx) => {
-                                    const rowNum = (currentPage - 1) * itemsPerPage + idx + 1;
+                                    const rowNum = totalItems - ((currentPage - 1) * itemsPerPage + idx);
                                     const isRowMenuOpen = openMenuId === row.rawContractId;
                                     const rowBorderColor = row.isAudited ? 'border-blue-500' : 'border-rose-400';
                                     const rowBgColor = row.isAudited ? 'bg-blue-50/20 hover:bg-blue-50/45' : 'bg-rose-50/15 hover:bg-rose-50/40';

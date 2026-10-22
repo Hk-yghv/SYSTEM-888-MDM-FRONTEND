@@ -191,7 +191,7 @@ const Redeem = () => {
                         ) : (
                             visibleContracts.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{total - ((selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx)}</td>
                                     <td className='px-4 py-1 font-mono text-purple-700 font-bold'>
                                         <CopyCell text={item.redeemDate || item.inputDate || ''} className='font-mono text-purple-700 font-bold' />
                                     </td>

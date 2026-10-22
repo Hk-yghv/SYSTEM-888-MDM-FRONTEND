@@ -290,7 +290,7 @@ const Device = () => {
                         ) : (
                             filteredDevices.map((item, idx) => (
                                 <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{total - ((selectedSearchRecord ? 0 : (page - 1) * LIMIT) + idx)}</td>
                                     <td className='px-4 py-1 font-bold text-slate-900 flex items-center gap-2'>
                                         <FaMobileAlt className="text-emerald-600 text-sm" />
                                         <CopyCell text={item.model} className="text-slate-900 hover:text-emerald-600 cursor-pointer font-semibold" />

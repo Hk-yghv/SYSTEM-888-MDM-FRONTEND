@@ -13,7 +13,9 @@ const cashTransactionSchema = new mongoose.Schema({
     photoUrl: { type: String, default: '' },
     photoUrls: { type: [String], default: [] },
     performedBy: { type: String, default: '' },
-    brand: { type: String, default: '' }
+    brand: { type: String, default: '' },
+    subBrand: { type: String, default: '' },
+    contractOR: { type: String, default: '' }
 }, { timestamps: true });
 
 export default mongoose.model('CashTransaction', cashTransactionSchema);

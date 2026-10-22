@@ -336,7 +336,7 @@ const Customer = () => {
 
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? locatedIndex + 1 : (currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? total - locatedIndex : total - ((currentPage - 1) * itemsPerPage + idx)}</td>
                                         <td className='px-4 py-1 whitespace-nowrap font-mono text-slate-700'><CopyCell text={item.inputDate || '-'} className='font-mono text-slate-700' /></td>
                                         <td className='px-4 py-1'>
                                             <div className="flex items-center gap-2">

@@ -583,7 +583,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     onClick={() => handleMarkSingleAsRead(item)}
                                                     className={`transition-colors cursor-pointer ${isUnread ? 'bg-indigo-50/70 hover:bg-indigo-100/70' : 'hover:bg-slate-50'}`}
                                                 >
-                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
+                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{activeList.length - idx}</td>
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         {isUnread ? (
                                                             <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[9px] font-black animate-pulse shadow-2xs">
@@ -674,7 +674,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                     onClick={() => handleMarkSingleAsRead(item)}
                                                     className={`transition-colors cursor-pointer ${isUnread ? 'bg-rose-50/70 hover:bg-rose-100/70' : 'hover:bg-slate-50'}`}
                                                 >
-                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{idx + 1}</td>
+                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{activeList.length - idx}</td>
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black shadow-2xs">
                                                             {t('failed')}
@@ -766,7 +766,7 @@ const PaymentAlertDrawer = ({ isOpen, onClose, alertCount, setAlertCount }) => {
                                                         : 'hover:bg-slate-50/80'
                                                         }`}
                                                 >
-                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500 font-mono">{idx + 1}</td>
+                                                    <td className="px-3.5 py-2.5 text-center font-bold text-slate-500 font-mono">{activeList.length - idx}</td>
                                                     <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                         {isUnread ? (
                                                             <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black animate-pulse shadow-2xs">

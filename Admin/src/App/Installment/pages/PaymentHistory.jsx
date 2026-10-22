@@ -472,7 +472,7 @@ const PaymentHistory = () => {
                         ) : (
                             visiblePayments.map((item, idx) => (
                                 <tr key={item._id || item.paymentId || idx} className='hover:bg-emerald-50/50 transition-colors'>
-                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{(page - 1) * LIMIT + idx + 1}</td>
+                                    <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{total - ((page - 1) * LIMIT + idx)}</td>
                                     <td className='px-4 py-1 font-mono text-emerald-700 font-semibold'>{item.paidDate}</td>
                                     <td className='px-4 py-1'>
                                         <div className="flex flex-col">

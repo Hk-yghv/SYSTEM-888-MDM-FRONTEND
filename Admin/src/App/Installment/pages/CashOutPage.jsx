@@ -459,7 +459,7 @@ const CashOutPage = () => {
                                 ) : (
                                     visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-rose-50/40 transition-colors'>
-                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{(page - 1) * LIMIT + idx + 1}</td>
+                                            <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{total - ((page - 1) * LIMIT + idx)}</td>
                                             <td className='px-4 py-1 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
                                             <td className='px-4 py-1 font-bold text-slate-900'>
                                                 <span className="px-2.5 py-1 bg-rose-50 border border-rose-200 rounded-lg text-rose-800 font-bold">

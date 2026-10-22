@@ -463,7 +463,7 @@ const ReportAll = () => {
                             ) : (
                                 brandSummaryData.rows.map((row, idx) => (
                                     <tr key={row.brand} className="hover:bg-indigo-50/50 transition-colors">
-                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{idx + 1}</td>
+                                        <td className="px-3.5 py-1 text-center font-mono text-slate-500 font-bold">{brandSummaryData.rows.length - idx}</td>
                                         <td className="px-3.5 py-1 font-black text-indigo-900">
                                             <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-200 rounded-lg text-indigo-900 font-bold">
                                                 {row.brand}
