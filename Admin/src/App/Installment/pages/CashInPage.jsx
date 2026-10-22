@@ -593,7 +593,7 @@ const CashInPage = () => {
 
             {/* Create & Edit Modal Form */}
             {isFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2">
+                <div className="fixed inset-0 z-999999 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2">
                     <div className="bg-white rounded-[5px] border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
                         <div className="p-2 bg-emerald-600 text-white flex items-center justify-between">
                             <h3 className="font-bold text-sm flex items-center gap-2">
