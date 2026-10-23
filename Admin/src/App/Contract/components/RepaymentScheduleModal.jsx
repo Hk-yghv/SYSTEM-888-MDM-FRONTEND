@@ -834,11 +834,12 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                     <th className="px-3 py-1 text-center">{t('monthDay')}</th>
                                     <th className="px-3 py-1">{t('installmentDueDate')}</th>
                                     <th className="px-3 py-1 font-mono text-emerald-700">{t('customerTotalLoanAmount')}</th>
+                                    <th className="px-3 py-1 text-indigo-600 font-mono font-bold">{t('principalPerInstallment')}</th>
                                     <th className="px-3 py-1 text-violet-700 font-mono font-bold">{t('interest')}</th>
                                     <th className="px-3 py-1 text-center font-bold text-rose-600">{t('penaltyDays')}</th>
                                     <th className="px-3 py-1 text-amber-600 font-bold">{t('penalty')}</th>
                                     <th className="px-3 py-1 text-sky-700 font-bold">{t('amountDue')}</th>
-                                    <th className="px-3 py-1 text-emerald-700 font-extrabold">{t('total')}</th>
+                                    <th className="px-3 py-1 text-emerald-700 font-extrabold">{t('totalAmountDue')}</th>
                                     <th className="px-3 py-1 text-emerald-800">{t('customerPaid')}</th>
                                     <th className="px-3 py-1">{t('commentNote')}</th>
                                     <th className="px-3 py-1 text-purple-700">{t('paidDate')}</th>
@@ -887,6 +888,11 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                             {/* Total Loan Amount */}
                                             <td className="px-3 py-2.5 font-mono font-bold text-emerald-700">
                                                 ${formatMoney(row.loanAmount || 0)}
+                                            </td>
+
+                                            {/* Principal Per Installment = scheduledAmount - interest */}
+                                            <td className="px-3 py-2.5 font-mono font-bold text-indigo-600">
+                                                ${formatMoney(round2(Number(row.scheduledAmount || 0) - Number(displayInterest || 0)))}
                                             </td>
 
                                             {/* Interest */}
@@ -953,7 +959,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                 )}
                                             </td>
 
-                                            {/* Total (Penalty + Scheduled) */}
+                                            {/* Total Amount Due = Principal/Month + Interest + Penalty */}
                                             <td className="px-3 py-2.5 font-mono font-extrabold text-emerald-700">
                                                 ${formatMoney(round2(Number(row.penalty || 0) + Number(row.scheduledAmount || 0)))}
                                             </td>

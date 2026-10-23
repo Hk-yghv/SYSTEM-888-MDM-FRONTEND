@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "Панель управления",
   "customer": "Все Клиенты",
@@ -2054,6 +2054,7 @@
   "installmentDueDate": "Срок сдачи",
   "penaltyDays": "Штрафные дни",
   "amountDue": "Сумма к оплате",
+  "principalPerInstallment": "Основной долг/Мес",
   "commentNote": "Примечание к комментарию",
   "image": "Изображение",
   "noteCommentPlaceholder": "Примечание/комментарий...",

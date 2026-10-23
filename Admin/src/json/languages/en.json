@@ -756,6 +756,7 @@
   "monthDay": "Month / Day",
   "penaltyDays": "Penalty days",
   "amountDue": "Amount due",
+  "principalPerInstallment": "Principal/Month",
   "image": "Image",
   "noteCommentPlaceholder": "Note / comment...",
   "settled": "Settled",

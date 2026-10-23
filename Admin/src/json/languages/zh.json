@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "SYSTEM MDM 系统",
   "dashboard": "仪表板",
   "customer": "全客户管理",
@@ -2054,6 +2054,7 @@
   "installmentDueDate": "截止日期",
   "penaltyDays": "处罚天数",
   "amountDue": "应付金额",
+  "principalPerInstallment": "本金/月",
   "commentNote": "评论备注",
   "image": "图片",
   "noteCommentPlaceholder": "注意/评论...",

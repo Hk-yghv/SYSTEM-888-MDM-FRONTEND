@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "ダッシュボード",
   "customer": "全顧客情報",
@@ -2054,6 +2054,7 @@
   "installmentDueDate": "期限",
   "penaltyDays": "ペナルティデー",
   "amountDue": "未払い額",
+  "principalPerInstallment": "元金/月",
   "commentNote": "コメントメモ",
   "image": "画像",
   "noteCommentPlaceholder": "メモ/コメント...",

@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "ระบบ SYSTEM MDM",
   "dashboard": "แดชบอร์ด",
   "customer": "ลูกค้าทั้งหมด",
@@ -2054,6 +2054,7 @@
   "installmentDueDate": "วันครบกำหนด",
   "penaltyDays": "วันลงโทษ",
   "amountDue": "จำนวนเงินที่ต้องชำระ",
+  "principalPerInstallment": "เงินต้น/เดือน",
   "commentNote": "หมายเหตุความคิดเห็น",
   "image": "รูปภาพ",
   "noteCommentPlaceholder": "หมายเหตุ/ข้อคิดเห็น...",

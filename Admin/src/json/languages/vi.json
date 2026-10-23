@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "Bảng Điều Khiển",
   "customer": "Tất Cả Khách Hàng",
@@ -2054,6 +2054,7 @@
   "installmentDueDate": "Ngày đến hạn",
   "penaltyDays": "Ngày phạt",
   "amountDue": "Số tiền đến hạn",
+  "principalPerInstallment": "Vốn gốc/Tháng",
   "commentNote": "ghi chú bình luận",
   "image": "Hình ảnh",
   "noteCommentPlaceholder": "Lưu ý/nhận xét...",

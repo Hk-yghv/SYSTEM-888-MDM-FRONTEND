@@ -1,4 +1,4 @@
-﻿{
+{
   "systemTitle": "SYSTEM MDM",
   "dashboard": "대시보드",
   "customer": "모든 고객",
@@ -2054,6 +2054,7 @@
   "installmentDueDate": "마감일",
   "penaltyDays": "페널티 일수",
   "amountDue": "미결제 금액",
+  "principalPerInstallment": "원금/월",
   "commentNote": "댓글 메모",
   "image": "이미지",
   "noteCommentPlaceholder": "메모/댓글...",
