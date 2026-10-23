@@ -1102,17 +1102,6 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             <FaLock size={11} /> {t('payOff')}
                                                                         </button>
 
-                                                                        {/* Redeem button — only visible on last month row */}
-                                                                        {isLastMonth && row.status !== 'PayOff' && row.status !== 'Paid' && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={handleRedeem}
-                                                                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
-                                                                            >
-                                                                                <MdSwapHoriz size={13} /> {t('redeem')}
-                                                                            </button>
-                                                                        )}
-
                                                                         {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (
                                                                             <button
                                                                                 type="button"
