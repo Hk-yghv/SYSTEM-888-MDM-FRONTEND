@@ -38,6 +38,7 @@ const getRowWithDueDate = (row, contract) => {
 
 const getAutomaticPenalty = (row, contract, rules = []) => {
     if (!row?.dueDate || ['Paid', 'PayOff', 'Settled'].includes(row.status)) return Number(row?.penalty || 0) || 0;
+    if (row.isPenaltyWaived) return Number(row.penalty || 0);
     const dueDate = new Date(`${row.dueDate}T00:00:00`);
     if (Number.isNaN(dueDate.getTime())) return Number(row.penalty || 0) || 0;
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -55,7 +56,7 @@ const getAutomaticPenalty = (row, contract, rules = []) => {
 const getDisplayValues = (row, contract, rules) => {
     if (!row) return null;
     const rowWithDueDate = getRowWithDueDate(row, contract);
-    const penalty = getAutomaticPenalty(rowWithDueDate, contract, rules);
+    const penalty = row.isPenaltyWaived ? Number(row.penalty || 0) : getAutomaticPenalty(rowWithDueDate, contract, rules);
     return { ...rowWithDueDate, penalty, totalAmount: Number(row.scheduledAmount || 0) + penalty };
 };
 

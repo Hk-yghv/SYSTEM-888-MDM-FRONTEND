@@ -38,7 +38,16 @@ const getDisplayRow = (schedule = [], selectedIdx = null) => {
 const getDisplayValues = (row, contract, rules) => {
     if (!row) return null;
     const rowWithDueDate = getRowWithDueDate(row, contract);
-    const penalty = getAutomaticPenalty(rowWithDueDate, contract, rules);
+    // If penalty was manually waived or overridden (isPenaltyWaived flag), always use saved row.penalty
+    let penalty;
+    if (row.isPenaltyWaived) {
+        penalty = Number(row.penalty || 0);
+    } else {
+        const autoPenalty = getAutomaticPenalty(rowWithDueDate, contract, rules);
+        // If auto penalty = 0 but row has a saved non-zero penalty (manually entered), use saved
+        // If auto penalty > 0, use auto (unless admin manually zeroed it out via isPenaltyWaived)
+        penalty = autoPenalty;
+    }
     const scheduledAmount = Number(row.scheduledAmount || 0);
     return { ...rowWithDueDate, penalty, totalAmount: scheduledAmount + penalty };
 };
@@ -112,7 +121,10 @@ export const getContractRepaymentCalculations = (contract, latePenaltyRules = []
     if (schedule.length > 0) {
         schedule.forEach(row => {
             const rowWithDueDate = getRowWithDueDate(row, contract);
-            const penalty = getAutomaticPenalty(rowWithDueDate, contract, latePenaltyRules);
+            // Respect manually waived/overridden penalty — don't recalculate over saved value
+            const penalty = row.isPenaltyWaived
+                ? Number(row.penalty || 0)
+                : getAutomaticPenalty(rowWithDueDate, contract, latePenaltyRules);
             const sched = Number(row.scheduledAmount || 0);
             const paid = Number(row.paidAmount || 0);
 

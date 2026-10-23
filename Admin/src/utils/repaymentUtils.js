@@ -18,6 +18,11 @@ export const getAutomaticPenalty = (row, contract, rules = []) => {
         return Number(row?.penalty || 0) || 0;
     }
 
+    // If penalty was manually waived or overridden by admin, always respect saved penalty
+    if (row.isPenaltyWaived) {
+        return Number(row.penalty || 0);
+    }
+
     const dueDate = new Date(`${row.dueDate}T00:00:00`);
     if (Number.isNaN(dueDate.getTime())) return Number(row.penalty || 0) || 0;
 

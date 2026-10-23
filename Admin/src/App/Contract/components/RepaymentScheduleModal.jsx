@@ -1083,24 +1083,14 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             <FaEdit size={11} /> {t('edit')}
                                                                         </button>
 
-                                                                        {!isLastMonth && row.status !== 'PayOff' && (
+                                                                        {/* Paid button — for all months (non-PayOff) */}
+                                                                        {row.status !== 'PayOff' && (
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => openPayConfirm(idx, 'Paid')}
                                                                                 className="w-full px-3 py-1.5 text-left text-xs font-bold text-amber-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
                                                                             >
                                                                                 <FaCheckCircle size={11} /> {t('paid')}
-                                                                            </button>
-                                                                        )}
-
-                                                                        {/* Redeem button — only for last month instead of Paid */}
-                                                                        {isLastMonth && row.status !== 'PayOff' && row.status !== 'Paid' && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={handleRedeem}
-                                                                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
-                                                                            >
-                                                                                <MdSwapHoriz size={13} /> {t('redeem')}
                                                                             </button>
                                                                         )}
 
@@ -1111,6 +1101,17 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                         >
                                                                             <FaLock size={11} /> {t('payOff')}
                                                                         </button>
+
+                                                                        {/* Redeem button — visible for any pending/saved/active row */}
+                                                                        {row.status !== 'PayOff' && row.status !== 'Paid' && row.status !== 'Settled' && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={handleRedeem}
+                                                                                className="w-full px-3 py-1.5 text-left text-xs font-bold text-purple-700 hover:bg-purple-50 flex items-center gap-1.5 cursor-pointer border-t border-slate-100"
+                                                                            >
+                                                                                <MdSwapHoriz size={13} /> {t('redeem')}
+                                                                            </button>
+                                                                        )}
 
                                                                         {isMasterAdmin && (row.status === 'Paid' || row.status === 'PayOff') && (
                                                                             <button
