@@ -1083,7 +1083,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             <FaEdit size={11} /> {t('edit')}
                                                                         </button>
 
-                                                                        {/* Paid button — for all months (non-PayOff) */}
+                                                                        {/* Paid button — for all months except if already PayOff */}
                                                                         {row.status !== 'PayOff' && (
                                                                             <button
                                                                                 type="button"
@@ -1102,8 +1102,8 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                                             <FaLock size={11} /> {t('payOff')}
                                                                         </button>
 
-                                                                        {/* Redeem button — visible for any pending/saved/active row */}
-                                                                        {row.status !== 'PayOff' && row.status !== 'Paid' && row.status !== 'Settled' && (
+                                                                        {/* Redeem button — only visible on last month row */}
+                                                                        {isLastMonth && row.status !== 'PayOff' && row.status !== 'Paid' && (
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={handleRedeem}
