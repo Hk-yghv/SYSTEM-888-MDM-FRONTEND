@@ -506,8 +506,8 @@ router.get('/staff-info', async (req, res) => {
                     { name: targetKey }
                 ].filter(c => Object.values(c)[0])
             };
-            const users = await queryAllDBs(User, (M) => M.findOne(userFilter));
-            const foundUser = users.find(u => u != null);
+            const users = await queryAllDBs(User, (M) => M.find(userFilter).limit(1).lean());
+            const foundUser = Array.isArray(users) ? users.find(u => u != null) : (users || null);
             if (foundUser) {
                 staffInfo.staffNameKh = foundUser.nameKh || '';
                 staffInfo.staffNameEn = foundUser.name || foundUser.username || '';
@@ -734,9 +734,10 @@ router.get('/:id', async (req, res) => {
 
         if (isMongoConnected) {
             if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                const item = await queryAllDBs(Salary, (M) => M.findById(id));
-                if (item && item.length > 0) {
-                    return res.json({ success: true, data: item[0] });
+                const items = await queryAllDBs(Salary, (M) => M.find({ _id: id }).limit(1).lean());
+                const itemArr = Array.isArray(items) ? items : (items ? [items] : []);
+                if (itemArr.length > 0) {
+                    return res.json({ success: true, data: itemArr[0] });
                 }
             }
         }
@@ -810,8 +811,8 @@ router.delete('/:id', async (req, res) => {
         let targetSalary = null;
 
         if (isMongoConnected && id.match(/^[0-9a-fA-F]{24}$/)) {
-            const results = await queryAllDBs(Salary, (M) => M.findById(id));
-            targetSalary = results.find(r => r != null) || null;
+            const results = await queryAllDBs(Salary, (M) => M.find({ _id: id }).limit(1).lean());
+            targetSalary = (Array.isArray(results) ? results : (results ? [results] : [])).find(r => r != null) || null;
             const WriteSalary = getWriteModel(Salary) || Salary;
             await WriteSalary.findByIdAndDelete(id);
         } else {

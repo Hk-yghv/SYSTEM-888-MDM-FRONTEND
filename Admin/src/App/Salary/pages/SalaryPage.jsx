@@ -1450,7 +1450,7 @@ const SalaryPage = () => {
             </div>
 
             {/* Salary Data Table */}
-            <div className="w-full overflow-x-auto rounded-[5px] border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] shadow-md table-container">
+            <div className="w-full overflow-x-auto overflow-y-auto h-[calc(100vh-360px)] pb-14 rounded-[5px] border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] shadow-md table-container">
                 <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider border-b border-[var(--app-border,#e2e8f0)]">
                         <tr>
@@ -1569,19 +1569,18 @@ const SalaryPage = () => {
                         )}
                     </tbody>
                 </table>
-
-                {/* Pagination */}
-                {!selectedSearchRecord && total > itemsPerPage && (
-                    <div className="p-2 border-t border-[var(--app-border,#e2e8f0)] flex items-center justify-between">
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={total}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={(p) => setCurrentPage(p)}
-                        />
-                    </div>
-                )}
             </div>
+
+            {/* Pagination */}
+            {!selectedSearchRecord && total > itemsPerPage && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={total}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={(p) => setCurrentPage(p)}
+                />
+            )}
+
 
             {/* Create & Edit Modal */}
             {openModal && (
