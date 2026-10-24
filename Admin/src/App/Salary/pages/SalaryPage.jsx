@@ -708,7 +708,7 @@ const SalaryPage = () => {
         const totalRecordsAll = salaryOnlyStaff.reduce((sum, s) => sum + (Number(s.recordsCount) || 0), 0);
 
         return (
-            <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-5 relative overflow-y-auto h-[calc(100vh-360px)]">
+            <div data-allow-scroll="true" className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-5 relative min-h-full">
                 {/* Header Bar */}
                 <header className="p-2 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                     <div>
@@ -935,7 +935,7 @@ const SalaryPage = () => {
     // VIEW 2: INDIVIDUAL STAFF SALARY DETAIL & MANAGEMENT VIEW
     // ─────────────────────────────────────────────────────────────────────────────
     return (
-        <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-4 relative overflow-y-auto h-[calc(100vh-360px)]">
+        <div data-allow-scroll="true" className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-4 relative min-h-full">
             {/* Admin Switcher Top Banner */}
             {isAdmin && selectedStaff && (
                 <div className="p-2 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
