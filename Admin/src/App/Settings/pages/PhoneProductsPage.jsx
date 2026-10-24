@@ -21,7 +21,6 @@ const PhoneProductsPage = () => {
     const [brandOptions, setBrandOptions] = useState([]);
     const [catalog, setCatalog] = useState(emptyCatalog);
     const [modelOptions, setModelOptions] = useState([]);
-    const [selectedDefectProductId, setSelectedDefectProductId] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -56,9 +55,6 @@ const PhoneProductsPage = () => {
                 products,
                 defects: Array.isArray(result.data?.defects) ? result.data.defects : []
             });
-            setSelectedDefectProductId((current) => (
-                products.some((product) => product.id === current) ? current : products[0]?.id || ''
-            ));
             setModelOptions(Array.isArray(result.models) ? result.models : []);
             if (!isMasterAdmin && result.brand !== undefined) {
                 setSelectedBrand(String(result.brand || '').trim());
@@ -88,62 +84,50 @@ const PhoneProductsPage = () => {
             variant: '',
             capacityGb: 128,
             valuationPrice: 0,
-            marketPrice: null,
-            defects: []
+            marketPrice: null
         };
         setCatalog((current) => ({
             ...current,
             products: [...current.products, product]
         }));
-        setSelectedDefectProductId(product.id);
         setMessage('');
     };
 
     const removeProduct = (id) => {
         const products = catalog.products.filter((item) => item.id !== id);
         setCatalog((current) => ({ ...current, products }));
-        if (selectedDefectProductId === id) setSelectedDefectProductId(products[0]?.id || '');
     };
 
-    const updateDefect = (productId, defectId, field, value) => {
+    const updateDefect = (defectId, field, value) => {
         setCatalog((current) => ({
             ...current,
-            products: current.products.map((product) => product.id === productId
+            defects: current.defects.map((defect) => defect.id === defectId
                 ? {
-                    ...product,
-                    defects: (product.defects || []).map((defect) => defect.id === defectId
-                        ? {
-                            ...defect,
-                            [field]: value,
-                            ...(field === 'minDeduction' && Number(value) > Number(defect.maxDeduction)
-                                ? { maxDeduction: Number(value) }
-                                : {}),
-                            ...(field === 'maxDeduction' && Number(value) < Number(defect.minDeduction)
-                                ? { minDeduction: Number(value) }
-                                : {})
-                        }
-                        : defect)
+                    ...defect,
+                    [field]: value,
+                    ...(field === 'minDeduction' && Number(value) > Number(defect.maxDeduction)
+                        ? { maxDeduction: Number(value) }
+                        : {}),
+                    ...(field === 'maxDeduction' && Number(value) < Number(defect.minDeduction)
+                        ? { minDeduction: Number(value) }
+                        : {})
                 }
-                : product)
+                : defect)
         }));
     };
 
     const addDefect = () => {
         setCatalog((current) => ({
             ...current,
-            products: current.products.map((product) => product.id === selectedDefectProductId
-                ? { ...product, defects: [...(product.defects || []), { id: newId(), name: '', minDeduction: 0, maxDeduction: 0 }] }
-                : product)
+            defects: [...current.defects, { id: newId(), name: '', minDeduction: 0, maxDeduction: 0 }]
         }));
         setMessage('');
     };
 
-    const removeDefect = (productId, defectId) => {
+    const removeDefect = (defectId) => {
         setCatalog((current) => ({
             ...current,
-            products: current.products.map((product) => product.id === productId
-                ? { ...product, defects: (product.defects || []).filter((defect) => defect.id !== defectId) }
-                : product)
+            defects: current.defects.filter((defect) => defect.id !== defectId)
         }));
     };
 
@@ -162,11 +146,6 @@ const PhoneProductsPage = () => {
                 products: result.data.products || [],
                 defects: result.data.defects || []
             });
-            setSelectedDefectProductId((current) => (
-                result.data.products?.some((product) => product.id === current)
-                    ? current
-                    : result.data.products?.[0]?.id || ''
-            ));
             if (!isMasterAdmin && result.brand !== undefined) {
                 setSelectedBrand(String(result.brand || '').trim());
             }
@@ -274,40 +253,25 @@ const PhoneProductsPage = () => {
                 <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                     <div>
                         <h2 className="font-bold text-slate-800">Product defect deductions</h2>
-                        <p className="mt-1 text-xs text-slate-500">Configure deductions separately for each model, variant, and capacity. Valuation uses the minimum for low, midpoint for medium, and maximum for high severity.</p>
+                        <p className="mt-1 text-xs text-slate-500">These defects and deduction ranges apply to every model, variant, and capacity. Valuation uses the minimum for low, midpoint for medium, and maximum for high severity.</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <select
-                            className={`${inputClass} min-w-56`}
-                            value={selectedDefectProductId}
-                            onChange={(event) => setSelectedDefectProductId(event.target.value)}
-                            aria-label="Choose product to configure defects"
-                        >
-                            {catalog.products.map((product) => (
-                                <option key={product.id} value={product.id}>
-                                    {product.model}{product.variant ? ` · ${product.variant}` : ''} · {product.capacityGb} GB
-                                </option>
-                            ))}
-                        </select>
-                        <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50" onClick={addDefect} disabled={!selectedDefectProductId}>
-                            <FaPlus className="mr-2 inline" /> Add defect
-                        </button>
-                    </div>
+                    <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={addDefect}>
+                        <FaPlus className="mr-2 inline" /> Add defect
+                    </button>
                 </div>
                 <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {(catalog.products.find((product) => product.id === selectedDefectProductId)?.defects || []).map((defect) => (
+                    {catalog.defects.map((defect) => (
                         <div key={defect.id} className="flex items-center gap-2">
-                            <input className={inputClass} value={defect.name} maxLength={100} onChange={(event) => updateDefect(selectedDefectProductId, defect.id, 'name', event.target.value)} placeholder="Broken screen / Service Google" />
-                            <input className={`${inputClass} max-w-28`} type="number" min="0" step="0.01" value={defect.minDeduction ?? defect.deduction ?? 0} onChange={(event) => updateDefect(selectedDefectProductId, defect.id, 'minDeduction', Number(event.target.value))} aria-label={`Minimum deduction for ${defect.name || 'defect'}`} title="Minimum deduction" />
+                            <input className={inputClass} value={defect.name} maxLength={100} onChange={(event) => updateDefect(defect.id, 'name', event.target.value)} placeholder="Broken screen / Service Google" />
+                            <input className={`${inputClass} max-w-28`} type="number" min="0" step="0.01" value={defect.minDeduction ?? defect.deduction ?? 0} onChange={(event) => updateDefect(defect.id, 'minDeduction', Number(event.target.value))} aria-label={`Minimum deduction for ${defect.name || 'defect'}`} title="Minimum deduction" />
                             <span className="text-slate-400">–</span>
-                            <input className={`${inputClass} max-w-28`} type="number" min={defect.minDeduction ?? defect.deduction ?? 0} step="0.01" value={defect.maxDeduction ?? defect.deduction ?? 0} onChange={(event) => updateDefect(selectedDefectProductId, defect.id, 'maxDeduction', Number(event.target.value))} aria-label={`Maximum deduction for ${defect.name || 'defect'}`} title="Maximum deduction" />
-                            <button type="button" className="shrink-0 text-rose-600" aria-label={`Delete ${defect.name || 'defect'}`} onClick={() => removeDefect(selectedDefectProductId, defect.id)}>
+                            <input className={`${inputClass} max-w-28`} type="number" min={defect.minDeduction ?? defect.deduction ?? 0} step="0.01" value={defect.maxDeduction ?? defect.deduction ?? 0} onChange={(event) => updateDefect(defect.id, 'maxDeduction', Number(event.target.value))} aria-label={`Maximum deduction for ${defect.name || 'defect'}`} title="Maximum deduction" />
+                            <button type="button" className="shrink-0 text-rose-600" aria-label={`Delete ${defect.name || 'defect'}`} onClick={() => removeDefect(defect.id)}>
                                 <FaTrashAlt />
                             </button>
                         </div>
                     ))}
-                    {!selectedDefectProductId && <p className="text-sm text-slate-500">Add a product before configuring defects.</p>}
-                    {selectedDefectProductId && (catalog.products.find((product) => product.id === selectedDefectProductId)?.defects || []).length === 0 && <p className="text-sm text-slate-500">No defects configured for this product.</p>}
+                    {catalog.defects.length === 0 && <p className="text-sm text-slate-500">No defects configured.</p>}
                 </div>
             </section>
         </main>

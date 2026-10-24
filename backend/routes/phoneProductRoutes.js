@@ -80,7 +80,7 @@ const normalizeCatalog = (body) => {
         return { error: 'Products and defects must be arrays.' };
     }
     if (body.products.length > 200 || body.defects.length > 100) {
-        return { error: 'A catalog can contain up to 200 products and 100 legacy defects.' };
+        return { error: 'A catalog can contain up to 200 products and 100 defects.' };
     }
 
     const normalizeDefects = (items, productModel) => {
@@ -136,11 +136,6 @@ const normalizeCatalog = (body) => {
         if (marketPrice !== null && (!Number.isFinite(marketPrice) || marketPrice < 0 || marketPrice > 10000000)) {
             return { error: `Product ${model} needs a valid market price.` };
         }
-        const productDefects = normalizeDefects(
-            Array.isArray(item?.defects) ? item.defects : legacyDefects.defects,
-            model
-        );
-        if (productDefects.error) return productDefects;
         ids.add(id);
         products.push({
             id,
@@ -148,27 +143,46 @@ const normalizeCatalog = (body) => {
             variant,
             capacityGb,
             valuationPrice,
-            marketPrice,
-            defects: productDefects.defects
+            marketPrice
         });
     }
 
-    return { products, defects: [] };
+    return { products, defects: legacyDefects.defects };
 };
 
 const readCatalog = async (brand) => {
-    const normalizeLegacyDefects = (catalog) => ({
-        ...catalog,
-        products: (catalog.products || []).map((product) => ({
-            ...product,
-            defects: (Array.isArray(product.defects) ? product.defects : catalog.defects || []).map((defect) => ({
-                ...defect,
-                minDeduction: Number(defect.minDeduction ?? defect.deduction ?? 0),
-                maxDeduction: Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0)
-            }))
-        })),
-        defects: catalog.defects || []
-    });
+    const normalizeLegacyDefects = (catalog) => {
+        const storedDefects = Array.isArray(catalog.defects) ? catalog.defects : [];
+        const sourceDefects = storedDefects.length > 0
+            ? storedDefects
+            : (catalog.products || []).flatMap((product) => Array.isArray(product.defects) ? product.defects : []);
+        const defectsByName = new Map();
+        sourceDefects.forEach((defect) => {
+            const name = String(defect.name || '').trim();
+            if (!name) return;
+            const key = name.toLowerCase();
+            const minDeduction = Number(defect.minDeduction ?? defect.deduction ?? 0);
+            const maxDeduction = Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0);
+            const existing = defectsByName.get(key);
+            if (existing) {
+                existing.minDeduction = Math.min(existing.minDeduction, minDeduction);
+                existing.maxDeduction = Math.max(existing.maxDeduction, maxDeduction);
+            } else {
+                defectsByName.set(key, {
+                    id: String(defect.id || `legacy-${key.replace(/[^a-z0-9]+/g, '-')}`),
+                    name,
+                    minDeduction,
+                    maxDeduction
+                });
+            }
+        });
+
+        return {
+            ...catalog,
+            products: (catalog.products || []).map(({ defects: _productDefects, ...product }) => product),
+            defects: [...defectsByName.values()]
+        };
+    };
     if (isMongoConnected) {
         const catalogs = await queryAllDBs(PhoneProductCatalog, (Model) => Model.find({ brand }).limit(1).lean());
         if (catalogs[0]) return normalizeLegacyDefects(catalogs[0]);

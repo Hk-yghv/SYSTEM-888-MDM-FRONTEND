@@ -43,7 +43,7 @@ const PhoneValuationPage = () => {
     const capacityOptions = useMemo(() => [...new Set(catalog.products
         .filter((item) => item.model === product?.model && String(item.variant || '') === String(product?.variant || ''))
         .map((item) => item.capacityGb))], [catalog.products, product?.model, product?.variant]);
-    const productDefects = product?.defects || [];
+    const productDefects = catalog.defects;
     const selectedDefects = useMemo(() => productDefects
         .filter((item) => defectSeverity[item.id])
         .map((item) => {
@@ -139,7 +139,7 @@ const PhoneValuationPage = () => {
 
                     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 className="font-bold text-black">Phone defects</h2>
-                        <p className="mt-1 text-sm text-black">Defects configured for {product?.model}{product?.variant ? ` · ${product.variant}` : ''} · {product?.capacityGb} GB. Low uses the minimum deduction, medium uses the midpoint, and high uses the maximum.</p>
+                        <p className="mt-1 text-sm text-black">These defects and deduction ranges apply to all models. Low uses the minimum deduction, medium uses the midpoint, and high uses the maximum.</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {productDefects.map((defect) => (
                                 <div key={defect.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
