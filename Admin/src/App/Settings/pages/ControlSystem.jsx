@@ -1497,13 +1497,6 @@ const ControlSystem = () => {
                             {productVariants.length} {lang === 'km' ? 'វ៉ារ្យ៉ង់' : 'Variants'}
                         </span>
                     </div>
-
-                    <p className="text-xs text-gray-400">
-                        {lang === 'km'
-                            ? 'កំណត់កូដវ៉ារ្យ៉ង់ (Variant Code) ដូចជា LL/A, ZA/A, VN/A និងការពិពណ៌នា (Description) ដើម្បីដឹងពីប្រទេស/តំបន់/លក្ខណៈ SIM។ វ៉ារ្យ៉ង់ទាំងនេះនឹងបង្ហាញក្នុង Droplist ពេលកំណត់តម្លៃទូរស័ព្ទនៅ Settings -> Products។'
-                            : 'Configure device variant codes (e.g. LL/A, ZA/A, VN/A) and descriptions (region/SIM specs). These variants will appear in the dropdown list when managing phone valuation prices.'}
-                    </p>
-
                     <div className="grid grid-cols-1 sm:grid-cols-[140px_180px_1fr_auto] gap-2 text-xs">
                         <input
                             type="text"
