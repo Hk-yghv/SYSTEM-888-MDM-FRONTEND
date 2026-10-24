@@ -75,6 +75,24 @@ const getAvailableModels = async (brand) => {
         : [];
 };
 
+const getAvailableVariants = async (brand) => {
+    let variants;
+    if (isMongoConnected) {
+        const configs = await queryAllDBs(ControlSystem, (Model) => Model.find({
+            key: 'product_variants',
+            $or: [{ brand }, { brand: '' }, { brand: { $exists: false } }, { brand: null }]
+        }));
+        const brandConfig = configs.find((item) => item.brand === brand)?.value;
+        const globalConfig = configs.find((item) => !item.brand)?.value;
+        variants = Array.isArray(brandConfig) && brandConfig.length > 0 ? brandConfig : globalConfig;
+    }
+    if (!variants) {
+        const brandConfig = MEM_DB.controlSystems?.find((item) => item.brand === brand);
+        variants = brandConfig?.product_variants || MEM_DB.controlSystem?.product_variants;
+    }
+    return Array.isArray(variants) ? variants : [];
+};
+
 const normalizeCatalog = (body) => {
     if (!Array.isArray(body.products) || !Array.isArray(body.defects)) {
         return { error: 'Products and defects must be arrays.' };
@@ -280,11 +298,12 @@ router.get('/', async (req, res) => {
 
         const brand = resolveCatalogBrand(req, identity);
         if (brand === null) return res.status(403).json({ error: 'You cannot access another brand product catalog.' });
-        const [data, models] = await Promise.all([
+        const [data, models, variants] = await Promise.all([
             readCatalog(brand),
-            getAvailableModels(brand)
+            getAvailableModels(brand),
+            getAvailableVariants(brand)
         ]);
-        return res.json({ data, brand, models });
+        return res.json({ data, brand, models, variants });
     } catch (error) {
         console.error('[PhoneProducts] Catalog read failed:', error);
         return res.status(500).json({ error: 'Unable to load phone product catalog.' });

@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { CONTROL_SYSTEM_PATH, CONTROL_SYSTEM_SECTIONS } from '../../../utils/controlSystemPermissions';
 import { IoIosSettings } from 'react-icons/io';
 import { MdOutlineSync, MdAddCircle, MdDelete, MdSave, MdOutlineSettingsBackupRestore } from 'react-icons/md';
-import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign, FaFolder, FaFolderOpen, FaShieldAlt } from 'react-icons/fa';
+import { FaPhoneAlt, FaList, FaUserShield, FaLayerGroup, FaGlobeAmericas, FaDollarSign, FaFolder, FaFolderOpen, FaShieldAlt, FaTags } from 'react-icons/fa';
 import './ControlSystem.css';
 
 const FOLLOW_UP_SUGGESTION_LISTS = [
@@ -93,6 +93,10 @@ const ControlSystem = () => {
     const [restoring, setRestoring] = useState(false);
     const [activeFile, setActiveFile] = useState('lock-screen');
 
+    const [productVariants, setProductVariants] = useState([]);
+    const [newVariantName, setNewVariantName] = useState('');
+    const [newVariantDesc, setNewVariantDesc] = useState('');
+
     const explorerFolders = [
         {
             name: t('deviceAndSecurity'),
@@ -112,7 +116,10 @@ const ControlSystem = () => {
         },
         {
             name: t('systemData'),
-            files: [{ id: 'dropdowns', label: t('dropdownLists'), icon: <FaLayerGroup />, color: 'text-emerald-400' }]
+            files: [
+                { id: 'dropdowns', label: t('dropdownLists'), icon: <FaLayerGroup />, color: 'text-emerald-400' },
+                { id: 'variants', label: lang === 'km' ? 'វ៉ារ្យ៉ង់ផលិតផល (Variants)' : 'Product Variants', icon: <FaTags />, color: 'text-teal-400' }
+            ]
         },
         ...(user?.role === 'Administrator' && selectedBrand === '' ? [{
             name: t('organization'),
@@ -282,6 +289,23 @@ const ControlSystem = () => {
                         : (Array.isArray(globalData.late_penalty_rules) ? globalData.late_penalty_rules : []);
                     setLatePenaltyRules(highPriorityRules);
                     if (!selectedBrand) setNewPenaltyBrand((globalData?.brand || 'MDM'));
+
+                    if (Array.isArray(data.product_variants) && data.product_variants.length > 0) {
+                        setProductVariants(data.product_variants);
+                    } else if (Array.isArray(globalData.product_variants)) {
+                        setProductVariants(globalData.product_variants);
+                    } else {
+                        setProductVariants([
+                            { name: 'LL/A', description: 'United States (eSIM / Single SIM)' },
+                            { name: 'ZA/A', description: 'Hong Kong / Macau / Singapore (Dual Physical SIM)' },
+                            { name: 'ZP/A', description: 'Singapore / Malaysia' },
+                            { name: 'VN/A', description: 'Vietnam' },
+                            { name: 'KH/A', description: 'Cambodia' },
+                            { name: 'CH/A', description: 'China' },
+                            { name: 'J/A', description: 'Japan' },
+                            { name: 'Global', description: 'International Standard' }
+                        ]);
+                    }
                 }
             } else {
                 // Global brand selected
@@ -293,6 +317,20 @@ const ControlSystem = () => {
                 setLockphoneTelegramChatIds(Array.isArray(globalData.lockphone_telegram_chat_ids) ? globalData.lockphone_telegram_chat_ids.map(String) : []);
                 setLatePenaltyRules(Array.isArray(globalData.late_penalty_rules) ? globalData.late_penalty_rules : []);
                 setNewPenaltyBrand(globalData?.brand || 'MDM');
+                if (Array.isArray(globalData.product_variants)) {
+                    setProductVariants(globalData.product_variants);
+                } else {
+                    setProductVariants([
+                        { name: 'LL/A', description: 'United States (eSIM / Single SIM)' },
+                        { name: 'ZA/A', description: 'Hong Kong / Macau / Singapore (Dual Physical SIM)' },
+                        { name: 'ZP/A', description: 'Singapore / Malaysia' },
+                        { name: 'VN/A', description: 'Vietnam' },
+                        { name: 'KH/A', description: 'Cambodia' },
+                        { name: 'CH/A', description: 'China' },
+                        { name: 'J/A', description: 'Japan' },
+                        { name: 'Global', description: 'International Standard' }
+                    ]);
+                }
             }
         } catch (err) {
             console.error('Fetch control system configs error:', err);
@@ -682,7 +720,8 @@ const ControlSystem = () => {
                 { key: 'lockphone_phone_number', value: lockphonePhoneNumber },
                 { key: 'late_penalty_rules', value: latePenaltyRules },
                 { key: 'roles', value: roles },
-                { key: 'droplists', value: droplists }
+                { key: 'droplists', value: droplists },
+                { key: 'product_variants', value: productVariants }
             ];
             const res = await fetch(`${API_BASE}/controlsystem`, {
                 method: 'POST',
@@ -706,6 +745,7 @@ const ControlSystem = () => {
                         late_penalty_rules: 'private',
                         roles: 'private',
                         droplists: 'private',
+                        product_variants: 'private',
                     }));
                 }
             } else {
@@ -1458,6 +1498,155 @@ const ControlSystem = () => {
                                 );
                             })}
                         </div>
+                    </div>
+                </div>
+                )}
+
+                {/* Section 6: Product Variants Management */}
+                {activeExplorerFile.id === 'variants' && (
+                <div className="p-6 rounded-3xl glass-card border border-teal-500/30 space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                        <div className="flex items-center gap-2 text-teal-300 text-xs font-bold uppercase">
+                            <FaTags /> {lang === 'km' ? 'វ៉ារ្យ៉ង់ផលិតផល (Product Variants)' : 'Product Variants & Descriptions'}
+                            <OriginBadge fieldKey="product_variants" />
+                        </div>
+                        <span className="text-[10px] bg-teal-950/80 text-teal-300 px-2 py-0.5 rounded-full border border-teal-800/40 font-mono">
+                            {productVariants.length} {lang === 'km' ? 'វ៉ារ្យ៉ង់' : 'Variants'}
+                        </span>
+                    </div>
+
+                    <p className="text-xs text-gray-400">
+                        {lang === 'km'
+                            ? 'កំណត់កូដវ៉ារ្យ៉ង់ (Variant Code) ដូចជា LL/A, ZA/A, VN/A និងការពិពណ៌នា (Description) ដើម្បីដឹងពីប្រទេស/តំបន់/លក្ខណៈ SIM។ វ៉ារ្យ៉ង់ទាំងនេះនឹងបង្ហាញក្នុង Droplist ពេលកំណត់តម្លៃទូរស័ព្ទនៅ Settings -> Products។'
+                            : 'Configure device variant codes (e.g. LL/A, ZA/A, VN/A) and descriptions (region/SIM specs). These variants will appear in the dropdown list when managing phone valuation prices.'}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-[160px_1fr_auto] gap-2 text-xs">
+                        <input
+                            type="text"
+                            value={newVariantName}
+                            onChange={(e) => setNewVariantName(e.target.value)}
+                            placeholder={lang === 'km' ? 'កូដវ៉ារ្យ៉ង់ (ឧ. LL/A)' : 'Variant (e.g. LL/A)'}
+                            disabled={!canEditSection('variants')}
+                            className="h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 font-bold uppercase focus:border-teal-500 outline-none"
+                        />
+                        <input
+                            type="text"
+                            value={newVariantDesc}
+                            onChange={(e) => setNewVariantDesc(e.target.value)}
+                            placeholder={lang === 'km' ? 'ការពិពណ៌នា (ឧ. USA - eSIM + Single SIM)' : 'Description (e.g. United States - eSIM + Nano SIM)'}
+                            disabled={!canEditSection('variants')}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const trimmedName = newVariantName.trim();
+                                    if (!trimmedName) return;
+                                    if (productVariants.some(v => (typeof v === 'string' ? v : v.name)?.toLowerCase() === trimmedName.toLowerCase())) {
+                                        alert('Variant code already exists!');
+                                        return;
+                                    }
+                                    const updated = [...productVariants, { name: trimmedName, description: newVariantDesc.trim() }];
+                                    setProductVariants(updated);
+                                    setNewVariantName('');
+                                    setNewVariantDesc('');
+                                    fetch(`${API_BASE}/controlsystem`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ key: 'product_variants', value: updated, brand: selectedBrand })
+                                    }).then(() => {
+                                        setMessage(`${t('controlSystemConfigurationUpdated')} 'Product Variants' ${t('forBrand')} '${selectedBrand || t('global')}'`);
+                                        fetchFieldOrigins(selectedBrand);
+                                    });
+                                }
+                            }}
+                            className="h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 focus:border-teal-500 outline-none"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const trimmedName = newVariantName.trim();
+                                if (!trimmedName) return;
+                                if (productVariants.some(v => (typeof v === 'string' ? v : v.name)?.toLowerCase() === trimmedName.toLowerCase())) {
+                                    alert('Variant code already exists!');
+                                    return;
+                                }
+                                const updated = [...productVariants, { name: trimmedName, description: newVariantDesc.trim() }];
+                                setProductVariants(updated);
+                                setNewVariantName('');
+                                setNewVariantDesc('');
+                                fetch(`${API_BASE}/controlsystem`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ key: 'product_variants', value: updated, brand: selectedBrand })
+                                }).then(() => {
+                                    setMessage(`${t('controlSystemConfigurationUpdated')} 'Product Variants' ${t('forBrand')} '${selectedBrand || t('global')}'`);
+                                    fetchFieldOrigins(selectedBrand);
+                                });
+                            }}
+                            disabled={!canEditSection('variants') || !newVariantName.trim()}
+                            className="px-4 h-10 bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white rounded-[5px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all shadow-md shadow-teal-600/20"
+                        >
+                            <MdAddCircle size={16} /> <span>{lang === 'km' ? 'បន្ថែមវ៉ារ្យ៉ង់' : 'Add Variant'}</span>
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-lg border border-gray-800 bg-gray-950/70">
+                        <table className="w-full text-left text-xs text-gray-300">
+                            <thead className="bg-gray-900/80 uppercase text-[11px] text-gray-400 border-b border-gray-800">
+                                <tr>
+                                    <th className="px-4 py-2.5 w-12 text-center">#</th>
+                                    <th className="px-4 py-2.5 w-44">{lang === 'km' ? 'កូដវ៉ារ្យ៉ង់' : 'Variant Code'}</th>
+                                    <th className="px-4 py-2.5">{lang === 'km' ? 'ការពិពណ៌នា (Description)' : 'Description'}</th>
+                                    {canDeleteSection('variants') && <th className="px-4 py-2.5 w-20 text-center">{lang === 'km' ? 'សកម្មភាព' : 'Action'}</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800/60">
+                                {productVariants.map((v, idx) => {
+                                    const vName = typeof v === 'string' ? v : v.name;
+                                    const vDesc = typeof v === 'string' ? '' : (v.description || '');
+                                    return (
+                                        <tr key={idx} className="hover:bg-gray-900/40 transition-colors">
+                                            <td className="px-4 py-2.5 text-center text-gray-500 font-mono">{idx + 1}</td>
+                                            <td className="px-4 py-2.5 font-bold text-teal-400">
+                                                <span className="bg-teal-950/70 border border-teal-800/50 px-2.5 py-1 rounded inline-block">
+                                                    {vName}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-2.5 text-gray-300">{vDesc || <span className="text-gray-600 italic">—</span>}</td>
+                                            {canDeleteSection('variants') && (
+                                                <td className="px-4 py-2.5 text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const updated = productVariants.filter((_, i) => i !== idx);
+                                                            setProductVariants(updated);
+                                                            fetch(`${API_BASE}/controlsystem`, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ key: 'product_variants', value: updated, brand: selectedBrand })
+                                                            }).then(() => {
+                                                                setMessage(`${t('controlSystemConfigurationUpdated')} 'Product Variants' ${t('forBrand')} '${selectedBrand || t('global')}'`);
+                                                                fetchFieldOrigins(selectedBrand);
+                                                            });
+                                                        }}
+                                                        className="text-red-400 hover:text-red-300 hover:bg-red-950/60 p-1.5 rounded transition-colors"
+                                                        title={t('deleteItem')}
+                                                    >
+                                                        <MdDelete size={16} />
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
+                                {productVariants.length === 0 && (
+                                    <tr>
+                                        <td colSpan={canDeleteSection('variants') ? 4 : 3} className="px-4 py-8 text-center text-gray-500">
+                                            {lang === 'km' ? 'មិនទាន់មានវ៉ារ្យ៉ង់នៅឡើយទេ។ សូមបន្ថែមវ៉ារ្យ៉ង់ខាងលើ។' : 'No variants configured yet. Add one above.'}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 )}

@@ -60,7 +60,17 @@ export const MEM_DB = {
         lockphone_phone_number: '+855 12 903 120',
         lockphone_telegram_chat_ids: [],
         lockphone_user_template: 'User: {{username}} — Role: {{role}}',
-        roles: ['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary']
+        roles: ['Administrator', 'Manager', 'Staff', 'Viewer', 'Salary'],
+        product_variants: [
+            { name: 'LL/A', description: 'United States (eSIM / Single SIM)' },
+            { name: 'ZA/A', description: 'Hong Kong / Macau / Singapore (Dual Physical SIM)' },
+            { name: 'ZP/A', description: 'Singapore / Malaysia' },
+            { name: 'VN/A', description: 'Vietnam' },
+            { name: 'KH/A', description: 'Cambodia' },
+            { name: 'CH/A', description: 'China' },
+            { name: 'J/A', description: 'Japan' },
+            { name: 'Global', description: 'International Standard' }
+        ]
     }
 };
 

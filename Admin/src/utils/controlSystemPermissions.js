@@ -6,5 +6,6 @@ export const CONTROL_SYSTEM_SECTIONS = [
     { id: 'roles', path: `${CONTROL_SYSTEM_PATH}/access-control`, label: 'Access Control' },
     { id: 'follow-up', path: `${CONTROL_SYSTEM_PATH}/workflows`, label: 'Workflows' },
     { id: 'dropdowns', path: `${CONTROL_SYSTEM_PATH}/system-data`, label: 'System Data' },
+    { id: 'variants', path: `${CONTROL_SYSTEM_PATH}/system-data`, label: 'Product Variants' },
     { id: 'brands', path: `${CONTROL_SYSTEM_PATH}/organization`, label: 'Organization' }
 ];
