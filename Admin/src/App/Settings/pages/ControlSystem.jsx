@@ -853,11 +853,6 @@ const ControlSystem = () => {
                     <FaFolderOpen className="text-sky-700" />
                     <span className="font-semibold">{t('systemMdmRegistryEditor')}</span>
                 </div>
-                <div role="menubar" aria-label={t('registryMenu')} className="flex gap-1 border-b border-slate-300 bg-white px-2 py-1 text-xs text-slate-700">
-                    {[['File', 'fileMenu'], ['Edit', 'editMenu'], ['View', 'viewMenu'], ['Favorites', 'favoritesMenu'], ['Help', 'helpMenu']].map(([menu, key]) => (
-                        <span key={menu} role="menuitem" className="cursor-default px-2 py-1 hover:bg-sky-100">{t(key)}</span>
-                    ))}
-                </div>
                 <div className="flex min-h-9 items-center gap-2 border-b border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700">
                     <FaGlobeAmericas className="text-sky-700" />
                     <span>{t('computer')}</span><span className="text-slate-400">›</span>
