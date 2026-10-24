@@ -77,7 +77,8 @@ const SYSTEM_PAGES = [
     '/history/login-history', '/history/device-history',
     '/report/all', '/report/activated', '/report/redeem', '/report/lock-phone', '/report/set-wallpaper', '/report/installment', '/report/follow-up',
     '/follow-up/follow-up-1', '/follow-up/follow-up-2', '/follow-up/follow-up-3', '/follow-up/sen-sok',
-    '/settings/all-account', '/settings/control-system', '/calendar', '/profile', '/audit/device'
+    '/settings/all-account', '/settings/control-system', '/settings/products',
+    '/phone-valuation', '/calendar', '/profile', '/audit/device'
 ];
 
 export const ensureMasterAdmin = async () => {

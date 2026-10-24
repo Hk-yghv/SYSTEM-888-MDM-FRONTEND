@@ -69,6 +69,7 @@ import telegramRoutes from './routes/telegramRoutes.js';
 import telegramAuditRoutes from './routes/telegramAuditRoutes.js';
 import deviceAuditRoutes from './routes/deviceAuditRoutes.js';
 import cashFlowTraderRoutes from './routes/cashFlowTraderRoutes.js';
+import phoneProductRoutes from './routes/phoneProductRoutes.js';
 import { installTelegramSendRetry } from './utils/telegramSendRetry.js';
 
 const app = express();
@@ -213,6 +214,7 @@ app.use('/api/device-audit', deviceAuditRoutes);
 app.use('/telegram-audit', telegramAuditRoutes);
 app.use('/api/cashflow-trader', cashFlowTraderRoutes);
 app.use('/cashflow-trader', cashFlowTraderRoutes);
+app.use('/api/phone-products', phoneProductRoutes);
 
 // ── Interactive HTML Partner API Documentation Route ──
 const docsHtmlPath = path.resolve(__dirname, '../docs/index.html');

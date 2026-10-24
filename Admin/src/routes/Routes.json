@@ -8,6 +8,7 @@
     "customer": "/customer",
     "device": "/device",
     "deviceEnrolment": "/device/enrolment",
+    "phoneValuation": "/phone-valuation",
     "report": {
         "report": "/report",
         "allCustomers": "/report/all-customers",
@@ -84,6 +85,7 @@
     "settings": {
         "controlSystem": "/settings/control-system",
         "controlSupportHelp": "/settings/control-support-help",
+        "products": "/settings/products",
         "allAccount": "/settings/all-account",
         "phoneApp": "/settings/phone-app",
         "profile": "/profile"

@@ -285,7 +285,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 )}
 
                 {/* Device */}
-                {(hasPermission('/device', 'read') || hasPermission(json.deviceEnrolment || '/device/enrolment', 'read')) && (
+                {(hasPermission('/device', 'read') ||
+                    hasPermission(json.deviceEnrolment || '/device/enrolment', 'read') ||
+                    hasPermission(json.phoneValuation || '/phone-valuation', 'read')) && (
                     <>
                         {hasPermission('/device', 'read') && (
                             <Link to={json.device} className={navItemClass(json.device)} style={navItemStyle(json.device)}>
@@ -303,6 +305,13 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 <FaMobileAlt size={13} />
                                 {t('deviceEnrolment')}
                                 {isActive(json.deviceEnrolment || "/device/enrolment") && <span className="ml-auto w-1 h-4 rounded-full bg-emerald-400 opacity-80" />}
+                            </Link>
+                        )}
+                        {hasPermission(json.phoneValuation || '/phone-valuation', 'read') && (
+                            <Link to={json.phoneValuation || '/phone-valuation'} className={subItemClass(json.phoneValuation || '/phone-valuation')} style={subItemStyle(json.phoneValuation || '/phone-valuation')}>
+                                <FaMobileAlt size={13} />
+                                {t('phoneValuation')}
+                                {isActive(json.phoneValuation || '/phone-valuation') && <span className="ml-auto w-1 h-4 rounded-full bg-emerald-400 opacity-80" />}
                             </Link>
                         )}
                     </>
@@ -707,6 +716,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                 {/* Settings */}
                 {(hasPermission('/settings/all-account', 'read') ||
                     hasPermission(json.settings.controlSystem, 'read') ||
+                    hasPermission(json.settings.products || '/settings/products', 'read') ||
                     hasControlSupportHelpPermission ||
                     hasPermission(json.settings.systemLogs, 'read')) && (
                         <div className="flex-shrink-0">
@@ -723,6 +733,12 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 )}
                                 {hasPermission(json.settings.controlSystem, 'read') && (
                                     <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)} style={subItemStyle(json.settings.controlSystem)}>{t('controlSystem')}</Link>
+                                )}
+                                {hasPermission(json.settings.products || '/settings/products', 'read') && (
+                                    <Link to={json.settings.products || '/settings/products'} className={subItemClass(json.settings.products || '/settings/products')} style={subItemStyle(json.settings.products || '/settings/products')}>
+                                        <FaMobileAlt size={10} className="opacity-60" />
+                                        {t('phoneProducts')}
+                                    </Link>
                                 )}
                                 {/* Control Support & Help — hide completely when no permissions at all */}
                                 {hasControlSupportHelpPermission && (

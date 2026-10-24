@@ -7,6 +7,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/customer',
     '/device',
     '/device/enrolment',
+    '/phone-valuation',
     '/contract/application',
     '/contract/activated',
     '/contract/check',
@@ -59,6 +60,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/settings/control-support-help',
     '/settings/all-account',
     '/settings/control-system',
+    '/settings/products',
     '/profile'
 ];
 

@@ -30,6 +30,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/customer', label: 'Customer Directory', actions: ['read', 'export', 'seePhoto', 'detail', 'qrcode'] },
     { category: 'Main Systems', path: '/device', label: 'Device List & Actions', actions: ['read', 'export', 'information', 'deviceAction'] },
     { category: 'Main Systems', path: '/device/enrolment', label: 'Device Enrolment (Phone Models)', actions: ['read', 'information'] },
+    { category: 'Main Systems', path: '/phone-valuation', label: 'Phone Valuation', actions: ['read'] },
     { category: 'Main Systems', path: '/telegram', label: 'Telegram Web (Multi-Account)', actions: ['read'] },
 
     { category: 'Contract Management', path: '/contract/application', label: 'Contract Application', actions: ['read', 'export', 'create', 'edit', 'delete', 'information', 'activate'] },
@@ -98,6 +99,7 @@ const ALL_SYSTEM_PAGES = [
 
     { category: 'Settings & Profile', path: '/profile', label: 'User Profile', actions: ['read', 'edit'] },
     { category: 'Settings & Profile', path: '/settings/all-account', label: 'All Account Management', actions: ['read', 'create', 'edit', 'delete'] },
+    { category: 'Settings & Profile', path: '/settings/products', label: 'Phone Products & Valuation Settings', actions: ['read', 'create', 'edit', 'delete'] },
     ...CONTROL_SYSTEM_SECTIONS.map(section => ({
         category: 'Control System',
         path: section.path,

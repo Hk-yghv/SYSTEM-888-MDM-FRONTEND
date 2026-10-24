@@ -14,6 +14,7 @@ const TelegramPage = lazy(() => import("../App/Telegram/TelegramPage"));
 const Customer = lazy(() => import("../App/Customer/pages/Customer"));
 const Device = lazy(() => import("../App/Device/pages/Device"));
 const DeviceEnrolment = lazy(() => import("../App/Device/pages/DeviceEnrolment"));
+const PhoneValuationPage = lazy(() => import("../App/Device/pages/PhoneValuationPage"));
 const Application = lazy(() => import("../App/Contract/page/Application"));
 const Activated = lazy(() => import("../App/Contract/page/Activated"));
 const Check = lazy(() => import("../App/Contract/page/Check"));
@@ -57,6 +58,7 @@ const FollowUp3 = lazy(() => import("../App/FollowUp/pages/FollowUp3"));
 const FollowUp4 = lazy(() => import("../App/FollowUp/pages/FollowUp4"));
 const SalaryPage = lazy(() => import("../App/Salary/pages/SalaryPage"));
 const ControlSystem = lazy(() => import("../App/Settings/pages/ControlSystem"));
+const PhoneProductsPage = lazy(() => import("../App/Settings/pages/PhoneProductsPage"));
 const AllAccount = lazy(() => import("../App/Settings/pages/AllAccount"));
 const Profile = lazy(() => import("../App/Profile/Profile"));
 const AllPicture = lazy(() => import("../App/Media/AllPicture"));
@@ -121,6 +123,7 @@ const AppRoutes = () => {
       <Route path={json.customer} element={renderProtected(json.customer, Customer)} />
       <Route path={json.device} element={renderProtected(json.device, Device)} />
       <Route path={json.deviceEnrolment || "/device/enrolment"} element={renderProtected(json.deviceEnrolment || "/device/enrolment", DeviceEnrolment)} />
+      <Route path={json.phoneValuation || "/phone-valuation"} element={renderProtected(json.phoneValuation || "/phone-valuation", PhoneValuationPage)} />
 
       {/* Contracts */}
       <Route path={json.contract.application} element={renderProtected(json.contract.application, Application)} />
@@ -206,6 +209,7 @@ const AppRoutes = () => {
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />
       <Route path={json.settings.controlSystem} element={renderProtected(json.settings.controlSystem, ControlSystem)} />
+      <Route path={json.settings.products || "/settings/products"} element={renderProtected(json.settings.products || "/settings/products", PhoneProductsPage)} />
       <Route path={json.settings?.controlSupportHelp || "/settings/control-support-help"} element={renderProtected(json.settings?.controlSupportHelp || "/settings/control-support-help", ControlSupportHelp)} />
       <Route path={json.settings.profile} element={renderProtected(json.settings.profile, Profile)} />
 

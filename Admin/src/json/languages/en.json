@@ -83,6 +83,8 @@
   "settings": "Settings",
   "allAccount": "All Account",
   "controlSystem": "Control System",
+  "phoneProducts": "Product",
+  "phoneValuation": "Phone Valuation",
   "systemLogs": "System Event Logs",
   "resetDefault": "Reset Default",
   "saveTheme": "Save Preferences",
