@@ -213,7 +213,7 @@ const PhoneProductsPage = () => {
     }
 
     return (
-        <main className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+        <main data-allow-scroll="true" className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
             <header className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Phone Products</h1>
@@ -246,9 +246,9 @@ const PhoneProductsPage = () => {
                     <h2 className="font-bold text-slate-800">Models and valuation prices</h2>
                     <p className="mt-1 text-xs text-slate-500">Catalog: {selectedBrand || 'Global'}. Select models from this brand's Device Models list. LL/A, ZA, and other market variants are stored separately.</p>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-auto max-h-[500px]">
                     <table className="w-full min-w-[1050px] text-left text-sm">
-                        <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                        <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase text-slate-500 shadow-sm">
                             <tr>
                                 <th className="px-4 py-3">Model</th>
                                 <th className="px-4 py-3">Variant</th>

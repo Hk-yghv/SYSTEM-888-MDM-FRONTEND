@@ -16,7 +16,7 @@ const STORAGE_KEY_HEADER = "isHeaderOpen";
 
 const MainLayout = ({ children }) => {
   const location = useLocation();
-  const isScrollableRoute = ['/dashboard', '/calculate/schedule-1', '/calculate/schedule-2', '/save-url'].some(
+  const isScrollableRoute = ['/dashboard', '/calculate/schedule-1', '/calculate/schedule-2', '/save-url', '/salary', '/settings/products'].some(
     (route) => location.pathname === route || location.pathname.startsWith(route)
   );
 

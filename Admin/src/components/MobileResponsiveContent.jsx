@@ -17,7 +17,7 @@ const applyTableLabels = (container) => {
     });
 };
 
-const MobileResponsiveContent = ({ children, className }) => {
+const MobileResponsiveContent = ({ children, className, ...rest }) => {
     const contentRef = useRef(null);
 
     useEffect(() => {
@@ -31,7 +31,7 @@ const MobileResponsiveContent = ({ children, className }) => {
         return () => observer.disconnect();
     }, []);
 
-    return <div ref={contentRef} className={className}>{children}</div>;
+    return <div ref={contentRef} className={className} {...rest}>{children}</div>;
 };
 
 export default MobileResponsiveContent;
