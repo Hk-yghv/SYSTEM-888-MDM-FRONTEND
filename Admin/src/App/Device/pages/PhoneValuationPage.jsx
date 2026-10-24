@@ -8,6 +8,7 @@ const PhoneValuationPage = () => {
     const { API_BASE } = useAuth();
     const [catalog, setCatalog] = useState({ products: [], defects: [] });
     const [selectedProductId, setSelectedProductId] = useState('');
+    const [selectedStatusByDefect, setSelectedStatusByDefect] = useState({});
     const [defectSeverity, setDefectSeverity] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -45,14 +46,19 @@ const PhoneValuationPage = () => {
         .map((item) => item.capacityGb))], [catalog.products, product?.model, product?.variant]);
     const productDefects = catalog.defects;
     const selectedDefects = useMemo(() => productDefects
-        .filter((item) => defectSeverity[item.id])
+        .filter((item) => selectedStatusByDefect[item.id] && defectSeverity[item.id])
         .map((item) => {
-            const min = Number(item.minDeduction ?? item.deduction ?? 0);
-            const max = Number(item.maxDeduction ?? item.deduction ?? min);
+            const status = item.statuses?.find((option) => (
+                option.id === selectedStatusByDefect[item.id] && option.enabled
+            ));
+            if (!status) return null;
+            const min = Number(status.minDeduction || 0);
+            const max = Number(status.maxDeduction ?? min);
             const severity = defectSeverity[item.id];
             const amount = severity === 'low' ? min : severity === 'high' ? max : (min + max) / 2;
-            return { ...item, severity, amount };
-        }), [productDefects, defectSeverity]);
+            return { ...item, status, severity, amount };
+        })
+        .filter(Boolean), [productDefects, selectedStatusByDefect, defectSeverity]);
     const deduction = useMemo(() => selectedDefects
         .reduce((total, item) => total + item.amount, 0), [selectedDefects]);
     const finalValue = Math.max(0, Number(product?.valuationPrice || 0) - deduction);
@@ -145,28 +151,54 @@ const PhoneValuationPage = () => {
                                 <div key={defect.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
                                     <span className="text-sm font-medium text-black">{defect.name}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="whitespace-nowrap text-xs text-black">
-                                            {money(defect.minDeduction ?? defect.deduction ?? 0)}–{money(defect.maxDeduction ?? defect.deduction ?? 0)}
-                                        </span>
-                                        {defectSeverity[defect.id] && (
+                                        <select
+                                            className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-black outline-none focus:border-emerald-500"
+                                            value={selectedStatusByDefect[defect.id] || ''}
+                                            onChange={(event) => {
+                                                setSelectedStatusByDefect((current) => ({
+                                                    ...current,
+                                                    [defect.id]: event.target.value
+                                                }));
+                                                setDefectSeverity((current) => ({
+                                                    ...current,
+                                                    [defect.id]: event.target.value ? (current[defect.id] || 'low') : ''
+                                                }));
+                                            }}
+                                            aria-label={`Status of ${defect.name}`}
+                                        >
+                                            <option value="">No issue</option>
+                                            {(defect.statuses || []).filter((status) => status.enabled).map((status) => (
+                                                <option key={status.id} value={status.id}>{status.name}</option>
+                                            ))}
+                                        </select>
+                                        {selectedStatusByDefect[defect.id] && (
+                                            <>
+                                                <span className="whitespace-nowrap text-xs text-black">
+                                                    {(() => {
+                                                        const status = defect.statuses?.find((item) => item.id === selectedStatusByDefect[defect.id]);
+                                                        return status ? `${money(status.minDeduction)}–${money(status.maxDeduction)}` : '';
+                                                    })()}
+                                                </span>
+                                                <select
+                                                    className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-black outline-none focus:border-emerald-500"
+                                                    value={defectSeverity[defect.id] || 'low'}
+                                                    onChange={(event) => setDefectSeverity((current) => ({
+                                                        ...current,
+                                                        [defect.id]: event.target.value
+                                                    }))}
+                                                    aria-label={`Severity of ${defect.name}`}
+                                                >
+                                                    <option value="low">តិច</option>
+                                                    <option value="medium">មធ្យម</option>
+                                                    <option value="high">ខ្លាំង</option>
+                                                </select>
+                                            </>
+                                        )}
+                                        {selectedStatusByDefect[defect.id] && defectSeverity[defect.id] && (
                                             <span className="whitespace-nowrap text-xs font-semibold text-black">
                                                 −{money(selectedDefects.find((item) => item.id === defect.id)?.amount)}
                                             </span>
                                         )}
-                                        <select
-                                            className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-black outline-none focus:border-emerald-500"
-                                            value={defectSeverity[defect.id] || ''}
-                                            onChange={(event) => setDefectSeverity((current) => ({
-                                                ...current,
-                                                [defect.id]: event.target.value
-                                            }))}
-                                            aria-label={`Severity of ${defect.name}`}
-                                        >
-                                            <option value="">គ្មាន</option>
-                                            <option value="low">តិច</option>
-                                            <option value="medium">មធ្យម</option>
-                                            <option value="high">ខ្លាំង</option>
-                                        </select>
                                     </div>
                                 </div>
                             ))}

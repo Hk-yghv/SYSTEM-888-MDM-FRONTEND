@@ -92,22 +92,49 @@ const normalizeCatalog = (body) => {
         for (const item of items) {
             const id = String(item?.id || '').trim();
             const name = String(item?.name || '').trim();
-            const minDeduction = Number(item?.minDeduction ?? item?.deduction ?? 0);
-            const maxDeduction = Number(item?.maxDeduction ?? item?.deduction ?? minDeduction);
             if (!id || defectIds.has(id) || !name || name.length > 100) {
                 return { error: `Each defect for ${productModel} needs a unique ID and a name.` };
             }
-            if (
-                !Number.isFinite(minDeduction) ||
-                !Number.isFinite(maxDeduction) ||
-                minDeduction < 0 ||
-                maxDeduction < minDeduction ||
-                maxDeduction > 10000000
-            ) {
-                return { error: `Defect ${name} needs a valid deduction range.` };
+            const rawStatuses = Array.isArray(item.statuses)
+                ? item.statuses
+                : [{
+                    id: `${id}-default`,
+                    name: 'Default',
+                    enabled: true,
+                    minDeduction: item.minDeduction ?? item.deduction ?? 0,
+                    maxDeduction: item.maxDeduction ?? item.deduction ?? item.minDeduction ?? 0
+                }];
+            if (rawStatuses.length > 50) return { error: `Defect ${name} can have up to 50 statuses.` };
+            const statusIds = new Set();
+            const statuses = [];
+            for (const rawStatus of rawStatuses) {
+                const statusId = String(rawStatus?.id || '').trim();
+                const statusName = String(rawStatus?.name || '').trim();
+                const minDeduction = Number(rawStatus?.minDeduction ?? 0);
+                const maxDeduction = Number(rawStatus?.maxDeduction ?? minDeduction);
+                if (!statusId || statusIds.has(statusId) || !statusName || statusName.length > 60) {
+                    return { error: `Each status for ${name} needs a unique ID and a name.` };
+                }
+                if (
+                    !Number.isFinite(minDeduction) ||
+                    !Number.isFinite(maxDeduction) ||
+                    minDeduction < 0 ||
+                    maxDeduction < minDeduction ||
+                    maxDeduction > 10000000
+                ) {
+                    return { error: `Status ${statusName} for ${name} needs a valid deduction range.` };
+                }
+                statusIds.add(statusId);
+                statuses.push({
+                    id: statusId,
+                    name: statusName,
+                    enabled: rawStatus.enabled !== false,
+                    minDeduction,
+                    maxDeduction
+                });
             }
             defectIds.add(id);
-            defects.push({ id, name, minDeduction, maxDeduction });
+            defects.push({ id, name, statuses });
         }
         return { defects };
     };
@@ -161,25 +188,52 @@ const readCatalog = async (brand) => {
             const name = String(defect.name || '').trim();
             if (!name) return;
             const key = name.toLowerCase();
-            const minDeduction = Number(defect.minDeduction ?? defect.deduction ?? 0);
-            const maxDeduction = Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0);
+            const statuses = Array.isArray(defect.statuses)
+                ? defect.statuses.map((status) => ({
+                    id: String(status.id || `status-${key}`),
+                    name: String(status.name || '').trim(),
+                    enabled: status.enabled !== false,
+                    minDeduction: Number(status.minDeduction ?? 0),
+                    maxDeduction: Number(status.maxDeduction ?? status.minDeduction ?? 0)
+                })).filter((status) => status.name)
+                : [{
+                    id: `legacy-${key.replace(/[^a-z0-9]+/g, '-')}`,
+                    name: 'Default',
+                    enabled: true,
+                    minDeduction: Number(defect.minDeduction ?? defect.deduction ?? 0),
+                    maxDeduction: Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0)
+                }];
             const existing = defectsByName.get(key);
             if (existing) {
-                existing.minDeduction = Math.min(existing.minDeduction, minDeduction);
-                existing.maxDeduction = Math.max(existing.maxDeduction, maxDeduction);
+                const statusesByName = new Map(existing.statuses.map((status) => [status.name.toLowerCase(), status]));
+                statuses.forEach((status) => {
+                    const statusKey = status.name.toLowerCase();
+                    const matchingStatus = statusesByName.get(statusKey);
+                    if (matchingStatus) {
+                        matchingStatus.minDeduction = Math.min(matchingStatus.minDeduction, status.minDeduction);
+                        matchingStatus.maxDeduction = Math.max(matchingStatus.maxDeduction, status.maxDeduction);
+                        matchingStatus.enabled = matchingStatus.enabled || status.enabled;
+                    } else {
+                        existing.statuses.push(status);
+                        statusesByName.set(statusKey, status);
+                    }
+                });
             } else {
                 defectsByName.set(key, {
                     id: String(defect.id || `legacy-${key.replace(/[^a-z0-9]+/g, '-')}`),
                     name,
-                    minDeduction,
-                    maxDeduction
+                    statuses
                 });
             }
         });
 
         return {
             ...catalog,
-            products: (catalog.products || []).map(({ defects: _productDefects, ...product }) => product),
+            products: (catalog.products || []).map((product) => {
+                const normalizedProduct = { ...product };
+                delete normalizedProduct.defects;
+                return normalizedProduct;
+            }),
             defects: [...defectsByName.values()]
         };
     };
