@@ -257,6 +257,92 @@ router.post('/', async (req, res) => {
     }
 });
 
+// PUT /api/calculate-schedules/:id
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const isolation = await resolveUserIsolation(req);
+        let targetSchedule = null;
+
+        if (isMongoConnected) {
+            targetSchedule = await queryAllDBs(CalculateSchedule, M => M.findById(id));
+        } else {
+            targetSchedule = MEM_DB.calculateSchedules.find(item => String(item._id) === String(id)) || null;
+        }
+
+        if (!targetSchedule || filterInMemoryRecords([targetSchedule], isolation).length === 0) {
+            return res.status(404).json({ success: false, error: 'Calculate schedule record not found.' });
+        }
+
+        const {
+            contractNumber = '',
+            customerName = '',
+            assetName = '',
+            assetType = '',
+            startDate = '',
+            principal,
+            ratePercent,
+            months,
+            monthlyInterest = 0,
+            totalInterest = 0,
+            schedule = [],
+            notes = ''
+        } = req.body;
+        const numericPrincipal = Number(principal);
+        const numericRatePercent = Number(ratePercent);
+        const numericMonths = Number(months);
+        const numericMonthlyInterest = Number(monthlyInterest);
+        const numericTotalInterest = Number(totalInterest);
+
+        if (
+            !startDate ||
+            !Number.isFinite(numericPrincipal) || numericPrincipal <= 0 ||
+            !Number.isFinite(numericRatePercent) ||
+            !Number.isInteger(numericMonths) || numericMonths < 1 ||
+            !Number.isFinite(numericMonthlyInterest) ||
+            !Number.isFinite(numericTotalInterest) ||
+            !Array.isArray(schedule)
+        ) {
+            return res.status(400).json({ success: false, error: 'Valid schedule details are required.' });
+        }
+
+        const updateData = {
+            contractNumber,
+            customerName,
+            assetName,
+            assetType,
+            startDate,
+            principal: numericPrincipal,
+            ratePercent: numericRatePercent,
+            months: numericMonths,
+            monthlyInterest: numericMonthlyInterest,
+            totalInterest: numericTotalInterest,
+            schedule,
+            notes
+        };
+
+        let updatedSchedule;
+        if (isMongoConnected) {
+            updatedSchedule = await queryAllDBs(CalculateSchedule, M =>
+                M.findByIdAndUpdate(id, { $set: updateData }, { new: true, runValidators: true })
+            );
+        } else {
+            Object.assign(targetSchedule, updateData, { updatedAt: new Date() });
+            updatedSchedule = targetSchedule;
+        }
+
+        if (!updatedSchedule) {
+            return res.status(404).json({ success: false, error: 'Calculate schedule record not found.' });
+        }
+
+        broadcastCalculateUpdate({ type: 'UPDATED', data: updatedSchedule });
+        return res.json({ success: true, message: 'Updated successfully', data: updatedSchedule });
+    } catch (err) {
+        console.error('Error updating calculate schedule:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // DELETE /api/calculate-schedules/:id
 router.delete('/:id', async (req, res) => {
     try {

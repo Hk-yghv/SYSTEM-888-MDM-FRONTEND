@@ -11,7 +11,10 @@ import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
 
 const CalculateSchedule2 = () => {
-    const { user, API_BASE } = useAuth();
+    const { user, API_BASE, hasPermission } = useAuth();
+    const canCreate = hasPermission('/calculate/schedule-2', 'create');
+    const canEdit = hasPermission('/calculate/schedule-2', 'edit');
+    const canDelete = hasPermission('/calculate/schedule-2', 'delete');
     const allowedSubBrands = useMemo(() => (
         Array.isArray(user?.subBrands)
             ? user.subBrands.filter(subBrand => typeof subBrand === 'string' && subBrand.trim())
@@ -52,6 +55,7 @@ const CalculateSchedule2 = () => {
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
     const [subBrandSwitchEnabled, setSubBrandSwitchEnabled] = useState(false);
     const [selectedSubBrand, setSelectedSubBrand] = useState(() => allowedSubBrands[0] || '');
+    const isFormReadOnly = activeRecordId ? !canEdit : !canCreate;
 
     useEffect(() => {
         setSelectedSubBrand(current =>
@@ -331,6 +335,8 @@ const CalculateSchedule2 = () => {
 
     // ─── Save to Database ──────────────────────────────────────────
     const handleSave = async () => {
+        if (activeRecordId ? !canEdit : !canCreate) return;
+
         let calcData = result;
         if (!calcData) {
             calcData = handleCalculate();
@@ -359,15 +365,30 @@ const CalculateSchedule2 = () => {
                 notes: notes.trim()
             };
 
-            const res = await fetch(`${API_BASE}/calculate-schedules`, {
-                method: 'POST',
+            const params = new URLSearchParams({
+                userBrand: user?.brand || '',
+                username: user?.username || '',
+                userRole: user?.role || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                userSubBrands: allowedSubBrands.join(',')
+            });
+            if (subBrandSwitchEnabled && selectedSubBrand) {
+                params.set('subBrand', selectedSubBrand);
+            }
+
+            const isEditing = Boolean(activeRecordId);
+            const url = isEditing
+                ? `${API_BASE}/calculate-schedules/${activeRecordId}?${params.toString()}`
+                : `${API_BASE}/calculate-schedules`;
+            const res = await fetch(url, {
+                method: isEditing ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
             const data = await res.json();
             if (res.ok && data.success) {
-                setSaveSuccessMsg('រក្សាទុកបានជោគជ័យ!');
+                setSaveSuccessMsg(isEditing ? 'កែប្រែបានជោគជ័យ!' : 'រក្សាទុកបានជោគជ័យ!');
                 setTimeout(() => setSaveSuccessMsg(''), 3500);
                 if (data.data) {
                     const savedDoc = data.data;
@@ -376,7 +397,10 @@ const CalculateSchedule2 = () => {
                         setNewlyAddedId(savedDoc._id);
                         setTimeout(() => setNewlyAddedId(null), 5000);
                     }
-                    setSavedHistory(prev => [savedDoc, ...prev.filter(item => String(item._id) !== String(savedDoc._id))]);
+                    setSavedHistory(prev => [
+                        savedDoc,
+                        ...prev.filter(item => String(item._id) !== String(savedDoc._id))
+                    ]);
                 }
                 localStorage.setItem('calc_schedules_updated', Date.now().toString());
                 fetchHistory(true);
@@ -810,8 +834,9 @@ const CalculateSchedule2 = () => {
                                 </h2>
                             </div>
 
-                            <form onSubmit={handleCalculate} className="space-y-4">
-                                {/* Row 1: Start Date, Customer Name, Asset Name */}
+                            <form onSubmit={handleCalculate}>
+                                <fieldset disabled={isFormReadOnly} className="m-0 min-w-0 space-y-4 border-0 p-0">
+                                    {/* Row 1: Start Date, Customer Name, Asset Name */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     {/* Start Date */}
                                     <div className="space-y-1.5">
@@ -990,22 +1015,27 @@ const CalculateSchedule2 = () => {
                                     </div>
                                 </div>
 
+                                </fieldset>
+
                                 {/* Action Buttons */}
                                 <div className="flex flex-wrap items-center gap-3 pt-3">
                                     <button
                                         type="submit"
-                                        className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-violet-600/25 transition-all transform active:scale-95 cursor-pointer">
+                                        disabled={isFormReadOnly}
+                                        className="px-6 py-2.5 rounded-[5px] bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-violet-600/25 transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                         <MdCalculate className="text-lg" /> គណនា
                                     </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={handleSave}
-                                        disabled={saving}
-                                        className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer">
-                                        {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                                        រក្សាទុក
-                                    </button>
+                                    {(activeRecordId ? canEdit : canCreate) && (
+                                        <button
+                                            type="button"
+                                            onClick={handleSave}
+                                            disabled={saving}
+                                            className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                            {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
+                                            {activeRecordId ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុក'}
+                                        </button>
+                                    )}
 
                                     <button
                                         type="button"
@@ -1114,13 +1144,15 @@ const CalculateSchedule2 = () => {
                                                         )}
                                                     </div>
                                                     <div className="flex items-center gap-1">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => handleDeleteRecord(item._id, e)}
-                                                            title="លុប"
-                                                            className="p-2 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
-                                                            <FaTrash className="text-[10px]" />
-                                                        </button>
+                                                        {canDelete && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => handleDeleteRecord(item._id, e)}
+                                                                title="លុប"
+                                                                className="p-2 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition-colors">
+                                                                <FaTrash className="text-[10px]" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -1356,12 +1388,14 @@ const CalculateSchedule2 = () => {
                                                     className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs flex items-center gap-1.5 transition-all cursor-pointer">
                                                     <FaEye /> មើល / បើក
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleDeleteRecord(item._id, e)}
-                                                    className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center gap-1.5 border border-rose-200 transition-all cursor-pointer">
-                                                    <FaTrash /> លុប
-                                                </button>
+                                                {canDelete && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleDeleteRecord(item._id, e)}
+                                                        className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center gap-1.5 border border-rose-200 transition-all cursor-pointer">
+                                                        <FaTrash /> លុប
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))
