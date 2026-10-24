@@ -760,8 +760,11 @@ const ControlSystem = () => {
     };
 
     return (
-        <div id="control-system-explorer" className='w-full bg-transparent p-2 md:p-2 select-none space-y-4'>
-            <header className='p-2 w-full border border-slate-300 bg-white rounded-md flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-sm'>
+        <div
+            id="control-system-explorer"
+            className={`w-full bg-transparent p-2 md:p-2 select-none ${activeExplorerFile?.id === 'variants' ? 'flex h-full min-h-0 flex-col gap-2 overflow-hidden' : 'space-y-4'}`}
+        >
+            <header className={`p-2 w-full border border-slate-300 bg-white rounded-md flex flex-col xl:flex-row xl:items-center justify-between gap-3 shadow-sm ${activeExplorerFile?.id === 'variants' ? 'shrink-0' : ''}`}>
                 <div>
                     <div>
                         <h1 className='text-lg font-bold text-slate-800 flex items-center gap-2'>
@@ -797,7 +800,7 @@ const ControlSystem = () => {
             </header>
 
             {user?.role === 'Administrator' ? (
-                <div className="p-2 bg-white border border-slate-300 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm">
+                <div className={`p-2 bg-white border border-slate-300 rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-sm ${activeExplorerFile?.id === 'variants' ? 'shrink-0' : ''}`}>
                     <div className="flex items-center gap-2">
                         <FaGlobeAmericas className="text-indigo-400 text-sm" />
                         <span className="font-bold text-slate-700">
@@ -833,19 +836,19 @@ const ControlSystem = () => {
                     </div>
                 </div>
             ) : (
-                <div className="p-2 bg-white border border-slate-300 rounded-md flex items-center justify-between text-xs text-sky-700 font-semibold">
+                <div className={`p-2 bg-white border border-slate-300 rounded-md flex items-center justify-between text-xs text-sky-700 font-semibold ${activeExplorerFile?.id === 'variants' ? 'shrink-0' : ''}`}>
                     <span>{t('configuringBrandTenantSettings')}: <span className="font-bold text-slate-900">{selectedBrand || 'Global'}</span></span>
                 </div>
             )}
 
 
             {message && (
-                <div className="p-2 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-fade-in">
+                <div className={`p-2 rounded-md bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold animate-fade-in ${activeExplorerFile?.id === 'variants' ? 'shrink-0' : ''}`}>
                     {message}
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-md border border-slate-300 bg-white shadow-md">
+            <div className={`overflow-hidden rounded-md border border-slate-300 bg-white shadow-md ${activeExplorerFile?.id === 'variants' ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
                 <div className="flex items-center gap-2 border-b border-slate-300 bg-[#f3f3f3] px-3 py-2 text-xs text-slate-700">
                     <FaFolderOpen className="text-sky-700" />
                     <span className="font-semibold">{t('systemMdmRegistryEditor')}</span>
@@ -862,7 +865,7 @@ const ControlSystem = () => {
                     <span className="truncate font-semibold">{activeExplorerFile.label}</span>
                 </div>
 
-                <div className="grid min-h-[620px] grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)]">
+                <div className={`grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] ${activeExplorerFile?.id === 'variants' ? 'min-h-0 flex-1' : 'min-h-[620px]'}`}>
                     <aside className="border-b border-slate-300 bg-white p-2 md:border-b-0 md:border-r">
                         <div className="mb-3 flex items-center gap-2 px-2 text-xs font-semibold text-slate-600">
                             <FaShieldAlt className="text-sky-700" /> {t('registryTree')}
@@ -899,7 +902,7 @@ const ControlSystem = () => {
                         </nav>
                     </aside>
 
-                    <main className="min-w-0 bg-white">
+                    <main className={`min-w-0 bg-white ${activeExplorerFile?.id === 'variants' ? 'flex min-h-0 flex-col overflow-hidden' : ''}`}>
                         {!activeExplorerFile && (
                             <div className="p-6 text-sm text-slate-500">
                                 You do not have read permission for any Control System section.
@@ -914,9 +917,9 @@ const ControlSystem = () => {
                             <span>{t('configurationFile')}</span>
                             <span className="truncate">{selectedBrand || 'Global'} settings</span>
                         </div>
-                        <div className="p-2 sm:p-2">
+                        <div className={`p-2 sm:p-2 ${activeExplorerFile.id === 'variants' ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : ''}`}>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className={activeExplorerFile.id === 'variants' ? 'flex min-h-0 flex-1 flex-col gap-4' : 'grid grid-cols-1 gap-4'}>
 
                 {/* Section 1: Lock Phone Display Text & Phone Number */}
                 {activeExplorerFile.id === 'lock-screen' && (
@@ -1487,8 +1490,8 @@ const ControlSystem = () => {
 
                 {/* Section 6: Product Variants Management */}
                 {activeExplorerFile.id === 'variants' && (
-                <div className="p-6 rounded-3xl glass-card border border-teal-500/30 space-y-4 shadow-xl">
-                    <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                <div className="glass-card flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-3xl border border-teal-500/30 p-3 shadow-xl">
+                    <div className="flex shrink-0 items-center justify-between border-b border-gray-800 pb-2">
                         <div className="flex items-center gap-2 text-teal-300 text-xs font-bold uppercase">
                             <FaTags /> {lang === 'km' ? 'វ៉ារ្យ៉ង់ផលិតផល (Product Variants)' : 'Product Variants & Descriptions'}
                             <OriginBadge fieldKey="product_variants" />
@@ -1497,7 +1500,7 @@ const ControlSystem = () => {
                             {productVariants.length} {lang === 'km' ? 'វ៉ារ្យ៉ង់' : 'Variants'}
                         </span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-[140px_180px_1fr_auto] gap-2 text-xs">
+                    <div className="grid shrink-0 grid-cols-1 gap-2 text-xs sm:grid-cols-[140px_180px_1fr_auto]">
                         <input
                             type="text"
                             value={newVariantName}
@@ -1575,8 +1578,8 @@ const ControlSystem = () => {
                         </button>
                     </div>
 
-                    <div className="overflow-x-auto rounded-lg border border-gray-800 bg-gray-950/70">
-                        <table className="w-full text-left text-xs text-gray-300">
+                    <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-gray-800 bg-gray-950/70">
+                        <table className="w-full min-w-[720px] text-left text-xs text-gray-300">
                             <thead className="bg-gray-900/80 uppercase text-[11px] text-gray-400 border-b border-gray-800">
                                 <tr>
                                     <th className="px-4 py-2.5 w-12 text-center">#</th>
