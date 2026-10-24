@@ -1603,7 +1603,7 @@ const ControlSystem = () => {
                                             <td className="px-4 py-2.5 text-center text-gray-500 font-mono">{idx + 1}</td>
                                             <td className="px-4 py-2.5 text-center sm:text-left">
                                                 <span
-                                                    className="inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-bold border border-slate-600 bg-slate-800 tracking-wider shadow-sm"
+                                                    className="inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-bold border border-slate-600 bg-black tracking-wider shadow-sm"
                                                     style={{ color: '#ffffff' }}
                                                 >
                                                     {vName}
