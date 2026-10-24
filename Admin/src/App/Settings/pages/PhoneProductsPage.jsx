@@ -56,12 +56,15 @@ const PhoneProductsPage = () => {
                 defects: Array.isArray(result.data?.defects) ? result.data.defects : []
             });
             setModelOptions(Array.isArray(result.models) ? result.models : []);
+            if (!isMasterAdmin && result.brand !== undefined) {
+                setSelectedBrand(String(result.brand || '').trim());
+            }
         } catch (loadError) {
             setError(loadError.message);
         } finally {
             setLoading(false);
         }
-    }, [API_BASE, selectedBrand]);
+    }, [API_BASE, isMasterAdmin, selectedBrand]);
 
     useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
@@ -127,6 +130,9 @@ const PhoneProductsPage = () => {
                 products: result.data.products || [],
                 defects: result.data.defects || []
             });
+            if (!isMasterAdmin && result.brand !== undefined) {
+                setSelectedBrand(String(result.brand || '').trim());
+            }
             setMessage('Product settings saved.');
         } catch (saveError) {
             setError(saveError.message);
@@ -148,6 +154,9 @@ const PhoneProductsPage = () => {
                 products: result.data.products || [],
                 defects: result.data.defects || []
             });
+            if (!isMasterAdmin && result.data.brand !== undefined) {
+                setSelectedBrand(String(result.data.brand || '').trim());
+            }
             setMessage(`Khmer24 market price updated from ${result.listingCount} matching listing(s).`);
         } catch (syncError) {
             setError(syncError.message);

@@ -51,7 +51,7 @@ const hasPermission = (identity, pagePath, action) => (
 const resolveCatalogBrand = (req, identity) => {
     const requestedBrand = String(req.query.brand ?? req.body?.brand ?? '').trim();
     if (isMasterAdmin(identity)) return requestedBrand;
-    return requestedBrand && requestedBrand !== identity.brand ? null : identity.brand;
+    return identity.brand;
 };
 
 const getAvailableModels = async (brand) => {
