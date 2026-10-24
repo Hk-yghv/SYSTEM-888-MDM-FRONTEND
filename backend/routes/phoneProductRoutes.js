@@ -120,30 +120,45 @@ const normalizeCatalog = (body) => {
     for (const item of body.defects) {
         const id = String(item?.id || '').trim();
         const name = String(item?.name || '').trim();
-        const deduction = Number(item?.deduction);
+        const minDeduction = Number(item?.minDeduction ?? item?.deduction ?? 0);
+        const maxDeduction = Number(item?.maxDeduction ?? item?.deduction ?? minDeduction);
         if (!id || defectIds.has(id) || !name || name.length > 100) {
             return { error: 'Each defect needs a unique ID and a name.' };
         }
-        if (!Number.isFinite(deduction) || deduction < 0 || deduction > 10000000) {
-            return { error: `Defect ${name} needs a valid deduction amount.` };
+        if (
+            !Number.isFinite(minDeduction) ||
+            !Number.isFinite(maxDeduction) ||
+            minDeduction < 0 ||
+            maxDeduction < minDeduction ||
+            maxDeduction > 10000000
+        ) {
+            return { error: `Defect ${name} needs a valid deduction range.` };
         }
         defectIds.add(id);
-        defects.push({ id, name, deduction });
+        defects.push({ id, name, minDeduction, maxDeduction });
     }
 
     return { products, defects };
 };
 
 const readCatalog = async (brand) => {
+    const normalizeLegacyDefects = (catalog) => ({
+        ...catalog,
+        defects: (catalog.defects || []).map((defect) => ({
+            ...defect,
+            minDeduction: Number(defect.minDeduction ?? defect.deduction ?? 0),
+            maxDeduction: Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0)
+        }))
+    });
     if (isMongoConnected) {
         const catalogs = await queryAllDBs(PhoneProductCatalog, (Model) => Model.find({ brand }).limit(1).lean());
-        if (catalogs[0]) return catalogs[0];
+        if (catalogs[0]) return normalizeLegacyDefects(catalogs[0]);
     }
-    return MEM_DB.phoneProductCatalogs.find((catalog) => catalog.brand === brand) || {
+    return normalizeLegacyDefects(MEM_DB.phoneProductCatalogs.find((catalog) => catalog.brand === brand) || {
         brand,
         products: [],
         defects: []
-    };
+    });
 };
 
 const saveCatalog = async (brand, data, username) => {

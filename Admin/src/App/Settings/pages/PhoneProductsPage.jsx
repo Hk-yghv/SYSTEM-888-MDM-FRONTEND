@@ -102,7 +102,16 @@ const PhoneProductsPage = () => {
         setCatalog((current) => ({
             ...current,
             defects: current.defects.map((defect) => defect.id === id
-                ? { ...defect, [field]: value }
+                ? {
+                    ...defect,
+                    [field]: value,
+                    ...(field === 'minDeduction' && Number(value) > Number(defect.maxDeduction)
+                        ? { maxDeduction: Number(value) }
+                        : {}),
+                    ...(field === 'maxDeduction' && Number(value) < Number(defect.minDeduction)
+                        ? { minDeduction: Number(value) }
+                        : {})
+                }
                 : defect)
         }));
     };
@@ -110,7 +119,7 @@ const PhoneProductsPage = () => {
     const addDefect = () => {
         setCatalog((current) => ({
             ...current,
-            defects: [...current.defects, { id: newId(), name: '', deduction: 0 }]
+            defects: [...current.defects, { id: newId(), name: '', minDeduction: 0, maxDeduction: 0 }]
         }));
         setMessage('');
     };
@@ -271,7 +280,7 @@ const PhoneProductsPage = () => {
                 <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                     <div>
                         <h2 className="font-bold text-slate-800">Defect deductions</h2>
-                        <p className="mt-1 text-xs text-slate-500">Each selected defect deducts its configured amount from the valuation price.</p>
+                        <p className="mt-1 text-xs text-slate-500">Set a minimum and maximum deduction. Valuation uses the minimum for low, midpoint for medium, and maximum for high severity.</p>
                     </div>
                     <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={addDefect}>
                         <FaPlus className="mr-2 inline" /> Add defect
@@ -281,7 +290,9 @@ const PhoneProductsPage = () => {
                     {catalog.defects.map((defect) => (
                         <div key={defect.id} className="flex items-center gap-2">
                             <input className={inputClass} value={defect.name} maxLength={100} onChange={(event) => updateDefect(defect.id, 'name', event.target.value)} placeholder="Broken screen" />
-                            <input className={`${inputClass} max-w-32`} type="number" min="0" step="0.01" value={defect.deduction} onChange={(event) => updateDefect(defect.id, 'deduction', Number(event.target.value))} aria-label={`Deduction for ${defect.name || 'defect'}`} />
+                            <input className={`${inputClass} max-w-28`} type="number" min="0" step="0.01" value={defect.minDeduction ?? defect.deduction ?? 0} onChange={(event) => updateDefect(defect.id, 'minDeduction', Number(event.target.value))} aria-label={`Minimum deduction for ${defect.name || 'defect'}`} title="Minimum deduction" />
+                            <span className="text-slate-400">–</span>
+                            <input className={`${inputClass} max-w-28`} type="number" min={defect.minDeduction ?? defect.deduction ?? 0} step="0.01" value={defect.maxDeduction ?? defect.deduction ?? 0} onChange={(event) => updateDefect(defect.id, 'maxDeduction', Number(event.target.value))} aria-label={`Maximum deduction for ${defect.name || 'defect'}`} title="Maximum deduction" />
                             <button type="button" className="shrink-0 text-rose-600" aria-label={`Delete ${defect.name || 'defect'}`} onClick={() => setCatalog((current) => ({ ...current, defects: current.defects.filter((item) => item.id !== defect.id) }))}>
                                 <FaTrashAlt />
                             </button>

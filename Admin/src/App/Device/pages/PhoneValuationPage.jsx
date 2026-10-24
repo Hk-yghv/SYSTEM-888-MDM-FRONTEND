@@ -8,7 +8,7 @@ const PhoneValuationPage = () => {
     const { API_BASE } = useAuth();
     const [catalog, setCatalog] = useState({ products: [], defects: [] });
     const [selectedProductId, setSelectedProductId] = useState('');
-    const [selectedDefects, setSelectedDefects] = useState([]);
+    const [defectSeverity, setDefectSeverity] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -34,9 +34,17 @@ const PhoneValuationPage = () => {
     useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
     const product = catalog.products.find((item) => item.id === selectedProductId);
-    const deduction = useMemo(() => catalog.defects
-        .filter((item) => selectedDefects.includes(item.id))
-        .reduce((total, item) => total + Number(item.deduction || 0), 0), [catalog.defects, selectedDefects]);
+    const selectedDefects = useMemo(() => catalog.defects
+        .filter((item) => defectSeverity[item.id])
+        .map((item) => {
+            const min = Number(item.minDeduction ?? item.deduction ?? 0);
+            const max = Number(item.maxDeduction ?? item.deduction ?? min);
+            const severity = defectSeverity[item.id];
+            const amount = severity === 'low' ? min : severity === 'high' ? max : (min + max) / 2;
+            return { ...item, severity, amount };
+        }), [catalog.defects, defectSeverity]);
+    const deduction = useMemo(() => selectedDefects
+        .reduce((total, item) => total + item.amount, 0), [selectedDefects]);
     const finalValue = Math.max(0, Number(product?.valuationPrice || 0) - deduction);
     const toggleDefect = (id) => setSelectedDefects((current) => (
         current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
@@ -61,7 +69,7 @@ const PhoneValuationPage = () => {
                     <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <label className="block text-sm font-semibold text-slate-700">
                             Phone model / variant / capacity
-                            <select className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" value={selectedProductId} onChange={(event) => { setSelectedProductId(event.target.value); setSelectedDefects([]); }}>
+                            <select className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" value={selectedProductId} onChange={(event) => { setSelectedProductId(event.target.value); setDefectSeverity({}); }}>
                                 {catalog.products.map((item) => (
                                     <option key={item.id} value={item.id}>
                                         {item.model}{item.variant ? ` · ${item.variant}` : ''} · ${item.capacityGb} GB
@@ -87,16 +95,36 @@ const PhoneValuationPage = () => {
 
                     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 className="font-bold text-slate-800">Phone defects</h2>
-                        <p className="mt-1 text-sm text-slate-500">Select each issue found. Its deduction is subtracted from the base price.</p>
+                        <p className="mt-1 text-sm text-slate-500">Choose how severe each issue is. Low uses the minimum deduction, medium uses the midpoint, and high uses the maximum.</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {catalog.defects.map((defect) => (
-                                <label key={defect.id} className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 hover:bg-slate-50">
-                                    <span className="flex items-center gap-3 text-sm text-slate-700">
-                                        <input type="checkbox" checked={selectedDefects.includes(defect.id)} onChange={() => toggleDefect(defect.id)} className="h-4 w-4 accent-emerald-600" />
-                                        {defect.name}
-                                    </span>
-                                    <span className="text-sm font-semibold text-rose-600">−{money(defect.deduction)}</span>
-                                </label>
+                                <div key={defect.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
+                                    <span className="text-sm font-medium text-slate-700">{defect.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="whitespace-nowrap text-xs text-slate-500">
+                                            {money(defect.minDeduction ?? defect.deduction ?? 0)}–{money(defect.maxDeduction ?? defect.deduction ?? 0)}
+                                        </span>
+                                        {defectSeverity[defect.id] && (
+                                            <span className="whitespace-nowrap text-xs font-semibold text-rose-600">
+                                                −{money(selectedDefects.find((item) => item.id === defect.id)?.amount)}
+                                            </span>
+                                        )}
+                                        <select
+                                            className="rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm outline-none focus:border-emerald-500"
+                                            value={defectSeverity[defect.id] || ''}
+                                            onChange={(event) => setDefectSeverity((current) => ({
+                                                ...current,
+                                                [defect.id]: event.target.value
+                                            }))}
+                                            aria-label={`Severity of ${defect.name}`}
+                                        >
+                                            <option value="">គ្មាន</option>
+                                            <option value="low">តិច</option>
+                                            <option value="medium">មធ្យម</option>
+                                            <option value="high">ខ្លាំង</option>
+                                        </select>
+                                    </div>
+                                </div>
                             ))}
                             {catalog.defects.length === 0 && <p className="text-sm text-slate-500">No defect deductions are configured.</p>}
                         </div>
