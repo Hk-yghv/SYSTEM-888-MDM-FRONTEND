@@ -450,6 +450,17 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                 row.penalty = autoPenalty;
             }
 
+            // 'principalPerMonth' is a virtual field: admin edits principal directly
+            // and we recompute scheduledAmount = principal + interest
+            if (field === 'principalPerMonth') {
+                const principalNum = Number(val) || 0;
+                const interestNum = Number(row.interest) || 0;
+                row.scheduledAmount = round2(principalNum + interestNum);
+                row.totalAmount = round2(row.scheduledAmount + (Number(row.penalty) || 0));
+                updated[idx] = row;
+                return updated;
+            }
+
             if (field === 'penalty' || field === 'scheduledAmount' || field === 'dueDate') {
                 const penaltyNum = Number(field === 'penalty' ? val : row.penalty) || 0;
                 const schedNum = Number(field === 'scheduledAmount' ? val : row.scheduledAmount) || 0;
@@ -890,9 +901,23 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
                                                 ${formatMoney(row.loanAmount || 0)}
                                             </td>
 
-                                            {/* Principal Per Installment = scheduledAmount - interest */}
+                                            {/* Principal Per Installment = scheduledAmount - interest  (editable by admin) */}
                                             <td className="px-3 py-2.5 font-mono font-bold text-indigo-600">
-                                                ${formatMoney(round2(Number(row.scheduledAmount || 0) - Number(displayInterest || 0)))}
+                                                {!canEditScheduled ? (
+                                                    <span className="font-bold text-indigo-600">
+                                                        ${formatMoney(round2(Number(row.scheduledAmount || 0) - Number(displayInterest || 0)))}
+                                                    </span>
+                                                ) : (
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        value={round2(Number(row.scheduledAmount || 0) - Number(displayInterest || 0))}
+                                                        onChange={(e) => handleRowChange(idx, 'principalPerMonth', e.target.value)}
+                                                        className="w-24 px-2 py-1 bg-indigo-50 border border-indigo-300 focus:border-indigo-500 rounded-lg text-indigo-700 font-bold font-mono text-xs outline-none shadow-2xs"
+                                                        placeholder="0"
+                                                        title="Principal/Month — auto-updates Amount Due"
+                                                    />
+                                                )}
                                             </td>
 
                                             {/* Interest */}
