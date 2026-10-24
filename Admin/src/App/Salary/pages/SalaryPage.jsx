@@ -123,30 +123,20 @@ const SalaryPage = () => {
     const [proofGalleryImages, setProofGalleryImages] = useState([]);
     const [proofGalleryIndex, setProofGalleryIndex] = useState(0);
 
+
     // Global Saved Join Date + Staff Names + Staff QR Code
-    const [savedJoinDate, setSavedJoinDate] = useState(() => localStorage.getItem('salary_saved_join_date') || '');
-    const [savedStaffNameKh, setSavedStaffNameKh] = useState(() => localStorage.getItem('salary_saved_name_kh') || '');
-    const [savedStaffNameEn, setSavedStaffNameEn] = useState(() => localStorage.getItem('salary_saved_name_en') || '');
-    const [savedQrCodePhoto, setSavedQrCodePhoto] = useState(() => localStorage.getItem('salary_saved_qr_code') || '');
-    const [tempNameKh, setTempNameKh] = useState(() => localStorage.getItem('salary_saved_name_kh') || '');
-    const [tempNameEn, setTempNameEn] = useState(() => localStorage.getItem('salary_saved_name_en') || '');
-    const [tempQrCodePhoto, setTempQrCodePhoto] = useState(() => localStorage.getItem('salary_saved_qr_code') || '');
-    const [tempDay, setTempDay] = useState(() => {
-        const saved = localStorage.getItem('salary_saved_join_date');
-        if (saved) { const parts = saved.split('-'); if (parts[2]) return parseInt(parts[2], 10); }
-        return new Date().getDate();
-    });
-    const [tempMonth, setTempMonth] = useState(() => {
-        const saved = localStorage.getItem('salary_saved_join_date');
-        if (saved) { const parts = saved.split('-'); if (parts[1]) return parseInt(parts[1], 10); }
-        return new Date().getMonth() + 1;
-    });
-    const [tempYear, setTempYear] = useState(() => {
-        const saved = localStorage.getItem('salary_saved_join_date');
-        if (saved) { const parts = saved.split('-'); if (parts[0]) return parseInt(parts[0], 10); }
-        return new Date().getFullYear();
-    });
-    const [isEditingDate, setIsEditingDate] = useState(() => !localStorage.getItem('salary_saved_join_date'));
+    // NOTE: No localStorage — data loaded from backend only (security)
+    const [savedJoinDate, setSavedJoinDate] = useState('');
+    const [savedStaffNameKh, setSavedStaffNameKh] = useState('');
+    const [savedStaffNameEn, setSavedStaffNameEn] = useState('');
+    const [savedQrCodePhoto, setSavedQrCodePhoto] = useState('');
+    const [tempNameKh, setTempNameKh] = useState('');
+    const [tempNameEn, setTempNameEn] = useState('');
+    const [tempQrCodePhoto, setTempQrCodePhoto] = useState('');
+    const [tempDay, setTempDay] = useState(new Date().getDate());
+    const [tempMonth, setTempMonth] = useState(new Date().getMonth() + 1);
+    const [tempYear, setTempYear] = useState(new Date().getFullYear());
+    const [isEditingDate, setIsEditingDate] = useState(true);
 
     const computeTempDateString = (y, m, d) => {
         const yy = String(y);
@@ -161,13 +151,9 @@ const SalaryPage = () => {
         setSavedStaffNameKh(tempNameKh);
         setSavedStaffNameEn(tempNameEn);
         setSavedQrCodePhoto(tempQrCodePhoto);
-        localStorage.setItem('salary_saved_join_date', dateStr);
-        localStorage.setItem('salary_saved_name_kh', tempNameKh);
-        localStorage.setItem('salary_saved_name_en', tempNameEn);
-        localStorage.setItem('salary_saved_qr_code', tempQrCodePhoto);
         setIsEditingDate(false);
 
-        // Sync with backend
+        // Sync with backend only — no localStorage
         try {
             const res = await fetch(`${API_BASE}/salary/save-staff-info`, {
                 method: 'POST',
@@ -189,7 +175,7 @@ const SalaryPage = () => {
         }
     };
 
-    // Automatically load saved staff info from backend
+    // Automatically load saved staff info from backend (no localStorage)
     const fetchStaffInfo = useCallback(async (targetStaff = selectedStaff) => {
         try {
             const targetKey = targetStaff?.key || targetStaff?.staffName || user?.username || '';
@@ -206,21 +192,17 @@ const SalaryPage = () => {
                     if (d.staffNameKh) {
                         setSavedStaffNameKh(d.staffNameKh);
                         setTempNameKh(d.staffNameKh);
-                        localStorage.setItem('salary_saved_name_kh', d.staffNameKh);
                     }
                     if (d.staffNameEn) {
                         setSavedStaffNameEn(d.staffNameEn);
                         setTempNameEn(d.staffNameEn);
-                        localStorage.setItem('salary_saved_name_en', d.staffNameEn);
                     }
                     if (d.qrCodePhoto) {
                         setSavedQrCodePhoto(d.qrCodePhoto);
                         setTempQrCodePhoto(d.qrCodePhoto);
-                        localStorage.setItem('salary_saved_qr_code', d.qrCodePhoto);
                     }
                     if (d.joinDate) {
                         setSavedJoinDate(d.joinDate);
-                        localStorage.setItem('salary_saved_join_date', d.joinDate);
                         const parts = d.joinDate.split('-');
                         if (parts.length >= 3) {
                             setTempYear(parseInt(parts[0], 10));
@@ -333,6 +315,13 @@ const SalaryPage = () => {
             fetchStaffDirectory();
         }
     }, [isAdmin, fetchStaffDirectory]);
+
+    // Security: clear any stale salary data left in localStorage by previous versions
+    useEffect(() => {
+        ['salary_saved_join_date', 'salary_saved_name_kh', 'salary_saved_name_en', 'salary_saved_qr_code'].forEach(
+            key => localStorage.removeItem(key)
+        );
+    }, []);
 
     // Handle Selecting a Staff Member (for Admin)
     const handleSelectStaff = (staff) => {
