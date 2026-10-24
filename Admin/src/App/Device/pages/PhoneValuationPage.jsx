@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { readApiResponse } from '../../../utils/apiResponse';
 
 const money = (value) => `$${Number(value || 0).toFixed(2)}`;
 
@@ -16,8 +17,7 @@ const PhoneValuationPage = () => {
         setError('');
         try {
             const response = await fetch(`${API_BASE}/phone-products`, { cache: 'no-store' });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Unable to load phone products.');
+            const result = await readApiResponse(response, 'Unable to load phone products.');
             const products = Array.isArray(result.data?.products) ? result.data.products : [];
             setCatalog({
                 products,

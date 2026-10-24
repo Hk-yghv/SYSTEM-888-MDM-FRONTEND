@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { FaPlus, FaSyncAlt, FaTrashAlt } from 'react-icons/fa';
+import { readApiResponse } from '../../../utils/apiResponse';
 
 const emptyCatalog = { products: [], defects: [] };
 const newId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -8,31 +9,59 @@ const inputClass = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50';
 
 const PhoneProductsPage = () => {
-    const { API_BASE } = useAuth();
+    const { API_BASE, user } = useAuth();
+    const isMasterAdmin = Boolean(
+        user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.isImmutable ||
+        user?.role === 'Administrator' ||
+        user?.role === 'Admin'
+    );
+    const [selectedBrand, setSelectedBrand] = useState(String(user?.brand || '').trim());
+    const [brandOptions, setBrandOptions] = useState([]);
     const [catalog, setCatalog] = useState(emptyCatalog);
+    const [modelOptions, setModelOptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [syncingId, setSyncingId] = useState('');
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
 
+    const loadBrandOptions = useCallback(async () => {
+        if (!isMasterAdmin) {
+            setBrandOptions([]);
+            setSelectedBrand(String(user?.brand || '').trim());
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE}/controlsystem?brand=`, { cache: 'no-store' });
+            const result = await readApiResponse(response, 'Unable to load brands.');
+            const brands = result.droplists?.find((item) => item.category === 'Brands')?.items || [];
+            setBrandOptions([...new Set(['', ...brands.map((brand) => String(brand || '').trim()).filter(Boolean)])]);
+        } catch (loadError) {
+            setError(loadError.message);
+        }
+    }, [API_BASE, isMasterAdmin, user?.brand]);
+
+    useEffect(() => { loadBrandOptions(); }, [loadBrandOptions]);
+
     const loadCatalog = useCallback(async () => {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch(`${API_BASE}/phone-products`, { cache: 'no-store' });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Unable to load product data.');
+            const response = await fetch(`${API_BASE}/phone-products?brand=${encodeURIComponent(selectedBrand)}`, { cache: 'no-store' });
+            const result = await readApiResponse(response, 'Unable to load product data.');
             setCatalog({
                 products: Array.isArray(result.data?.products) ? result.data.products : [],
                 defects: Array.isArray(result.data?.defects) ? result.data.defects : []
             });
+            setModelOptions(Array.isArray(result.models) ? result.models : []);
         } catch (loadError) {
             setError(loadError.message);
         } finally {
             setLoading(false);
         }
-    }, [API_BASE]);
+    }, [API_BASE, selectedBrand]);
 
     useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
@@ -50,7 +79,7 @@ const PhoneProductsPage = () => {
             ...current,
             products: [...current.products, {
                 id: newId(),
-                model: '',
+                model: modelOptions[0] || '',
                 variant: '',
                 capacityGb: 128,
                 valuationPrice: 0,
@@ -91,10 +120,9 @@ const PhoneProductsPage = () => {
             const response = await fetch(`${API_BASE}/phone-products`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(catalog)
+                body: JSON.stringify({ ...catalog, brand: selectedBrand })
             });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Unable to save product data.');
+            const result = await readApiResponse(response, 'Unable to save product data.');
             setCatalog({
                 products: result.data.products || [],
                 defects: result.data.defects || []
@@ -112,11 +140,10 @@ const PhoneProductsPage = () => {
         setError('');
         setMessage('');
         try {
-            const response = await fetch(`${API_BASE}/phone-products/sync-market-price/${encodeURIComponent(productId)}`, {
+            const response = await fetch(`${API_BASE}/phone-products/sync-market-price/${encodeURIComponent(productId)}?brand=${encodeURIComponent(selectedBrand)}`, {
                 method: 'POST'
             });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Unable to sync Khmer24 price.');
+            const result = await readApiResponse(response, 'Unable to sync Khmer24 price.');
             setCatalog({
                 products: result.data.products || [],
                 defects: result.data.defects || []
@@ -140,8 +167,17 @@ const PhoneProductsPage = () => {
                     <h1 className="text-2xl font-bold text-slate-900">Phone Products</h1>
                     <p className="mt-1 text-sm text-slate-500">Manage models, market variants, storage capacities, valuation prices, and defect deductions.</p>
                 </div>
+                {isMasterAdmin && (
+                    <label className="min-w-52 text-sm font-semibold text-slate-700">
+                        Brand
+                        <select className={`${inputClass} mt-1`} value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)}>
+                            <option value="">Global</option>
+                            {brandOptions.filter(Boolean).map((brand) => <option key={brand} value={brand}>{brand}</option>)}
+                        </select>
+                    </label>
+                )}
                 <div className="flex gap-2">
-                    <button type="button" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={addProduct}>
+                    <button type="button" className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={addProduct} disabled={!modelOptions.length}>
                         <FaPlus className="mr-2 inline" /> Add model
                     </button>
                     <button type="button" className={buttonClass} onClick={saveCatalog} disabled={saving}>
@@ -156,7 +192,7 @@ const PhoneProductsPage = () => {
             <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-200 px-5 py-4">
                     <h2 className="font-bold text-slate-800">Models and valuation prices</h2>
-                    <p className="mt-1 text-xs text-slate-500">LL/A, ZA, and other market variants are stored separately. Khmer24 pricing is fetched separately; the market reference uses the median of matching listings.</p>
+                    <p className="mt-1 text-xs text-slate-500">Catalog: {selectedBrand || 'Global'}. Select models from this brand's Device Models list. LL/A, ZA, and other market variants are stored separately.</p>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[1100px] text-left text-sm">
@@ -175,7 +211,17 @@ const PhoneProductsPage = () => {
                         <tbody className="divide-y divide-slate-100">
                             {catalog.products.map((product) => (
                                 <tr key={product.id}>
-                                    <td className="px-4 py-3"><input className={inputClass} value={product.model} maxLength={100} onChange={(event) => updateProduct(product.id, 'model', event.target.value)} placeholder="iPhone 16 Pro Max" /></td>
+                                    <td className="px-4 py-3">
+                                        <select className={inputClass} value={product.model} onChange={(event) => {
+                                            updateProduct(product.id, 'model', event.target.value);
+                                            updateProduct(product.id, 'khmer24MarketPrice', null);
+                                            updateProduct(product.id, 'khmer24Listings', []);
+                                            updateProduct(product.id, 'khmer24SyncedAt', null);
+                                        }}>
+                                            <option value="">Select model</option>
+                                            {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
+                                        </select>
+                                    </td>
                                     <td className="px-4 py-3"><input className={inputClass} value={product.variant} maxLength={40} onChange={(event) => updateProduct(product.id, 'variant', event.target.value)} placeholder="LL/A, ZA, Global..." /></td>
                                     <td className="px-4 py-3"><input className={inputClass} type="number" min="1" step="1" value={product.capacityGb} onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))} /></td>
                                     <td className="px-4 py-3"><input className={inputClass} type="number" min="0" step="0.01" value={product.valuationPrice} onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))} /></td>
@@ -206,7 +252,7 @@ const PhoneProductsPage = () => {
                                     </td>
                                 </tr>
                             ))}
-                            {catalog.products.length === 0 && <tr><td colSpan="8" className="px-4 py-10 text-center text-slate-500">No products configured. Add a model to begin.</td></tr>}
+                            {catalog.products.length === 0 && <tr><td colSpan="8" className="px-4 py-10 text-center text-slate-500">{modelOptions.length ? 'No products configured. Add a model to begin.' : 'No Device Models are configured for this brand. Add them in Control System → System Data first.'}</td></tr>}
                         </tbody>
                     </table>
                 </div>

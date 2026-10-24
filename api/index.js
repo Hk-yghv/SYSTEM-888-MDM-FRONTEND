@@ -212,6 +212,7 @@ export default async function handler(req, res) {
     }
 
     let lastError = null;
+    let missingPhoneProductRoute = false;
 
     // 6. Real-Time Failover Loop across all 3 Backend Servers
     for (let i = 0; i < API_POOL.length; i++) {
@@ -243,6 +244,10 @@ export default async function handler(req, res) {
                 console.warn(`[Proxy Failover] Server ${backendBase} returned HTTP ${backendRes.status}. Trying next server...`);
                 continue;
             }
+            if (backendRes.status === 404 && req.method === 'GET' && cleanPath === 'phone-products') {
+                missingPhoneProductRoute = true;
+                continue;
+            }
 
             // Forward response headers
             const contentType = backendRes.headers.get('content-type');
@@ -264,6 +269,10 @@ export default async function handler(req, res) {
             console.warn(`[Proxy Failover Error] Server ${backendBase} unreachable (${err.message}). Trying next...`);
             lastError = err;
         }
+    }
+
+    if (missingPhoneProductRoute) {
+        return res.status(404).json({ error: 'Phone Products API is not deployed on any configured backend. Deploy the latest backend before using Product settings.' });
     }
 
     // If all servers in pool fail

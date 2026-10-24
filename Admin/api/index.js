@@ -169,6 +169,7 @@ export default async function handler(req, res) {
 
     let lastError = null;
     let missingCalendarRoute = false;
+    let missingPhoneProductRoute = false;
 
     // 7. Real-Time Failover Loop across all configured backend servers
     for (let i = 0; i < API_POOL.length; i++) {
@@ -204,6 +205,10 @@ export default async function handler(req, res) {
                 missingCalendarRoute = true;
                 continue;
             }
+            if (backendRes.status === 404 && req.method === 'GET' && cleanPath === 'phone-products') {
+                missingPhoneProductRoute = true;
+                continue;
+            }
 
             // Forward response headers
             const contentType = backendRes.headers.get('content-type');
@@ -228,6 +233,9 @@ export default async function handler(req, res) {
 
     if (missingCalendarRoute) {
         return res.status(404).json({ error: 'Calendar API is not deployed on any configured backend.' });
+    }
+    if (missingPhoneProductRoute) {
+        return res.status(404).json({ error: 'Phone Products API is not deployed on any configured backend. Deploy the latest backend before using Product settings.' });
     }
 
     // If all servers in pool fail

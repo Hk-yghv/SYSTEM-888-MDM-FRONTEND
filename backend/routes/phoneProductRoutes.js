@@ -1,6 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import PhoneProductCatalog from '../models/PhoneProductCatalog.js';
+import ControlSystem from '../models/ControlSystem.js';
 import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { getWriteModel, queryAllDBs } from '../config/multiDB.js';
@@ -36,6 +37,7 @@ const getRequestIdentity = async (req) => {
 
     return {
         username: user.username,
+        brand: String(user.brand || '').trim(),
         role: user.role || '',
         isImmutable: Boolean(user.isImmutable),
         permissions
@@ -46,7 +48,34 @@ const hasPermission = (identity, pagePath, action) => (
     isMasterAdmin(identity) || identity.permissions?.[pagePath]?.[action] === true
 );
 
-const resolveCatalogBrand = () => '';
+const resolveCatalogBrand = (req, identity) => {
+    const requestedBrand = String(req.query.brand ?? req.body?.brand ?? '').trim();
+    if (isMasterAdmin(identity)) return requestedBrand;
+    return requestedBrand && requestedBrand !== identity.brand ? null : identity.brand;
+};
+
+const getAvailableModels = async (brand) => {
+    let config;
+    if (isMongoConnected) {
+        const configs = await queryAllDBs(ControlSystem, (Model) => Model.find({
+            key: 'droplists',
+            $or: [{ brand }, { brand: '' }, { brand: { $exists: false } }, { brand: null }]
+        }));
+        const brandConfig = configs.find((item) => item.brand === brand)?.value;
+        const globalConfig = configs.find((item) => !item.brand)?.value;
+        const brandModels = brandConfig?.find((item) => item.category === 'Device Models')?.items;
+        config = Array.isArray(brandModels) && brandModels.length > 0 ? brandConfig : globalConfig;
+    }
+    if (!config) {
+        const brandConfig = MEM_DB.controlSystems?.find((item) => item.brand === brand);
+        config = brandConfig?.droplists || MEM_DB.controlSystem?.droplists;
+    }
+
+    const models = config?.find((item) => item.category === 'Device Models')?.items;
+    return Array.isArray(models)
+        ? [...new Set(models.map((model) => String(model || '').trim()).filter(Boolean))]
+        : [];
+};
 
 const normalizeCatalog = (body) => {
     if (!Array.isArray(body.products) || !Array.isArray(body.defects)) {
@@ -201,8 +230,13 @@ router.get('/', async (req, res) => {
             return res.status(403).json({ error: 'Phone product read permission required.' });
         }
 
-        const brand = resolveCatalogBrand();
-        return res.json({ data: await readCatalog(brand), brand });
+        const brand = resolveCatalogBrand(req, identity);
+        if (brand === null) return res.status(403).json({ error: 'You cannot access another brand product catalog.' });
+        const [data, models] = await Promise.all([
+            readCatalog(brand),
+            getAvailableModels(brand)
+        ]);
+        return res.json({ data, brand, models });
     } catch (error) {
         console.error('[PhoneProducts] Catalog read failed:', error);
         return res.status(500).json({ error: 'Unable to load phone product catalog.' });
@@ -219,7 +253,13 @@ router.put('/', async (req, res) => {
 
         const normalized = normalizeCatalog(req.body);
         if (normalized.error) return res.status(400).json({ error: normalized.error });
-        const brand = resolveCatalogBrand();
+        const brand = resolveCatalogBrand(req, identity);
+        if (brand === null) return res.status(403).json({ error: 'You cannot edit another brand product catalog.' });
+        const availableModels = await getAvailableModels(brand);
+        const unavailableModel = normalized.products.find((item) => !availableModels.includes(item.model));
+        if (unavailableModel) {
+            return res.status(400).json({ error: `Model "${unavailableModel.model}" is not configured for ${brand || 'Global'}.` });
+        }
         const data = await saveCatalog(brand, normalized, identity.username);
         return res.json({ data, brand });
     } catch (error) {
@@ -236,7 +276,8 @@ router.post('/sync-market-price/:productId', async (req, res) => {
             return res.status(403).json({ error: 'Product settings edit permission required.' });
         }
 
-        const brand = resolveCatalogBrand();
+        const brand = resolveCatalogBrand(req, identity);
+        if (brand === null) return res.status(403).json({ error: 'You cannot sync another brand product catalog.' });
         const catalog = await readCatalog(brand);
         const product = catalog.products.find((item) => item.id === req.params.productId);
         if (!product) return res.status(404).json({ error: 'Phone product not found.' });
