@@ -80,9 +80,40 @@ const normalizeCatalog = (body) => {
         return { error: 'Products and defects must be arrays.' };
     }
     if (body.products.length > 200 || body.defects.length > 100) {
-        return { error: 'A catalog can contain up to 200 products and 100 defects.' };
+        return { error: 'A catalog can contain up to 200 products and 100 legacy defects.' };
     }
 
+    const normalizeDefects = (items, productModel) => {
+        if (!Array.isArray(items) || items.length > 100) {
+            return { error: `Product ${productModel} can contain up to 100 defects.` };
+        }
+        const defectIds = new Set();
+        const defects = [];
+        for (const item of items) {
+            const id = String(item?.id || '').trim();
+            const name = String(item?.name || '').trim();
+            const minDeduction = Number(item?.minDeduction ?? item?.deduction ?? 0);
+            const maxDeduction = Number(item?.maxDeduction ?? item?.deduction ?? minDeduction);
+            if (!id || defectIds.has(id) || !name || name.length > 100) {
+                return { error: `Each defect for ${productModel} needs a unique ID and a name.` };
+            }
+            if (
+                !Number.isFinite(minDeduction) ||
+                !Number.isFinite(maxDeduction) ||
+                minDeduction < 0 ||
+                maxDeduction < minDeduction ||
+                maxDeduction > 10000000
+            ) {
+                return { error: `Defect ${name} needs a valid deduction range.` };
+            }
+            defectIds.add(id);
+            defects.push({ id, name, minDeduction, maxDeduction });
+        }
+        return { defects };
+    };
+
+    const legacyDefects = normalizeDefects(body.defects, 'catalog');
+    if (legacyDefects.error) return legacyDefects;
     const ids = new Set();
     const products = [];
     for (const item of body.products) {
@@ -105,6 +136,11 @@ const normalizeCatalog = (body) => {
         if (marketPrice !== null && (!Number.isFinite(marketPrice) || marketPrice < 0 || marketPrice > 10000000)) {
             return { error: `Product ${model} needs a valid market price.` };
         }
+        const productDefects = normalizeDefects(
+            Array.isArray(item?.defects) ? item.defects : legacyDefects.defects,
+            model
+        );
+        if (productDefects.error) return productDefects;
         ids.add(id);
         products.push({
             id,
@@ -112,44 +148,26 @@ const normalizeCatalog = (body) => {
             variant,
             capacityGb,
             valuationPrice,
-            marketPrice
+            marketPrice,
+            defects: productDefects.defects
         });
     }
 
-    const defectIds = new Set();
-    const defects = [];
-    for (const item of body.defects) {
-        const id = String(item?.id || '').trim();
-        const name = String(item?.name || '').trim();
-        const minDeduction = Number(item?.minDeduction ?? item?.deduction ?? 0);
-        const maxDeduction = Number(item?.maxDeduction ?? item?.deduction ?? minDeduction);
-        if (!id || defectIds.has(id) || !name || name.length > 100) {
-            return { error: 'Each defect needs a unique ID and a name.' };
-        }
-        if (
-            !Number.isFinite(minDeduction) ||
-            !Number.isFinite(maxDeduction) ||
-            minDeduction < 0 ||
-            maxDeduction < minDeduction ||
-            maxDeduction > 10000000
-        ) {
-            return { error: `Defect ${name} needs a valid deduction range.` };
-        }
-        defectIds.add(id);
-        defects.push({ id, name, minDeduction, maxDeduction });
-    }
-
-    return { products, defects };
+    return { products, defects: [] };
 };
 
 const readCatalog = async (brand) => {
     const normalizeLegacyDefects = (catalog) => ({
         ...catalog,
-        defects: (catalog.defects || []).map((defect) => ({
-            ...defect,
-            minDeduction: Number(defect.minDeduction ?? defect.deduction ?? 0),
-            maxDeduction: Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0)
-        }))
+        products: (catalog.products || []).map((product) => ({
+            ...product,
+            defects: (Array.isArray(product.defects) ? product.defects : catalog.defects || []).map((defect) => ({
+                ...defect,
+                minDeduction: Number(defect.minDeduction ?? defect.deduction ?? 0),
+                maxDeduction: Number(defect.maxDeduction ?? defect.deduction ?? defect.minDeduction ?? 0)
+            }))
+        })),
+        defects: catalog.defects || []
     });
     if (isMongoConnected) {
         const catalogs = await queryAllDBs(PhoneProductCatalog, (Model) => Model.find({ brand }).limit(1).lean());
