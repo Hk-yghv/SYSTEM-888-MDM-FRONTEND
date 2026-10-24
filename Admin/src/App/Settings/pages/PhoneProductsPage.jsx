@@ -7,7 +7,7 @@ const emptyCatalog = { products: [], defects: [] };
 const newId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const inputClass = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50';
-const modelsPerPage = 3;
+const modelFamiliesPerPage = 1;
 const productsPerPage = 2;
 const defectsPerPage = 1;
 const statusesPerPage = 2;
@@ -99,17 +99,30 @@ const PhoneProductsPage = () => {
         return [...new Set([...fromOptions, ...fromCatalog])];
     }, [modelOptions, catalog.products]);
 
-    const filteredModels = useMemo(() => {
-        if (!searchModel.trim()) return allModels;
-        const q = searchModel.toLowerCase();
-        return allModels.filter((m) => m.toLowerCase().includes(q));
+    const filteredModelFamilies = useMemo(() => {
+        const families = new Map();
+        allModels.forEach((model) => {
+            const words = model.trim().split(/\s+/);
+            const firstNumberIndex = words.findIndex((word) => /\d/.test(word));
+            const familyName = firstNumberIndex === -1
+                ? model.trim()
+                : words.slice(0, firstNumberIndex + 1).join(' ');
+            const family = families.get(familyName) || { name: familyName, models: [] };
+            family.models.push(model);
+            families.set(familyName, family);
+        });
+        const query = searchModel.trim().toLowerCase();
+        return [...families.values()].filter((family) => (
+            !query || family.models.some((model) => model.toLowerCase().includes(query))
+        ));
     }, [allModels, searchModel]);
-    const modelPageCount = Math.ceil(filteredModels.length / modelsPerPage);
+    const modelPageCount = Math.ceil(filteredModelFamilies.length / modelFamiliesPerPage);
     const currentModelPage = Math.min(modelPage, Math.max(0, modelPageCount - 1));
-    const visibleModels = filteredModels.slice(
-        currentModelPage * modelsPerPage,
-        (currentModelPage + 1) * modelsPerPage
+    const visibleModelFamilies = filteredModelFamilies.slice(
+        currentModelPage * modelFamiliesPerPage,
+        (currentModelPage + 1) * modelFamiliesPerPage
     );
+    const visibleModels = visibleModelFamilies.flatMap((family) => family.models);
     const defectPageCount = Math.ceil(catalog.defects.length / defectsPerPage);
     const currentDefectPage = Math.min(defectPage, Math.max(0, defectPageCount - 1));
 
@@ -381,7 +394,7 @@ const PhoneProductsPage = () => {
                             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-emerald-500"
                         />
                         <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg">
-                            {filteredModels.length} Models
+                            {filteredModelFamilies.length} Model families
                         </span>
                     </div>
                 </div>
@@ -559,7 +572,7 @@ const PhoneProductsPage = () => {
                         })}
                     </div>
 
-                    {filteredModels.length === 0 && (
+                    {filteredModelFamilies.length === 0 && (
                         <div className="p-10 text-center text-sm text-slate-500">
                             {modelOptions.length === 0
                                 ? 'No Device Models found for this brand. Add models in Control System / System Data (Device Models) first.'
@@ -570,7 +583,7 @@ const PhoneProductsPage = () => {
                 {modelPageCount > 1 && (
                     <div className="flex shrink-0 items-center justify-between border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
                         <span>
-                            {currentModelPage * modelsPerPage + 1}–{Math.min((currentModelPage + 1) * modelsPerPage, filteredModels.length)} of {filteredModels.length} models
+                            {visibleModelFamilies[0]?.name} ({visibleModels.length} models) — page {currentModelPage + 1} of {modelPageCount}
                         </span>
                         <div className="flex gap-2">
                             <button
