@@ -21,23 +21,38 @@ const normalizeCashTransaction = (record) => {
     return normalized;
 };
 
+// 'cash_in' and 'penalty' share the same OR sequence so numbers are
+// globally unique across both income-type transactions for a given subbrand.
+const SHARED_INCOME_TYPES = new Set(['cash_in', 'penalty']);
+
 const getContractORParts = (type, subBrand, now = new Date()) => {
     const normalizedSubBrand = String(subBrand || '').trim();
     if (!['cash_out', 'cash_in', 'penalty'].includes(type) || !normalizedSubBrand) return null;
     const year = now.getFullYear();
+    // cash_in and penalty share the same counter namespace so their OR
+    // numbers are consecutive across both pages.
+    const counterNamespace = SHARED_INCOME_TYPES.has(type) ? 'income' : type;
     return {
         year,
         type,
         subBrand: normalizedSubBrand,
-        key: `${year}:${type}:${normalizedSubBrand.toLowerCase()}`,
+        key: `${year}:${counterNamespace}:${normalizedSubBrand.toLowerCase()}`,
         prefix: `${year}-${normalizedSubBrand}-`
     };
 };
 
 const getExistingContractORSequence = async ({ type, prefix }) => {
+    // For shared-namespace types (cash_in / penalty) scan both types at once.
+    const typesFilter = SHARED_INCOME_TYPES.has(type)
+        ? { $in: [...SHARED_INCOME_TYPES] }
+        : type;
+
     if (!isMongoConnected) {
         return MEM_DB.cashTransactions.reduce((max, record) => {
-            if (record.type !== type || !record.contractOR?.startsWith(prefix)) return max;
+            const matchType = Array.isArray(typesFilter['$in'])
+                ? typesFilter['$in'].includes(record.type)
+                : record.type === typesFilter;
+            if (!matchType || !record.contractOR?.startsWith(prefix)) return max;
             const sequence = Number(record.contractOR.slice(prefix.length));
             return Number.isSafeInteger(sequence) ? Math.max(max, sequence) : max;
         }, 0);
@@ -45,7 +60,7 @@ const getExistingContractORSequence = async ({ type, prefix }) => {
 
     const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const records = await queryAllDBs(CashTransaction, M =>
-        M.find({ type, contractOR: { $regex: `^${escapedPrefix}` } }).select('contractOR').lean()
+        M.find({ type: typesFilter, contractOR: { $regex: `^${escapedPrefix}` } }).select('contractOR').lean()
     );
     return records.reduce((max, record) => {
         const sequence = Number(record.contractOR.slice(prefix.length));
@@ -107,18 +122,24 @@ const advanceContractORSequence = async (parts, contractOR) => {
 const formatContractOR = (parts, sequence) => `${parts.prefix}${String(sequence).padStart(8, '0')}`;
 
 const findContractORConflict = async (contractOR, type, excludeId = '') => {
-    const typeFilter = type ? { type } : {};
+    // When checking shared-namespace types (cash_in / penalty), look for
+    // conflicts across ALL types in the same namespace so the same OR number
+    // cannot be issued twice regardless of which page created it.
+    const sharedTypes = SHARED_INCOME_TYPES.has(type) ? [...SHARED_INCOME_TYPES] : null;
     if (!contractOR) return null;
+
     if (!isMongoConnected) {
         return MEM_DB.cashTransactions.find(record =>
-            (!type || record.type === type) &&
+            (!type || (sharedTypes ? sharedTypes.includes(record.type) : record.type === type)) &&
             record.contractOR === contractOR &&
             record._id !== excludeId &&
             record.transactionId !== excludeId
         ) || null;
     }
 
-    const records = await queryAllDBs(CashTransaction, M => M.find({ contractOR, ...typeFilter }));
+    const typeQuery = sharedTypes ? { $in: sharedTypes } : type;
+    const filter = contractOR ? { contractOR, ...(typeQuery ? { type: typeQuery } : {}) } : {};
+    const records = await queryAllDBs(CashTransaction, M => M.find(filter));
     return records.find(record =>
         String(record._id) !== excludeId &&
         record.transactionId !== excludeId
