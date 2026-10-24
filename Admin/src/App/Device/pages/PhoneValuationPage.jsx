@@ -69,7 +69,6 @@ const PhoneValuationPage = () => {
         <main className="mx-auto max-w-4xl space-y-6 p-4 text-black md:p-8">
             <header>
                 <h1 className="text-2xl font-bold text-black">Phone Valuation</h1>
-                <p className="mt-1 text-sm text-black">Select a configured model and defects to calculate its valuation.</p>
             </header>
 
             {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-black">{error}</p>}
@@ -145,7 +144,6 @@ const PhoneValuationPage = () => {
 
                     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <h2 className="font-bold text-black">Phone defects</h2>
-                        <p className="mt-1 text-sm text-black">These defects and deduction ranges apply to all models. Low uses the minimum deduction, medium uses the midpoint, and high uses the maximum.</p>
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                             {productDefects.map((defect) => (
                                 <div key={defect.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3">
