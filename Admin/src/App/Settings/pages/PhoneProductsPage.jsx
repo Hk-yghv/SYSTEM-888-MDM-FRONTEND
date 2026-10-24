@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { FaPlus, FaSyncAlt, FaTrashAlt } from 'react-icons/fa';
+import { FaPlus, FaTrashAlt } from 'react-icons/fa';
 import { readApiResponse } from '../../../utils/apiResponse';
 
 const emptyCatalog = { products: [], defects: [] };
@@ -23,7 +23,6 @@ const PhoneProductsPage = () => {
     const [modelOptions, setModelOptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [syncingId, setSyncingId] = useState('');
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
 
@@ -86,9 +85,7 @@ const PhoneProductsPage = () => {
                 variant: '',
                 capacityGb: 128,
                 valuationPrice: 0,
-                khmer24MarketPrice: null,
-                khmer24Listings: [],
-                khmer24SyncedAt: null
+                marketPrice: null
             }]
         }));
         setMessage('');
@@ -150,30 +147,6 @@ const PhoneProductsPage = () => {
         }
     };
 
-    const syncMarketPrice = async (productId) => {
-        setSyncingId(productId);
-        setError('');
-        setMessage('');
-        try {
-            const response = await fetch(`${API_BASE}/phone-products/sync-market-price/${encodeURIComponent(productId)}?brand=${encodeURIComponent(selectedBrand)}`, {
-                method: 'POST'
-            });
-            const result = await readApiResponse(response, 'Unable to sync Khmer24 price.');
-            setCatalog({
-                products: result.data.products || [],
-                defects: result.data.defects || []
-            });
-            if (!isMasterAdmin && result.data.brand !== undefined) {
-                setSelectedBrand(String(result.data.brand || '').trim());
-            }
-            setMessage(`Khmer24 market price updated from ${result.listingCount} matching listing(s).`);
-        } catch (syncError) {
-            setError(syncError.message);
-        } finally {
-            setSyncingId('');
-        }
-    };
-
     if (loading) {
         return <div className="p-8 text-center text-slate-500">Loading product settings...</div>;
     }
@@ -183,7 +156,7 @@ const PhoneProductsPage = () => {
             <header className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Phone Products</h1>
-                    <p className="mt-1 text-sm text-slate-500">Manage models, market variants, storage capacities, valuation prices, and defect deductions.</p>
+                    <p className="mt-1 text-sm text-slate-500">Manage models, variants, capacities, valuation prices, manually entered market prices, and defect deductions.</p>
                 </div>
                 {isMasterAdmin && (
                     <label className="min-w-52 text-sm font-semibold text-slate-700">
@@ -213,7 +186,7 @@ const PhoneProductsPage = () => {
                     <p className="mt-1 text-xs text-slate-500">Catalog: {selectedBrand || 'Global'}. Select models from this brand's Device Models list. LL/A, ZA, and other market variants are stored separately.</p>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1100px] text-left text-sm">
+                    <table className="w-full min-w-[1050px] text-left text-sm">
                         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                             <tr>
                                 <th className="px-4 py-3">Model</th>
@@ -222,7 +195,6 @@ const PhoneProductsPage = () => {
                                 <th className="px-4 py-3">Valuation price ($)</th>
                                 <th className="px-4 py-3">Khmer24 market price ($)</th>
                                 <th className="px-4 py-3">40% price ($)</th>
-                                <th className="px-4 py-3">Market data</th>
                                 <th className="px-4 py-3">Actions</th>
                             </tr>
                         </thead>
@@ -230,12 +202,7 @@ const PhoneProductsPage = () => {
                             {catalog.products.map((product) => (
                                 <tr key={product.id}>
                                     <td className="px-4 py-3">
-                                        <select className={inputClass} value={product.model} onChange={(event) => {
-                                            updateProduct(product.id, 'model', event.target.value);
-                                            updateProduct(product.id, 'khmer24MarketPrice', null);
-                                            updateProduct(product.id, 'khmer24Listings', []);
-                                            updateProduct(product.id, 'khmer24SyncedAt', null);
-                                        }}>
+                                        <select className={inputClass} value={product.model} onChange={(event) => updateProduct(product.id, 'model', event.target.value)}>
                                             <option value="">Select model</option>
                                             {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
                                         </select>
@@ -243,34 +210,30 @@ const PhoneProductsPage = () => {
                                     <td className="px-4 py-3"><input className={inputClass} value={product.variant} maxLength={40} onChange={(event) => updateProduct(product.id, 'variant', event.target.value)} placeholder="LL/A, ZA, Global..." /></td>
                                     <td className="px-4 py-3"><input className={inputClass} type="number" min="1" step="1" value={product.capacityGb} onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))} /></td>
                                     <td className="px-4 py-3"><input className={inputClass} type="number" min="0" step="0.01" value={product.valuationPrice} onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))} /></td>
-                                    <td className="px-4 py-3 font-semibold text-slate-700">{product.khmer24MarketPrice == null ? 'Not synced' : `$${Number(product.khmer24MarketPrice).toFixed(2)}`}</td>
-                                    <td className="px-4 py-3 font-semibold text-emerald-700">{product.khmer24MarketPrice == null ? '—' : `$${(Number(product.khmer24MarketPrice) * 0.4).toFixed(2)}`}</td>
-                                    <td className="px-4 py-3 text-xs text-slate-500">
-                                        {product.khmer24SyncedAt ? new Date(product.khmer24SyncedAt).toLocaleString() : 'No data'}
-                                        {product.khmer24Listings?.length > 0 && (
-                                            <div className="mt-1 flex flex-col gap-1">
-                                                {product.khmer24Listings.slice(0, 3).map((listing) => (
-                                                    <a key={listing.url} href={listing.url} target="_blank" rel="noreferrer" className="max-w-48 truncate text-emerald-700 underline">
-                                                        {listing.title} (${listing.price})
-                                                    </a>
-                                                ))}
-                                            </div>
-                                        )}
+                                    <td className="px-4 py-3">
+                                        <input
+                                            className={inputClass}
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={(product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice) ?? ''}
+                                            onChange={(event) => updateProduct(product.id, 'marketPrice', event.target.value === '' ? null : Number(event.target.value))}
+                                            aria-label={`Manually entered Khmer24 market price for ${product.model || 'product'}`}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-3 font-semibold text-emerald-700">
+                                        {(product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice) == null
+                                            ? '—'
+                                            : `$${(Number(product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice) * 0.4).toFixed(2)}`}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 disabled:opacity-50" onClick={() => syncMarketPrice(product.id)} disabled={syncingId === product.id || !product.model || !product.capacityGb}>
-                                                <FaSyncAlt className={syncingId === product.id ? 'animate-spin' : ''} />
-                                                {syncingId === product.id ? 'Syncing...' : 'Sync Khmer24'}
-                                            </button>
-                                            <button type="button" className="text-rose-600 hover:text-rose-800" aria-label={`Delete ${product.model || 'product'}`} onClick={() => removeProduct(product.id)}>
-                                                <FaTrashAlt />
-                                            </button>
-                                        </div>
+                                        <button type="button" className="text-rose-600 hover:text-rose-800" aria-label={`Delete ${product.model || 'product'}`} onClick={() => removeProduct(product.id)}>
+                                            <FaTrashAlt />
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
-                            {catalog.products.length === 0 && <tr><td colSpan="8" className="px-4 py-10 text-center text-slate-500">{modelOptions.length ? 'No products configured. Add a model to begin.' : 'No Device Models are configured for this brand. Add them in Control System → System Data first.'}</td></tr>}
+                            {catalog.products.length === 0 && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">{modelOptions.length ? 'No products configured. Add a model to begin.' : 'No Device Models are configured for this brand. Add them in Control System → System Data first.'}</td></tr>}
                         </tbody>
                     </table>
                 </div>

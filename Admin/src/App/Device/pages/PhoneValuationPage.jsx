@@ -79,16 +79,9 @@ const PhoneValuationPage = () => {
                         </label>
 
                         {product && (
-                            <div className="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2">
-                                <div>
-                                    <p className="text-xs font-medium uppercase text-slate-500">Valuation base price</p>
-                                    <p className="mt-1 text-xl font-bold text-slate-800">{money(product.valuationPrice)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium uppercase text-slate-500">Khmer24 market price</p>
-                                    <p className="mt-1 text-xl font-bold text-blue-700">{product.khmer24MarketPrice == null ? 'Not synced' : money(product.khmer24MarketPrice)}</p>
-                                    {product.khmer24MarketPrice != null && <p className="text-xs text-slate-500">40% reference: {money(Number(product.khmer24MarketPrice) * 0.4)}</p>}
-                                </div>
+                            <div className="rounded-lg bg-slate-50 p-4">
+                                <p className="text-xs font-medium uppercase text-slate-500">Valuation base price</p>
+                                <p className="mt-1 text-xl font-bold text-slate-800">{money(product.valuationPrice)}</p>
                             </div>
                         )}
                     </section>

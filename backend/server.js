@@ -175,6 +175,7 @@ app.use('/api/auth', createAuthRoutes(bot));
 app.use('/api/users', userRoutes);
 app.use('/api/controlsystem', controlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/phone-products', phoneProductRoutes);
 app.use('/api/phone-app', phoneAppRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/contracts', contractRoutes);
@@ -214,7 +215,6 @@ app.use('/api/device-audit', deviceAuditRoutes);
 app.use('/telegram-audit', telegramAuditRoutes);
 app.use('/api/cashflow-trader', cashFlowTraderRoutes);
 app.use('/cashflow-trader', cashFlowTraderRoutes);
-app.use('/api/phone-products', phoneProductRoutes);
 
 // ── Interactive HTML Partner API Documentation Route ──
 const docsHtmlPath = path.resolve(__dirname, '../docs/index.html');

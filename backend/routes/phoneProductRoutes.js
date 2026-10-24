@@ -1,5 +1,4 @@
 import express from 'express';
-import axios from 'axios';
 import PhoneProductCatalog from '../models/PhoneProductCatalog.js';
 import ControlSystem from '../models/ControlSystem.js';
 import User from '../models/User.js';
@@ -9,7 +8,6 @@ import { getWriteModel, queryAllDBs } from '../config/multiDB.js';
 const router = express.Router();
 const VALUATION_PATH = '/phone-valuation';
 const SETTINGS_PATH = '/settings/products';
-const KHMER24_CATEGORY_URL = 'https://www.khmer24.com/km/c-mobile-phones-tablets';
 
 if (!Array.isArray(MEM_DB.phoneProductCatalogs)) MEM_DB.phoneProductCatalogs = [];
 
@@ -93,6 +91,8 @@ const normalizeCatalog = (body) => {
         const variant = String(item?.variant || '').trim();
         const capacityGb = Number(item?.capacityGb);
         const valuationPrice = Number(item?.valuationPrice);
+        const rawMarketPrice = item?.marketPrice !== undefined ? item.marketPrice : item?.khmer24MarketPrice;
+        const marketPrice = rawMarketPrice == null || rawMarketPrice === '' ? null : Number(rawMarketPrice);
         if (!id || ids.has(id) || !model || model.length > 100 || variant.length > 40) {
             return { error: 'Each product needs a unique ID, model, and valid variant.' };
         }
@@ -102,6 +102,9 @@ const normalizeCatalog = (body) => {
         if (!Number.isFinite(valuationPrice) || valuationPrice < 0 || valuationPrice > 10000000) {
             return { error: `Product ${model} needs a valid base price.` };
         }
+        if (marketPrice !== null && (!Number.isFinite(marketPrice) || marketPrice < 0 || marketPrice > 10000000)) {
+            return { error: `Product ${model} needs a valid market price.` };
+        }
         ids.add(id);
         products.push({
             id,
@@ -109,9 +112,7 @@ const normalizeCatalog = (body) => {
             variant,
             capacityGb,
             valuationPrice,
-            khmer24MarketPrice: Number.isFinite(Number(item.khmer24MarketPrice)) ? Number(item.khmer24MarketPrice) : null,
-            khmer24Listings: Array.isArray(item.khmer24Listings) ? item.khmer24Listings.slice(0, 10) : [],
-            khmer24SyncedAt: item.khmer24SyncedAt || null
+            marketPrice
         });
     }
 
@@ -181,60 +182,6 @@ const saveCatalog = async (brand, data, username) => {
     return catalog;
 };
 
-const decodeHtml = (text) => text
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&#(\d+);/g, (_match, code) => String.fromCodePoint(Number(code)));
-
-const stripHtml = (html) => decodeHtml(
-    html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
-        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-).replace(/\s+/g, ' ').trim();
-
-const normalizeComparable = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-export const parseKhmer24Listings = (html, product) => {
-    const modelTokens = String(product.model || '').toLowerCase().match(/[a-z0-9]+/g) || [];
-    const requiredTokens = modelTokens.filter((token) => !['gb', 'g'].includes(token));
-    const capacityPattern = new RegExp(`\\b${product.capacityGb}\\s*(?:gb|g)\\b`, 'i');
-    const listings = [];
-    const anchorPattern = /<a\b[^>]*href=["']([^"']*adid-\d+[^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
-    let match;
-
-    while ((match = anchorPattern.exec(html)) !== null) {
-        const title = stripHtml(match[2]);
-        const normalizedTitle = normalizeComparable(title);
-        if (!title || !requiredTokens.every((token) => normalizedTitle.includes(normalizeComparable(token)))) continue;
-        if (product.capacityGb && !capacityPattern.test(title)) continue;
-        if (product.variant && !normalizedTitle.includes(normalizeComparable(product.variant))) continue;
-
-        const withoutDiscountLabels = title.replace(/\$\s*[\d,]+(?:\.\d+)?\s*off/gi, '');
-        const priceMatches = [...withoutDiscountLabels.matchAll(/\$\s*([\d,]+(?:\.\d+)?)/g)];
-        if (!priceMatches.length) continue;
-        const price = Number(priceMatches[0][1].replace(/,/g, ''));
-        if (!Number.isFinite(price) || price <= 0) continue;
-
-        const path = match[1].startsWith('http') ? match[1] : `https://www.khmer24.com${match[1]}`;
-        listings.push({ title, price, url: path });
-        if (listings.length >= 50) break;
-    }
-
-    const unique = [...new Map(listings.map((listing) => [listing.url, listing])).values()];
-    const prices = unique.map((listing) => listing.price).sort((a, b) => a - b);
-    if (prices.length === 0) return { marketPrice: null, listings: [] };
-    const middle = Math.floor(prices.length / 2);
-    const marketPrice = prices.length % 2
-        ? prices[middle]
-        : Math.round(((prices[middle - 1] + prices[middle]) / 2) * 100) / 100;
-
-    return { marketPrice, listings: unique.slice(0, 10) };
-};
-
 router.get('/', async (req, res) => {
     try {
         const identity = await getRequestIdentity(req);
@@ -280,53 +227,6 @@ router.put('/', async (req, res) => {
     } catch (error) {
         console.error('[PhoneProducts] Catalog save failed:', error);
         return res.status(500).json({ error: 'Unable to save phone product catalog.' });
-    }
-});
-
-router.post('/sync-market-price/:productId', async (req, res) => {
-    try {
-        const identity = await getRequestIdentity(req);
-        if (!identity) return res.status(401).json({ error: 'Authenticated user not found.' });
-        if (!hasPermission(identity, SETTINGS_PATH, 'edit')) {
-            return res.status(403).json({ error: 'Product settings edit permission required.' });
-        }
-
-        const brand = resolveCatalogBrand(req, identity);
-        if (brand === null) return res.status(403).json({ error: 'You cannot sync another brand product catalog.' });
-        const catalog = await readCatalog(brand);
-        const product = catalog.products.find((item) => item.id === req.params.productId);
-        if (!product) return res.status(404).json({ error: 'Phone product not found.' });
-
-        const keyword = `${product.model} ${product.variant} ${product.capacityGb}GB`;
-        const response = await axios.get(KHMER24_CATEGORY_URL, {
-            params: { keyword },
-            timeout: 12000,
-            headers: { 'User-Agent': 'SYSTEM-MDM price lookup/1.0' },
-            maxContentLength: 5 * 1024 * 1024
-        });
-        const result = parseKhmer24Listings(response.data, product);
-        if (!result.marketPrice) {
-            return res.status(404).json({ error: `No Khmer24 listings matched ${keyword}.` });
-        }
-
-        const updatedProducts = catalog.products.map((item) => item.id === product.id
-            ? {
-                ...item,
-                khmer24MarketPrice: result.marketPrice,
-                khmer24Listings: result.listings,
-                khmer24SyncedAt: new Date().toISOString()
-            }
-            : item);
-        const saved = await saveCatalog(brand, { products: updatedProducts, defects: catalog.defects || [] }, identity.username);
-        return res.json({
-            data: saved,
-            marketPrice: result.marketPrice,
-            fortyPercentPrice: Math.round(result.marketPrice * 0.4 * 100) / 100,
-            listingCount: result.listings.length
-        });
-    } catch (error) {
-        console.error('[PhoneProducts] Khmer24 sync failed:', error.message);
-        return res.status(502).json({ error: 'Unable to fetch matching prices from Khmer24. Please try again later.' });
     }
 });
 
