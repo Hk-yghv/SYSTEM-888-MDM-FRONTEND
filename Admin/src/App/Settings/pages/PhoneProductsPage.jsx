@@ -64,7 +64,7 @@ const PhoneProductsPage = () => {
             const variants = Array.isArray(result.variants)
                 ? result.variants.map((v) => (typeof v === 'string' ? v : v.name)).filter(Boolean)
                 : [];
-            setVariantOptions(variants.length > 0 ? variants : ['LL/A', 'ZA/A', 'ZP/A', 'VN/A', 'KH/A', 'CH/A', 'J/A', 'Global']);
+            setVariantOptions(variants);
 
             // Auto-expand the first model by default if models exist
             if (models.length > 0) {
@@ -137,7 +137,7 @@ const PhoneProductsPage = () => {
         const newProduct = {
             id: newId(),
             model,
-            variant: variantOptions[0] || 'LL/A',
+            variant: variantOptions[0] || '',
             capacityGb: 128,
             valuationPrice: 0,
             marketPrice: null

@@ -290,21 +290,12 @@ const ControlSystem = () => {
                     setLatePenaltyRules(highPriorityRules);
                     if (!selectedBrand) setNewPenaltyBrand((globalData?.brand || 'MDM'));
 
-                    if (Array.isArray(data.product_variants) && data.product_variants.length > 0) {
+                    if (Array.isArray(data.product_variants)) {
                         setProductVariants(data.product_variants);
                     } else if (Array.isArray(globalData.product_variants)) {
                         setProductVariants(globalData.product_variants);
                     } else {
-                        setProductVariants([
-                            { name: 'LL/A', description: 'United States (eSIM / Single SIM)' },
-                            { name: 'ZA/A', description: 'Hong Kong / Macau / Singapore (Dual Physical SIM)' },
-                            { name: 'ZP/A', description: 'Singapore / Malaysia' },
-                            { name: 'VN/A', description: 'Vietnam' },
-                            { name: 'KH/A', description: 'Cambodia' },
-                            { name: 'CH/A', description: 'China' },
-                            { name: 'J/A', description: 'Japan' },
-                            { name: 'Global', description: 'International Standard' }
-                        ]);
+                        setProductVariants([]);
                     }
                 }
             } else {
@@ -320,16 +311,7 @@ const ControlSystem = () => {
                 if (Array.isArray(globalData.product_variants)) {
                     setProductVariants(globalData.product_variants);
                 } else {
-                    setProductVariants([
-                        { name: 'LL/A', description: 'United States (eSIM / Single SIM)' },
-                        { name: 'ZA/A', description: 'Hong Kong / Macau / Singapore (Dual Physical SIM)' },
-                        { name: 'ZP/A', description: 'Singapore / Malaysia' },
-                        { name: 'VN/A', description: 'Vietnam' },
-                        { name: 'KH/A', description: 'Cambodia' },
-                        { name: 'CH/A', description: 'China' },
-                        { name: 'J/A', description: 'Japan' },
-                        { name: 'Global', description: 'International Standard' }
-                    ]);
+                    setProductVariants([]);
                 }
             }
         } catch (err) {
@@ -1605,9 +1587,11 @@ const ControlSystem = () => {
                                     const vDesc = typeof v === 'string' ? '' : (v.description || '');
                                     return (
                                         <tr key={idx} className="hover:bg-gray-900/40 transition-colors">
-                                            <td className="px-4 py-2.5 text-center text-gray-500 font-mono">{idx + 1}</td>
-                                            <td className="px-4 py-2.5 font-bold text-teal-400">
-                                                <span className="bg-teal-950/70 border border-teal-800/50 px-2.5 py-1 rounded inline-block">
+                                            <td className="px-4 py-2.5 text-center sm:text-left">
+                                                <span
+                                                    className="inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-bold border border-slate-600 bg-slate-800 tracking-wider shadow-sm"
+                                                    style={{ color: '#ffffff' }}
+                                                >
                                                     {vName}
                                                 </span>
                                             </td>
