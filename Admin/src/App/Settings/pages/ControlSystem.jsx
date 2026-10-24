@@ -1612,7 +1612,7 @@ const ControlSystem = () => {
                                             <td className="px-4 py-2.5 text-teal-300 font-medium">
                                                 {vRegion || <span className="text-gray-600 italic"> — </span>}
                                             </td>
-                                            <td className="px-4 py-2.5 text-gray-300">{vDesc || <span className="text-gray-600 italic">—</span>}</td>
+                                            <td className="px-4 py-2.5 text-gray-300">{vDesc || <span className="text-gray-600 italic"> — </span>}</td>
                                             {canDeleteSection('variants') && (
                                                 <td className="px-4 py-2.5 text-center">
                                                     <button
