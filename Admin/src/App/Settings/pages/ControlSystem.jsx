@@ -95,6 +95,7 @@ const ControlSystem = () => {
 
     const [productVariants, setProductVariants] = useState([]);
     const [newVariantName, setNewVariantName] = useState('');
+    const [newVariantRegion, setNewVariantRegion] = useState('');
     const [newVariantDesc, setNewVariantDesc] = useState('');
 
     const explorerFolders = [
@@ -1503,7 +1504,7 @@ const ControlSystem = () => {
                             : 'Configure device variant codes (e.g. LL/A, ZA/A, VN/A) and descriptions (region/SIM specs). These variants will appear in the dropdown list when managing phone valuation prices.'}
                     </p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-[160px_1fr_auto] gap-2 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_180px_1fr_auto] gap-2 text-xs">
                         <input
                             type="text"
                             value={newVariantName}
@@ -1514,9 +1515,17 @@ const ControlSystem = () => {
                         />
                         <input
                             type="text"
+                            value={newVariantRegion}
+                            onChange={(e) => setNewVariantRegion(e.target.value)}
+                            placeholder={lang === 'km' ? 'តំបន់ (ឧ. United States)' : 'Region (e.g. United States)'}
+                            disabled={!canEditSection('variants')}
+                            className="h-10 px-3 bg-gray-900 border border-gray-700 rounded-[5px] text-gray-100 focus:border-teal-500 outline-none"
+                        />
+                        <input
+                            type="text"
                             value={newVariantDesc}
                             onChange={(e) => setNewVariantDesc(e.target.value)}
-                            placeholder={lang === 'km' ? 'ការពិពណ៌នា (ឧ. USA - eSIM + Single SIM)' : 'Description (e.g. United States - eSIM + Nano SIM)'}
+                            placeholder={lang === 'km' ? 'ការពិពណ៌នា (ឧ. eSIM + Single SIM)' : 'Description (e.g. United States - eSIM + Nano SIM)'}
                             disabled={!canEditSection('variants')}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -1526,9 +1535,10 @@ const ControlSystem = () => {
                                         alert('Variant code already exists!');
                                         return;
                                     }
-                                    const updated = [...productVariants, { name: trimmedName, description: newVariantDesc.trim() }];
+                                    const updated = [...productVariants, { name: trimmedName, region: newVariantRegion.trim(), description: newVariantDesc.trim() }];
                                     setProductVariants(updated);
                                     setNewVariantName('');
+                                    setNewVariantRegion('');
                                     setNewVariantDesc('');
                                     fetch(`${API_BASE}/controlsystem`, {
                                         method: 'POST',
@@ -1551,9 +1561,10 @@ const ControlSystem = () => {
                                     alert('Variant code already exists!');
                                     return;
                                 }
-                                const updated = [...productVariants, { name: trimmedName, description: newVariantDesc.trim() }];
+                                const updated = [...productVariants, { name: trimmedName, region: newVariantRegion.trim(), description: newVariantDesc.trim() }];
                                 setProductVariants(updated);
                                 setNewVariantName('');
+                                setNewVariantRegion('');
                                 setNewVariantDesc('');
                                 fetch(`${API_BASE}/controlsystem`, {
                                     method: 'POST',
@@ -1576,17 +1587,20 @@ const ControlSystem = () => {
                             <thead className="bg-gray-900/80 uppercase text-[11px] text-gray-400 border-b border-gray-800">
                                 <tr>
                                     <th className="px-4 py-2.5 w-12 text-center">#</th>
-                                    <th className="px-4 py-2.5 w-44">{lang === 'km' ? 'កូដវ៉ារ្យ៉ង់' : 'Variant Code'}</th>
-                                    <th className="px-4 py-2.5">{lang === 'km' ? 'ការពិពណ៌នា (Description)' : 'Description'}</th>
+                                    <th className="px-4 py-2.5 w-36">{lang === 'km' ? 'កូដវ៉ារ្យ៉ង់' : 'Variant Code'}</th>
+                                    <th className="px-4 py-2.5 w-48">{lang === 'km' ? 'តំបន់' : 'Region'}</th>
+                                    <th className="px-4 py-2.5">{lang === 'km' ? 'ការពិពណ៌នា' : 'Description'}</th>
                                     {canDeleteSection('variants') && <th className="px-4 py-2.5 w-20 text-center">{lang === 'km' ? 'សកម្មភាព' : 'Action'}</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800/60">
                                 {productVariants.map((v, idx) => {
                                     const vName = typeof v === 'string' ? v : v.name;
+                                    const vRegion = typeof v === 'string' ? '' : (v.region || '');
                                     const vDesc = typeof v === 'string' ? '' : (v.description || '');
                                     return (
                                         <tr key={idx} className="hover:bg-gray-900/40 transition-colors">
+                                            <td className="px-4 py-2.5 text-center text-gray-500 font-mono">{idx + 1}</td>
                                             <td className="px-4 py-2.5 text-center sm:text-left">
                                                 <span
                                                     className="inline-flex items-center justify-center px-3 py-1 rounded-md text-xs font-bold border border-slate-600 bg-slate-800 tracking-wider shadow-sm"
@@ -1594,6 +1608,9 @@ const ControlSystem = () => {
                                                 >
                                                     {vName}
                                                 </span>
+                                            </td>
+                                            <td className="px-4 py-2.5 text-teal-300 font-medium">
+                                                {vRegion || <span className="text-gray-600 italic">—</span>}
                                             </td>
                                             <td className="px-4 py-2.5 text-gray-300">{vDesc || <span className="text-gray-600 italic">—</span>}</td>
                                             {canDeleteSection('variants') && (
@@ -1624,7 +1641,7 @@ const ControlSystem = () => {
                                 })}
                                 {productVariants.length === 0 && (
                                     <tr>
-                                        <td colSpan={canDeleteSection('variants') ? 4 : 3} className="px-4 py-8 text-center text-gray-500">
+                                        <td colSpan={canDeleteSection('variants') ? 5 : 4} className="px-4 py-8 text-center text-gray-500">
                                             {lang === 'km' ? 'មិនទាន់មានវ៉ារ្យ៉ង់នៅឡើយទេ។ សូមបន្ថែមវ៉ារ្យ៉ង់ខាងលើ។' : 'No variants configured yet. Add one above.'}
                                         </td>
                                     </tr>

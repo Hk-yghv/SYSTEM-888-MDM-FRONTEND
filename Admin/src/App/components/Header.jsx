@@ -58,15 +58,15 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             navigator.getInstalledRelatedApps().then((apps) => {
                 if (apps && apps.length > 0) {
                     setIsAppInstalled(true);
-                    try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch {}
+                    try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch { }
                 } else if (!standalone) {
                     setIsAppInstalled(false);
-                    try { localStorage.removeItem(PWA_INSTALLED_KEY); } catch {}
+                    try { localStorage.removeItem(PWA_INSTALLED_KEY); } catch { }
                 }
-            }).catch(() => {});
+            }).catch(() => { });
         } else if (standalone) {
             setIsAppInstalled(true);
-            try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch {}
+            try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch { }
         }
 
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
@@ -124,7 +124,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                 const choice = await activePrompt.userChoice;
                 if (choice?.outcome === 'accepted') {
                     setIsAppInstalled(true);
-                    try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch {}
+                    try { localStorage.setItem(PWA_INSTALLED_KEY, 'true'); } catch { }
                     setInstallPrompt(null);
                     if (typeof window !== 'undefined') window.deferredPwaPrompt = null;
                 }
@@ -149,7 +149,7 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
     const handleResetInstallState = () => {
         try {
             localStorage.removeItem(PWA_INSTALLED_KEY);
-        } catch {}
+        } catch { }
         setIsAppInstalled(false);
         setShowInstallGuide(false);
     };
@@ -288,14 +288,14 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
                 {/* Brand Logo */}
                 <Link to={getFirstAllowedRoute(user, hasPermission)} className='flex items-center gap-2.5 group flex-shrink-0'>
-                    <div
+                    {/* <div
                         className='w-8 h-8 rounded-[8px] flex items-center justify-center flex-shrink-0 shadow-sm'
                         style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
                     >
                         <span className='text-white font-black text-xs tracking-tight'>
                             {brandName.charAt(0)}
                         </span>
-                    </div>
+                    </div> */}
                     <div className='hidden sm:block'>
                         <h1 className='text-sm font-black tracking-widest leading-none text-slate-800 group-hover:text-emerald-700 transition-colors'>
                             {brandName}
@@ -424,11 +424,10 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
                     <button
                         type='button'
                         onClick={handleInstallApp}
-                        className={`flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border transition-colors cursor-pointer text-xs font-bold ${
-                            isAppInstalled
+                        className={`flex items-center gap-1.5 h-9 px-2.5 rounded-[8px] border transition-colors cursor-pointer text-xs font-bold ${isAppInstalled
                                 ? 'border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100'
                                 : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        }`}
+                            }`}
                         title={isAppInstalled ? t('headerOpenInstalledApp', lang === 'km' ? 'បើកកម្មវិធី SYSTEM MDM ដែលបានដំឡើង' : 'Open the installed SYSTEM MDM app') : t('headerInstallApp', lang === 'km' ? 'ដំឡើង SYSTEM MDM' : 'Install SYSTEM MDM')}
                     >
                         {isAppInstalled ? <FaExternalLinkAlt size={12} /> : <FaDownload size={12} />}

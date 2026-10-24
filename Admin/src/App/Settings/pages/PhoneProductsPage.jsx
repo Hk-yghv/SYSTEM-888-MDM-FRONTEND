@@ -23,6 +23,7 @@ const PhoneProductsPage = () => {
     const [modelOptions, setModelOptions] = useState([]);
     const [variantOptions, setVariantOptions] = useState([]);
     const [expandedModels, setExpandedModels] = useState(new Set());
+    const [activeTab, setActiveTab] = useState('models');
     const [searchModel, setSearchModel] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -308,8 +309,48 @@ const PhoneProductsPage = () => {
             {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
             {message && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
 
+            <div role="tablist" aria-label="Product settings sections" className="flex gap-2 border-b border-slate-200">
+                <button
+                    id="product-models-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'models'}
+                    aria-controls="product-models-panel"
+                    onClick={() => setActiveTab('models')}
+                    className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                        activeTab === 'models'
+                            ? 'border-emerald-600 text-emerald-700'
+                            : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                    }`}
+                >
+                    Models and Variant Valuation Prices
+                </button>
+                <button
+                    id="product-defects-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'defects'}
+                    aria-controls="product-defects-panel"
+                    onClick={() => setActiveTab('defects')}
+                    className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                        activeTab === 'defects'
+                            ? 'border-amber-600 text-amber-700'
+                            : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                    }`}
+                >
+                    Product Defect Deductions
+                </button>
+            </div>
+
             {/* Section 1: Device Models and Variant Pricing Table */}
-            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <section
+                id="product-models-panel"
+                role="tabpanel"
+                aria-labelledby="product-models-tab"
+                tabIndex={0}
+                hidden={activeTab !== 'models'}
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+            >
                 <div className="flex flex-wrap items-center justify-between border-b border-slate-200 px-5 py-4 gap-3">
                     <div>
                         <h2 className="font-bold text-slate-800 flex items-center gap-2">
@@ -547,7 +588,14 @@ const PhoneProductsPage = () => {
             </section>
 
             {/* Section 2: Product Defect Deductions Table with Internal Scroll */}
-            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <section
+                id="product-defects-panel"
+                role="tabpanel"
+                aria-labelledby="product-defects-tab"
+                tabIndex={0}
+                hidden={activeTab !== 'defects'}
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+            >
                 <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                     <div>
                         <h2 className="font-bold text-slate-800 flex items-center gap-2">
