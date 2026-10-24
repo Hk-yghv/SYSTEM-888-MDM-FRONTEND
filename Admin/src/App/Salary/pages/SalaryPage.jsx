@@ -708,7 +708,7 @@ const SalaryPage = () => {
         const totalRecordsAll = salaryOnlyStaff.reduce((sum, s) => sum + (Number(s.recordsCount) || 0), 0);
 
         return (
-            <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-5 relative min-h-screen">
+            <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-5 relative overflow-y-auto h-[calc(100vh-360px)]">
                 {/* Header Bar */}
                 <header className="p-2 w-full border border-[var(--app-border,#e2e8f0)] bg-[var(--app-card,white)] rounded-[5px] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
                     <div>
@@ -818,10 +818,9 @@ const SalaryPage = () => {
                             return (
                                 <div
                                     key={staff.key || idx}
-                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-[5px] p-2 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
+                                    className="bg-[var(--app-card,white)] border border-[var(--app-border,#e2e8f0)] hover:border-emerald-500/70 rounded-[5px] p-2 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
                                 >
-                                    {/* Top decorative accent */}
-                                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 opacity-80 group-hover:h-1.5 transition-all"></div>
+
 
                                     <div className="space-y-3 pt-1">
                                         {/* Avatar & Main Identity */}
@@ -936,7 +935,7 @@ const SalaryPage = () => {
     // VIEW 2: INDIVIDUAL STAFF SALARY DETAIL & MANAGEMENT VIEW
     // ─────────────────────────────────────────────────────────────────────────────
     return (
-        <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-4 relative min-h-screen">
+        <div className="w-full bg-[var(--app-bg,#f4f6f8)] p-2 select-none space-y-4 relative overflow-y-auto h-[calc(100vh-360px)]">
             {/* Admin Switcher Top Banner */}
             {isAdmin && selectedStaff && (
                 <div className="p-2 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-[5px] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-700">
@@ -1221,7 +1220,7 @@ const SalaryPage = () => {
                         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
                             <FaQrcode className="text-emerald-600 text-sm shrink-0" />
                             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                            {t('salaryQrImageLabel', lang === 'km' ? 'រូបភាព QR Code របស់យើង:' : 'Our QR code image:')}
+                                {t('salaryQrImageLabel', lang === 'km' ? 'រូបភាព QR Code របស់យើង:' : 'Our QR code image:')}
                             </span>
                             <input
                                 type="text"
