@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { FaPlus, FaTrashAlt, FaChevronDown, FaChevronUp, FaMobileAlt, FaLayerGroup } from 'react-icons/fa';
+import { FaPlus, FaTrashAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { readApiResponse } from '../../../utils/apiResponse';
 
 const emptyCatalog = { products: [], defects: [] };
 const newId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const inputClass = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50';
+const modelsPerPage = 3;
+const productsPerPage = 2;
+const defectsPerPage = 1;
+const statusesPerPage = 2;
 
 const PhoneProductsPage = () => {
     const { API_BASE, user } = useAuth();
@@ -25,6 +29,10 @@ const PhoneProductsPage = () => {
     const [expandedModels, setExpandedModels] = useState(new Set());
     const [activeTab, setActiveTab] = useState('models');
     const [searchModel, setSearchModel] = useState('');
+    const [modelPage, setModelPage] = useState(0);
+    const [productPageByModel, setProductPageByModel] = useState({});
+    const [defectPage, setDefectPage] = useState(0);
+    const [statusPageByDefect, setStatusPageByDefect] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -96,13 +104,18 @@ const PhoneProductsPage = () => {
         const q = searchModel.toLowerCase();
         return allModels.filter((m) => m.toLowerCase().includes(q));
     }, [allModels, searchModel]);
+    const modelPageCount = Math.ceil(filteredModels.length / modelsPerPage);
+    const currentModelPage = Math.min(modelPage, Math.max(0, modelPageCount - 1));
+    const visibleModels = filteredModels.slice(
+        currentModelPage * modelsPerPage,
+        (currentModelPage + 1) * modelsPerPage
+    );
+    const defectPageCount = Math.ceil(catalog.defects.length / defectsPerPage);
+    const currentDefectPage = Math.min(defectPage, Math.max(0, defectPageCount - 1));
 
     const toggleModelExpand = (model) => {
         setExpandedModels((prev) => {
-            const next = new Set(prev);
-            if (next.has(model)) next.delete(model);
-            else next.add(model);
-            return next;
+            return prev.has(model) ? new Set() : new Set([model]);
         });
     };
 
@@ -202,6 +215,7 @@ const PhoneProductsPage = () => {
     };
 
     const addDefect = () => {
+        setDefectPage(0);
         setCatalog((current) => ({
             ...current,
             defects: [{
@@ -284,11 +298,11 @@ const PhoneProductsPage = () => {
     }
 
     return (
-        <main data-allow-scroll="true" className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
-            <header className="flex flex-wrap items-center justify-between gap-3">
+        <main className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col gap-3 overflow-hidden p-2 md:p-3">
+            <header className="flex shrink-0 flex-wrap items-center justify-between gap-2">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Phone Products</h1>
-                    <p className="mt-1 text-sm text-slate-500">Manage models, variants from Control System, capacities, valuation prices, and defect deductions.</p>
+                    <h1 className="text-xl font-bold text-slate-900">Phone Products</h1>
+                    <p className="mt-0.5 text-xs text-slate-500">Manage valuation prices and product defect deductions.</p>
                 </div>
                 {isMasterAdmin && (
                     <label className="min-w-52 text-sm font-semibold text-slate-700">
@@ -309,7 +323,7 @@ const PhoneProductsPage = () => {
             {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
             {message && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p>}
 
-            <div role="tablist" aria-label="Product settings sections" className="flex gap-2 border-b border-slate-200">
+            <div role="tablist" aria-label="Product settings sections" className="grid shrink-0 grid-cols-2 gap-1 border-b border-slate-200 sm:gap-2">
                 <button
                     id="product-models-tab"
                     type="button"
@@ -317,7 +331,7 @@ const PhoneProductsPage = () => {
                     aria-selected={activeTab === 'models'}
                     aria-controls="product-models-panel"
                     onClick={() => setActiveTab('models')}
-                    className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                    className={`border-b-2 px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:py-3 sm:text-sm ${
                         activeTab === 'models'
                             ? 'border-emerald-600 text-emerald-700'
                             : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
@@ -332,7 +346,7 @@ const PhoneProductsPage = () => {
                     aria-selected={activeTab === 'defects'}
                     aria-controls="product-defects-panel"
                     onClick={() => setActiveTab('defects')}
-                    className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${
+                    className={`border-b-2 px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:py-3 sm:text-sm ${
                         activeTab === 'defects'
                             ? 'border-amber-600 text-amber-700'
                             : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
@@ -349,23 +363,20 @@ const PhoneProductsPage = () => {
                 aria-labelledby="product-models-tab"
                 tabIndex={0}
                 hidden={activeTab !== 'models'}
-                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+                className={`${activeTab === 'models' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm`}
             >
-                <div className="flex flex-wrap items-center justify-between border-b border-slate-200 px-5 py-4 gap-3">
-                    <div>
-                        <h2 className="font-bold text-slate-800 flex items-center gap-2">
-                            <FaMobileAlt className="text-emerald-600" />
-                            <span>Models and Variant Valuation Prices</span>
-                        </h2>
-                        <p className="mt-1 text-xs text-slate-500">
-                            Catalog: {selectedBrand || 'Global'}. Models are loaded from Control System. Click on any model to view and configure its variants.
-                        </p>
+                <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 md:px-4">
+                    <div className="text-xs text-slate-500">
+                        Catalog: <span className="font-semibold text-slate-700">{selectedBrand || 'Global'}</span>. Select a model to configure variants.
                     </div>
                     <div className="flex items-center gap-2">
                         <input
                             type="text"
                             value={searchModel}
-                            onChange={(e) => setSearchModel(e.target.value)}
+                            onChange={(e) => {
+                                setSearchModel(e.target.value);
+                                setModelPage(0);
+                            }}
                             placeholder="Filter model name..."
                             className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 outline-none focus:border-emerald-500"
                         />
@@ -376,11 +387,17 @@ const PhoneProductsPage = () => {
                 </div>
 
                 {/* Models List Accordion / Table */}
-                <div className="divide-y divide-slate-100 max-h-[560px] overflow-y-auto">
-                    {filteredModels.map((model) => {
+                <div className="min-h-0 flex-1 divide-y divide-slate-100 overflow-hidden">
+                    {visibleModels.map((model) => {
                         const modelProducts = catalog.products.filter((p) => p.model === model);
                         const isExpanded = expandedModels.has(model);
                         const droplistVariants = getAvailableDroplistVariants(model);
+                        const productPageCount = Math.ceil(modelProducts.length / productsPerPage);
+                        const currentProductPage = Math.min(productPageByModel[model] || 0, Math.max(0, productPageCount - 1));
+                        const visibleProducts = modelProducts.slice(
+                            currentProductPage * productsPerPage,
+                            (currentProductPage + 1) * productsPerPage
+                        );
                         const pricedCount = modelProducts.filter((p) => Number(p.valuationPrice) > 0).length;
 
                         // Calculate price range for model preview
@@ -396,7 +413,7 @@ const PhoneProductsPage = () => {
                                 {/* Model Header Row (clickable) */}
                                 <div
                                     onClick={() => toggleModelExpand(model)}
-                                    className="flex cursor-pointer items-center justify-between px-5 py-3.5 select-none"
+                                    className="flex cursor-pointer items-center justify-between px-3 py-2 select-none"
                                 >
                                     <div className="flex items-center gap-3">
                                         <button
@@ -473,7 +490,8 @@ const PhoneProductsPage = () => {
 
                                         {/* Variants Table for this model */}
                                         {modelProducts.length > 0 ? (
-                                            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-2xs">
+                                            <>
+                                            <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xs lg:block">
                                                 <table className="w-full min-w-[850px] text-left text-xs">
                                                     <thead className="bg-slate-100/80 uppercase text-[11px] text-slate-500 border-b border-slate-200">
                                                         <tr>
@@ -486,7 +504,7 @@ const PhoneProductsPage = () => {
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
-                                                        {modelProducts.map((product) => {
+                                                        {visibleProducts.map((product) => {
                                                             const mktPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
                                                             return (
                                                                 <tr key={product.id} className="hover:bg-slate-50/50">
@@ -566,6 +584,99 @@ const PhoneProductsPage = () => {
                                                     </tbody>
                                                 </table>
                                             </div>
+                                            <div className="space-y-2 lg:hidden">
+                                                {visibleProducts.map((product) => {
+                                                    const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
+                                                    return (
+                                                        <div key={product.id} className="space-y-2 rounded-lg border border-slate-200 bg-white p-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <select
+                                                                    className={`${inputClass} min-w-0 font-semibold`}
+                                                                    value={product.variant}
+                                                                    onChange={(event) => updateProduct(product.id, 'variant', event.target.value)}
+                                                                    aria-label={`Variant for ${model}`}
+                                                                >
+                                                                    {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
+                                                                    {!variantOptions.includes(product.variant) && product.variant && (
+                                                                        <option value={product.variant}>{product.variant}</option>
+                                                                    )}
+                                                                </select>
+                                                                <button
+                                                                    type="button"
+                                                                    className="shrink-0 rounded p-2 text-rose-500 hover:text-rose-700"
+                                                                    aria-label={`Delete ${product.variant || 'variant'}`}
+                                                                    onClick={() => removeProduct(product.id)}
+                                                                >
+                                                                    <FaTrashAlt size={13} />
+                                                                </button>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <label className="text-[11px] text-slate-500">
+                                                                    Capacity (GB)
+                                                                    <input
+                                                                        className={`${inputClass} mt-1`}
+                                                                        type="number"
+                                                                        min="1"
+                                                                        step="1"
+                                                                        value={product.capacityGb}
+                                                                        onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))}
+                                                                    />
+                                                                </label>
+                                                                <label className="text-[11px] text-slate-500">
+                                                                    Valuation Price ($)
+                                                                    <input
+                                                                        className={`${inputClass} mt-1`}
+                                                                        type="number"
+                                                                        min="0"
+                                                                        step="0.01"
+                                                                        value={product.valuationPrice}
+                                                                        onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))}
+                                                                    />
+                                                                </label>
+                                                                <label className="text-[11px] text-slate-500">
+                                                                    Market Price ($)
+                                                                    <input
+                                                                        className={`${inputClass} mt-1`}
+                                                                        type="number"
+                                                                        min="0"
+                                                                        step="0.01"
+                                                                        value={marketPrice ?? ''}
+                                                                        placeholder="Optional"
+                                                                        onChange={(event) => updateProduct(product.id, 'marketPrice', event.target.value === '' ? null : Number(event.target.value))}
+                                                                    />
+                                                                </label>
+                                                                <div className="self-end pb-2 text-[11px] text-slate-500">
+                                                                    40%: <span className="font-semibold text-emerald-700">
+                                                                        {marketPrice == null ? '—' : `$${(Number(marketPrice) * 0.4).toFixed(2)}`}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {productPageCount > 1 && (
+                                                <div className="flex items-center justify-end gap-2 text-xs text-slate-500">
+                                                    <span>{currentProductPage + 1} / {productPageCount}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                                        disabled={currentProductPage === 0}
+                                                        onClick={() => setProductPageByModel((current) => ({ ...current, [model]: currentProductPage - 1 }))}
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                                        disabled={currentProductPage >= productPageCount - 1}
+                                                        onClick={() => setProductPageByModel((current) => ({ ...current, [model]: currentProductPage + 1 }))}
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            )}
+                                            </>
                                         ) : (
                                             <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500 text-xs">
                                                 No variants configured for <span className="font-bold text-slate-700">{model}</span> yet. Select a variant from the droplist above to set prices.
@@ -585,6 +696,31 @@ const PhoneProductsPage = () => {
                         </div>
                     )}
                 </div>
+                {modelPageCount > 1 && (
+                    <div className="flex shrink-0 items-center justify-between border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+                        <span>
+                            {currentModelPage * modelsPerPage + 1}–{Math.min((currentModelPage + 1) * modelsPerPage, filteredModels.length)} of {filteredModels.length} models
+                        </span>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                disabled={currentModelPage === 0}
+                                onClick={() => setModelPage(currentModelPage - 1)}
+                            >
+                                Previous
+                            </button>
+                            <button
+                                type="button"
+                                className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                disabled={currentModelPage >= modelPageCount - 1}
+                                onClick={() => setModelPage(currentModelPage + 1)}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </section>
 
             {/* Section 2: Product Defect Deductions Table with Internal Scroll */}
@@ -594,19 +730,13 @@ const PhoneProductsPage = () => {
                 aria-labelledby="product-defects-tab"
                 tabIndex={0}
                 hidden={activeTab !== 'defects'}
-                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+                className={`${activeTab === 'defects' ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm`}
             >
-                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                    <div>
-                        <h2 className="font-bold text-slate-800 flex items-center gap-2">
-                            <FaLayerGroup className="text-amber-600" />
-                            <span>Product Defect Deductions</span>
-                        </h2>
-                        <p className="mt-1 text-xs text-slate-500">
-                            These defects and deduction ranges apply to every model, variant, and capacity. (Scrollable within table)
-                        </p>
+                <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 md:px-4">
+                    <div className="text-xs text-slate-500">
+                        Deductions apply to all configured products.
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                         <span className="text-xs bg-slate-100 text-slate-600 font-semibold px-2.5 py-1.5 rounded-lg">
                             {catalog.defects.length} Defects
                         </span>
@@ -616,10 +746,20 @@ const PhoneProductsPage = () => {
                     </div>
                 </div>
 
-                {/* Internal Scrollable Container for Defect Deductions */}
-                <div className="space-y-4 p-5 max-h-[480px] overflow-y-auto">
-                    {catalog.defects.map((defect) => (
-                        <div key={defect.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xs">
+                <div className="min-h-0 flex-1 overflow-hidden p-3 md:p-4">
+                    {catalog.defects.slice(
+                        currentDefectPage * defectsPerPage,
+                        (currentDefectPage + 1) * defectsPerPage
+                    ).map((defect) => {
+                        const statuses = defect.statuses || [];
+                        const statusPageCount = Math.ceil(statuses.length / statusesPerPage);
+                        const currentStatusPage = Math.min(statusPageByDefect[defect.id] || 0, Math.max(0, statusPageCount - 1));
+                        const visibleStatuses = statuses.slice(
+                            currentStatusPage * statusesPerPage,
+                            (currentStatusPage + 1) * statusesPerPage
+                        );
+                        return (
+                                <div key={defect.id} className="rounded-lg border border-slate-200 bg-white p-3 shadow-2xs">
                             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Defect Name:</span>
                                 <input
@@ -634,9 +774,9 @@ const PhoneProductsPage = () => {
                                 </button>
                             </div>
 
-                            <div className="mt-3 space-y-2 overflow-x-auto pb-1">
-                                {(defect.statuses || []).map((status) => (
-                                    <div key={status.id} className="grid min-w-[550px] items-center gap-2 sm:min-w-0 sm:grid-cols-[minmax(140px,1fr)_auto_110px_auto_110px_auto]">
+                            <div className="mt-3 space-y-2 pb-1">
+                                {visibleStatuses.map((status) => (
+                                    <div key={status.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(140px,1fr)_auto_110px_auto_110px_auto]">
                                         <input
                                             className={inputClass}
                                             value={status.name}
@@ -670,11 +810,56 @@ const PhoneProductsPage = () => {
                                 <button type="button" className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 mt-1 inline-flex items-center gap-1" onClick={() => addDefectStatus(defect.id)}>
                                     <FaPlus size={11} /> <span>Add status level</span>
                                 </button>
+                                {statusPageCount > 1 && (
+                                    <div className="flex items-center justify-end gap-2 text-xs text-slate-500">
+                                        <span>{currentStatusPage + 1} / {statusPageCount} status pages</span>
+                                        <button
+                                            type="button"
+                                            className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                            disabled={currentStatusPage === 0}
+                                            onClick={() => setStatusPageByDefect((current) => ({ ...current, [defect.id]: currentStatusPage - 1 }))}
+                                        >
+                                            Previous
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                            disabled={currentStatusPage >= statusPageCount - 1}
+                                            onClick={() => setStatusPageByDefect((current) => ({ ...current, [defect.id]: currentStatusPage + 1 }))}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
                     {catalog.defects.length === 0 && <p className="text-sm text-slate-500 py-6 text-center">No defects configured yet. Click "Add defect" above.</p>}
                 </div>
+                {defectPageCount > 1 && (
+                    <div className="flex shrink-0 items-center justify-between border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+                        <span>Defect {currentDefectPage + 1} of {defectPageCount}</span>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                disabled={currentDefectPage === 0}
+                                onClick={() => setDefectPage(currentDefectPage - 1)}
+                            >
+                                Previous
+                            </button>
+                            <button
+                                type="button"
+                                className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40"
+                                disabled={currentDefectPage >= defectPageCount - 1}
+                                onClick={() => setDefectPage(currentDefectPage + 1)}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </section>
         </main>
     );
