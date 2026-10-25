@@ -15,6 +15,12 @@
         color: var(--app-text, #0f172a);
     }
 
+    style,
+    script,
+    template {
+        display: none !important;
+    }
+
     /* CUSTOM SLEEK EMERALD SCROLLBAR DESIGN */
     ::-webkit-scrollbar {
         width: 6px;
@@ -313,7 +319,7 @@ table tbody tr.table-scroll-row:hover > th:last-child {
     -webkit-overflow-scrolling: touch !important;
 }
 
-.mobile-content-area[data-scrollable-route="true"] > *,
+.mobile-content-area[data-scrollable-route="true"] > *:not(style):not(script),
 .mobile-content-area > .dashboard-root,
 .mobile-content-area > .calculate-schedule-root,
 .mobile-content-area > [data-allow-scroll="true"] {

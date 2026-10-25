@@ -552,7 +552,7 @@ const CalculateSchedule2 = () => {
     };
 
     return (
-        <>
+        <div lang="km" data-allow-scroll="true" className="calculate-schedule-root p-2 sm:p-2 max-w-7xl mx-auto space-y-6 bg-[#fff]">
             <style>{`
                 @page {
                     size: A4 ${printOrientation};
@@ -713,9 +713,7 @@ const CalculateSchedule2 = () => {
                 }
             `}</style>
 
-            <div lang="km" data-allow-scroll="true" className="calculate-schedule-root p-2 sm:p-2 max-w-7xl mx-auto space-y-6 bg-[#fff]">
-
-                {/* ── Header ────────────────────────────────────────── */}
+            {/* ── Header ────────────────────────────────────────── */}
                 <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#fff] p-5 rounded-[5px] border border-slate-200 shadow-xs">
                     <div>
                         <div>
@@ -1406,7 +1404,6 @@ const CalculateSchedule2 = () => {
                 )}
 
             </div>
-        </>
     );
 };
 
