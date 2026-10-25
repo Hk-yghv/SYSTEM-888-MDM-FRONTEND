@@ -20,11 +20,12 @@ const PhoneValuationPage = () => {
             const response = await fetch(`${API_BASE}/phone-products`, { cache: 'no-store' });
             const result = await readApiResponse(response, 'Unable to load phone products.');
             const products = Array.isArray(result.data?.products) ? result.data.products : [];
+            const activeProducts = products.filter((item) => item.enabled !== false);
             setCatalog({
                 products,
                 defects: Array.isArray(result.data?.defects) ? result.data.defects : []
             });
-            setSelectedProductId((current) => products.some((item) => item.id === current) ? current : products[0]?.id || '');
+            setSelectedProductId((current) => activeProducts.some((item) => item.id === current) ? current : activeProducts[0]?.id || '');
         } catch (loadError) {
             setError(loadError.message);
         } finally {
@@ -34,16 +35,17 @@ const PhoneValuationPage = () => {
 
     useEffect(() => { loadCatalog(); }, [loadCatalog]);
 
-    const product = catalog.products.find((item) => item.id === selectedProductId);
-    const modelOptions = useMemo(() => [...new Set(catalog.products.map((item) => item.model))], [catalog.products]);
+    const activeProducts = useMemo(() => catalog.products.filter((item) => item.enabled !== false), [catalog.products]);
+    const product = activeProducts.find((item) => item.id === selectedProductId);
+    const modelOptions = useMemo(() => [...new Set(activeProducts.map((item) => item.model))], [activeProducts]);
     const variantOptions = useMemo(() => [...new Set(
-        catalog.products
+        activeProducts
             .filter((item) => item.model === product?.model)
             .map((item) => String(item.variant || ''))
-    )], [catalog.products, product?.model]);
-    const capacityOptions = useMemo(() => [...new Set(catalog.products
+    )], [activeProducts, product?.model]);
+    const capacityOptions = useMemo(() => [...new Set(activeProducts
         .filter((item) => item.model === product?.model && String(item.variant || '') === String(product?.variant || ''))
-        .map((item) => item.capacityGb))], [catalog.products, product?.model, product?.variant]);
+        .map((item) => item.capacityGb))], [activeProducts, product?.model, product?.variant]);
     const productDefects = catalog.defects;
     const selectedDefects = useMemo(() => productDefects
         .filter((item) => selectedStatusByDefect[item.id] && defectSeverity[item.id])
@@ -72,11 +74,15 @@ const PhoneValuationPage = () => {
             </header>
 
             {error && <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-black">{error}</p>}
-            {!error && catalog.products.length === 0 && (
-                <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-black">No phone products are configured yet. Ask an administrator to add them in Settings → Product.</p>
+            {!error && activeProducts.length === 0 && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-black">
+                    {catalog.products.length === 0
+                        ? 'No phone products are configured yet. Ask an administrator to add them in Settings → Product.'
+                        : 'No phone products are enabled. Ask an administrator to enable one in Settings → Product.'}
+                </p>
             )}
 
-            {catalog.products.length > 0 && (
+            {activeProducts.length > 0 && (
                 <>
                     <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div className="grid gap-4 md:grid-cols-3">
@@ -86,7 +92,7 @@ const PhoneValuationPage = () => {
                                     className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-black outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                                     value={product?.model || ''}
                                     onChange={(event) => {
-                                        const nextProduct = catalog.products.find((item) => item.model === event.target.value);
+                                        const nextProduct = activeProducts.find((item) => item.model === event.target.value);
                                         setSelectedProductId(nextProduct?.id || '');
                                         setDefectSeverity({});
                                     }}
@@ -100,7 +106,7 @@ const PhoneValuationPage = () => {
                                     className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-black outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                                     value={String(product?.variant || '')}
                                     onChange={(event) => {
-                                        const nextProduct = catalog.products.find((item) => (
+                                        const nextProduct = activeProducts.find((item) => (
                                             item.model === product?.model && String(item.variant || '') === event.target.value
                                         ));
                                         setSelectedProductId(nextProduct?.id || '');
@@ -118,7 +124,7 @@ const PhoneValuationPage = () => {
                                     className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-black outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                                     value={String(product?.capacityGb || '')}
                                     onChange={(event) => {
-                                        const nextProduct = catalog.products.find((item) => (
+                                        const nextProduct = activeProducts.find((item) => (
                                             item.model === product?.model &&
                                             String(item.variant || '') === String(product?.variant || '') &&
                                             String(item.capacityGb) === event.target.value

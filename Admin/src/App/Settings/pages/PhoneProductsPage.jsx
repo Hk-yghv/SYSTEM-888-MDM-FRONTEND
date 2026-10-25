@@ -170,7 +170,8 @@ const PhoneProductsPage = () => {
             variant: variantName,
             capacityGb: 128,
             valuationPrice: 0,
-            marketPrice: null
+            marketPrice: null,
+            enabled: true
         };
         setCatalog((current) => ({
             ...current,
@@ -188,7 +189,8 @@ const PhoneProductsPage = () => {
             variant: variantOptions[0] || '',
             capacityGb: 128,
             valuationPrice: 0,
-            marketPrice: null
+            marketPrice: null,
+            enabled: true
         };
         setCatalog((current) => ({
             ...current,
@@ -413,12 +415,13 @@ const PhoneProductsPage = () => {
                         <table className="w-full table-fixed text-left text-xs">
                             <thead className="bg-slate-100/80 text-[11px] uppercase text-slate-500">
                                 <tr>
-                                    <th className="w-[18%] px-3 py-2">Model</th>
-                                    <th className="w-[16%] px-3 py-2">Variant</th>
-                                    <th className="w-[12%] px-3 py-2">Capacity (GB)</th>
-                                    <th className="w-[15%] px-3 py-2">Valuation ($)</th>
-                                    <th className="w-[16%] px-3 py-2">Market ($)</th>
-                                    <th className="w-[12%] px-3 py-2">40% Price</th>
+                                    <th className="w-[15%] px-3 py-2">Model</th>
+                                    <th className="w-[14%] px-3 py-2">Variant</th>
+                                    <th className="w-[11%] px-3 py-2">Capacity (GB)</th>
+                                    <th className="w-[14%] px-3 py-2">Valuation ($)</th>
+                                    <th className="w-[14%] px-3 py-2">Market ($)</th>
+                                    <th className="w-[11%] px-3 py-2">40% Price</th>
+                                    <th className="w-[11%] px-3 py-2 text-center">Status</th>
                                     <th className="w-[8%] px-3 py-2 text-center">Action</th>
                                 </tr>
                             </thead>
@@ -437,7 +440,7 @@ const PhoneProductsPage = () => {
                                 return (
                                     <tbody key={model} className="divide-y divide-slate-100">
                                         <tr className="bg-slate-50">
-                                            <td colSpan={7} className="px-3 py-2">
+                                            <td colSpan={8} className="px-3 py-2">
                                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                                     <button
                                                         type="button"
@@ -478,14 +481,14 @@ const PhoneProductsPage = () => {
                                         {isExpanded && visibleProductGroups.map((group) => (
                                             <React.Fragment key={`variant-group-${group.variant}`}>
                                                 <tr className="bg-emerald-50/60">
-                                                    <td colSpan={7} className="px-3 py-1.5 pl-8 font-semibold text-emerald-800">
+                                                    <td colSpan={8} className="px-3 py-1.5 pl-8 font-semibold text-emerald-800">
                                                         {group.variant || 'Unassigned variant'} <span className="font-normal text-emerald-700">({group.products.length} capacities)</span>
                                                     </td>
                                                 </tr>
                                                 {group.products.map((product) => {
                                                     const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
                                                     return (
-                                                        <tr key={product.id} className="hover:bg-slate-50/60">
+                                                        <tr key={product.id} className={product.enabled === false ? 'bg-slate-50 text-slate-400' : 'hover:bg-slate-50/60'}>
                                                             <td className="px-3 py-2 pl-8 text-slate-500">{model}</td>
                                                             <td className="px-3 py-2">
                                                                 <select
@@ -509,6 +512,16 @@ const PhoneProductsPage = () => {
                                                             <td className="px-3 py-2 font-semibold text-emerald-700">
                                                                 {marketPrice == null ? 'N/A' : `$${(Number(marketPrice) * 0.4).toFixed(2)}`}
                                                             </td>
+                                                            <td className="px-2 py-2 text-center">
+                                                                <button
+                                                                    type="button"
+                                                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold ${product.enabled !== false ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                                                                    onClick={() => updateProduct(product.id, 'enabled', product.enabled === false)}
+                                                                    aria-pressed={product.enabled !== false}
+                                                                >
+                                                                    {product.enabled !== false ? 'Enabled' : 'Disabled'}
+                                                                </button>
+                                                            </td>
                                                             <td className="px-3 py-2 text-center">
                                                                 <button type="button" className="rounded p-1.5 text-rose-500 hover:text-rose-700" aria-label={`Delete ${product.variant || 'variant'}`} onClick={() => removeProduct(product.id)}>
                                                                     <FaTrashAlt size={13} />
@@ -520,11 +533,11 @@ const PhoneProductsPage = () => {
                                             </React.Fragment>
                                         ))}
                                         {isExpanded && modelProducts.length === 0 && (
-                                            <tr><td colSpan={7} className="px-4 py-4 text-center text-xs text-slate-500">No variants configured. Add one above.</td></tr>
+                                            <tr><td colSpan={8} className="px-4 py-4 text-center text-xs text-slate-500">No variants configured. Add one above.</td></tr>
                                         )}
                                         {isExpanded && productPageCount > 1 && (
                                             <tr>
-                                                <td colSpan={7} className="px-3 py-1.5 text-right text-xs text-slate-500">
+                                                <td colSpan={8} className="px-3 py-1.5 text-right text-xs text-slate-500">
                                                     <span className="mr-2">{currentProductPage + 1} / {productPageCount}</span>
                                                     <button type="button" className="mr-1 rounded border border-slate-200 px-2 py-1 disabled:opacity-40" disabled={currentProductPage === 0} onClick={() => setProductPageByModel((current) => ({ ...current, [model]: currentProductPage - 1 }))}>Previous</button>
                                                     <button type="button" className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40" disabled={currentProductPage >= productPageCount - 1} onClick={() => setProductPageByModel((current) => ({ ...current, [model]: currentProductPage + 1 }))}>Next</button>
@@ -570,12 +583,20 @@ const PhoneProductsPage = () => {
                                                 {group.products.map((product) => {
                                                     const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
                                                     return (
-                                                        <div key={product.id} className="space-y-2 rounded border border-slate-200 p-2">
+                                                        <div key={product.id} className={`space-y-2 rounded border border-slate-200 p-2 ${product.enabled === false ? 'bg-slate-50 opacity-75' : ''}`}>
                                                             <div className="flex items-center gap-2">
                                                                 <select className={`${inputClass} min-w-0 font-semibold`} value={product.variant} onChange={(event) => updateProduct(product.id, 'variant', event.target.value)} aria-label={`Variant for ${model}`}>
                                                                     {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
                                                                     {!variantOptions.includes(product.variant) && product.variant && <option value={product.variant}>{product.variant}</option>}
                                                                 </select>
+                                                                <button
+                                                                    type="button"
+                                                                    className={`shrink-0 rounded px-2 py-1 text-[11px] font-semibold ${product.enabled !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}
+                                                                    onClick={() => updateProduct(product.id, 'enabled', product.enabled === false)}
+                                                                    aria-pressed={product.enabled !== false}
+                                                                >
+                                                                    {product.enabled !== false ? 'Enabled' : 'Disabled'}
+                                                                </button>
                                                                 <button type="button" className="shrink-0 p-2 text-rose-500" aria-label={`Delete ${product.variant || 'variant'}`} onClick={() => removeProduct(product.id)}><FaTrashAlt size={13} /></button>
                                                             </div>
                                                             <div className="grid grid-cols-2 gap-2">

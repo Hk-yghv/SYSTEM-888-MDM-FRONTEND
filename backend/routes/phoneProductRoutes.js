@@ -188,7 +188,8 @@ const normalizeCatalog = (body) => {
             variant,
             capacityGb,
             valuationPrice,
-            marketPrice
+            marketPrice,
+            enabled: item.enabled !== false
         });
     }
 
