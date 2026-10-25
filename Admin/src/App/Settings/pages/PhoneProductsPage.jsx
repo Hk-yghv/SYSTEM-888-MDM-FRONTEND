@@ -8,9 +8,22 @@ const newId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.r
 const inputClass = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100';
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50';
 const modelFamiliesPerPage = 1;
-const productsPerPage = 2;
+const variantGroupsPerPage = 1;
 const defectsPerPage = 1;
 const statusesPerPage = 2;
+
+const groupProductsByVariant = (products) => {
+    const groups = new Map();
+    products.forEach((product) => {
+        const variant = String(product.variant || '').trim();
+        if (!groups.has(variant)) groups.set(variant, []);
+        groups.get(variant).push(product);
+    });
+    return [...groups.entries()].map(([variant, groupedProducts]) => ({
+        variant,
+        products: groupedProducts
+    }));
+};
 
 const PhoneProductsPage = () => {
     const { API_BASE, user } = useAuth();
@@ -141,6 +154,13 @@ const PhoneProductsPage = () => {
         }));
     };
 
+    const getVariantGroupPage = (model, variantName) => {
+        const variant = String(variantName || '').trim();
+        const groups = groupProductsByVariant(catalog.products.filter((product) => product.model === model));
+        const existingPage = groups.findIndex((group) => group.variant === variant);
+        return existingPage === -1 ? groups.length : existingPage;
+    };
+
     // Add variant from droplist for a specific model
     const handleAddVariantToModel = (model, variantName) => {
         if (!variantName) return;
@@ -156,6 +176,7 @@ const PhoneProductsPage = () => {
             ...current,
             products: [...current.products, newProduct]
         }));
+        setProductPageByModel((current) => ({ ...current, [model]: getVariantGroupPage(model, variantName) }));
         setExpandedModels((prev) => new Set([...prev, model]));
         setMessage('');
     };
@@ -173,6 +194,7 @@ const PhoneProductsPage = () => {
             ...current,
             products: [...current.products, newProduct]
         }));
+        setProductPageByModel((current) => ({ ...current, [model]: getVariantGroupPage(model, newProduct.variant) }));
         setExpandedModels((prev) => new Set([...prev, model]));
         setMessage('');
     };
@@ -180,19 +202,6 @@ const PhoneProductsPage = () => {
     const removeProduct = (id) => {
         const products = catalog.products.filter((item) => item.id !== id);
         setCatalog((current) => ({ ...current, products }));
-    };
-
-    // Calculate available droplist variants for a model:
-    // If a variant is already priced (valuationPrice > 0), it disappears from the droplist.
-    // If it has not been given a price, it still shows in the droplist.
-    const getAvailableDroplistVariants = (model) => {
-        const modelProducts = catalog.products.filter((p) => p.model === model);
-        const pricedVariants = new Set(
-            modelProducts
-                .filter((p) => Number(p.valuationPrice) > 0)
-                .map((p) => String(p.variant || '').trim())
-        );
-        return variantOptions.filter((v) => !pricedVariants.has(v));
     };
 
     const updateDefect = (defectId, field, value) => {
@@ -400,7 +409,7 @@ const PhoneProductsPage = () => {
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-hidden">
-                    <div className="hidden h-full overflow-hidden xl:block">
+                    <div className="hidden h-full overflow-y-auto xl:block">
                         <table className="w-full table-fixed text-left text-xs">
                             <thead className="bg-slate-100/80 text-[11px] uppercase text-slate-500">
                                 <tr>
@@ -416,12 +425,12 @@ const PhoneProductsPage = () => {
                             {visibleModels.map((model) => {
                                 const modelProducts = catalog.products.filter((product) => product.model === model);
                                 const isExpanded = expandedModels.has(model);
-                                const droplistVariants = getAvailableDroplistVariants(model);
-                                const productPageCount = Math.ceil(modelProducts.length / productsPerPage);
+                                const productGroups = groupProductsByVariant(modelProducts);
+                                const productPageCount = Math.ceil(productGroups.length / variantGroupsPerPage);
                                 const currentProductPage = Math.min(productPageByModel[model] || 0, Math.max(0, productPageCount - 1));
-                                const visibleProducts = modelProducts.slice(
-                                    currentProductPage * productsPerPage,
-                                    (currentProductPage + 1) * productsPerPage
+                                const visibleProductGroups = productGroups.slice(
+                                    currentProductPage * variantGroupsPerPage,
+                                    (currentProductPage + 1) * variantGroupsPerPage
                                 );
                                 const pricedCount = modelProducts.filter((product) => Number(product.valuationPrice) > 0).length;
 
@@ -453,7 +462,7 @@ const PhoneProductsPage = () => {
                                                             }}
                                                         >
                                                             <option value="">Add variant...</option>
-                                                            {droplistVariants.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
+                                                            {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
                                                         </select>
                                                         <button
                                                             type="button"
@@ -466,41 +475,50 @@ const PhoneProductsPage = () => {
                                                 </div>
                                             </td>
                                         </tr>
-                                        {isExpanded && visibleProducts.map((product) => {
-                                            const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
-                                            return (
-                                                <tr key={product.id} className="hover:bg-slate-50/60">
-                                                    <td className="px-3 py-2 pl-8 text-slate-500">{model}</td>
-                                                    <td className="px-3 py-2">
-                                                        <select
-                                                            className="w-full rounded border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-800"
-                                                            value={product.variant}
-                                                            onChange={(event) => updateProduct(product.id, 'variant', event.target.value)}
-                                                        >
-                                                            {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
-                                                            {!variantOptions.includes(product.variant) && product.variant && <option value={product.variant}>{product.variant}</option>}
-                                                        </select>
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <input className="w-full rounded border border-slate-200 px-2 py-1" type="number" min="1" step="1" value={product.capacityGb} onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))} />
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <input className="w-full rounded border border-slate-200 px-2 py-1 font-semibold" type="number" min="0" step="0.01" value={product.valuationPrice} onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))} />
-                                                    </td>
-                                                    <td className="px-3 py-2">
-                                                        <input className="w-full rounded border border-slate-200 px-2 py-1" type="number" min="0" step="0.01" value={marketPrice ?? ''} placeholder="Optional" onChange={(event) => updateProduct(product.id, 'marketPrice', event.target.value === '' ? null : Number(event.target.value))} />
-                                                    </td>
-                                                    <td className="px-3 py-2 font-semibold text-emerald-700">
-                                                        {marketPrice == null ? 'N/A' : `$${(Number(marketPrice) * 0.4).toFixed(2)}`}
-                                                    </td>
-                                                    <td className="px-3 py-2 text-center">
-                                                        <button type="button" className="rounded p-1.5 text-rose-500 hover:text-rose-700" aria-label={`Delete ${product.variant || 'variant'}`} onClick={() => removeProduct(product.id)}>
-                                                            <FaTrashAlt size={13} />
-                                                        </button>
+                                        {isExpanded && visibleProductGroups.map((group) => (
+                                            <React.Fragment key={`variant-group-${group.variant}`}>
+                                                <tr className="bg-emerald-50/60">
+                                                    <td colSpan={7} className="px-3 py-1.5 pl-8 font-semibold text-emerald-800">
+                                                        {group.variant || 'Unassigned variant'} <span className="font-normal text-emerald-700">({group.products.length} capacities)</span>
                                                     </td>
                                                 </tr>
-                                            );
-                                        })}
+                                                {group.products.map((product) => {
+                                                    const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
+                                                    return (
+                                                        <tr key={product.id} className="hover:bg-slate-50/60">
+                                                            <td className="px-3 py-2 pl-8 text-slate-500">{model}</td>
+                                                            <td className="px-3 py-2">
+                                                                <select
+                                                                    className="w-full rounded border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-800"
+                                                                    value={product.variant}
+                                                                    onChange={(event) => updateProduct(product.id, 'variant', event.target.value)}
+                                                                >
+                                                                    {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
+                                                                    {!variantOptions.includes(product.variant) && product.variant && <option value={product.variant}>{product.variant}</option>}
+                                                                </select>
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                <input className="w-full rounded border border-slate-200 px-2 py-1" type="number" min="1" step="1" value={product.capacityGb} onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))} />
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                <input className="w-full rounded border border-slate-200 px-2 py-1 font-semibold" type="number" min="0" step="0.01" value={product.valuationPrice} onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))} />
+                                                            </td>
+                                                            <td className="px-3 py-2">
+                                                                <input className="w-full rounded border border-slate-200 px-2 py-1" type="number" min="0" step="0.01" value={marketPrice ?? ''} placeholder="Optional" onChange={(event) => updateProduct(product.id, 'marketPrice', event.target.value === '' ? null : Number(event.target.value))} />
+                                                            </td>
+                                                            <td className="px-3 py-2 font-semibold text-emerald-700">
+                                                                {marketPrice == null ? 'N/A' : `$${(Number(marketPrice) * 0.4).toFixed(2)}`}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                <button type="button" className="rounded p-1.5 text-rose-500 hover:text-rose-700" aria-label={`Delete ${product.variant || 'variant'}`} onClick={() => removeProduct(product.id)}>
+                                                                    <FaTrashAlt size={13} />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        ))}
                                         {isExpanded && modelProducts.length === 0 && (
                                             <tr><td colSpan={7} className="px-4 py-4 text-center text-xs text-slate-500">No variants configured. Add one above.</td></tr>
                                         )}
@@ -519,14 +537,14 @@ const PhoneProductsPage = () => {
                         </table>
                     </div>
 
-                    <div className="h-full space-y-2 overflow-hidden xl:hidden">
+                    <div className="h-full space-y-2 overflow-y-auto xl:hidden">
                         {visibleModels.map((model) => {
                             const modelProducts = catalog.products.filter((product) => product.model === model);
                             const isExpanded = expandedModels.has(model);
-                            const droplistVariants = getAvailableDroplistVariants(model);
-                            const productPageCount = Math.ceil(modelProducts.length / productsPerPage);
+                            const productGroups = groupProductsByVariant(modelProducts);
+                            const productPageCount = Math.ceil(productGroups.length / variantGroupsPerPage);
                             const currentProductPage = Math.min(productPageByModel[model] || 0, Math.max(0, productPageCount - 1));
-                            const visibleProducts = modelProducts.slice(currentProductPage * productsPerPage, (currentProductPage + 1) * productsPerPage);
+                            const visibleProductGroups = productGroups.slice(currentProductPage * variantGroupsPerPage, (currentProductPage + 1) * variantGroupsPerPage);
                             return (
                                 <section key={model} className="rounded-lg border border-slate-200 bg-white">
                                     <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-2">
@@ -538,32 +556,39 @@ const PhoneProductsPage = () => {
                                         <div className="flex items-center gap-1">
                                             <select className="max-w-36 rounded border border-slate-200 bg-white px-2 py-1 text-xs" value="" aria-label={`Add variant for ${model}`} onChange={(event) => { if (event.target.value) handleAddVariantToModel(model, event.target.value); }}>
                                                 <option value="">Add variant...</option>
-                                                {droplistVariants.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
+                                                {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
                                             </select>
                                             <button type="button" className="rounded border border-emerald-300 px-2 py-1 text-xs text-emerald-700" onClick={() => handleAddCustomProductForModel(model)}>+ Capacity</button>
                                         </div>
                                     </div>
                                     {isExpanded && <div className="space-y-2 p-2">
-                                        {visibleProducts.map((product) => {
-                                            const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
-                                            return (
-                                                <div key={product.id} className="space-y-2 rounded border border-slate-200 p-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <select className={`${inputClass} min-w-0 font-semibold`} value={product.variant} onChange={(event) => updateProduct(product.id, 'variant', event.target.value)} aria-label={`Variant for ${model}`}>
-                                                            {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
-                                                            {!variantOptions.includes(product.variant) && product.variant && <option value={product.variant}>{product.variant}</option>}
-                                                        </select>
-                                                        <button type="button" className="shrink-0 p-2 text-rose-500" aria-label={`Delete ${product.variant || 'variant'}`} onClick={() => removeProduct(product.id)}><FaTrashAlt size={13} /></button>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <label className="text-[11px] text-slate-500">Capacity (GB)<input className={`${inputClass} mt-1`} type="number" min="1" step="1" value={product.capacityGb} onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))} /></label>
-                                                        <label className="text-[11px] text-slate-500">Valuation ($)<input className={`${inputClass} mt-1`} type="number" min="0" step="0.01" value={product.valuationPrice} onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))} /></label>
-                                                        <label className="text-[11px] text-slate-500">Market ($)<input className={`${inputClass} mt-1`} type="number" min="0" step="0.01" value={marketPrice ?? ''} onChange={(event) => updateProduct(product.id, 'marketPrice', event.target.value === '' ? null : Number(event.target.value))} /></label>
-                                                        <div className="self-end pb-2 text-[11px] text-slate-500">40%: <span className="font-semibold text-emerald-700">{marketPrice == null ? 'N/A' : `$${(Number(marketPrice) * 0.4).toFixed(2)}`}</span></div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                        {visibleProductGroups.map((group) => (
+                                            <div key={`variant-group-${group.variant}`} className="space-y-2">
+                                                <h3 className="rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">
+                                                    {group.variant || 'Unassigned variant'} ({group.products.length} capacities)
+                                                </h3>
+                                                {group.products.map((product) => {
+                                                    const marketPrice = product.marketPrice !== undefined ? product.marketPrice : product.khmer24MarketPrice;
+                                                    return (
+                                                        <div key={product.id} className="space-y-2 rounded border border-slate-200 p-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <select className={`${inputClass} min-w-0 font-semibold`} value={product.variant} onChange={(event) => updateProduct(product.id, 'variant', event.target.value)} aria-label={`Variant for ${model}`}>
+                                                                    {variantOptions.map((variant) => <option key={variant} value={variant}>{variant}</option>)}
+                                                                    {!variantOptions.includes(product.variant) && product.variant && <option value={product.variant}>{product.variant}</option>}
+                                                                </select>
+                                                                <button type="button" className="shrink-0 p-2 text-rose-500" aria-label={`Delete ${product.variant || 'variant'}`} onClick={() => removeProduct(product.id)}><FaTrashAlt size={13} /></button>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <label className="text-[11px] text-slate-500">Capacity (GB)<input className={`${inputClass} mt-1`} type="number" min="1" step="1" value={product.capacityGb} onChange={(event) => updateProduct(product.id, 'capacityGb', Number(event.target.value))} /></label>
+                                                                <label className="text-[11px] text-slate-500">Valuation ($)<input className={`${inputClass} mt-1`} type="number" min="0" step="0.01" value={product.valuationPrice} onChange={(event) => updateProduct(product.id, 'valuationPrice', Number(event.target.value))} /></label>
+                                                                <label className="text-[11px] text-slate-500">Market ($)<input className={`${inputClass} mt-1`} type="number" min="0" step="0.01" value={marketPrice ?? ''} onChange={(event) => updateProduct(product.id, 'marketPrice', event.target.value === '' ? null : Number(event.target.value))} /></label>
+                                                                <div className="self-end pb-2 text-[11px] text-slate-500">40%: <span className="font-semibold text-emerald-700">{marketPrice == null ? 'N/A' : `$${(Number(marketPrice) * 0.4).toFixed(2)}`}</span></div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ))}
                                         {modelProducts.length === 0 && <p className="py-3 text-center text-xs text-slate-500">No variants configured yet.</p>}
                                         {productPageCount > 1 && <div className="flex items-center justify-end gap-2 text-xs text-slate-500"><span>{currentProductPage + 1} / {productPageCount}</span><button type="button" className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40" disabled={currentProductPage === 0} onClick={() => setProductPageByModel((current) => ({ ...current, [model]: currentProductPage - 1 }))}>Previous</button><button type="button" className="rounded border border-slate-200 px-2 py-1 disabled:opacity-40" disabled={currentProductPage >= productPageCount - 1} onClick={() => setProductPageByModel((current) => ({ ...current, [model]: currentProductPage + 1 }))}>Next</button></div>}
                                     </div>}
