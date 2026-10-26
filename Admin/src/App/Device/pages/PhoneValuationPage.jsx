@@ -10,7 +10,7 @@ const getDeductionOptions = (status) => {
     const range = max - min;
     if (!Number.isFinite(range) || range <= 0) return [min];
 
-    const step = Math.max(5, Math.round((range / 4) / 5) * 5);
+    const step = Math.max(5, Math.ceil((range / 4) / 5) * 5);
     const values = [min];
     for (let value = min + step; value < max; value += step) {
         values.push(Number(value.toFixed(2)));
