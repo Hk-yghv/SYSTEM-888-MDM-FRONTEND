@@ -25,7 +25,6 @@ const PhoneValuationPage = () => {
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedStatusByDefect, setSelectedStatusByDefect] = useState({});
     const [selectedDeductionByDefect, setSelectedDeductionByDefect] = useState({});
-    const [customDeductionByDefect, setCustomDeductionByDefect] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -72,14 +71,12 @@ const PhoneValuationPage = () => {
             if (!status) return null;
             const min = Number(status.minDeduction || 0);
             const max = Number(status.maxDeduction ?? min);
-            const customAmount = customDeductionByDefect[item.id];
-            const amount = customAmount !== undefined && customAmount !== ''
-                ? Number(customAmount)
-                : Number(selectedDeductionByDefect[item.id] ?? min);
-            if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+            const selectedAmount = selectedDeductionByDefect[item.id] ?? String(min);
+            const amount = Number(selectedAmount);
+            if (selectedAmount === '' || !Number.isFinite(amount) || amount < min || amount > max) return null;
             return { ...item, status, amount };
         })
-        .filter(Boolean), [productDefects, selectedStatusByDefect, selectedDeductionByDefect, customDeductionByDefect]);
+        .filter(Boolean), [productDefects, selectedStatusByDefect, selectedDeductionByDefect]);
     const deduction = useMemo(() => selectedDefects
         .reduce((total, item) => total + item.amount, 0), [selectedDefects]);
     const finalValue = Math.max(0, Number(product?.valuationPrice || 0) - deduction);
@@ -115,7 +112,6 @@ const PhoneValuationPage = () => {
                                         setSelectedProductId(nextProduct?.id || '');
                                         setSelectedStatusByDefect({});
                                         setSelectedDeductionByDefect({});
-                                        setCustomDeductionByDefect({});
                                     }}
                                 >
                                     {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
@@ -133,7 +129,6 @@ const PhoneValuationPage = () => {
                                         setSelectedProductId(nextProduct?.id || '');
                                         setSelectedStatusByDefect({});
                                         setSelectedDeductionByDefect({});
-                                        setCustomDeductionByDefect({});
                                     }}
                                 >
                                     {variantOptions.map((variant) => (
@@ -155,7 +150,6 @@ const PhoneValuationPage = () => {
                                         setSelectedProductId(nextProduct?.id || '');
                                         setSelectedStatusByDefect({});
                                         setSelectedDeductionByDefect({});
-                                        setCustomDeductionByDefect({});
                                     }}
                                 >
                                     {capacityOptions.map((capacity) => (
@@ -183,11 +177,11 @@ const PhoneValuationPage = () => {
                                 const deductionOptions = selectedStatus ? getDeductionOptions(selectedStatus) : [];
                                 const minDeduction = Number(selectedStatus?.minDeduction || 0);
                                 const maxDeduction = Number(selectedStatus?.maxDeduction ?? minDeduction);
-                                const customDeduction = customDeductionByDefect[defect.id] || '';
-                                const hasInvalidCustomDeduction = customDeduction !== '' && (
-                                    !Number.isFinite(Number(customDeduction)) ||
-                                    Number(customDeduction) < minDeduction ||
-                                    Number(customDeduction) > maxDeduction
+                                const selectedDeduction = selectedDeductionByDefect[defect.id] ?? String(minDeduction);
+                                const hasInvalidDeduction = selectedDeduction === '' || (
+                                    !Number.isFinite(Number(selectedDeduction)) ||
+                                    Number(selectedDeduction) < minDeduction ||
+                                    Number(selectedDeduction) > maxDeduction
                                 );
 
                                 return (
@@ -207,10 +201,6 @@ const PhoneValuationPage = () => {
                                                     ...current,
                                                     [defect.id]: event.target.value ? String(nextStatus?.minDeduction ?? 0) : ''
                                                 }));
-                                                setCustomDeductionByDefect((current) => ({
-                                                    ...current,
-                                                    [defect.id]: ''
-                                                }));
                                             }}
                                             aria-label={`Status of ${defect.name}`}
                                         >
@@ -221,46 +211,32 @@ const PhoneValuationPage = () => {
                                         </select>
                                         {selectedStatus && (
                                             <div className="grid gap-2">
-                                                <select
-                                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-black outline-none focus:border-emerald-500"
-                                                    value={selectedDeductionByDefect[defect.id] ?? String(minDeduction)}
+                                                <input
+                                                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-emerald-500"
+                                                    type="number"
+                                                    min={minDeduction}
+                                                    max={maxDeduction}
+                                                    step="0.01"
+                                                    list={`deduction-options-${defect.id}`}
+                                                    value={selectedDeduction}
                                                     onChange={(event) => {
                                                         setSelectedDeductionByDefect((current) => ({
                                                             ...current,
                                                             [defect.id]: event.target.value
                                                         }));
-                                                        setCustomDeductionByDefect((current) => ({
-                                                            ...current,
-                                                            [defect.id]: ''
-                                                        }));
                                                     }}
                                                     aria-label={`Deduction amount for ${defect.name}`}
-                                                >
+                                                />
+                                                <datalist id={`deduction-options-${defect.id}`}>
                                                     {deductionOptions.map((amount) => (
-                                                        <option key={amount} value={amount}>{money(amount)}</option>
+                                                        <option key={amount} value={amount} label={money(amount)} />
                                                     ))}
-                                                </select>
-                                                <label className="block text-xs font-medium text-black">
-                                                    Custom deduction ({money(minDeduction)}–{money(maxDeduction)})
-                                                    <input
-                                                        className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-emerald-500"
-                                                        type="number"
-                                                        min={minDeduction}
-                                                        max={maxDeduction}
-                                                        step="0.01"
-                                                        value={customDeduction}
-                                                        onChange={(event) => setCustomDeductionByDefect((current) => ({
-                                                            ...current,
-                                                            [defect.id]: event.target.value
-                                                        }))}
-                                                        aria-label={`Custom deduction for ${defect.name}`}
-                                                    />
-                                                    {hasInvalidCustomDeduction && (
-                                                        <span className="mt-1 block text-rose-700" role="alert">
-                                                            Enter an amount from {money(minDeduction)} to {money(maxDeduction)}.
-                                                        </span>
-                                                    )}
-                                                </label>
+                                                </datalist>
+                                                {hasInvalidDeduction && (
+                                                    <span className="text-xs text-rose-700" role="alert">
+                                                        Enter an amount from {money(minDeduction)} to {money(maxDeduction)}.
+                                                    </span>
+                                                )}
                                             </div>
                                         )}
                                         {selectedStatusByDefect[defect.id] && selectedDefects.some((item) => item.id === defect.id) && (
