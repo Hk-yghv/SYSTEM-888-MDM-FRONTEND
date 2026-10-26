@@ -289,7 +289,6 @@ export const MusicPlayerProvider = ({ children }) => {
             if (tracks.length > 0) playTrackAt(0);
             return;
         }
-        setIsPlayerVisible(true);
         const player = playerRef.current;
         if (!player || !playerReady) {
             pendingPlayRef.current = true;
