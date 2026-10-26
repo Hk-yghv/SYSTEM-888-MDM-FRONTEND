@@ -4,8 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import {
     FaCalculator, FaCalendarAlt, FaPrint, FaUndo, FaFileContract,
     FaGem, FaHashtag, FaUser, FaSave, FaHistory, FaTrash, FaEye,
-    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar,
-    FaChevronLeft, FaChevronRight
+    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar
 } from 'react-icons/fa';
 import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
@@ -53,13 +52,18 @@ const CalculateSchedule2 = () => {
     const [displayLimit, setDisplayLimit] = useState(10);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
-    const [subBrandSwitchEnabled, setSubBrandSwitchEnabled] = useState(false);
-    const [selectedSubBrand, setSelectedSubBrand] = useState(() => allowedSubBrands[0] || '');
-    const isFormReadOnly = activeRecordId ? !canEdit : !canCreate;
+    const [selectedSubBrand, setSelectedSubBrand] = useState(() => (
+        allowedSubBrands.length === 1 ? allowedSubBrands[0] : ''
+    ));
+    const requiresSubBrandSelection = allowedSubBrands.length >= 2;
+    const isSubBrandSelectionReady = !requiresSubBrandSelection || allowedSubBrands.includes(selectedSubBrand);
+    const isFormReadOnly = (activeRecordId ? !canEdit : !canCreate) || !isSubBrandSelectionReady;
 
     useEffect(() => {
         setSelectedSubBrand(current =>
-            allowedSubBrands.includes(current) ? current : (allowedSubBrands[0] || '')
+            allowedSubBrands.includes(current)
+                ? current
+                : (allowedSubBrands.length === 1 ? allowedSubBrands[0] : '')
         );
     }, [allowedSubBrands]);
 
@@ -123,7 +127,7 @@ const CalculateSchedule2 = () => {
                 userSubBrands,
                 _t: String(Date.now())
             });
-            if (subBrandSwitchEnabled && selectedSubBrand) {
+            if (selectedSubBrand) {
                 params.set('subBrand', selectedSubBrand);
             }
 
@@ -154,7 +158,6 @@ const CalculateSchedule2 = () => {
         user?.isImmutable,
         user?.subBrands,
         allowedSubBrands,
-        subBrandSwitchEnabled,
         selectedSubBrand
     ]);
 
@@ -261,6 +264,7 @@ const CalculateSchedule2 = () => {
     // ─── Calculate ─────────────────────────────────────────────────
     const handleCalculate = (e) => {
         if (e) e.preventDefault();
+        if (!isSubBrandSelectionReady) return null;
         const principal = parseFloat(principalInput) || 0;
         const ratePercent = parseRate(rateInput);
         const months = parseInt(durationMonths, 10) || 1;
@@ -335,7 +339,7 @@ const CalculateSchedule2 = () => {
 
     // ─── Save to Database ──────────────────────────────────────────
     const handleSave = async () => {
-        if (activeRecordId ? !canEdit : !canCreate) return;
+        if ((activeRecordId ? !canEdit : !canCreate) || !isSubBrandSelectionReady) return;
 
         let calcData = result;
         if (!calcData) {
@@ -358,9 +362,7 @@ const CalculateSchedule2 = () => {
                 totalInterest: calcData.totalInterest,
                 schedule: calcData.schedule,
                 brand: user?.brand || '',
-                subBrand: subBrandSwitchEnabled
-                    ? selectedSubBrand
-                    : (allowedSubBrands[0] || ''),
+                subBrand: selectedSubBrand || (allowedSubBrands[0] || ''),
                 createdBy: user?.username || user?.name || 'Staff',
                 notes: notes.trim()
             };
@@ -372,14 +374,14 @@ const CalculateSchedule2 = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false',
                 userSubBrands: allowedSubBrands.join(',')
             });
-            if (subBrandSwitchEnabled && selectedSubBrand) {
+            if (selectedSubBrand) {
                 params.set('subBrand', selectedSubBrand);
             }
 
             const isEditing = Boolean(activeRecordId);
             const url = isEditing
                 ? `${API_BASE}/calculate-schedules/${activeRecordId}?${params.toString()}`
-                : `${API_BASE}/calculate-schedules`;
+                : `${API_BASE}/calculate-schedules?${params.toString()}`;
             const res = await fetch(url, {
                 method: isEditing ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -463,7 +465,7 @@ const CalculateSchedule2 = () => {
                 isImmutable: user?.isImmutable ? 'true' : 'false',
                 userSubBrands: allowedSubBrands.join(',')
             });
-            if (subBrandSwitchEnabled && selectedSubBrand) {
+            if (selectedSubBrand) {
                 params.set('subBrand', selectedSubBrand);
             }
 
@@ -499,12 +501,18 @@ const CalculateSchedule2 = () => {
         setActiveRecordId(null);
     };
 
+    const handleSubBrandChange = (subBrand) => {
+        setSelectedSubBrand(subBrand);
+        handleReset();
+        setContractNumber('');
+    };
+
     const handlePrint = () => {
         window.print();
     };
 
     const filteredHistory = savedHistory.filter(item => {
-        if (subBrandSwitchEnabled && selectedSubBrand && item.subBrand !== selectedSubBrand) {
+        if (selectedSubBrand && item.subBrand !== selectedSubBrand) {
             return false;
         }
         if (!historySearch.trim()) return true;
@@ -725,36 +733,18 @@ const CalculateSchedule2 = () => {
 
                     {/* Action buttons */}
                     <div className="flex flex-wrap items-center gap-2 no-print">
-                        {allowedSubBrands.length >= 2 && (
-                            <>
-                                <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={subBrandSwitchEnabled}
-                                    onClick={() => setSubBrandSwitchEnabled(enabled => !enabled)}
-                                    className={`px-3 py-2.5 rounded-[5px] text-xs sm:text-sm flex items-center gap-2 border transition-all cursor-pointer ${
-                                        subBrandSwitchEnabled
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                            : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-                                    }`}
-                                    title={subBrandSwitchEnabled ? 'បិទការប្តូរ Sub-brand' : 'បើកការប្តូរ Sub-brand'}
-                                >
-                                    {subBrandSwitchEnabled ? <FaChevronRight /> : <FaChevronLeft />}
-                                    <span>ប្តូរ Sub-brand</span>
-                                </button>
-                                {subBrandSwitchEnabled && (
-                                    <select
-                                        aria-label="ជ្រើសរើស Sub-brand"
-                                        value={selectedSubBrand}
-                                        onChange={(e) => setSelectedSubBrand(e.target.value)}
-                                        className="px-3 py-2.5 rounded-[5px] border border-slate-200 bg-white text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                                    >
-                                        {allowedSubBrands.map(subBrand => (
-                                            <option key={subBrand} value={subBrand}>{subBrand}</option>
-                                        ))}
-                                    </select>
-                                )}
-                            </>
+                        {requiresSubBrandSelection && (
+                            <select
+                                aria-label="ជ្រើសរើស Sub-brand"
+                                value={selectedSubBrand}
+                                onChange={(e) => handleSubBrandChange(e.target.value)}
+                                className="px-3 py-2.5 rounded-[5px] border border-slate-200 bg-white text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                            >
+                                <option value="">-- ជ្រើសរើស Sub-brand មុនបញ្ចូលទិន្នន័យ --</option>
+                                {allowedSubBrands.map(subBrand => (
+                                    <option key={subBrand} value={subBrand}>{subBrand}</option>
+                                ))}
+                            </select>
                         )}
                         {savedHistory.length > 0 && (
                             <button
@@ -1028,7 +1018,7 @@ const CalculateSchedule2 = () => {
                                         <button
                                             type="button"
                                             onClick={handleSave}
-                                            disabled={saving}
+                                            disabled={saving || isFormReadOnly}
                                             className="px-5 py-2.5 rounded-[5px] bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                             {saving ? <FaSpinner className="animate-spin" /> : <FaSave />}
                                             {activeRecordId ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុក'}
