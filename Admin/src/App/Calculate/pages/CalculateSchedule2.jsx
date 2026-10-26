@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -60,6 +60,7 @@ const CalculateSchedule2 = () => {
     const requiresSubBrandSelection = allowedSubBrands.length >= 2;
     const isSubBrandSelectionReady = !requiresSubBrandSelection || allowedSubBrands.includes(selectedSubBrand);
     const isFormReadOnly = (activeRecordId ? !canEdit : !canCreate) || !isSubBrandSelectionReady;
+    const historyRequestId = useRef(0);
 
     useEffect(() => {
         setSelectedSubBrand(current =>
@@ -114,6 +115,15 @@ const CalculateSchedule2 = () => {
 
     // ─── Load Saved History from DB (with silent realtime refresh support) ──────
     const fetchHistory = useCallback(async (isSilent = false) => {
+        const requestId = ++historyRequestId.current;
+        if (requiresSubBrandSelection && !selectedSubBrand) {
+            setSavedHistory([]);
+            setHistoryLoadError(false);
+            setContractNumber('');
+            setHistoryLoading(false);
+            return;
+        }
+
         try {
             if (!isSilent) setHistoryLoading(true);
             const brand = user?.brand || '';
@@ -140,6 +150,7 @@ const CalculateSchedule2 = () => {
                 throw new Error(`HTTP ${res.status}`);
             }
             const data = await res.json();
+            if (requestId !== historyRequestId.current) return;
             if (!data.success || !Array.isArray(data.data)) {
                 throw new Error(data.error || 'Invalid calculate schedules response');
             }
@@ -147,10 +158,11 @@ const CalculateSchedule2 = () => {
             setHistoryLoadError(false);
             setContractNumber(current => current || getNextContractNumber(data.data));
         } catch (err) {
+            if (requestId !== historyRequestId.current) return;
             console.error('Error loading saved calculation history:', err);
             setHistoryLoadError(true);
         } finally {
-            if (!isSilent) setHistoryLoading(false);
+            if (requestId === historyRequestId.current && !isSilent) setHistoryLoading(false);
         }
     }, [
         API_BASE,
@@ -160,6 +172,7 @@ const CalculateSchedule2 = () => {
         user?.isImmutable,
         user?.subBrands,
         allowedSubBrands,
+        requiresSubBrandSelection,
         selectedSubBrand
     ]);
 
@@ -209,7 +222,7 @@ const CalculateSchedule2 = () => {
         const idQuery = searchParams.get('id');
         const contractNumQuery = searchParams.get('contractNumber');
 
-        if (savedHistory.length > 0 && (customerQuery || idQuery || contractNumQuery)) {
+        if (isSubBrandSelectionReady && savedHistory.length > 0 && (customerQuery || idQuery || contractNumQuery)) {
             const found = savedHistory.find(item =>
                 (idQuery && String(item._id) === String(idQuery)) ||
                 (customerQuery && item.customerName && item.customerName.trim().toLowerCase().replace(/\s+/g, ' ') === customerQuery.trim().toLowerCase().replace(/\s+/g, ' ')) ||
@@ -219,7 +232,7 @@ const CalculateSchedule2 = () => {
                 handleLoadRecord(found);
             }
         }
-    }, [savedHistory, searchParams]);
+    }, [isSubBrandSelectionReady, savedHistory, searchParams]);
 
     // ─── Helpers ───────────────────────────────────────────────────
     const parseRate = (val) => {
@@ -509,13 +522,14 @@ const CalculateSchedule2 = () => {
         handleReset();
         setContractNumber('');
         setSaveSuccessMsg('');
+        setShowHistoryModal(false);
     };
 
     const handlePrint = () => {
         window.print();
     };
 
-    const filteredHistory = savedHistory.filter(item => {
+    const filteredHistory = (requiresSubBrandSelection && !selectedSubBrand ? [] : savedHistory).filter(item => {
         if (selectedSubBrand && item.subBrand !== selectedSubBrand) {
             return false;
         }
@@ -769,7 +783,7 @@ const CalculateSchedule2 = () => {
                                 )}
                             </>
                         )}
-                        {savedHistory.length > 0 && (
+                        {filteredHistory.length > 0 && (
                             <button
                                 type="button"
                                 onClick={() => setShowHistoryModal(true)}
@@ -1105,7 +1119,11 @@ const CalculateSchedule2 = () => {
                         <div
                             onScroll={handleHistoryScroll}
                             className="flex-1 overflow-y-auto space-y-2 pr-1 scroll-smooth">
-                            {historyLoading ? (
+                            {!isSubBrandSelectionReady ? (
+                                <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs text-center p-2">
+                                    <span>សូមជ្រើសរើស Sub-brand ដើម្បីបង្ហាញទិន្នន័យ</span>
+                                </div>
+                            ) : historyLoading ? (
                                 <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-xs gap-2">
                                     <FaSpinner className="animate-spin text-lg text-violet-500" />
                                     <span>កំពុងទាញយកទិន្នន័យ...</span>

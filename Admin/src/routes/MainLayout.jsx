@@ -7,6 +7,7 @@ import MobileResponsiveContent from "../components/MobileResponsiveContent";
 import PaymentAlertDrawer from "../components/PaymentAlertDrawer";
 import GlobalImageZoomModal from "../components/GlobalImageZoomModal";
 import { useTheme } from "../context/ThemeContext";
+import MusicDockControls from "../App/Music/MusicDockControls";
 
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { MdOutlineViewHeadline, MdOutlineViewSidebar, MdDragIndicator } from "react-icons/md";
@@ -354,6 +355,8 @@ const MainLayout = ({ children }) => {
                   {isSidebarOpen ? "បើក" : "បិទ"}
                 </span>
               </button>
+
+              <MusicDockControls />
             </div>
           )}
         </div>

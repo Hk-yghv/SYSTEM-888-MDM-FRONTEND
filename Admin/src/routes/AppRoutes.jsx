@@ -69,6 +69,7 @@ const ReportAuditTelegram = lazy(() => import("../App/Audit/pages/ReportAuditTel
 const PrintIdCard = lazy(() => import("../App/Print/pages/PrintIdCard"));
 const HelpSupport = lazy(() => import("../App/Support/pages/HelpSupport"));
 const ControlSupportHelp = lazy(() => import("../App/Settings/pages/ControlSupportHelp"));
+const MusicPage = lazy(() => import("../App/Music/MusicPage"));
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
@@ -205,6 +206,9 @@ const AppRoutes = () => {
 
       {/* Help & Support */}
       <Route path={json.helpSupport || "/help-support"} element={renderProtected(json.helpSupport || "/help-support", HelpSupport)} />
+
+      {/* Local YouTube playlist */}
+      <Route path={json.music || "/music"} element={renderProtected("/profile", MusicPage)} />
 
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />

@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronRight, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping, FaShieldAlt, FaMobileAlt } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronRight, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping, FaShieldAlt, FaMobileAlt, FaMusic } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
@@ -797,6 +797,18 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             >
                                 <FaUserCog className="text-sm text-emerald-600" />
                                 <span>{t('profile')}</span>
+                            </Link>
+
+                            <Link
+                                to={json.music || '/music'}
+                                onClick={() => setAccountOpen(false)}
+                                className="w-full h-[36px] flex items-center gap-2.5 px-3 rounded-[8px] transition-all cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900"
+                                style={{ background: 'transparent' }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <FaMusic className="text-sm text-violet-600" />
+                                <span>Music</span>
                             </Link>
 
                             <button

@@ -7,6 +7,7 @@ import { LanguageProvider } from "../context/LanguageContext";
 import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import AppRoutes from "./AppRoutes";
+import { MusicPlayerProvider } from "../context/MusicPlayerContext";
 import { installTableInteractions } from "../utils/tableInteractions";
 import { installModalAnimations } from "../utils/modalAnimations";
 
@@ -57,7 +58,9 @@ const App = () => {
         <ThemeProvider>
           <LanguageProvider>
             <BrowserRouter>
-              <AppRoutes />
+              <MusicPlayerProvider>
+                <AppRoutes />
+              </MusicPlayerProvider>
             </BrowserRouter>
           </LanguageProvider>
         </ThemeProvider>

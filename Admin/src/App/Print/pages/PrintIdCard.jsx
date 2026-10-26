@@ -17,7 +17,10 @@ import {
     FaExclamationTriangle,
     FaTimes,
     FaInfoCircle,
-    FaCopy
+    FaCopy,
+    FaEdit,
+    FaFont,
+    FaSquare
 } from 'react-icons/fa';
 
 const PrintIdCard = () => {
@@ -36,6 +39,13 @@ const PrintIdCard = () => {
     const [scalePercent, setScalePercent] = useState(100);
     const [showBorder, setShowBorder] = useState(false);
     const [showAdjustments, setShowAdjustments] = useState(false);
+    const [showEditor, setShowEditor] = useState(false);
+    const [crop, setCrop] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
+    const [brightness, setBrightness] = useState(100);
+    const [contrast, setContrast] = useState(100);
+    const [shadow, setShadow] = useState(0);
+    const [annotations, setAnnotations] = useState([]);
+    const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
     const [pasteSuccess, setPasteSuccess] = useState(false);
 
     // Number of print copies (ចំនួនសន្លឹកព្រីន)
@@ -73,6 +83,12 @@ const PrintIdCard = () => {
         const reader = new FileReader();
         reader.onload = (e) => {
             setImageSrc(e.target.result);
+            setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+            setBrightness(100);
+            setContrast(100);
+            setShadow(0);
+            setAnnotations([]);
+            setSelectedAnnotationId(null);
             setPasteSuccess(true);
             setTimeout(() => setPasteSuccess(false), 2500);
         };
@@ -143,10 +159,79 @@ const PrintIdCard = () => {
         setScalePercent(100);
         setCopies(1);
         setShowBorder(false);
+        setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+        setBrightness(100);
+        setContrast(100);
+        setShadow(0);
+        setAnnotations([]);
+        setSelectedAnnotationId(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
     };
+
+    const addAnnotation = (type) => {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        setAnnotations(current => [
+            ...current,
+            {
+                id,
+                type,
+                text: type === 'text' ? 'អត្ថបទ' : '',
+                color: '#ef4444',
+                x: 10,
+                y: 10,
+                width: 25,
+                height: 20,
+                fontSize: 18
+            }
+        ]);
+        setSelectedAnnotationId(id);
+    };
+
+    const updateSelectedAnnotation = (field, value) => {
+        setAnnotations(current => current.map(annotation => (
+            annotation.id === selectedAnnotationId
+                ? { ...annotation, [field]: value }
+                : annotation
+        )));
+    };
+
+    const renderAnnotations = () => annotations.map(annotation => (
+        annotation.type === 'box' ? (
+            <div
+                key={annotation.id}
+                style={{
+                    position: 'absolute',
+                    left: `${annotation.x}%`,
+                    top: `${annotation.y}%`,
+                    width: `${annotation.width}%`,
+                    height: `${annotation.height}%`,
+                    border: `2px solid ${annotation.color}`,
+                    boxSizing: 'border-box',
+                    pointerEvents: 'none'
+                }}
+            />
+        ) : (
+            <div
+                key={annotation.id}
+                style={{
+                    position: 'absolute',
+                    left: `${annotation.x}%`,
+                    top: `${annotation.y}%`,
+                    color: annotation.color,
+                    fontSize: `${annotation.fontSize}px`,
+                    lineHeight: 1.2,
+                    fontWeight: 700,
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.7)',
+                    whiteSpace: 'pre-wrap',
+                    pointerEvents: 'none'
+                }}
+            >
+                {annotation.text}
+            </div>
+        )
+    ));
 
     // When clicking Print button -> Show custom Alert UI confirmation
     const handleInitiatePrint = () => {
@@ -311,6 +396,20 @@ const PrintIdCard = () => {
                     >
                         <FaSlidersH size={13} className="text-emerald-600" />
                         <span>{t('printMargins', lang === 'km' ? 'គម្លាត' : 'Margins')}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowEditor(open => !open)}
+                        disabled={!imageSrc}
+                        aria-expanded={showEditor}
+                        className={`h-[38px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${showEditor
+                            ? 'bg-violet-50 border-violet-300 text-violet-700 shadow-2xs'
+                            : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                            }`}
+                    >
+                        <FaEdit size={13} className="text-violet-600" />
+                        <span>កែរូបភាព</span>
                     </button>
 
                     {/* Print Button (Opens Custom Alert UI Confirmation) */}
@@ -570,6 +669,227 @@ const PrintIdCard = () => {
                             </div>
                         </div>
                     )}
+
+                    {showEditor && imageSrc && (
+                        <div className="border border-violet-200 bg-violet-50/50 rounded-xl p-4 space-y-4">
+                            <div className="flex items-center justify-between border-b border-violet-100 pb-2">
+                                <h3 className="text-sm font-bold text-slate-800">កែរូបភាព ID Card</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+                                        setRotation(0);
+                                        setBrightness(100);
+                                        setContrast(100);
+                                        setShadow(0);
+                                        setAnnotations([]);
+                                        setSelectedAnnotationId(null);
+                                    }}
+                                    className="text-[11px] font-semibold text-violet-700 hover:text-violet-900"
+                                >
+                                    កំណត់ឡើងវិញ
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {Object.entries({
+                                    top: 'កាត់ពីលើ',
+                                    right: 'កាត់ពីស្តាំ',
+                                    bottom: 'កាត់ពីក្រោម',
+                                    left: 'កាត់ពីឆ្វេង'
+                                }).map(([side, label]) => (
+                                    <label key={side} className="space-y-1 block">
+                                        <span className="flex justify-between text-[11px] font-semibold text-slate-700">
+                                            <span>{label}</span>
+                                            <span className="font-mono text-violet-700">{crop[side]}%</span>
+                                        </span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="35"
+                                            step="1"
+                                            value={crop[side]}
+                                            onChange={(event) => setCrop(current => ({
+                                                ...current,
+                                                [side]: Number(event.target.value)
+                                            }))}
+                                            className="w-full accent-violet-600"
+                                        />
+                                    </label>
+                                ))}
+                                <label className="space-y-1 block">
+                                    <span className="flex justify-between text-[11px] font-semibold text-slate-700">
+                                        <span>បង្វិលរូបភាព</span>
+                                        <span className="font-mono text-violet-700">{rotation}°</span>
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min="-180"
+                                        max="180"
+                                        step="1"
+                                        value={rotation}
+                                        onChange={(event) => setRotation(Number(event.target.value))}
+                                        className="w-full accent-violet-600"
+                                    />
+                                </label>
+                                <label className="space-y-1 block">
+                                    <span className="flex justify-between text-[11px] font-semibold text-slate-700">
+                                        <span>ពន្លឺ</span>
+                                        <span className="font-mono text-violet-700">{brightness}%</span>
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min="40"
+                                        max="200"
+                                        step="1"
+                                        value={brightness}
+                                        onChange={(event) => setBrightness(Number(event.target.value))}
+                                        className="w-full accent-violet-600"
+                                    />
+                                </label>
+                                <label className="space-y-1 block">
+                                    <span className="flex justify-between text-[11px] font-semibold text-slate-700">
+                                        <span>កម្រិតពណ៌/Contrast</span>
+                                        <span className="font-mono text-violet-700">{contrast}%</span>
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min="50"
+                                        max="200"
+                                        step="1"
+                                        value={contrast}
+                                        onChange={(event) => setContrast(Number(event.target.value))}
+                                        className="w-full accent-violet-600"
+                                    />
+                                </label>
+                                <label className="space-y-1 block">
+                                    <span className="flex justify-between text-[11px] font-semibold text-slate-700">
+                                        <span>ស្រមោល</span>
+                                        <span className="font-mono text-violet-700">{shadow}px</span>
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="30"
+                                        step="1"
+                                        value={shadow}
+                                        onChange={(event) => setShadow(Number(event.target.value))}
+                                        className="w-full accent-violet-600"
+                                    />
+                                </label>
+                            </div>
+
+                            <div className="border-t border-violet-100 pt-3 space-y-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-700 mr-1">បន្ថែមលើរូប៖</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => addAnnotation('text')}
+                                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5"
+                                    >
+                                        <FaFont className="text-violet-600" /> បន្ថែមអក្សរ
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => addAnnotation('box')}
+                                        className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5"
+                                    >
+                                        <FaSquare className="text-violet-600" /> បន្ថែមប្រអប់
+                                    </button>
+                                </div>
+
+                                {annotations.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {annotations.map((annotation, index) => (
+                                            <button
+                                                key={annotation.id}
+                                                type="button"
+                                                onClick={() => setSelectedAnnotationId(annotation.id)}
+                                                className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold ${
+                                                    annotation.id === selectedAnnotationId
+                                                        ? 'bg-violet-100 border-violet-300 text-violet-800'
+                                                        : 'bg-white border-slate-200 text-slate-600'
+                                                }`}
+                                            >
+                                                {annotation.type === 'text' ? 'អក្សរ' : 'ប្រអប់'} {index + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {annotations.find(annotation => annotation.id === selectedAnnotationId) && (() => {
+                                    const selectedAnnotation = annotations.find(annotation => annotation.id === selectedAnnotationId);
+                                    return (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white border border-slate-200 rounded-lg p-3">
+                                            {selectedAnnotation.type === 'text' && (
+                                                <>
+                                                    <label className="space-y-1 sm:col-span-2">
+                                                        <span className="block text-[10px] font-semibold text-slate-600">អត្ថបទ</span>
+                                                        <input
+                                                            type="text"
+                                                            value={selectedAnnotation.text}
+                                                            onChange={(event) => updateSelectedAnnotation('text', event.target.value)}
+                                                            className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs"
+                                                        />
+                                                    </label>
+                                                    <label className="space-y-1">
+                                                        <span className="block text-[10px] font-semibold text-slate-600">ទំហំអក្សរ</span>
+                                                        <input
+                                                            type="number"
+                                                            min="8"
+                                                            max="72"
+                                                            value={selectedAnnotation.fontSize}
+                                                            onChange={(event) => updateSelectedAnnotation('fontSize', Math.min(72, Math.max(8, Number(event.target.value) || 8)))}
+                                                            className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs"
+                                                        />
+                                                    </label>
+                                                </>
+                                            )}
+                                            <label className="space-y-1">
+                                                <span className="block text-[10px] font-semibold text-slate-600">ពណ៌</span>
+                                                <input
+                                                    type="color"
+                                                    value={selectedAnnotation.color}
+                                                    onChange={(event) => updateSelectedAnnotation('color', event.target.value)}
+                                                    className="h-8 w-full rounded border border-slate-200 bg-white"
+                                                />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="flex justify-between text-[10px] font-semibold text-slate-600"><span>ទីតាំង X</span><span>{selectedAnnotation.x}%</span></span>
+                                                <input type="range" min="0" max="95" value={selectedAnnotation.x} onChange={(event) => updateSelectedAnnotation('x', Number(event.target.value))} className="w-full accent-violet-600" />
+                                            </label>
+                                            <label className="space-y-1">
+                                                <span className="flex justify-between text-[10px] font-semibold text-slate-600"><span>ទីតាំង Y</span><span>{selectedAnnotation.y}%</span></span>
+                                                <input type="range" min="0" max="95" value={selectedAnnotation.y} onChange={(event) => updateSelectedAnnotation('y', Number(event.target.value))} className="w-full accent-violet-600" />
+                                            </label>
+                                            {selectedAnnotation.type === 'box' && (
+                                                <>
+                                                    <label className="space-y-1">
+                                                        <span className="flex justify-between text-[10px] font-semibold text-slate-600"><span>ទទឹង</span><span>{selectedAnnotation.width}%</span></span>
+                                                        <input type="range" min="5" max="80" value={selectedAnnotation.width} onChange={(event) => updateSelectedAnnotation('width', Number(event.target.value))} className="w-full accent-violet-600" />
+                                                    </label>
+                                                    <label className="space-y-1">
+                                                        <span className="flex justify-between text-[10px] font-semibold text-slate-600"><span>កម្ពស់</span><span>{selectedAnnotation.height}%</span></span>
+                                                        <input type="range" min="5" max="80" value={selectedAnnotation.height} onChange={(event) => updateSelectedAnnotation('height', Number(event.target.value))} className="w-full accent-violet-600" />
+                                                    </label>
+                                                </>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setAnnotations(current => current.filter(item => item.id !== selectedAnnotationId));
+                                                    setSelectedAnnotationId(null);
+                                                }}
+                                                className="self-end px-3 py-1.5 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-semibold"
+                                            >
+                                                លុបធាតុនេះ
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* 2. Review Section Below (A4 Preview) */}
@@ -635,23 +955,25 @@ const PrintIdCard = () => {
                                         style={{
                                             transform: `rotate(${rotation}deg) scale(${scalePercent / 100})`,
                                             transition: 'transform 0.2s ease-out',
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            width: '100%'
+                                            position: 'relative',
+                                            display: 'inline-block',
+                                            maxWidth: '100%'
                                         }}
                                     >
                                         <img
                                             src={imageSrc}
                                             alt="ID Card Preview"
-                                            className={`max-w-full h-auto object-contain transition-all ${showBorder
+                                            className={`block max-w-full h-auto object-contain transition-all ${showBorder
                                                 ? 'border-2 border-dashed border-slate-400 p-0.5'
                                                 : 'shadow-xs'
                                                 }`}
                                             style={{
-                                                maxHeight: '400px'
+                                                maxHeight: '400px',
+                                                clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
+                                                filter: `brightness(${brightness}%) contrast(${contrast}%) drop-shadow(0 2px ${shadow}px rgba(0, 0, 0, 0.35))`
                                             }}
                                         />
+                                        {renderAnnotations()}
                                     </div>
                                 ) : (
                                     <div
@@ -721,21 +1043,25 @@ const PrintIdCard = () => {
                                 <div
                                     style={{
                                         transform: `rotate(${rotation}deg) scale(${scalePercent / 100})`,
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        width: '100%'
+                                        position: 'relative',
+                                        display: 'inline-block',
+                                        maxWidth: '100%'
                                     }}
                                 >
-                                    <img
-                                        src={imageSrc}
-                                        alt={`Print ID Card Page ${pageIndex + 1}`}
-                                        className={`max-w-full h-auto object-contain ${showBorder ? 'border border-dashed border-gray-400 p-0.5' : ''
-                                            }`}
-                                        style={{
-                                            maxHeight: '400px'
-                                        }}
-                                    />
+                                    <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+                                        <img
+                                            src={imageSrc}
+                                            alt={`Print ID Card Page ${pageIndex + 1}`}
+                                            className={`block max-w-full h-auto object-contain ${showBorder ? 'border border-dashed border-gray-400 p-0.5' : ''
+                                                }`}
+                                            style={{
+                                                maxHeight: '400px',
+                                                clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
+                                                filter: `brightness(${brightness}%) contrast(${contrast}%) drop-shadow(0 2px ${shadow}px rgba(0, 0, 0, 0.35))`
+                                            }}
+                                        />
+                                        {renderAnnotations()}
+                                    </div>
                                 </div>
                             </div>
                         </div>
