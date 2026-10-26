@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaMusic, FaPause, FaPlay, FaStepForward, FaVolumeUp, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaMusic, FaPause, FaPlay, FaStepForward, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
 const MusicDockControls = () => {
     const {
-        currentTrack, isPlaying, isPlayerVisible, tracks, volume, playerReady,
+        currentTrack, isPlaying, isPlayerVisible, tracks, playerReady,
         currentTime, duration, togglePlayPause, togglePlayerVisibility, playNext,
-        setVolume, seekTo
+        seekTo
     } = useMusicPlayer();
     const formatTime = (seconds) => {
         const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
@@ -56,17 +56,6 @@ const MusicDockControls = () => {
                 >
                     {isPlayerVisible ? <FaEyeSlash size={12} /> : <FaEye size={12} />}
                 </button>
-                <FaVolumeUp className="ml-1 text-[11px] text-slate-500" />
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={volume}
-                    onChange={(event) => setVolume(event.target.value)}
-                    aria-label="Music volume"
-                    className="min-w-0 flex-1 accent-violet-600"
-                />
-                <span className="w-7 text-right text-[9px] text-slate-500">{volume}</span>
             </div>
             <div className="mt-1 flex items-center gap-1 px-1">
                 <span className="w-7 text-right font-mono text-[8px] text-slate-400">{formatTime(currentTime)}</span>

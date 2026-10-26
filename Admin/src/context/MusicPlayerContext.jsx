@@ -8,10 +8,9 @@ const DEFAULT_TRACK = {
     title: 'YouTube video pICAha0nsb0'
 };
 
-const applyPlayerVolume = (player, volume) => {
-    if (volume > 0) player.unMute();
-    else player.mute();
-    player.setVolume(volume);
+const applyPlayerVolume = (player) => {
+    player.unMute();
+    player.setVolume(100);
 };
 
 const readSavedMusic = () => {
@@ -36,12 +35,11 @@ const readSavedMusic = () => {
                 : Number.isInteger(saved.currentIndex) && saved.currentIndex >= 0 && saved.currentIndex < tracks.length
                     ? saved.currentIndex
                     : 0,
-            volume: Number.isFinite(saved.volume) ? Math.min(100, Math.max(0, saved.volume)) : 60,
             playbackMode
         };
     } catch (error) {
         console.error('Unable to load saved music playlist:', error);
-        return { tracks: [DEFAULT_TRACK], defaultTrackDismissed: false, currentIndex: 0, volume: 60, playbackMode: 'sequential' };
+        return { tracks: [DEFAULT_TRACK], defaultTrackDismissed: false, currentIndex: 0, playbackMode: 'sequential' };
     }
 };
 
@@ -105,7 +103,6 @@ export const MusicPlayerProvider = ({ children }) => {
             ? initialMusic.currentIndex
             : -1
     ));
-    const [volume, setVolumeState] = useState(initialMusic.volume);
     const [playbackMode, setPlaybackMode] = useState(initialMusic.playbackMode);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -128,14 +125,13 @@ export const MusicPlayerProvider = ({ children }) => {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 tracks,
                 currentIndex,
-                volume,
                 playbackMode,
                 defaultTrackDismissed
             }));
         } catch (error) {
             console.error('Unable to save music playlist locally:', error);
         }
-    }, [tracks, currentIndex, volume, playbackMode, defaultTrackDismissed]);
+    }, [tracks, currentIndex, playbackMode, defaultTrackDismissed]);
 
     const playTrackAt = useCallback((index) => {
         const track = settingsRef.current.tracks[index];
@@ -152,13 +148,13 @@ export const MusicPlayerProvider = ({ children }) => {
         const player = playerRef.current;
         if (player && loadedVideoIdRef.current === track.videoId) {
             pendingPlayRef.current = false;
-            applyPlayerVolume(player, settingsRef.current.volume);
+            applyPlayerVolume(player);
             player.playVideo();
         } else if (player && playerReady) {
             loadedVideoIdRef.current = track.videoId;
             pendingPlayRef.current = false;
             player.loadVideoById(track.videoId);
-            applyPlayerVolume(player, settingsRef.current.volume);
+            applyPlayerVolume(player);
             player.playVideo();
         }
     }, [playerReady]);
@@ -214,19 +210,19 @@ export const MusicPlayerProvider = ({ children }) => {
                 events: {
                     onReady: (event) => {
                         playerRef.current = event.target;
-                        applyPlayerVolume(event.target, settingsRef.current.volume);
+                        applyPlayerVolume(event.target);
                         setPlayerReady(true);
                     },
                     onStateChange: (event) => {
                         if (event.data === YT.PlayerState.PLAYING) {
-                            applyPlayerVolume(event.target, settingsRef.current.volume);
+                            applyPlayerVolume(event.target);
                             [150, 600].forEach(delay => {
                                 window.setTimeout(() => {
                                     if (
                                         playerRef.current === event.target &&
                                         event.target.getPlayerState?.() === YT.PlayerState.PLAYING
                                     ) {
-                                        applyPlayerVolume(event.target, settingsRef.current.volume);
+                                        applyPlayerVolume(event.target);
                                     }
                                 }, delay);
                             });
@@ -268,7 +264,7 @@ export const MusicPlayerProvider = ({ children }) => {
             const nextDuration = Number(player.getDuration?.()) || 0;
             setDuration(nextDuration);
             if (isPlaying && player.getPlayerState?.() === 1) {
-                applyPlayerVolume(player, settingsRef.current.volume);
+                applyPlayerVolume(player);
                 setCurrentTime(Number(player.getCurrentTime?.()) || 0);
             }
         }, 500);
@@ -281,7 +277,7 @@ export const MusicPlayerProvider = ({ children }) => {
         if (pendingPlayRef.current) {
             pendingPlayRef.current = false;
             playerRef.current?.loadVideoById(currentTrack.videoId);
-            applyPlayerVolume(playerRef.current, settingsRef.current.volume);
+            applyPlayerVolume(playerRef.current);
             playerRef.current?.playVideo();
         } else {
             playerRef.current?.cueVideoById(currentTrack.videoId);
@@ -307,12 +303,12 @@ export const MusicPlayerProvider = ({ children }) => {
             pendingPlayRef.current = true;
             setIsPlaying(true);
             player.loadVideoById(currentTrack.videoId);
-            applyPlayerVolume(player, settingsRef.current.volume);
+            applyPlayerVolume(player);
             player.playVideo();
             loadedVideoIdRef.current = currentTrack.videoId;
             pendingPlayRef.current = false;
         } else {
-            applyPlayerVolume(player, settingsRef.current.volume);
+            applyPlayerVolume(player);
             player.playVideo();
         }
     }, [currentTrack, isPlaying, playerReady, playTrackAt, tracks.length]);
@@ -381,12 +377,6 @@ export const MusicPlayerProvider = ({ children }) => {
         });
     }, []);
 
-    const setVolume = useCallback((nextVolume) => {
-        const next = Math.min(100, Math.max(0, Number(nextVolume)));
-        setVolumeState(next);
-        if (playerRef.current) applyPlayerVolume(playerRef.current, next);
-    }, []);
-
     const changePlaybackMode = useCallback((mode) => {
         if (!['sequential', 'shuffle', 'repeat-all', 'repeat-one'].includes(mode)) return;
         setPlaybackMode(mode);
@@ -396,7 +386,6 @@ export const MusicPlayerProvider = ({ children }) => {
         tracks,
         currentTrack,
         currentIndex,
-        volume,
         playbackMode,
         currentTime,
         duration,
@@ -412,14 +401,13 @@ export const MusicPlayerProvider = ({ children }) => {
         playPrevious,
         togglePlayPause,
         togglePlayerVisibility,
-        setVolume,
         seekTo,
         setPlaybackMode: changePlaybackMode
     }), [
-        tracks, currentTrack, currentIndex, volume, playbackMode, currentTime, duration, isPlaying,
+        tracks, currentTrack, currentIndex, playbackMode, currentTime, duration, isPlaying,
         isPlayerVisible, playerError, playerReady, addTrack, removeTrack, moveTrack,
         playTrackAt, playNext, playPrevious, togglePlayPause, togglePlayerVisibility,
-        setVolume, seekTo, changePlaybackMode
+        seekTo, changePlaybackMode
     ]);
 
     return (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     FaMusic, FaPlay, FaPause, FaStepBackward, FaStepForward, FaTrash,
-    FaVolumeUp, FaVolumeDown, FaArrowUp, FaArrowDown
+    FaArrowUp, FaArrowDown
 } from 'react-icons/fa';
 import { extractYouTubeVideoId, useMusicPlayer } from '../../context/MusicPlayerContext';
 
@@ -10,7 +10,6 @@ const MusicPage = () => {
         tracks,
         currentTrack,
         currentIndex,
-        volume,
         playbackMode,
         currentTime,
         duration,
@@ -24,7 +23,6 @@ const MusicPage = () => {
         playNext,
         playPrevious,
         togglePlayPause,
-        setVolume,
         seekTo,
         setPlaybackMode
     } = useMusicPlayer();
@@ -60,12 +58,8 @@ const MusicPage = () => {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-slate-800">Music Player</h1>
-                            <p className="mt-1 text-sm text-slate-500">រក្សាទុក Playlist ក្នុងម៉ាស៊ីននេះ ហើយស្តាប់បន្តពេលប្តូរ Page។</p>
                         </div>
                     </div>
-                    <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-800">
-                        ចាក់បទតាម YouTube embed ផ្លូវការ។ URL ត្រូវបានរក្សាទុកក្នុង Local Storage របស់ Browser នេះប៉ុណ្ណោះ។
-                    </p>
                 </header>
 
                 <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -83,7 +77,7 @@ const MusicPage = () => {
                             type="text"
                             value={title}
                             onChange={(event) => setTitle(event.target.value)}
-                            placeholder="ចំណងជើងបទ (អាចទុកទទេ)"
+                            placeholder="ចំណងជើងបទ"
                             aria-label="Track title"
                             className="min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                         />
@@ -137,19 +131,6 @@ const MusicPage = () => {
                             <p className="mt-0.5 text-[10px] text-slate-500">
                                 {playerError ? playerError : playerReady ? (isPlaying ? 'កំពុងចាក់' : 'រួចរាល់') : 'កំពុងភ្ជាប់ YouTube Player...'}
                             </p>
-                        </div>
-                        <div className="flex min-w-[150px] flex-1 items-center gap-2">
-                            {volume < 50 ? <FaVolumeDown className="text-slate-500" /> : <FaVolumeUp className="text-slate-500" />}
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={volume}
-                                onChange={(event) => setVolume(event.target.value)}
-                                aria-label="Music volume"
-                                className="w-full accent-violet-600"
-                            />
-                            <span className="w-9 text-right text-[10px] text-slate-500">{volume}%</span>
                         </div>
                     </div>
 
