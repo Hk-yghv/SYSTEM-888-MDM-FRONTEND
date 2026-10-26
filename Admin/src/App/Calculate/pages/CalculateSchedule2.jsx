@@ -39,6 +39,7 @@ const CalculateSchedule2 = () => {
     const [principalInput, setPrincipalInput] = useState('');
     const [rateInput, setRateInput] = useState('11.5');
     const [notes, setNotes] = useState('');
+    const [savedFormSnapshot, setSavedFormSnapshot] = useState(null);
 
     // ─── Result & UI States ─────────────────────────────────────────
     const [result, setResult] = useState(null);
@@ -61,6 +62,18 @@ const CalculateSchedule2 = () => {
     const isSubBrandSelectionReady = !requiresSubBrandSelection || allowedSubBrands.includes(selectedSubBrand);
     const isFormReadOnly = (activeRecordId ? !canEdit : !canCreate) || !isSubBrandSelectionReady;
     const historyRequestId = useRef(0);
+    const currentFormSnapshot = JSON.stringify({
+        startDate,
+        customerName: customerName.trim(),
+        assetName: assetName.trim(),
+        durationMonths,
+        contractNumber: contractNumber.trim(),
+        principalInput,
+        rateInput,
+        notes: notes.trim(),
+        selectedSubBrand
+    });
+    const isCurrentFormSaved = Boolean(savedFormSnapshot && savedFormSnapshot === currentFormSnapshot);
 
     useEffect(() => {
         setSelectedSubBrand(current =>
@@ -364,6 +377,7 @@ const CalculateSchedule2 = () => {
 
         try {
             setSaving(true);
+            const submittedFormSnapshot = currentFormSnapshot;
             const payload = {
                 contractNumber: calcData.contractNumber || contractNumber,
                 customerName: calcData.customerName || customerName,
@@ -405,6 +419,7 @@ const CalculateSchedule2 = () => {
 
             const data = await res.json();
             if (res.ok && data.success) {
+                setSavedFormSnapshot(submittedFormSnapshot);
                 setSaveSuccessMsg(isEditing ? 'កែប្រែបានជោគជ័យ!' : 'រក្សាទុកបានជោគជ័យ!');
                 setTimeout(() => setSaveSuccessMsg(''), 3500);
                 if (data.data) {
@@ -435,15 +450,36 @@ const CalculateSchedule2 = () => {
 
     // ─── Load Record from History ───────────────────────────────────
     const handleLoadRecord = (record) => {
+        const loadedValues = {
+            customerName: record.customerName || '',
+            contractNumber: record.contractNumber || '',
+            assetName: record.assetName || '',
+            startDate: record.startDate || formatDateToYMD(new Date()),
+            principalInput: String(record.principal || 120),
+            rateInput: String(record.ratePercent || 11.5),
+            durationMonths: String(record.months || 4),
+            notes: record.notes || ''
+        };
         setActiveRecordId(record._id);
-        setCustomerName(record.customerName || '');
-        setContractNumber(record.contractNumber || '');
-        setAssetName(record.assetName || '');
-        setStartDate(record.startDate || formatDateToYMD(new Date()));
-        setPrincipalInput(String(record.principal || 120));
-        setRateInput(String(record.ratePercent || 11.5));
-        setDurationMonths(String(record.months || 4));
-        setNotes(record.notes || '');
+        setCustomerName(loadedValues.customerName);
+        setContractNumber(loadedValues.contractNumber);
+        setAssetName(loadedValues.assetName);
+        setStartDate(loadedValues.startDate);
+        setPrincipalInput(loadedValues.principalInput);
+        setRateInput(loadedValues.rateInput);
+        setDurationMonths(loadedValues.durationMonths);
+        setNotes(loadedValues.notes);
+        setSavedFormSnapshot(JSON.stringify({
+            startDate: loadedValues.startDate,
+            customerName: loadedValues.customerName.trim(),
+            assetName: loadedValues.assetName.trim(),
+            durationMonths: loadedValues.durationMonths,
+            contractNumber: loadedValues.contractNumber.trim(),
+            principalInput: loadedValues.principalInput,
+            rateInput: loadedValues.rateInput,
+            notes: loadedValues.notes.trim(),
+            selectedSubBrand
+        }));
 
         setResult({
             principal: record.principal,
@@ -489,7 +525,10 @@ const CalculateSchedule2 = () => {
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                if (activeRecordId === id) setActiveRecordId(null);
+                if (activeRecordId === id) {
+                    setActiveRecordId(null);
+                    setSavedFormSnapshot(null);
+                }
                 setSavedHistory(prev => prev.filter(item => item._id !== id));
                 localStorage.setItem('calc_schedules_updated', Date.now().toString());
             } else {
@@ -514,6 +553,7 @@ const CalculateSchedule2 = () => {
         setNotes('');
         setResult(null);
         setActiveRecordId(null);
+        setSavedFormSnapshot(null);
     };
 
     const handleSubBrandChange = (subBrand) => {
@@ -526,6 +566,10 @@ const CalculateSchedule2 = () => {
     };
 
     const handlePrint = () => {
+        if (!isCurrentFormSaved) {
+            alert('សូមរក្សាទុកទិន្នន័យមុនពេលបោះពុម្ព។');
+            return;
+        }
         window.print();
     };
 
@@ -830,7 +874,9 @@ const CalculateSchedule2 = () => {
                                 <button
                                     type="button"
                                     onClick={handlePrint}
-                                    className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer">
+                                    disabled={!isCurrentFormSaved || saving}
+                                    title={isCurrentFormSaved ? 'បោះពុម្ពទិន្នន័យដែលបានរក្សាទុក' : 'សូមរក្សាទុកទិន្នន័យមុនពេលបោះពុម្ព'}
+                                    className="px-4 py-2.5 rounded-[5px] bg-green-800 hover:bg-slate-800 text-white text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-800">
                                     <FaPrint /> បោះពុម្ព
                                 </button>
                             </>
