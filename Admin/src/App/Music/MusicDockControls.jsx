@@ -6,8 +6,13 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 const MusicDockControls = () => {
     const {
         currentTrack, isPlaying, isPlayerVisible, tracks, volume, playerReady,
-        togglePlayPause, togglePlayerVisibility, playNext, setVolume
+        currentTime, duration, togglePlayPause, togglePlayerVisibility, playNext,
+        setVolume, seekTo
     } = useMusicPlayer();
+    const formatTime = (seconds) => {
+        const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+        return `${Math.floor(safeSeconds / 60)}:${String(safeSeconds % 60).padStart(2, '0')}`;
+    };
 
     return (
         <div className="mt-2 border-t border-slate-100 pt-2">
@@ -62,6 +67,21 @@ const MusicDockControls = () => {
                     className="min-w-0 flex-1 accent-violet-600"
                 />
                 <span className="w-7 text-right text-[9px] text-slate-500">{volume}</span>
+            </div>
+            <div className="mt-1 flex items-center gap-1 px-1">
+                <span className="w-7 text-right font-mono text-[8px] text-slate-400">{formatTime(currentTime)}</span>
+                <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    step="1"
+                    value={Math.min(currentTime, duration || 0)}
+                    onChange={(event) => seekTo(event.target.value)}
+                    disabled={!playerReady || !duration}
+                    aria-label="Music playback progress"
+                    className="min-w-0 flex-1 accent-violet-600 disabled:opacity-40"
+                />
+                <span className="w-7 font-mono text-[8px] text-slate-400">{formatTime(duration)}</span>
             </div>
         </div>
     );

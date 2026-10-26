@@ -8,6 +8,12 @@ const DEFAULT_TRACK = {
     title: 'YouTube video pICAha0nsb0'
 };
 
+const applyPlayerVolume = (player, volume) => {
+    player.setVolume(volume);
+    if (volume > 0) player.unMute();
+    else player.mute();
+};
+
 const readSavedMusic = () => {
     try {
         const savedValue = localStorage.getItem(STORAGE_KEY);
@@ -19,6 +25,9 @@ const readSavedMusic = () => {
         const tracks = savedTracks.length > 0 || defaultTrackDismissed
             ? savedTracks
             : [DEFAULT_TRACK];
+        const playbackMode = ['sequential', 'shuffle', 'repeat-all', 'repeat-one'].includes(saved.playbackMode)
+            ? saved.playbackMode
+            : (saved.shuffle ? 'shuffle' : saved.repeat ? 'repeat-all' : 'sequential');
         return {
             tracks,
             defaultTrackDismissed,
@@ -28,12 +37,11 @@ const readSavedMusic = () => {
                     ? saved.currentIndex
                     : 0,
             volume: Number.isFinite(saved.volume) ? Math.min(100, Math.max(0, saved.volume)) : 60,
-            repeat: Boolean(saved.repeat),
-            shuffle: Boolean(saved.shuffle)
+            playbackMode
         };
     } catch (error) {
         console.error('Unable to load saved music playlist:', error);
-        return { tracks: [DEFAULT_TRACK], defaultTrackDismissed: false, currentIndex: 0, volume: 60, repeat: false, shuffle: false };
+        return { tracks: [DEFAULT_TRACK], defaultTrackDismissed: false, currentIndex: 0, volume: 60, playbackMode: 'sequential' };
     }
 };
 
@@ -98,8 +106,9 @@ export const MusicPlayerProvider = ({ children }) => {
             : -1
     ));
     const [volume, setVolumeState] = useState(initialMusic.volume);
-    const [repeat, setRepeat] = useState(initialMusic.repeat);
-    const [shuffle, setShuffle] = useState(initialMusic.shuffle);
+    const [playbackMode, setPlaybackMode] = useState(initialMusic.playbackMode);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
     const [defaultTrackDismissed, setDefaultTrackDismissed] = useState(initialMusic.defaultTrackDismissed);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPlayerVisible, setIsPlayerVisible] = useState(false);
@@ -109,8 +118,8 @@ export const MusicPlayerProvider = ({ children }) => {
     const playerRef = useRef(null);
     const loadedVideoIdRef = useRef('');
     const pendingPlayRef = useRef(false);
-    const settingsRef = useRef({ tracks, currentIndex, repeat, shuffle });
-    settingsRef.current = { tracks, currentIndex, repeat, shuffle };
+    const settingsRef = useRef({ tracks, currentIndex, playbackMode });
+    settingsRef.current = { tracks, currentIndex, playbackMode };
 
     const currentTrack = tracks[currentIndex] || null;
 
@@ -120,14 +129,13 @@ export const MusicPlayerProvider = ({ children }) => {
                 tracks,
                 currentIndex,
                 volume,
-                repeat,
-                shuffle,
+                playbackMode,
                 defaultTrackDismissed
             }));
         } catch (error) {
             console.error('Unable to save music playlist locally:', error);
         }
-    }, [tracks, currentIndex, volume, repeat, shuffle, defaultTrackDismissed]);
+    }, [tracks, currentIndex, volume, playbackMode, defaultTrackDismissed]);
 
     const playTrackAt = useCallback((index) => {
         const track = settingsRef.current.tracks[index];
@@ -135,6 +143,8 @@ export const MusicPlayerProvider = ({ children }) => {
 
         setIsPlayerVisible(true);
         setCurrentIndex(index);
+        setCurrentTime(0);
+        setDuration(0);
         setIsPlaying(true);
         setPlayerError('');
         pendingPlayRef.current = true;
@@ -142,24 +152,31 @@ export const MusicPlayerProvider = ({ children }) => {
         const player = playerRef.current;
         if (player && loadedVideoIdRef.current === track.videoId) {
             pendingPlayRef.current = false;
-            player.unMute();
-            player.setVolume(settingsRef.current.volume);
+            applyPlayerVolume(player, settingsRef.current.volume);
             player.playVideo();
         } else if (player && playerReady) {
             loadedVideoIdRef.current = track.videoId;
             pendingPlayRef.current = false;
-            player.unMute();
-            player.setVolume(settingsRef.current.volume);
             player.loadVideoById(track.videoId);
+            applyPlayerVolume(player, settingsRef.current.volume);
+            player.playVideo();
         }
     }, [playerReady]);
 
-    const playNext = useCallback(() => {
+    const playNext = useCallback((ended = false) => {
         const current = settingsRef.current;
         if (current.tracks.length === 0) return;
 
+        if (ended === true && current.playbackMode === 'repeat-one') {
+            playerRef.current?.seekTo(0, true);
+            playerRef.current?.playVideo();
+            setCurrentTime(0);
+            setIsPlaying(true);
+            return;
+        }
+
         let nextIndex;
-        if (current.shuffle && current.tracks.length > 1) {
+        if (current.playbackMode === 'shuffle' && current.tracks.length > 1) {
             const choices = current.tracks.map((_, index) => index).filter(index => index !== current.currentIndex);
             nextIndex = choices[Math.floor(Math.random() * choices.length)];
         } else {
@@ -167,7 +184,7 @@ export const MusicPlayerProvider = ({ children }) => {
         }
 
         if (nextIndex >= current.tracks.length) {
-            if (!current.repeat) {
+            if (current.playbackMode !== 'repeat-all' && current.playbackMode !== 'shuffle') {
                 setIsPlaying(false);
                 playerRef.current?.stopVideo();
                 return;
@@ -197,22 +214,18 @@ export const MusicPlayerProvider = ({ children }) => {
                 events: {
                     onReady: (event) => {
                         playerRef.current = event.target;
-                        event.target.setVolume(settingsRef.current.volume);
-                        if (settingsRef.current.volume > 0) event.target.unMute();
-                        else event.target.mute();
+                        applyPlayerVolume(event.target, settingsRef.current.volume);
                         setPlayerReady(true);
                     },
                     onStateChange: (event) => {
                         if (event.data === YT.PlayerState.PLAYING) {
-                            event.target.setVolume(settingsRef.current.volume);
-                            if (settingsRef.current.volume > 0) event.target.unMute();
-                            else event.target.mute();
+                            applyPlayerVolume(event.target, settingsRef.current.volume);
                             setIsPlaying(true);
                         }
                         if (event.data === YT.PlayerState.PAUSED) setIsPlaying(false);
                         if (event.data === YT.PlayerState.ENDED) {
                             setIsPlaying(false);
-                            playNextRef.current();
+                            playNextRef.current(true);
                         }
                     },
                     onError: (event) => {
@@ -238,13 +251,28 @@ export const MusicPlayerProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
+        if (!playerReady) return undefined;
+        const progressInterval = window.setInterval(() => {
+            const player = playerRef.current;
+            if (!player) return;
+            const nextDuration = Number(player.getDuration?.()) || 0;
+            setDuration(nextDuration);
+            if (isPlaying && player.getPlayerState?.() === 1) {
+                applyPlayerVolume(player, settingsRef.current.volume);
+                setCurrentTime(Number(player.getCurrentTime?.()) || 0);
+            }
+        }, 500);
+        return () => window.clearInterval(progressInterval);
+    }, [isPlaying, playerReady, currentTrack]);
+
+    useEffect(() => {
         if (!playerReady || !currentTrack || loadedVideoIdRef.current === currentTrack.videoId) return;
         loadedVideoIdRef.current = currentTrack.videoId;
         if (pendingPlayRef.current) {
             pendingPlayRef.current = false;
-            playerRef.current?.unMute();
-            playerRef.current?.setVolume(settingsRef.current.volume);
             playerRef.current?.loadVideoById(currentTrack.videoId);
+            applyPlayerVolume(playerRef.current, settingsRef.current.volume);
+            playerRef.current?.playVideo();
         } else {
             playerRef.current?.cueVideoById(currentTrack.videoId);
         }
@@ -268,14 +296,13 @@ export const MusicPlayerProvider = ({ children }) => {
         } else if (loadedVideoIdRef.current !== currentTrack.videoId) {
             pendingPlayRef.current = true;
             setIsPlaying(true);
-            player.unMute();
-            player.setVolume(settingsRef.current.volume);
             player.loadVideoById(currentTrack.videoId);
+            applyPlayerVolume(player, settingsRef.current.volume);
+            player.playVideo();
             loadedVideoIdRef.current = currentTrack.videoId;
             pendingPlayRef.current = false;
         } else {
-            player.unMute();
-            player.setVolume(settingsRef.current.volume);
+            applyPlayerVolume(player, settingsRef.current.volume);
             player.playVideo();
         }
     }, [currentTrack, isPlaying, playerReady, playTrackAt, tracks.length]);
@@ -285,11 +312,17 @@ export const MusicPlayerProvider = ({ children }) => {
     }, []);
 
     const playPrevious = useCallback(() => {
-        const { tracks: currentTracks, currentIndex: index, repeat: shouldRepeat } = settingsRef.current;
+        const { tracks: currentTracks, currentIndex: index, playbackMode: mode } = settingsRef.current;
         if (currentTracks.length === 0) return;
-        const previousIndex = index > 0 ? index - 1 : (shouldRepeat ? currentTracks.length - 1 : 0);
+        const previousIndex = index > 0 ? index - 1 : (mode === 'repeat-all' ? currentTracks.length - 1 : 0);
         playTrackAt(previousIndex);
     }, [playTrackAt]);
+
+    const seekTo = useCallback((time) => {
+        const nextTime = Math.min(duration || 0, Math.max(0, Number(time) || 0));
+        playerRef.current?.seekTo(nextTime, true);
+        setCurrentTime(nextTime);
+    }, [duration]);
 
     const addTrack = useCallback((videoId, title) => {
         const track = {
@@ -341,12 +374,12 @@ export const MusicPlayerProvider = ({ children }) => {
     const setVolume = useCallback((nextVolume) => {
         const next = Math.min(100, Math.max(0, Number(nextVolume)));
         setVolumeState(next);
-        if (next === 0) {
-            playerRef.current?.mute();
-        } else {
-            playerRef.current?.unMute();
-            playerRef.current?.setVolume(next);
-        }
+        if (playerRef.current) applyPlayerVolume(playerRef.current, next);
+    }, []);
+
+    const changePlaybackMode = useCallback((mode) => {
+        if (!['sequential', 'shuffle', 'repeat-all', 'repeat-one'].includes(mode)) return;
+        setPlaybackMode(mode);
     }, []);
 
     const value = useMemo(() => ({
@@ -354,8 +387,9 @@ export const MusicPlayerProvider = ({ children }) => {
         currentTrack,
         currentIndex,
         volume,
-        repeat,
-        shuffle,
+        playbackMode,
+        currentTime,
+        duration,
         isPlaying,
         isPlayerVisible,
         playerError,
@@ -369,12 +403,13 @@ export const MusicPlayerProvider = ({ children }) => {
         togglePlayPause,
         togglePlayerVisibility,
         setVolume,
-        setRepeat,
-        setShuffle
+        seekTo,
+        setPlaybackMode: changePlaybackMode
     }), [
-        tracks, currentTrack, currentIndex, volume, repeat, shuffle, isPlaying,
+        tracks, currentTrack, currentIndex, volume, playbackMode, currentTime, duration, isPlaying,
         isPlayerVisible, playerError, playerReady, addTrack, removeTrack, moveTrack,
-        playTrackAt, playNext, playPrevious, togglePlayPause, togglePlayerVisibility, setVolume
+        playTrackAt, playNext, playPrevious, togglePlayPause, togglePlayerVisibility,
+        setVolume, seekTo, changePlaybackMode
     ]);
 
     return (

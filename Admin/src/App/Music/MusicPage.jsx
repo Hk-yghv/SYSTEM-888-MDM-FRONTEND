@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     FaMusic, FaPlay, FaPause, FaStepBackward, FaStepForward, FaTrash,
-    FaRandom, FaRedo, FaVolumeUp, FaVolumeDown, FaArrowUp, FaArrowDown
+    FaVolumeUp, FaVolumeDown, FaArrowUp, FaArrowDown
 } from 'react-icons/fa';
 import { extractYouTubeVideoId, useMusicPlayer } from '../../context/MusicPlayerContext';
 
@@ -11,8 +11,9 @@ const MusicPage = () => {
         currentTrack,
         currentIndex,
         volume,
-        repeat,
-        shuffle,
+        playbackMode,
+        currentTime,
+        duration,
         isPlaying,
         playerError,
         playerReady,
@@ -24,8 +25,8 @@ const MusicPage = () => {
         playPrevious,
         togglePlayPause,
         setVolume,
-        setRepeat,
-        setShuffle
+        seekTo,
+        setPlaybackMode
     } = useMusicPlayer();
     const [url, setUrl] = useState('');
     const [title, setTitle] = useState('');
@@ -42,6 +43,11 @@ const MusicPage = () => {
         setUrl('');
         setTitle('');
         setFormError('');
+    };
+
+    const formatTime = (seconds) => {
+        const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+        return `${Math.floor(safeSeconds / 60)}:${String(safeSeconds % 60).padStart(2, '0')}`;
     };
 
     return (
@@ -95,25 +101,22 @@ const MusicPage = () => {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h2 className="text-sm font-bold text-slate-800">Playlist ({tracks.length})</h2>
-                            <p className="mt-1 text-xs text-slate-500">បទបន្ទាប់នឹងចាក់តាមលំដាប់ក្នុងបញ្ជី លុះត្រាតែបើក Shuffle។</p>
+                            <p className="mt-1 text-xs text-slate-500">ជ្រើសរើសលំដាប់ចាក់ និងការចាក់សារឡើងវិញតាមចំណូលចិត្ត។</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setRepeat(value => !value)}
-                                aria-pressed={repeat}
-                                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${repeat ? 'border-violet-300 bg-violet-50 text-violet-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                            >
-                                <FaRedo /> Loop {repeat ? 'On' : 'Off'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShuffle(value => !value)}
-                                aria-pressed={shuffle}
-                                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${shuffle ? 'border-violet-300 bg-violet-50 text-violet-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                            >
-                                <FaRandom /> Shuffle {shuffle ? 'On' : 'Off'}
-                            </button>
+                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                                របៀបចាក់
+                                <select
+                                    value={playbackMode}
+                                    onChange={(event) => setPlaybackMode(event.target.value)}
+                                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-violet-500"
+                                >
+                                    <option value="sequential">តាមលំដាប់</option>
+                                    <option value="shuffle">ឆ្លាស់បទ</option>
+                                    <option value="repeat-all">Loop បញ្ជីទាំងមូល</option>
+                                    <option value="repeat-one">Loop បទតែមួយ</option>
+                                </select>
+                            </label>
                         </div>
                     </div>
 
@@ -148,6 +151,22 @@ const MusicPage = () => {
                             />
                             <span className="w-9 text-right text-[10px] text-slate-500">{volume}%</span>
                         </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                        <span className="w-10 text-right font-mono text-[10px] text-slate-500">{formatTime(currentTime)}</span>
+                        <input
+                            type="range"
+                            min="0"
+                            max={duration || 0}
+                            step="1"
+                            value={Math.min(currentTime, duration || 0)}
+                            onChange={(event) => seekTo(event.target.value)}
+                            disabled={!playerReady || !duration}
+                            aria-label="Music playback progress"
+                            className="w-full accent-violet-600 disabled:opacity-40"
+                        />
+                        <span className="w-10 font-mono text-[10px] text-slate-500">{formatTime(duration)}</span>
                     </div>
 
                     {playerError && (
