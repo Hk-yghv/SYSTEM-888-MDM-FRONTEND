@@ -4,7 +4,8 @@ import { useAuth } from '../../../context/AuthContext';
 import {
     FaCalculator, FaCalendarAlt, FaPrint, FaUndo, FaFileContract,
     FaGem, FaHashtag, FaUser, FaSave, FaHistory, FaTrash, FaEye,
-    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar
+    FaSearch, FaCheckCircle, FaSpinner, FaFileInvoiceDollar,
+    FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 import { MdCalculate } from 'react-icons/md';
 import { roundMoney, roundPrincipalToCents, toCurrencyCents } from '../../../utils/installmentRounding';
@@ -52,6 +53,7 @@ const CalculateSchedule2 = () => {
     const [displayLimit, setDisplayLimit] = useState(10);
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [printOrientation, setPrintOrientation] = useState('landscape'); // 'portrait' | 'landscape'
+    const [showSubBrandSelector, setShowSubBrandSelector] = useState(false);
     const [selectedSubBrand, setSelectedSubBrand] = useState(() => (
         allowedSubBrands.length === 1 ? allowedSubBrands[0] : ''
     ));
@@ -502,9 +504,11 @@ const CalculateSchedule2 = () => {
     };
 
     const handleSubBrandChange = (subBrand) => {
+        if (subBrand === selectedSubBrand) return;
         setSelectedSubBrand(subBrand);
         handleReset();
         setContractNumber('');
+        setSaveSuccessMsg('');
     };
 
     const handlePrint = () => {
@@ -734,17 +738,36 @@ const CalculateSchedule2 = () => {
                     {/* Action buttons */}
                     <div className="flex flex-wrap items-center gap-2 no-print">
                         {requiresSubBrandSelection && (
-                            <select
-                                aria-label="ជ្រើសរើស Sub-brand"
-                                value={selectedSubBrand}
-                                onChange={(e) => handleSubBrandChange(e.target.value)}
-                                className="px-3 py-2.5 rounded-[5px] border border-slate-200 bg-white text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                            >
-                                <option value="">-- ជ្រើសរើស Sub-brand មុនបញ្ចូលទិន្នន័យ --</option>
-                                {allowedSubBrands.map(subBrand => (
-                                    <option key={subBrand} value={subBrand}>{subBrand}</option>
-                                ))}
-                            </select>
+                            <>
+                                <button
+                                    type="button"
+                                    aria-expanded={showSubBrandSelector}
+                                    aria-controls="cs2-subbrand-selector"
+                                    onClick={() => setShowSubBrandSelector(open => !open)}
+                                    className={`px-3 py-2.5 rounded-[5px] text-xs sm:text-sm flex items-center gap-2 border transition-all cursor-pointer ${
+                                        showSubBrandSelector
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                            : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                                    }`}
+                                >
+                                    {showSubBrandSelector ? <FaChevronRight /> : <FaChevronLeft />}
+                                    <span>{selectedSubBrand || 'ជ្រើសរើស Sub-brand'}</span>
+                                </button>
+                                {showSubBrandSelector && (
+                                    <select
+                                        id="cs2-subbrand-selector"
+                                        aria-label="ជ្រើសរើស Sub-brand"
+                                        value={selectedSubBrand}
+                                        onChange={(e) => handleSubBrandChange(e.target.value)}
+                                        className="px-3 py-2.5 rounded-[5px] border border-slate-200 bg-white text-xs sm:text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                    >
+                                        <option value="">-- ជ្រើសរើស Sub-brand មុនបញ្ចូលទិន្នន័យ --</option>
+                                        {allowedSubBrands.map(subBrand => (
+                                            <option key={subBrand} value={subBrand}>{subBrand}</option>
+                                        ))}
+                                    </select>
+                                )}
+                            </>
                         )}
                         {savedHistory.length > 0 && (
                             <button
