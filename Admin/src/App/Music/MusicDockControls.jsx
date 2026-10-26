@@ -5,7 +5,7 @@ import { useMusicPlayer } from '../../context/MusicPlayerContext';
 
 const MusicDockControls = () => {
     const {
-        currentTrack, isPlaying, isPlayerVisible, tracks, volume,
+        currentTrack, isPlaying, isPlayerVisible, tracks, volume, playerReady,
         togglePlayPause, togglePlayerVisibility, playNext, setVolume
     } = useMusicPlayer();
 
@@ -26,7 +26,7 @@ const MusicDockControls = () => {
                 <button
                     type="button"
                     onClick={togglePlayPause}
-                    disabled={!tracks.length}
+                    disabled={!tracks.length || !playerReady}
                     aria-label={isPlaying ? 'Pause music' : 'Play music'}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-violet-700 hover:bg-violet-50 disabled:opacity-40"
                 >
@@ -35,7 +35,7 @@ const MusicDockControls = () => {
                 <button
                     type="button"
                     onClick={playNext}
-                    disabled={!tracks.length}
+                    disabled={!tracks.length || !playerReady}
                     aria-label="Next track"
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40"
                 >

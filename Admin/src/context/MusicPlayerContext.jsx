@@ -105,7 +105,6 @@ export const MusicPlayerProvider = ({ children }) => {
     const [isPlayerVisible, setIsPlayerVisible] = useState(false);
     const [playerError, setPlayerError] = useState('');
     const [playerReady, setPlayerReady] = useState(false);
-    const [shouldInitializePlayer, setShouldInitializePlayer] = useState(false);
     const playerContainerRef = useRef(null);
     const playerRef = useRef(null);
     const loadedVideoIdRef = useRef('');
@@ -134,7 +133,6 @@ export const MusicPlayerProvider = ({ children }) => {
         const track = settingsRef.current.tracks[index];
         if (!track) return;
 
-        setShouldInitializePlayer(true);
         setIsPlayerVisible(true);
         setCurrentIndex(index);
         setIsPlaying(true);
@@ -144,10 +142,14 @@ export const MusicPlayerProvider = ({ children }) => {
         const player = playerRef.current;
         if (player && loadedVideoIdRef.current === track.videoId) {
             pendingPlayRef.current = false;
+            player.unMute();
+            player.setVolume(settingsRef.current.volume);
             player.playVideo();
         } else if (player && playerReady) {
             loadedVideoIdRef.current = track.videoId;
             pendingPlayRef.current = false;
+            player.unMute();
+            player.setVolume(settingsRef.current.volume);
             player.loadVideoById(track.videoId);
         }
     }, [playerReady]);
@@ -179,7 +181,6 @@ export const MusicPlayerProvider = ({ children }) => {
     playNextRef.current = playNext;
 
     useEffect(() => {
-        if (!shouldInitializePlayer) return undefined;
         let active = true;
 
         loadYouTubeApi().then(YT => {
@@ -197,10 +198,17 @@ export const MusicPlayerProvider = ({ children }) => {
                     onReady: (event) => {
                         playerRef.current = event.target;
                         event.target.setVolume(settingsRef.current.volume);
+                        if (settingsRef.current.volume > 0) event.target.unMute();
+                        else event.target.mute();
                         setPlayerReady(true);
                     },
                     onStateChange: (event) => {
-                        if (event.data === YT.PlayerState.PLAYING) setIsPlaying(true);
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            event.target.setVolume(settingsRef.current.volume);
+                            if (settingsRef.current.volume > 0) event.target.unMute();
+                            else event.target.mute();
+                            setIsPlaying(true);
+                        }
                         if (event.data === YT.PlayerState.PAUSED) setIsPlaying(false);
                         if (event.data === YT.PlayerState.ENDED) {
                             setIsPlaying(false);
@@ -227,13 +235,15 @@ export const MusicPlayerProvider = ({ children }) => {
             playerRef.current = null;
             loadedVideoIdRef.current = '';
         };
-    }, [shouldInitializePlayer]);
+    }, []);
 
     useEffect(() => {
         if (!playerReady || !currentTrack || loadedVideoIdRef.current === currentTrack.videoId) return;
         loadedVideoIdRef.current = currentTrack.videoId;
         if (pendingPlayRef.current) {
             pendingPlayRef.current = false;
+            playerRef.current?.unMute();
+            playerRef.current?.setVolume(settingsRef.current.volume);
             playerRef.current?.loadVideoById(currentTrack.videoId);
         } else {
             playerRef.current?.cueVideoById(currentTrack.videoId);
@@ -245,7 +255,6 @@ export const MusicPlayerProvider = ({ children }) => {
             if (tracks.length > 0) playTrackAt(0);
             return;
         }
-        setShouldInitializePlayer(true);
         setIsPlayerVisible(true);
         const player = playerRef.current;
         if (!player || !playerReady) {
@@ -259,24 +268,21 @@ export const MusicPlayerProvider = ({ children }) => {
         } else if (loadedVideoIdRef.current !== currentTrack.videoId) {
             pendingPlayRef.current = true;
             setIsPlaying(true);
+            player.unMute();
+            player.setVolume(settingsRef.current.volume);
             player.loadVideoById(currentTrack.videoId);
             loadedVideoIdRef.current = currentTrack.videoId;
             pendingPlayRef.current = false;
         } else {
+            player.unMute();
+            player.setVolume(settingsRef.current.volume);
             player.playVideo();
         }
     }, [currentTrack, isPlaying, playerReady, playTrackAt, tracks.length]);
 
     const togglePlayerVisibility = useCallback(() => {
-        if (isPlayerVisible) {
-            playerRef.current?.pauseVideo();
-            setIsPlaying(false);
-            setIsPlayerVisible(false);
-            return;
-        }
-        if (currentTrack) setShouldInitializePlayer(true);
-        setIsPlayerVisible(true);
-    }, [currentTrack, isPlayerVisible]);
+        setIsPlayerVisible(visible => !visible);
+    }, []);
 
     const playPrevious = useCallback(() => {
         const { tracks: currentTracks, currentIndex: index, repeat: shouldRepeat } = settingsRef.current;
@@ -335,7 +341,12 @@ export const MusicPlayerProvider = ({ children }) => {
     const setVolume = useCallback((nextVolume) => {
         const next = Math.min(100, Math.max(0, Number(nextVolume)));
         setVolumeState(next);
-        playerRef.current?.setVolume(next);
+        if (next === 0) {
+            playerRef.current?.mute();
+        } else {
+            playerRef.current?.unMute();
+            playerRef.current?.setVolume(next);
+        }
     }, []);
 
     const value = useMemo(() => ({
@@ -372,8 +383,15 @@ export const MusicPlayerProvider = ({ children }) => {
             <div
                 className="fixed bottom-4 right-4 z-[99998] rounded-xl border border-slate-200 bg-white p-2 shadow-2xl"
                 style={{
-                    display: isPlayerVisible && currentTrack ? 'block' : 'none',
-                    width: 216
+                    width: 216,
+                    height: 242,
+                    left: isPlayerVisible && currentTrack ? 'auto' : -240,
+                    top: isPlayerVisible && currentTrack ? 'auto' : 0,
+                    right: isPlayerVisible && currentTrack ? 16 : 'auto',
+                    bottom: isPlayerVisible && currentTrack ? 16 : 'auto',
+                    opacity: isPlayerVisible && currentTrack ? 1 : 0.01,
+                    overflow: 'visible',
+                    pointerEvents: isPlayerVisible && currentTrack ? 'auto' : 'none'
                 }}
             >
                 <div className="mb-1 flex items-center justify-between gap-2 px-1">
@@ -383,8 +401,8 @@ export const MusicPlayerProvider = ({ children }) => {
                     <button
                         type="button"
                         onClick={togglePlayerVisibility}
-                        aria-label="Close music player and pause"
-                        title="បិទ Player និង Pause"
+                        aria-label="Hide music player"
+                        title="លាក់វីដេអូ តែបន្តចាក់សំឡេង"
                         className="rounded px-1.5 text-sm font-bold text-slate-500 hover:bg-slate-100"
                     >
                         ×

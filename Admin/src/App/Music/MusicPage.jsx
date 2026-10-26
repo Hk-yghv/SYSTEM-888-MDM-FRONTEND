@@ -119,13 +119,13 @@ const MusicPage = () => {
 
                     <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3">
                         <div className="flex items-center gap-2">
-                            <button type="button" onClick={playPrevious} aria-label="Previous track" disabled={!tracks.length} className="rounded-md p-2 text-slate-600 hover:bg-white disabled:opacity-40">
+                            <button type="button" onClick={playPrevious} aria-label="Previous track" disabled={!tracks.length || !playerReady} className="rounded-md p-2 text-slate-600 hover:bg-white disabled:opacity-40">
                                 <FaStepBackward />
                             </button>
-                            <button type="button" onClick={togglePlayPause} aria-label={isPlaying ? 'Pause music' : 'Play music'} disabled={!tracks.length} className="rounded-full bg-violet-600 p-3 text-white hover:bg-violet-700 disabled:opacity-40">
+                            <button type="button" onClick={togglePlayPause} aria-label={isPlaying ? 'Pause music' : 'Play music'} disabled={!tracks.length || !playerReady} className="rounded-full bg-violet-600 p-3 text-white hover:bg-violet-700 disabled:opacity-40">
                                 {isPlaying ? <FaPause /> : <FaPlay />}
                             </button>
-                            <button type="button" onClick={playNext} aria-label="Next track" disabled={!tracks.length} className="rounded-md p-2 text-slate-600 hover:bg-white disabled:opacity-40">
+                            <button type="button" onClick={playNext} aria-label="Next track" disabled={!tracks.length || !playerReady} className="rounded-md p-2 text-slate-600 hover:bg-white disabled:opacity-40">
                                 <FaStepForward />
                             </button>
                         </div>
