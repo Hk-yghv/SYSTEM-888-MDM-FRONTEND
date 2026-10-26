@@ -333,7 +333,7 @@ const ScreenRecorderDock = () => {
                                         }}
                                         className={`relative h-6 w-10 shrink-0 rounded-full transition-colors touch-pan-y cursor-pointer ${option.enabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
                                     >
-                                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${option.enabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                                        <span className={`absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${option.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
                             ))}
