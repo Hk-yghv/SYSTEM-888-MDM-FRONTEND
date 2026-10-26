@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
     FaCircle, FaDesktop, FaFolderOpen, FaMicrophone, FaPause,
-    FaPlay, FaStop, FaTimes, FaVideo
+    FaPlay, FaStop, FaVideo
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
@@ -14,7 +15,8 @@ const formatDuration = (seconds) => {
 const ScreenRecorderDock = () => {
     const { user } = useAuth();
     const isAuthenticated = Boolean(user);
-    const [isOpen, setIsOpen] = useState(false);
+    const [portalTarget, setPortalTarget] = useState(null);
+    const [showSettings, setShowSettings] = useState(false);
     const [captureMicrophone, setCaptureMicrophone] = useState(false);
     const [captureSystemAudio, setCaptureSystemAudio] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
@@ -170,7 +172,6 @@ const ScreenRecorderDock = () => {
             setIsRecording(true);
             setIsPaused(false);
             setShowSettings(false);
-            setIsOpen(true);
         } catch (startError) {
             displayStream?.getTracks().forEach(track => track.stop());
             microphoneStream?.getTracks().forEach(track => track.stop());
@@ -215,6 +216,17 @@ const ScreenRecorderDock = () => {
     }, [isRecording, isPaused]);
 
     useEffect(() => {
+        const syncPortalTarget = () => {
+            const target = document.getElementById('display-screen-recorder');
+            setPortalTarget(current => current === target ? current : target);
+        };
+        syncPortalTarget();
+        const observer = new MutationObserver(syncPortalTarget);
+        observer.observe(document.body, { childList: true, subtree: true });
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
         if (!isAuthenticated) stopRecording();
     }, [isAuthenticated, stopRecording]);
 
@@ -226,129 +238,127 @@ const ScreenRecorderDock = () => {
         releaseStreams();
     }, [releaseStreams]);
 
-    if (!isAuthenticated) return null;
+    if (!isAuthenticated || !portalTarget) return null;
 
     const audioOptions = [
         { label: 'សម្លេងពី Microphone', icon: <FaMicrophone />, enabled: captureMicrophone, setEnabled: setCaptureMicrophone },
         { label: 'សម្លេងពីក្នុងកុំព្យូទ័រ', icon: <FaDesktop />, enabled: captureSystemAudio, setEnabled: setCaptureSystemAudio }
     ];
 
-    return (
-        <div className="no-print fixed right-0 top-[45%] z-[100000]">
-            <button
-                type="button"
-                onClick={() => setIsOpen(open => !open)}
-                aria-expanded={isOpen}
-                aria-label={isRecording ? `កំពុងថត ${formatDuration(duration)}` : 'បើកការថតអេក្រង់'}
-                title={isRecording ? `កំពុងថត ${formatDuration(duration)}` : 'ថតអេក្រង់'}
-                className={`flex min-h-12 items-center gap-2 rounded-l-xl border-y border-l px-3 py-2 text-sm font-bold text-white shadow-xl cursor-pointer ${
-                    isRecording ? 'border-rose-400 bg-rose-600' : 'border-violet-400 bg-violet-700 hover:bg-violet-800'
-                }`}
-            >
-                {isRecording ? <FaCircle className={`text-[9px] ${isPaused ? 'text-amber-300' : 'animate-pulse'}`} /> : <FaVideo />}
-                <span>{isRecording ? formatDuration(duration) : 'Record'}</span>
-            </button>
+    return createPortal(
+        <div className="space-y-2 border-b border-slate-100 pb-2 text-slate-800">
+            {error && (
+                <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
+                    {error}
+                </div>
+            )}
+            {successMessage && (
+                <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-[11px] text-emerald-800">
+                    {successMessage}
+                </div>
+            )}
 
-            {isOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] w-[min(340px,calc(100vw-24px))] rounded-xl border border-slate-200 bg-white p-3 text-slate-800 shadow-2xl">
-                    <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
-                        <span className="flex items-center gap-2 text-sm font-bold">
-                            <FaVideo className="text-rose-600" /> ការថតអេក្រង់
-                        </span>
-                        <button type="button" onClick={() => setIsOpen(false)} aria-label="បិទ" className="text-slate-500 hover:text-slate-800 cursor-pointer">
-                            <FaTimes />
+            {isRecording ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-rose-50 p-2 text-rose-700">
+                    <span className="flex items-center gap-1.5 text-xs font-bold">
+                        <FaCircle className={`text-[8px] ${isPaused ? 'text-amber-500' : 'animate-pulse text-rose-600'}`} />
+                        {isPaused ? 'បានផ្អាក' : 'កំពុងថត'} {formatDuration(duration)}
+                    </span>
+                    <div className="flex gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const recorder = recorderRef.current;
+                                if (recorder?.state === 'recording') {
+                                    recorder.pause();
+                                    setIsPaused(true);
+                                } else if (recorder?.state === 'paused') {
+                                    recorder.resume();
+                                    setIsPaused(false);
+                                }
+                            }}
+                            aria-label={isPaused ? 'បន្តថត' : 'ផ្អាកថត'}
+                            className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-pointer"
+                        >
+                            {isPaused ? <FaPlay /> : <FaPause />}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={stopRecording}
+                            aria-label="បញ្ឈប់ និងរក្សាទុកវីដេអូ"
+                            className="flex h-8 w-8 items-center justify-center rounded-md bg-rose-600 text-white hover:bg-rose-700 cursor-pointer"
+                        >
+                            <FaStop />
                         </button>
                     </div>
+                </div>
+            ) : (
+                <>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setError('');
+                            setShowSettings(open => !open);
+                        }}
+                        aria-expanded={showSettings}
+                        className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-700 cursor-pointer"
+                    >
+                        <span className="flex items-center gap-2">
+                            <FaVideo className="text-rose-600" /> Record screen
+                        </span>
+                        <span className="text-[10px] text-slate-500">{showSettings ? 'បិទ' : 'កំណត់'}</span>
+                    </button>
 
-                    {error && (
-                        <div role="alert" className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
-                            {error}
-                        </div>
-                    )}
-                    {successMessage && (
-                        <div role="status" className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-xs text-emerald-800">
-                            {successMessage}
-                        </div>
-                    )}
-
-                    {isRecording ? (
-                        <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono text-sm font-bold">{isPaused ? 'បានផ្អាក' : 'កំពុងថត'} {formatDuration(duration)}</span>
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const recorder = recorderRef.current;
-                                        if (recorder?.state === 'recording') {
-                                            recorder.pause();
-                                            setIsPaused(true);
-                                        } else if (recorder?.state === 'paused') {
-                                            recorder.resume();
-                                            setIsPaused(false);
-                                        }
-                                    }}
-                                    aria-label={isPaused ? 'បន្តថត' : 'ផ្អាកថត'}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-pointer"
-                                >
-                                    {isPaused ? <FaPlay /> : <FaPause />}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={stopRecording}
-                                    aria-label="បញ្ឈប់ និងរក្សាទុកវីដេអូ"
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-600 text-white hover:bg-rose-700 cursor-pointer"
-                                >
-                                    <FaStop />
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <p className="mb-3 text-xs text-slate-600">អូសប៊ូតុងទៅស្តាំដើម្បីបើក និងទៅឆ្វេងដើម្បីបិទសម្លេង។</p>
-                            <div className="space-y-2">
-                                {audioOptions.map(option => (
-                                    <div key={option.label} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2">
-                                        <span className="flex items-center gap-2 text-xs font-medium">
-                                            <span className="text-violet-600">{option.icon}</span>{option.label}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            role="switch"
-                                            aria-checked={option.enabled}
-                                            aria-label={option.label}
-                                            onPointerDown={event => { audioToggleStartXRef.current = event.clientX; }}
-                                            onPointerUp={event => toggleAudioOnSwipe(event, option.enabled, option.setEnabled)}
-                                            onPointerCancel={() => { audioToggleStartXRef.current = null; }}
-                                            onKeyDown={event => {
-                                                if (event.key === ' ' || event.key === 'Enter') {
-                                                    event.preventDefault();
-                                                    option.setEnabled(enabled => !enabled);
-                                                }
-                                            }}
-                                            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors touch-pan-y cursor-pointer ${option.enabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                                        >
-                                            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${option.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <p className="my-3 text-[11px] text-slate-500">សម្លេងកុំព្យូទ័រអាស្រ័យលើ browser និង screen/tab ដែលបានជ្រើស។</p>
+                    {showSettings && (
+                        <div className="space-y-2 px-1 pb-1">
+                            <p className="text-[10px] text-slate-500">អូសទៅស្តាំដើម្បីបើក និងឆ្វេងដើម្បីបិទសម្លេង។</p>
+                            {audioOptions.map(option => (
+                                <div key={option.label} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2">
+                                    <span className="flex items-center gap-1.5 text-[10px] font-medium">
+                                        <span className="text-violet-600">{option.icon}</span>{option.label}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={option.enabled}
+                                        aria-label={option.label}
+                                        onPointerDown={event => { audioToggleStartXRef.current = event.clientX; }}
+                                        onPointerUp={event => toggleAudioOnSwipe(event, option.enabled, option.setEnabled)}
+                                        onPointerCancel={() => { audioToggleStartXRef.current = null; }}
+                                        onKeyDown={event => {
+                                            if (event.key === ' ' || event.key === 'Enter') {
+                                                event.preventDefault();
+                                                option.setEnabled(enabled => !enabled);
+                                            }
+                                        }}
+                                        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors touch-pan-y cursor-pointer ${option.enabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                    >
+                                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${option.enabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                                    </button>
+                                </div>
+                            ))}
                             <button
                                 type="button"
                                 onClick={chooseFolder}
-                                className="mb-3 flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-left text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
+                                className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] text-slate-700 hover:bg-slate-100 cursor-pointer"
                             >
                                 <FaFolderOpen className="shrink-0 text-amber-600" />
-                                <span className="truncate">{folderName ? `រក្សាទុកក្នុង៖ ${folderName}` : 'ជ្រើស folder រក្សាទុកវីដេអូ'}</span>
+                                <span className="truncate">{folderName ? `រក្សាទុក៖ ${folderName}` : 'ជ្រើស folder រក្សាទុក'}</span>
                             </button>
-                            <button type="button" onClick={startRecording} className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer">
+                            <p className="text-[10px] text-slate-500">សម្លេងកុំព្យូទ័រអាស្រ័យលើ browser និង screen/tab ដែលបានជ្រើស។</p>
+                            <button
+                                type="button"
+                                onClick={startRecording}
+                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700 cursor-pointer"
+                            >
                                 <FaVideo /> ចាប់ផ្តើមថត
                             </button>
-                        </>
+                        </div>
                     )}
-                </div>
+                </>
             )}
-        </div>
+        </div>,
+        portalTarget
     );
 };
 

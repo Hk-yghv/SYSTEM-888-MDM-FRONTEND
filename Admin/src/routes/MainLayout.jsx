@@ -282,7 +282,7 @@ const MainLayout = ({ children }) => {
           {/* Absolute Popup Panel */}
           {isFloatingUplistOpen && (
             <div
-              className="absolute w-[222px] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.22)] animate-in fade-in duration-150 z-50 pointer-events-auto"
+              className="absolute w-[280px] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-[14px] p-2 shadow-[0_15px_50px_rgba(0,0,0,0.22)] animate-in fade-in duration-150 z-50 pointer-events-auto"
               style={{
                 ...(popupGoesUp
                   ? { bottom: "calc(100% + 8px)", top: "auto" }
@@ -356,6 +356,7 @@ const MainLayout = ({ children }) => {
                 </span>
               </button>
 
+              <div id="display-screen-recorder" />
               <MusicDockControls />
             </div>
           )}
