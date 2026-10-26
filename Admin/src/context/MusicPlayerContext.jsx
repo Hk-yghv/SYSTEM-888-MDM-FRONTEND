@@ -9,9 +9,9 @@ const DEFAULT_TRACK = {
 };
 
 const applyPlayerVolume = (player, volume) => {
-    player.setVolume(volume);
     if (volume > 0) player.unMute();
     else player.mute();
+    player.setVolume(volume);
 };
 
 const readSavedMusic = () => {
@@ -220,6 +220,16 @@ export const MusicPlayerProvider = ({ children }) => {
                     onStateChange: (event) => {
                         if (event.data === YT.PlayerState.PLAYING) {
                             applyPlayerVolume(event.target, settingsRef.current.volume);
+                            [150, 600].forEach(delay => {
+                                window.setTimeout(() => {
+                                    if (
+                                        playerRef.current === event.target &&
+                                        event.target.getPlayerState?.() === YT.PlayerState.PLAYING
+                                    ) {
+                                        applyPlayerVolume(event.target, settingsRef.current.volume);
+                                    }
+                                }, delay);
+                            });
                             setIsPlaying(true);
                         }
                         if (event.data === YT.PlayerState.PAUSED) setIsPlaying(false);
