@@ -25,6 +25,7 @@ const PhoneValuationPage = () => {
     const [selectedProductId, setSelectedProductId] = useState('');
     const [selectedStatusByDefect, setSelectedStatusByDefect] = useState({});
     const [selectedDeductionByDefect, setSelectedDeductionByDefect] = useState({});
+    const [deductionRangeErrorByDefect, setDeductionRangeErrorByDefect] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -112,6 +113,7 @@ const PhoneValuationPage = () => {
                                         setSelectedProductId(nextProduct?.id || '');
                                         setSelectedStatusByDefect({});
                                         setSelectedDeductionByDefect({});
+                                        setDeductionRangeErrorByDefect({});
                                     }}
                                 >
                                     {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
@@ -129,6 +131,7 @@ const PhoneValuationPage = () => {
                                         setSelectedProductId(nextProduct?.id || '');
                                         setSelectedStatusByDefect({});
                                         setSelectedDeductionByDefect({});
+                                        setDeductionRangeErrorByDefect({});
                                     }}
                                 >
                                     {variantOptions.map((variant) => (
@@ -150,6 +153,7 @@ const PhoneValuationPage = () => {
                                         setSelectedProductId(nextProduct?.id || '');
                                         setSelectedStatusByDefect({});
                                         setSelectedDeductionByDefect({});
+                                        setDeductionRangeErrorByDefect({});
                                     }}
                                 >
                                     {capacityOptions.map((capacity) => (
@@ -178,11 +182,6 @@ const PhoneValuationPage = () => {
                                 const minDeduction = Number(selectedStatus?.minDeduction || 0);
                                 const maxDeduction = Number(selectedStatus?.maxDeduction ?? minDeduction);
                                 const selectedDeduction = selectedDeductionByDefect[defect.id] ?? String(minDeduction);
-                                const hasInvalidDeduction = selectedDeduction === '' || (
-                                    !Number.isFinite(Number(selectedDeduction)) ||
-                                    Number(selectedDeduction) < minDeduction ||
-                                    Number(selectedDeduction) > maxDeduction
-                                );
 
                                 return (
                                 <div key={defect.id} className="flex flex-col gap-3 rounded-lg border border-slate-200 px-4 py-3">
@@ -200,6 +199,10 @@ const PhoneValuationPage = () => {
                                                 setSelectedDeductionByDefect((current) => ({
                                                     ...current,
                                                     [defect.id]: event.target.value ? String(nextStatus?.minDeduction ?? 0) : ''
+                                                }));
+                                                setDeductionRangeErrorByDefect((current) => ({
+                                                    ...current,
+                                                    [defect.id]: ''
                                                 }));
                                             }}
                                             aria-label={`Status of ${defect.name}`}
@@ -220,21 +223,49 @@ const PhoneValuationPage = () => {
                                                     list={`deduction-options-${defect.id}`}
                                                     value={selectedDeduction}
                                                     onChange={(event) => {
-                                                        setSelectedDeductionByDefect((current) => ({
+                                                        const value = event.target.value;
+                                                        if (value === '') {
+                                                            setSelectedDeductionByDefect((current) => ({
+                                                                ...current,
+                                                                [defect.id]: value
+                                                            }));
+                                                            setDeductionRangeErrorByDefect((current) => ({
+                                                                ...current,
+                                                                [defect.id]: ''
+                                                            }));
+                                                            return;
+                                                        }
+                                                        const amount = Number(value);
+                                                        if (Number.isFinite(amount) && amount >= minDeduction && amount <= maxDeduction) {
+                                                            setSelectedDeductionByDefect((current) => ({
+                                                                ...current,
+                                                                [defect.id]: value
+                                                            }));
+                                                            setDeductionRangeErrorByDefect((current) => ({
+                                                                ...current,
+                                                                [defect.id]: ''
+                                                            }));
+                                                            return;
+                                                        }
+                                                        setDeductionRangeErrorByDefect((current) => ({
                                                             ...current,
-                                                            [defect.id]: event.target.value
+                                                            [defect.id]: `Amount must be between ${money(minDeduction)} and ${money(maxDeduction)}.`
                                                         }));
                                                     }}
                                                     aria-label={`Deduction amount for ${defect.name}`}
+                                                    aria-describedby={`deduction-range-${defect.id}`}
                                                 />
                                                 <datalist id={`deduction-options-${defect.id}`}>
                                                     {deductionOptions.map((amount) => (
                                                         <option key={amount} value={amount} label={money(amount)} />
                                                     ))}
                                                 </datalist>
-                                                {hasInvalidDeduction && (
+                                                <span id={`deduction-range-${defect.id}`} className="text-xs text-slate-600">
+                                                    Allowed range: {money(minDeduction)}–{money(maxDeduction)}
+                                                </span>
+                                                {deductionRangeErrorByDefect[defect.id] && (
                                                     <span className="text-xs text-rose-700" role="alert">
-                                                        Enter an amount from {money(minDeduction)} to {money(maxDeduction)}.
+                                                        {deductionRangeErrorByDefect[defect.id]}
                                                     </span>
                                                 )}
                                             </div>
