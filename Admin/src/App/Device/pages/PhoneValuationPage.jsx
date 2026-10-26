@@ -224,32 +224,20 @@ const PhoneValuationPage = () => {
                                                     value={selectedDeduction}
                                                     onChange={(event) => {
                                                         const value = event.target.value;
-                                                        if (value === '') {
-                                                            setSelectedDeductionByDefect((current) => ({
-                                                                ...current,
-                                                                [defect.id]: value
-                                                            }));
-                                                            setDeductionRangeErrorByDefect((current) => ({
-                                                                ...current,
-                                                                [defect.id]: ''
-                                                            }));
-                                                            return;
-                                                        }
                                                         const amount = Number(value);
-                                                        if (Number.isFinite(amount) && amount >= minDeduction && amount <= maxDeduction) {
-                                                            setSelectedDeductionByDefect((current) => ({
-                                                                ...current,
-                                                                [defect.id]: value
-                                                            }));
-                                                            setDeductionRangeErrorByDefect((current) => ({
-                                                                ...current,
-                                                                [defect.id]: ''
-                                                            }));
-                                                            return;
-                                                        }
+                                                        setSelectedDeductionByDefect((current) => ({
+                                                            ...current,
+                                                            [defect.id]: value
+                                                        }));
                                                         setDeductionRangeErrorByDefect((current) => ({
                                                             ...current,
-                                                            [defect.id]: `Amount must be between ${money(minDeduction)} and ${money(maxDeduction)}.`
+                                                            [defect.id]: value !== '' && (
+                                                                !Number.isFinite(amount) ||
+                                                                amount < minDeduction ||
+                                                                amount > maxDeduction
+                                                            )
+                                                                ? `Amount must be between ${money(minDeduction)} and ${money(maxDeduction)}.`
+                                                                : ''
                                                         }));
                                                     }}
                                                     aria-label={`Deduction amount for ${defect.name}`}
