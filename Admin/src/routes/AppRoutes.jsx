@@ -6,6 +6,7 @@ import SignIn from "../services/SignIn";
 import MainLayout from "./MainLayout";
 import { useAuth } from "../context/AuthContext";
 import { getFirstAllowedRoute } from "../utils/permissionUtils";
+import ScreenRecorderDock from "../components/ScreenRecorderDock";
 
 const Dashboard = lazy(() => import("../App/Dashboard/Dashboard"));
 const CashFlowTrader = lazy(() => import("../App/CashFlow/pages/CashFlowTrader"));
@@ -109,7 +110,9 @@ const renderProtected = (pagePath, Component, props = {}) => (
 
 const AppRoutes = () => {
   return (
-    <Routes>
+    <>
+      <ScreenRecorderDock />
+      <Routes>
       {/* Sign In Route */}
       <Route path={json.signin} element={<SignIn />} />
 
@@ -219,7 +222,8 @@ const AppRoutes = () => {
 
       {/* Wildcard Fallback */}
       <Route path="*" element={<RootRedirect />} />
-    </Routes>
+      </Routes>
+    </>
   );
 };
 
