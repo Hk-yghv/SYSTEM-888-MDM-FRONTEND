@@ -19,6 +19,7 @@ import {
     FaInfoCircle,
     FaCopy,
     FaEdit,
+    FaCropAlt,
     FaFont,
     FaSquare
 } from 'react-icons/fa';
@@ -40,6 +41,7 @@ const PrintIdCard = () => {
     const [showBorder, setShowBorder] = useState(false);
     const [showAdjustments, setShowAdjustments] = useState(false);
     const [showEditor, setShowEditor] = useState(false);
+    const [isCropMode, setIsCropMode] = useState(false);
     const [crop, setCrop] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
     const [brightness, setBrightness] = useState(100);
     const [contrast, setContrast] = useState(100);
@@ -58,6 +60,8 @@ const PrintIdCard = () => {
 
     const fileInputRef = useRef(null);
     const dropzoneRef = useRef(null);
+    const cropImageFrameRef = useRef(null);
+    const activeCropSideRef = useRef(null);
 
     useEffect(() => {
         if (!showConfirmModal) return undefined;
@@ -84,6 +88,7 @@ const PrintIdCard = () => {
         reader.onload = (e) => {
             setImageSrc(e.target.result);
             setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+            setIsCropMode(false);
             setBrightness(100);
             setContrast(100);
             setShadow(0);
@@ -159,6 +164,7 @@ const PrintIdCard = () => {
         setScalePercent(100);
         setCopies(1);
         setShowBorder(false);
+        setIsCropMode(false);
         setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
         setBrightness(100);
         setContrast(100);
@@ -196,6 +202,88 @@ const PrintIdCard = () => {
                 : annotation
         )));
     };
+
+    const updateCropFromPointer = (side, event) => {
+        const frame = cropImageFrameRef.current;
+        if (!frame) return;
+
+        const bounds = frame.getBoundingClientRect();
+        const radians = rotation * Math.PI / 180;
+        const deltaX = event.clientX - (bounds.left + bounds.width / 2);
+        const deltaY = event.clientY - (bounds.top + bounds.height / 2);
+        const scale = scalePercent / 100 || 1;
+        const localX = (deltaX * Math.cos(radians) + deltaY * Math.sin(radians)) / scale + frame.clientWidth / 2;
+        const localY = (-deltaX * Math.sin(radians) + deltaY * Math.cos(radians)) / scale + frame.clientHeight / 2;
+        const value = side === 'top'
+            ? localY / frame.clientHeight * 100
+            : side === 'bottom'
+                ? (1 - localY / frame.clientHeight) * 100
+                : side === 'left'
+                    ? localX / frame.clientWidth * 100
+                    : (1 - localX / frame.clientWidth) * 100;
+
+        setCrop(current => ({
+            ...current,
+            [side]: Math.max(0, Math.min(35, 100 - current[side === 'top' ? 'bottom' : side === 'bottom' ? 'top' : side === 'left' ? 'right' : 'left'] - 1, value))
+        }));
+    };
+
+    const changeRotation = (amount) => {
+        setRotation(current => Math.max(-180, Math.min(180, current + amount)));
+    };
+
+    const rotateBy90 = () => {
+        setRotation(current => {
+            const next = (current + 90) % 360;
+            return next > 180 ? next - 360 : next;
+        });
+    };
+
+    const renderCropHandle = (side, className, label) => (
+        <button
+            key={side}
+            type="button"
+            role="slider"
+            aria-label={label}
+            aria-orientation={side === 'top' || side === 'bottom' ? 'horizontal' : 'vertical'}
+            aria-valuemin={0}
+            aria-valuemax={Math.min(35, 99 - crop[side === 'top' ? 'bottom' : side === 'bottom' ? 'top' : side === 'left' ? 'right' : 'left'])}
+            aria-valuenow={crop[side]}
+            tabIndex={0}
+            className={`absolute z-10 touch-none bg-transparent ${className}`}
+            style={side === 'top'
+                ? { left: `${crop.left}%`, right: `${crop.right}%`, top: `calc(${crop.top}% - 6px)` }
+                : side === 'bottom'
+                    ? { left: `${crop.left}%`, right: `${crop.right}%`, bottom: `calc(${crop.bottom}% - 6px)` }
+                    : side === 'left'
+                        ? { top: `${crop.top}%`, bottom: `${crop.bottom}%`, left: `calc(${crop.left}% - 6px)` }
+                        : { top: `${crop.top}%`, bottom: `${crop.bottom}%`, right: `calc(${crop.right}% - 6px)` }}
+            onPointerDown={(event) => {
+                event.preventDefault();
+                activeCropSideRef.current = side;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                updateCropFromPointer(side, event);
+            }}
+            onPointerMove={(event) => {
+                if (activeCropSideRef.current === side) updateCropFromPointer(side, event);
+            }}
+            onPointerUp={() => {
+                activeCropSideRef.current = null;
+            }}
+            onPointerCancel={() => {
+                activeCropSideRef.current = null;
+            }}
+            onKeyDown={(event) => {
+                if (event.key !== 'ArrowUp' && event.key !== 'ArrowRight' && event.key !== 'ArrowDown' && event.key !== 'ArrowLeft') return;
+                event.preventDefault();
+                const change = event.key === 'ArrowUp' || event.key === 'ArrowRight' ? 1 : -1;
+                setCrop(current => ({
+                    ...current,
+                    [side]: Math.max(0, Math.min(35, 100 - current[side === 'top' ? 'bottom' : side === 'bottom' ? 'top' : side === 'left' ? 'right' : 'left'] - 1, current[side] + change))
+                }));
+            }}
+        />
+    );
 
     const renderAnnotations = () => annotations.map(annotation => (
         annotation.type === 'box' ? (
@@ -410,6 +498,20 @@ const PrintIdCard = () => {
                     >
                         <FaEdit size={13} className="text-violet-600" />
                         <span>កែរូបភាព</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsCropMode(open => !open)}
+                        disabled={!imageSrc}
+                        aria-pressed={isCropMode}
+                        className={`h-[38px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${isCropMode
+                            ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-2xs'
+                            : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                            }`}
+                        title={isCropMode ? 'ចុចដើម្បីបិទការកាត់រូប' : 'ចុចដើម្បីទាញគែមកាត់រូប'}
+                    >
+                        <FaCropAlt size={13} className="text-amber-600" />
+                        <span>{isCropMode ? 'បិទការកាត់' : 'កាត់រូប'}</span>
                     </button>
 
                     {/* Print Button (Opens Custom Alert UI Confirmation) */}
@@ -635,7 +737,7 @@ const PrintIdCard = () => {
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                                        onClick={rotateBy90}
                                         className="flex-1 h-[32px] px-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                                     >
                                         <FaRedo size={11} className="text-emerald-600" />
@@ -678,6 +780,7 @@ const PrintIdCard = () => {
                                     type="button"
                                     onClick={() => {
                                         setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+                                        setIsCropMode(false);
                                         setRotation(0);
                                         setBrightness(100);
                                         setContrast(100);
@@ -709,24 +812,58 @@ const PrintIdCard = () => {
                                             max="35"
                                             step="1"
                                             value={crop[side]}
-                                            onChange={(event) => setCrop(current => ({
-                                                ...current,
-                                                [side]: Number(event.target.value)
-                                            }))}
+                                            onChange={(event) => {
+                                                const oppositeSide = side === 'top' ? 'bottom' : side === 'bottom' ? 'top' : side === 'left' ? 'right' : 'left';
+                                                setCrop(current => ({
+                                                    ...current,
+                                                    [side]: Math.min(Number(event.target.value), 99 - current[oppositeSide])
+                                                }));
+                                            }}
                                             className="w-full accent-violet-600"
                                         />
                                     </label>
                                 ))}
                                 <label className="space-y-1 block">
-                                    <span className="flex justify-between text-[11px] font-semibold text-slate-700">
+                                    <span className="flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-700">
                                         <span>បង្វិលរូបភាព</span>
-                                        <span className="font-mono text-violet-700">{rotation}°</span>
+                                        <span className="flex items-center gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => changeRotation(-1)}
+                                                aria-label="បង្វិលថយក្រោយ ១ ដឺក្រេ"
+                                                className="w-7 h-7 rounded border border-violet-200 bg-white text-violet-700 hover:bg-violet-100"
+                                            >
+                                                −
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="-180"
+                                                max="180"
+                                                step="0.1"
+                                                value={rotation}
+                                                aria-label="មុំបង្វិលជាដឺក្រេ"
+                                                onChange={(event) => {
+                                                    const value = event.target.valueAsNumber;
+                                                    if (Number.isFinite(value)) setRotation(Math.max(-180, Math.min(180, value)));
+                                                }}
+                                                className="w-16 h-7 rounded border border-violet-200 bg-white px-1 text-center font-mono text-violet-700"
+                                            />
+                                            <span className="font-mono text-violet-700">°</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => changeRotation(1)}
+                                                aria-label="បង្វិលទៅមុខ ១ ដឺក្រេ"
+                                                className="w-7 h-7 rounded border border-violet-200 bg-white text-violet-700 hover:bg-violet-100"
+                                            >
+                                                +
+                                            </button>
+                                        </span>
                                     </span>
                                     <input
                                         type="range"
                                         min="-180"
                                         max="180"
-                                        step="1"
+                                        step="0.1"
                                         value={rotation}
                                         onChange={(event) => setRotation(Number(event.target.value))}
                                         className="w-full accent-violet-600"
@@ -959,6 +1096,7 @@ const PrintIdCard = () => {
                                             display: 'inline-block',
                                             maxWidth: '100%'
                                         }}
+                                        ref={cropImageFrameRef}
                                     >
                                         <img
                                             src={imageSrc}
@@ -974,6 +1112,23 @@ const PrintIdCard = () => {
                                             }}
                                         />
                                         {renderAnnotations()}
+                                        {isCropMode && (
+                                            <div className="absolute inset-0 z-20" aria-label="Crop image edges">
+                                                <div
+                                                    className="absolute border-2 border-dashed border-amber-400 bg-amber-300/10 pointer-events-none"
+                                                    style={{
+                                                        top: `${crop.top}%`,
+                                                        right: `${crop.right}%`,
+                                                        bottom: `${crop.bottom}%`,
+                                                        left: `${crop.left}%`
+                                                    }}
+                                                />
+                                                {renderCropHandle('top', 'h-3 cursor-ns-resize', 'កាត់ពីលើ')}
+                                                {renderCropHandle('bottom', 'h-3 cursor-ns-resize', 'កាត់ពីក្រោម')}
+                                                {renderCropHandle('left', 'w-3 cursor-ew-resize', 'កាត់ពីឆ្វេង')}
+                                                {renderCropHandle('right', 'w-3 cursor-ew-resize', 'កាត់ពីស្តាំ')}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div
