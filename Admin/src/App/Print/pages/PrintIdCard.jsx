@@ -24,6 +24,59 @@ import {
     FaSquare
 } from 'react-icons/fa';
 
+const getCropCorners = (crop) => ({
+    topLeft: { x: crop.left, y: crop.top },
+    topRight: { x: 100 - crop.right, y: crop.top },
+    bottomRight: { x: 100 - crop.right, y: 100 - crop.bottom },
+    bottomLeft: { x: crop.left, y: 100 - crop.bottom }
+});
+
+const getPerspectiveTransform = (corners, width, height) => {
+    if (!width || !height) return 'none';
+
+    const source = [
+        corners.topLeft,
+        corners.topRight,
+        corners.bottomRight,
+        corners.bottomLeft
+    ].map(({ x, y }) => [x / 100, y / 100]);
+    const destination = [[0, 0], [1, 0], [1, 1], [0, 1]];
+    const equations = [];
+
+    source.forEach(([x, y], index) => {
+        const [u, v] = destination[index];
+        equations.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u]);
+        equations.push([0, 0, 0, x, y, 1, -v * x, -v * y, v]);
+    });
+
+    for (let column = 0; column < 8; column += 1) {
+        let pivot = column;
+        for (let row = column + 1; row < 8; row += 1) {
+            if (Math.abs(equations[row][column]) > Math.abs(equations[pivot][column])) pivot = row;
+        }
+        if (Math.abs(equations[pivot][column]) < 1e-10) return 'none';
+        [equations[column], equations[pivot]] = [equations[pivot], equations[column]];
+
+        const divisor = equations[column][column];
+        for (let cell = column; cell <= 8; cell += 1) equations[column][cell] /= divisor;
+        for (let row = 0; row < 8; row += 1) {
+            if (row === column) continue;
+            const factor = equations[row][column];
+            for (let cell = column; cell <= 8; cell += 1) {
+                equations[row][cell] -= factor * equations[column][cell];
+            }
+        }
+    }
+
+    const [a, b, c, d, e, f, g, h] = equations.map((row) => row[8]);
+    return `matrix3d(${[
+        a, d * height / width, 0, g / width,
+        b * width / height, e, 0, h / height,
+        0, 0, 1, 0,
+        c * width, f * height, 0, 1
+    ].join(',')})`;
+};
+
 const PrintIdCard = () => {
     const { t, lang } = useLanguage();
 
@@ -42,13 +95,16 @@ const PrintIdCard = () => {
     const [showAdjustments, setShowAdjustments] = useState(false);
     const [showEditor, setShowEditor] = useState(false);
     const [isCropMode, setIsCropMode] = useState(false);
+    const [cropOutputMode, setCropOutputMode] = useState('polygon');
     const [crop, setCrop] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
+    const [cropCorners, setCropCorners] = useState(null);
     const [brightness, setBrightness] = useState(100);
     const [contrast, setContrast] = useState(100);
     const [shadow, setShadow] = useState(0);
     const [annotations, setAnnotations] = useState([]);
     const [selectedAnnotationId, setSelectedAnnotationId] = useState(null);
     const [pasteSuccess, setPasteSuccess] = useState(false);
+    const [, setCropImageLayoutVersion] = useState(0);
 
     // Number of print copies (ចំនួនសន្លឹកព្រីន)
     const [copies, setCopies] = useState(1);
@@ -61,6 +117,7 @@ const PrintIdCard = () => {
     const fileInputRef = useRef(null);
     const dropzoneRef = useRef(null);
     const cropImageFrameRef = useRef(null);
+    const cropImageContentRef = useRef(null);
     const activeCropSideRef = useRef(null);
 
     useEffect(() => {
@@ -88,6 +145,7 @@ const PrintIdCard = () => {
         reader.onload = (e) => {
             setImageSrc(e.target.result);
             setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+            setCropCorners(null);
             setIsCropMode(false);
             setBrightness(100);
             setContrast(100);
@@ -166,6 +224,7 @@ const PrintIdCard = () => {
         setShowBorder(false);
         setIsCropMode(false);
         setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+        setCropCorners(null);
         setBrightness(100);
         setContrast(100);
         setShadow(0);
@@ -222,10 +281,48 @@ const PrintIdCard = () => {
                     ? localX / frame.clientWidth * 100
                     : (1 - localX / frame.clientWidth) * 100;
 
+        const oppositeSide = side === 'top' ? 'bottom' : side === 'bottom' ? 'top' : side === 'left' ? 'right' : 'left';
         setCrop(current => ({
             ...current,
-            [side]: Math.max(0, Math.min(35, 100 - current[side === 'top' ? 'bottom' : side === 'bottom' ? 'top' : side === 'left' ? 'right' : 'left'] - 1, value))
+            [side]: Math.max(0, Math.min(35, 99 - current[oppositeSide], value))
         }));
+        setCropCorners(null);
+    };
+
+    const updateCropCornerFromPointer = (corner, event) => {
+        const frame = cropImageFrameRef.current;
+        if (!frame) return;
+
+        const bounds = frame.getBoundingClientRect();
+        const radians = rotation * Math.PI / 180;
+        const deltaX = event.clientX - (bounds.left + bounds.width / 2);
+        const deltaY = event.clientY - (bounds.top + bounds.height / 2);
+        const scale = scalePercent / 100 || 1;
+        const x = ((deltaX * Math.cos(radians) + deltaY * Math.sin(radians)) / scale + frame.clientWidth / 2) / frame.clientWidth * 100;
+        const y = ((-deltaX * Math.sin(radians) + deltaY * Math.cos(radians)) / scale + frame.clientHeight / 2) / frame.clientHeight * 100;
+
+        setCropCorners(current => {
+            const next = { ...(current || getCropCorners(crop)) };
+            const boundsByCorner = {
+                topLeft: { minX: 0, maxX: next.topRight.x - 1, minY: 0, maxY: next.bottomLeft.y - 1 },
+                topRight: { minX: next.topLeft.x + 1, maxX: 100, minY: 0, maxY: next.bottomRight.y - 1 },
+                bottomRight: { minX: next.bottomLeft.x + 1, maxX: 100, minY: next.topRight.y + 1, maxY: 100 },
+                bottomLeft: { minX: 0, maxX: next.bottomRight.x - 1, minY: next.topLeft.y + 1, maxY: 100 }
+            }[corner];
+            next[corner] = {
+                x: Math.max(boundsByCorner.minX, Math.min(boundsByCorner.maxX, x)),
+                y: Math.max(boundsByCorner.minY, Math.min(boundsByCorner.maxY, y))
+            };
+            const points = [next.topLeft, next.topRight, next.bottomRight, next.bottomLeft];
+            const isConvex = points.every((point, index) => {
+                const nextPoint = points[(index + 1) % points.length];
+                const afterNextPoint = points[(index + 2) % points.length];
+                return (nextPoint.x - point.x) * (afterNextPoint.y - nextPoint.y)
+                    - (nextPoint.y - point.y) * (afterNextPoint.x - nextPoint.x) > 0;
+            });
+            if (!isConvex) return current || getCropCorners(crop);
+            return next;
+        });
     };
 
     const changeRotation = (amount) => {
@@ -285,6 +382,35 @@ const PrintIdCard = () => {
         />
     );
 
+    const renderCropCornerHandle = (corner, label) => {
+        const corners = cropCorners || getCropCorners(crop);
+        const point = corners[corner];
+        return (
+            <button
+                key={corner}
+                type="button"
+                aria-label={label}
+                className="absolute z-30 w-5 h-5 -ml-2.5 -mt-2.5 rounded-full border-2 border-white bg-amber-500 shadow-md touch-none cursor-move"
+                style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                onPointerDown={(event) => {
+                    event.preventDefault();
+                    activeCropSideRef.current = corner;
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    updateCropCornerFromPointer(corner, event);
+                }}
+                onPointerMove={(event) => {
+                    if (activeCropSideRef.current === corner) updateCropCornerFromPointer(corner, event);
+                }}
+                onPointerUp={() => {
+                    activeCropSideRef.current = null;
+                }}
+                onPointerCancel={() => {
+                    activeCropSideRef.current = null;
+                }}
+            />
+        );
+    };
+
     const renderAnnotations = () => annotations.map(annotation => (
         annotation.type === 'box' ? (
             <div
@@ -320,6 +446,22 @@ const PrintIdCard = () => {
             </div>
         )
     ));
+
+    const activeCropCorners = cropCorners || getCropCorners(crop);
+    const cropPolygon = `polygon(${[
+        activeCropCorners.topLeft,
+        activeCropCorners.topRight,
+        activeCropCorners.bottomRight,
+        activeCropCorners.bottomLeft
+    ].map(({ x, y }) => `${x}% ${y}%`).join(', ')})`;
+    const perspectiveTransform = getPerspectiveTransform(
+        activeCropCorners,
+        cropImageContentRef.current?.clientWidth,
+        cropImageContentRef.current?.clientHeight
+    );
+    const cropContentStyle = cropOutputMode === 'perspective'
+        ? { transform: perspectiveTransform, transformOrigin: 'top left' }
+        : { clipPath: cropPolygon };
 
     // When clicking Print button -> Show custom Alert UI confirmation
     const handleInitiatePrint = () => {
@@ -780,6 +922,7 @@ const PrintIdCard = () => {
                                     type="button"
                                     onClick={() => {
                                         setCrop({ top: 0, right: 0, bottom: 0, left: 0 });
+                                        setCropCorners(null);
                                         setIsCropMode(false);
                                         setRotation(0);
                                         setBrightness(100);
@@ -791,6 +934,32 @@ const PrintIdCard = () => {
                                     className="text-[11px] font-semibold text-violet-700 hover:text-violet-900"
                                 >
                                     កំណត់ឡើងវិញ
+                                </button>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span className="font-semibold text-slate-700">ទម្រង់កាត់ជ្រុង៖</span>
+                                <button
+                                    type="button"
+                                    aria-pressed={cropOutputMode === 'polygon'}
+                                    onClick={() => setCropOutputMode('polygon')}
+                                    className={`rounded-lg border px-3 py-1.5 font-semibold ${cropOutputMode === 'polygon'
+                                        ? 'border-violet-400 bg-violet-100 text-violet-800'
+                                        : 'border-slate-200 bg-white text-slate-600'
+                                        }`}
+                                >
+                                    កាត់តាមរាងដែលទាញ
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-pressed={cropOutputMode === 'perspective'}
+                                    onClick={() => setCropOutputMode('perspective')}
+                                    className={`rounded-lg border px-3 py-1.5 font-semibold ${cropOutputMode === 'perspective'
+                                        ? 'border-violet-400 bg-violet-100 text-violet-800'
+                                        : 'border-slate-200 bg-white text-slate-600'
+                                        }`}
+                                >
+                                    កែឲ្យត្រង់ជាចតុកោណ
                                 </button>
                             </div>
 
@@ -818,6 +987,7 @@ const PrintIdCard = () => {
                                                     ...current,
                                                     [side]: Math.min(Number(event.target.value), 99 - current[oppositeSide])
                                                 }));
+                                                setCropCorners(null);
                                             }}
                                             className="w-full accent-violet-600"
                                         />
@@ -1094,39 +1264,57 @@ const PrintIdCard = () => {
                                             transition: 'transform 0.2s ease-out',
                                             position: 'relative',
                                             display: 'inline-block',
-                                            maxWidth: '100%'
+                                            maxWidth: '100%',
+                                            overflow: cropOutputMode === 'perspective' ? 'hidden' : undefined
                                         }}
                                         ref={cropImageFrameRef}
                                     >
-                                        <img
-                                            src={imageSrc}
-                                            alt="ID Card Preview"
-                                            className={`block max-w-full h-auto object-contain transition-all ${showBorder
-                                                ? 'border-2 border-dashed border-slate-400 p-0.5'
-                                                : 'shadow-xs'
-                                                }`}
-                                            style={{
-                                                maxHeight: '400px',
-                                                clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
-                                                filter: `brightness(${brightness}%) contrast(${contrast}%) drop-shadow(0 2px ${shadow}px rgba(0, 0, 0, 0.35))`
-                                            }}
-                                        />
-                                        {renderAnnotations()}
+                                        <div style={{
+                                            ...cropContentStyle,
+                                            position: 'relative',
+                                            display: 'inline-block',
+                                            maxWidth: '100%'
+                                        }} ref={cropImageContentRef}>
+                                            <img
+                                                src={imageSrc}
+                                                alt="ID Card Preview"
+                                                onLoad={() => setCropImageLayoutVersion(version => version + 1)}
+                                                className={`block max-w-full h-auto object-contain transition-all ${showBorder
+                                                    ? 'border-2 border-dashed border-slate-400 p-0.5'
+                                                    : 'shadow-xs'
+                                                    }`}
+                                                style={{
+                                                    maxHeight: '400px',
+                                                    filter: `brightness(${brightness}%) contrast(${contrast}%) drop-shadow(0 2px ${shadow}px rgba(0, 0, 0, 0.35))`
+                                                }}
+                                            />
+                                            {renderAnnotations()}
+                                        </div>
                                         {isCropMode && (
                                             <div className="absolute inset-0 z-20" aria-label="Crop image edges">
-                                                <div
-                                                    className="absolute border-2 border-dashed border-amber-400 bg-amber-300/10 pointer-events-none"
-                                                    style={{
-                                                        top: `${crop.top}%`,
-                                                        right: `${crop.right}%`,
-                                                        bottom: `${crop.bottom}%`,
-                                                        left: `${crop.left}%`
-                                                    }}
-                                                />
-                                                {renderCropHandle('top', 'h-3 cursor-ns-resize', 'កាត់ពីលើ')}
-                                                {renderCropHandle('bottom', 'h-3 cursor-ns-resize', 'កាត់ពីក្រោម')}
-                                                {renderCropHandle('left', 'w-3 cursor-ew-resize', 'កាត់ពីឆ្វេង')}
-                                                {renderCropHandle('right', 'w-3 cursor-ew-resize', 'កាត់ពីស្តាំ')}
+                                                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                                    <polygon
+                                                        points={[activeCropCorners.topLeft, activeCropCorners.topRight, activeCropCorners.bottomRight, activeCropCorners.bottomLeft]
+                                                            .map(({ x, y }) => `${x},${y}`).join(' ')}
+                                                        fill="rgba(251, 191, 36, 0.1)"
+                                                        stroke="#f59e0b"
+                                                        strokeWidth="0.6"
+                                                        strokeDasharray="2 1"
+                                                        vectorEffect="non-scaling-stroke"
+                                                    />
+                                                </svg>
+                                                {!cropCorners && (
+                                                    <>
+                                                        {renderCropHandle('top', 'h-3 cursor-ns-resize', 'កាត់ពីលើ')}
+                                                        {renderCropHandle('bottom', 'h-3 cursor-ns-resize', 'កាត់ពីក្រោម')}
+                                                        {renderCropHandle('left', 'w-3 cursor-ew-resize', 'កាត់ពីឆ្វេង')}
+                                                        {renderCropHandle('right', 'w-3 cursor-ew-resize', 'កាត់ពីស្តាំ')}
+                                                    </>
+                                                )}
+                                                {renderCropCornerHandle('topLeft', 'កែជ្រុងលើឆ្វេង')}
+                                                {renderCropCornerHandle('topRight', 'កែជ្រុងលើស្តាំ')}
+                                                {renderCropCornerHandle('bottomRight', 'កែជ្រុងក្រោមស្តាំ')}
+                                                {renderCropCornerHandle('bottomLeft', 'កែជ្រុងក្រោមឆ្វេង')}
                                             </div>
                                         )}
                                     </div>
@@ -1200,10 +1388,16 @@ const PrintIdCard = () => {
                                         transform: `rotate(${rotation}deg) scale(${scalePercent / 100})`,
                                         position: 'relative',
                                         display: 'inline-block',
-                                        maxWidth: '100%'
+                                        maxWidth: '100%',
+                                        overflow: cropOutputMode === 'perspective' ? 'hidden' : undefined
                                     }}
                                 >
-                                    <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+                                    <div style={{
+                                        ...cropContentStyle,
+                                        position: 'relative',
+                                        display: 'inline-block',
+                                        maxWidth: '100%'
+                                    }}>
                                         <img
                                             src={imageSrc}
                                             alt={`Print ID Card Page ${pageIndex + 1}`}
@@ -1211,7 +1405,6 @@ const PrintIdCard = () => {
                                                 }`}
                                             style={{
                                                 maxHeight: '400px',
-                                                clipPath: `inset(${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%)`,
                                                 filter: `brightness(${brightness}%) contrast(${contrast}%) drop-shadow(0 2px ${shadow}px rgba(0, 0, 0, 0.35))`
                                             }}
                                         />
