@@ -865,14 +865,14 @@
                         <input type="number" id="inpPrincipal" class="form-input" placeholder="ឧ. 1000"
                             step="any" min="0" required>
                     </div>
-                    <div class="chips-scroll">
-                        <button type="button" class="chip" onclick="setPrincipal(100)">$100</button>
-                        <button type="button" class="chip" onclick="setPrincipal(200)">$200</button>
-                        <button type="button" class="chip" onclick="setPrincipal(300)">$300</button>
-                        <button type="button" class="chip" onclick="setPrincipal(500)">$500</button>
-                        <button type="button" class="chip active" onclick="setPrincipal(1000)">$1,000</button>
-                        <button type="button" class="chip" onclick="setPrincipal(2000)">$2,000</button>
-                        <button type="button" class="chip" onclick="setPrincipal(5000)">$5,000</button>
+                    <div class="chips-scroll" id="principalChips">
+                        <button type="button" class="chip" data-principal="100" onclick="setPrincipal(100)">$100</button>
+                        <button type="button" class="chip" data-principal="200" onclick="setPrincipal(200)">$200</button>
+                        <button type="button" class="chip" data-principal="300" onclick="setPrincipal(300)">$300</button>
+                        <button type="button" class="chip" data-principal="500" onclick="setPrincipal(500)">$500</button>
+                        <button type="button" class="chip active" data-principal="1000" onclick="setPrincipal(1000)">$1,000</button>
+                        <button type="button" class="chip" data-principal="2000" onclick="setPrincipal(2000)">$2,000</button>
+                        <button type="button" class="chip" data-principal="5000" onclick="setPrincipal(5000)">$5,000</button>
                     </div>
                 </div>
 
@@ -921,12 +921,12 @@
                             required>
                     </div>
                     <div class="chips-scroll" id="durationChips">
-                        <button type="button" class="chip" onclick="setDuration(1)">1 ខែ</button>
-                        <button type="button" class="chip" onclick="setDuration(2)">2 ខែ</button>
-                        <button type="button" class="chip" onclick="setDuration(3)">3 ខែ</button>
-                        <button type="button" class="chip active" onclick="setDuration(4)">4 ខែ</button>
-                        <button type="button" class="chip" onclick="setDuration(6)">6 ខែ</button>
-                        <button type="button" class="chip" onclick="setDuration(12)">12 ខែ</button>
+                        <button type="button" class="chip" data-duration="1" onclick="setDuration(1)">1 ខែ</button>
+                        <button type="button" class="chip" data-duration="2" onclick="setDuration(2)">2 ខែ</button>
+                        <button type="button" class="chip" data-duration="3" onclick="setDuration(3)">3 ខែ</button>
+                        <button type="button" class="chip active" data-duration="4" onclick="setDuration(4)">4 ខែ</button>
+                        <button type="button" class="chip" data-duration="6" onclick="setDuration(6)">6 ខែ</button>
+                        <button type="button" class="chip" data-duration="12" onclick="setDuration(12)">12 ខែ</button>
                     </div>
                 </div>
 
@@ -1164,7 +1164,7 @@
         // Quick Preset Setters
         function setPrincipal(val) {
             document.getElementById('inpPrincipal').value = val;
-            updateChips('inpPrincipal', val);
+            updateChips('principalChips', 'principal', val);
             calculate();
         }
 
@@ -1175,7 +1175,20 @@
 
         function setDuration(val) {
             document.getElementById('inpDuration').value = val;
+            updateDurationChips(val);
             calculate();
+        }
+
+        function updateDurationChips(value) {
+            document.querySelectorAll('#durationChips .chip').forEach(chip => {
+                chip.classList.toggle('active', Number(chip.dataset.duration) === Number(value));
+            });
+        }
+
+        function updateChips(containerId, dataAttribute, value) {
+            document.querySelectorAll(`#${containerId} .chip`).forEach(chip => {
+                chip.classList.toggle('active', Number(chip.dataset[dataAttribute]) === Number(value));
+            });
         }
 
         function setDurationUnit(unit) {
@@ -1186,30 +1199,31 @@
             const chipsBox = document.getElementById('durationChips');
             if (unit === 'days') {
                 chipsBox.innerHTML = `
-                    <button type="button" class="chip" onclick="setDuration(30)">30 ថ្ងៃ</button>
-                    <button type="button" class="chip" onclick="setDuration(60)">60 ថ្ងៃ</button>
-                    <button type="button" class="chip" onclick="setDuration(90)">90 ថ្ងៃ</button>
-                    <button type="button" class="chip active" onclick="setDuration(120)">120 ថ្ងៃ</button>
-                    <button type="button" class="chip" onclick="setDuration(180)">180 ថ្ងៃ</button>
+                    <button type="button" class="chip" data-duration="30" onclick="setDuration(30)">30 ថ្ងៃ</button>
+                    <button type="button" class="chip" data-duration="60" onclick="setDuration(60)">60 ថ្ងៃ</button>
+                    <button type="button" class="chip" data-duration="90" onclick="setDuration(90)">90 ថ្ងៃ</button>
+                    <button type="button" class="chip active" data-duration="120" onclick="setDuration(120)">120 ថ្ងៃ</button>
+                    <button type="button" class="chip" data-duration="180" onclick="setDuration(180)">180 ថ្ងៃ</button>
                 `;
                 document.getElementById('inpDuration').value = '120';
             } else {
                 chipsBox.innerHTML = `
-                    <button type="button" class="chip" onclick="setDuration(1)">1 ខែ</button>
-                    <button type="button" class="chip" onclick="setDuration(2)">2 ខែ</button>
-                    <button type="button" class="chip" onclick="setDuration(3)">3 ខែ</button>
-                    <button type="button" class="chip active" onclick="setDuration(4)">4 ខែ</button>
-                    <button type="button" class="chip" onclick="setDuration(6)">6 ខែ</button>
-                    <button type="button" class="chip" onclick="setDuration(12)">12 ខែ</button>
+                    <button type="button" class="chip" data-duration="1" onclick="setDuration(1)">1 ខែ</button>
+                    <button type="button" class="chip" data-duration="2" onclick="setDuration(2)">2 ខែ</button>
+                    <button type="button" class="chip" data-duration="3" onclick="setDuration(3)">3 ខែ</button>
+                    <button type="button" class="chip active" data-duration="4" onclick="setDuration(4)">4 ខែ</button>
+                    <button type="button" class="chip" data-duration="6" onclick="setDuration(6)">6 ខែ</button>
+                    <button type="button" class="chip" data-duration="12" onclick="setDuration(12)">12 ខែ</button>
                 `;
                 document.getElementById('inpDuration').value = '4';
             }
+            updateDurationChips(document.getElementById('inpDuration').value);
             calculate();
         }
 
-        function updateChips(inputId, val) {
-            // Highlight visual feedback
-        }
+        document.getElementById('inpDuration').addEventListener('input', event => {
+            updateDurationChips(event.target.value);
+        });
 
         function parseRate(str) {
             if (!str) return 0;
@@ -1221,6 +1235,10 @@
         function formatMoney(num) {
             return '$' + Number(num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+
+        document.getElementById('inpPrincipal').addEventListener('input', event => {
+            updateChips('principalChips', 'principal', event.target.value);
+        });
 
         // Calculate Schedule exactly as calculate/schedule-1
         function calculate() {
