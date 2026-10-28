@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private PermissionRequest pendingCameraRequest;
     private byte[] pendingImage;
+    private boolean pendingScheduleImage;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -133,13 +134,18 @@ public class MainActivity extends AppCompatActivity {
             }
         } else if (requestCode == STORAGE_PERMISSION_REQUEST) {
             byte[] image = pendingImage;
+            boolean scheduleImage = pendingScheduleImage;
             pendingImage = null;
+            pendingScheduleImage = false;
             boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            boolean saved = granted && image != null && saveImageToGallery(image);
+            boolean saved = granted && image != null && saveImageToGallery(
+                    image,
+                    scheduleImage ? "payment-schedule-" : "id-card-"
+            );
             if (!granted) {
                 Toast.makeText(this, "មិនទាន់មានសិទ្ធិរក្សាទុករូបភាពទេ", Toast.LENGTH_LONG).show();
             }
-            notifyImageSaveResult(saved);
+            notifyImageSaveResult(saved, scheduleImage);
         }
     }
 
@@ -153,9 +159,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveCapturedImage(String dataUrl) {
+        saveImage(dataUrl, false);
+    }
+
+    private void saveScheduleImage(String dataUrl) {
+        saveImage(dataUrl, true);
+    }
+
+    private void saveImage(String dataUrl, boolean scheduleImage) {
         if (dataUrl == null || !dataUrl.startsWith("data:image/jpeg;base64,")) {
             Toast.makeText(this, "ទម្រង់រូបភាពមិនត្រឹមត្រូវ", Toast.LENGTH_LONG).show();
-            notifyImageSaveResult(false);
+            notifyImageSaveResult(false, scheduleImage);
             return;
         }
 
@@ -164,12 +178,12 @@ public class MainActivity extends AppCompatActivity {
             image = Base64.decode(dataUrl.substring(dataUrl.indexOf(',') + 1), Base64.DEFAULT);
         } catch (IllegalArgumentException error) {
             Toast.makeText(this, "មិនអាចអានទិន្នន័យរូបភាពបានទេ", Toast.LENGTH_LONG).show();
-            notifyImageSaveResult(false);
+            notifyImageSaveResult(false, scheduleImage);
             return;
         }
         if (image.length == 0) {
             Toast.makeText(this, "រូបភាពទទេ មិនអាចរក្សាទុកបានទេ", Toast.LENGTH_LONG).show();
-            notifyImageSaveResult(false);
+            notifyImageSaveResult(false, scheduleImage);
             return;
         }
 
@@ -177,14 +191,18 @@ public class MainActivity extends AppCompatActivity {
                 && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             pendingImage = image;
+            pendingScheduleImage = scheduleImage;
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_REQUEST);
             return;
         }
-        notifyImageSaveResult(saveImageToGallery(image));
+        notifyImageSaveResult(
+                saveImageToGallery(image, scheduleImage ? "payment-schedule-" : "id-card-"),
+                scheduleImage
+        );
     }
 
-    private boolean saveImageToGallery(byte[] image) {
-        String fileName = "id-card-" + System.currentTimeMillis() + ".jpg";
+    private boolean saveImageToGallery(byte[] image, String filePrefix) {
+        String fileName = filePrefix + System.currentTimeMillis() + ".jpg";
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
@@ -224,12 +242,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void notifyImageSaveResult(boolean success) {
+    private void notifyImageSaveResult(boolean success, boolean scheduleImage) {
         if (webView == null) {
             return;
         }
-        String script = "document.getElementById('cameraFrame')?.contentWindow?.postMessage("
-                + "{ type: 'camera-image-save-result', success: " + success + " }, '*')";
+        String script = scheduleImage
+                ? "window.dispatchEvent(new CustomEvent('schedule-image-save-result', { detail: { success: " + success + " } }))"
+                : "document.getElementById('cameraFrame')?.contentWindow?.postMessage("
+                        + "{ type: 'camera-image-save-result', success: " + success + " }, '*')";
         webView.post(() -> webView.evaluateJavascript(script, null));
     }
 
@@ -274,6 +294,11 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void saveImage(String dataUrl) {
             activity.runOnUiThread(() -> activity.saveCapturedImage(dataUrl));
+        }
+
+        @JavascriptInterface
+        public void saveScheduleImage(String dataUrl) {
+            activity.runOnUiThread(() -> activity.saveScheduleImage(dataUrl));
         }
     }
 }

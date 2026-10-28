@@ -71,7 +71,11 @@ struct WebViewContainer: UIViewRepresentable {
             } else if action == "saveImage",
                       let dataUrl = dict["dataUrl"] as? String,
                       let webView = message.webView {
-                saveImage(dataUrl, in: webView)
+                saveImage(dataUrl, in: webView, isScheduleImage: false)
+            } else if action == "saveScheduleImage",
+                      let dataUrl = dict["dataUrl"] as? String,
+                      let webView = message.webView {
+                saveImage(dataUrl, in: webView, isScheduleImage: true)
             }
         }
 
@@ -89,19 +93,19 @@ struct WebViewContainer: UIViewRepresentable {
             decisionHandler(.grant)
         }
 
-        private func saveImage(_ dataUrl: String, in webView: WKWebView) {
+        private func saveImage(_ dataUrl: String, in webView: WKWebView, isScheduleImage: Bool) {
             let prefix = "data:image/jpeg;base64,"
             guard dataUrl.hasPrefix(prefix),
                   let imageData = Data(base64Encoded: String(dataUrl.dropFirst(prefix.count))),
                   let image = UIImage(data: imageData) else {
-                notifyImageSaveResult(false, in: webView)
+                notifyImageSaveResult(false, in: webView, isScheduleImage: isScheduleImage)
                 return
             }
 
             PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self, weak webView] status in
                 guard let self, let webView else { return }
                 guard status == .authorized || status == .limited else {
-                    self.notifyImageSaveResult(false, in: webView)
+                    self.notifyImageSaveResult(false, in: webView, isScheduleImage: isScheduleImage)
                     return
                 }
 
@@ -109,20 +113,22 @@ struct WebViewContainer: UIViewRepresentable {
                     PHAssetChangeRequest.creationRequestForAsset(from: image)
                 }) { success, error in
                     if let error {
-                        NSLog("Unable to save captured ID card image: %@", error.localizedDescription)
+                        NSLog("Unable to save captured image: %@", error.localizedDescription)
                     }
-                    self.notifyImageSaveResult(success, in: webView)
+                    self.notifyImageSaveResult(success, in: webView, isScheduleImage: isScheduleImage)
                 }
             }
         }
 
-        private func notifyImageSaveResult(_ success: Bool, in webView: WKWebView) {
-            let script = "document.getElementById('cameraFrame')?.contentWindow?.postMessage("
-                + "{ type: 'camera-image-save-result', success: \(success) }, '*')"
+        private func notifyImageSaveResult(_ success: Bool, in webView: WKWebView, isScheduleImage: Bool) {
+            let script = isScheduleImage
+                ? "window.dispatchEvent(new CustomEvent('schedule-image-save-result', { detail: { success: \(success) } }))"
+                : "document.getElementById('cameraFrame')?.contentWindow?.postMessage("
+                    + "{ type: 'camera-image-save-result', success: \(success) }, '*')"
             DispatchQueue.main.async {
                 webView.evaluateJavaScript(script) { _, error in
                     if let error {
-                        NSLog("Unable to report ID card image save result: %@", error.localizedDescription)
+                        NSLog("Unable to report image save result: %@", error.localizedDescription)
                     }
                 }
             }
