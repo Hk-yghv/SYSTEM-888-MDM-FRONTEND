@@ -47,6 +47,10 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        [hidden] {
+            display: none !important;
+        }
+
         body {
             background-color: var(--bg-body);
             color: var(--text-main);
@@ -105,6 +109,123 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .app-back-btn {
+            display: none;
+            flex: 0 0 auto;
+        }
+
+        .app-back-btn.visible {
+            display: flex;
+        }
+
+        .home-screen {
+            max-width: 760px;
+            min-height: calc(100dvh - 92px);
+            margin: 0 auto;
+            padding: 28px 18px max(32px, env(safe-area-inset-bottom));
+        }
+
+        .home-welcome {
+            margin-bottom: 22px;
+        }
+
+        .home-welcome h2 {
+            font-size: 21px;
+            font-weight: 800;
+            line-height: 1.45;
+        }
+
+        .home-welcome p {
+            margin-top: 6px;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .home-card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .home-card {
+            min-height: 168px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            background: var(--bg-card);
+            color: var(--text-main);
+            text-align: left;
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+        }
+
+        .home-card:active {
+            transform: scale(0.98);
+        }
+
+        .home-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .home-card-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            border-radius: 16px;
+            background: var(--primary-bg);
+            font-size: 28px;
+        }
+
+        .home-card-copy strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .home-card-copy span {
+            display: block;
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 420px) {
+            .home-card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .home-card {
+                min-height: 142px;
+            }
+        }
+
+        .camera-screen {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        .camera-frame {
+            display: block;
+            width: 100%;
+            height: calc(100dvh - 92px - env(safe-area-inset-top));
+            min-height: 560px;
+            border: 0;
+            border-radius: 18px;
+            background: #07111f;
+            box-shadow: var(--shadow-md);
         }
 
         .icon-btn {
@@ -691,9 +812,10 @@
     <!-- App Header -->
     <header class="app-header">
         <div class="header-title-box">
+            <button class="icon-btn app-back-btn" id="appBackButton" type="button" aria-label="ត្រឡប់ទៅទំព័រដើម">‹</button>
             <div class="header-text">
                 <h1>MDM Calculate</h1>
-                <p>គណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់</p>
+                <p id="appSubtitle">សូមជ្រើសរើសមុខងារ</p>
             </div>
         </div>
         <div class="header-actions">
@@ -703,7 +825,30 @@
         </div>
     </header>
 
-    <div class="container">
+    <section class="home-screen" id="homeScreen" aria-label="ជ្រើសរើសមុខងារ">
+        <div class="home-welcome">
+            <h2>សូមស្វាគមន៍</h2>
+            <p>ជ្រើសរើសមុខងារដែលអ្នកចង់ប្រើ</p>
+        </div>
+        <div class="home-card-grid">
+            <button class="home-card" type="button" data-app-screen="calculator">
+                <span class="home-card-icon" aria-hidden="true">🧮</span>
+                <span class="home-card-copy">
+                    <strong>គណនា</strong>
+                    <span>គណនាការប្រាក់ និងកាលវិភាគបង់ប្រាក់</span>
+                </span>
+            </button>
+            <button class="home-card" type="button" data-app-screen="camera">
+                <span class="home-card-icon" aria-hidden="true">🪪</span>
+                <span class="home-card-copy">
+                    <strong>ថតអត្តសញ្ញាណប័ណ្ណ</strong>
+                    <span>ថត កាត់រូប និងរក្សាទុកក្នុង Photos</span>
+                </span>
+            </button>
+        </div>
+    </section>
+
+    <div class="container" id="calculatorScreen" hidden>
 
         <!-- Calculator Input Card -->
         <div class="card">
@@ -876,6 +1021,16 @@
         </div>
     </div>
 
+    <section class="camera-screen" id="cameraScreen" aria-label="ថតអត្តសញ្ញាណប័ណ្ណ" hidden>
+        <iframe
+            class="camera-frame"
+            id="cameraFrame"
+            src="id-card-camera.html"
+            title="ថតអត្តសញ្ញាណប័ណ្ណ"
+            allow="camera; accelerometer; gyroscope"
+        ></iframe>
+    </section>
+
     <!-- iOS Add to Home Screen Modal -->
     <div id="iosModal" class="ios-modal-overlay" onclick="if(event.target===this) toggleIosModal(false)">
         <div class="ios-modal-card">
@@ -946,6 +1101,50 @@
                 else modal.classList.remove('active');
             }
         }
+
+        const appBackButton = document.getElementById('appBackButton');
+        const homeScreen = document.getElementById('homeScreen');
+        const calculatorScreen = document.getElementById('calculatorScreen');
+        const cameraScreen = document.getElementById('cameraScreen');
+        const cameraFrame = document.getElementById('cameraFrame');
+        let currentAppScreen = 'home';
+
+        function setAppScreen(screen) {
+            const nextScreen = ['home', 'calculator', 'camera'].includes(screen) ? screen : 'home';
+            const showCamera = nextScreen === 'camera';
+            homeScreen.hidden = nextScreen !== 'home';
+            calculatorScreen.hidden = nextScreen !== 'calculator';
+            cameraScreen.hidden = !showCamera;
+            currentAppScreen = nextScreen;
+            appBackButton.classList.toggle('visible', nextScreen !== 'home');
+            document.getElementById('appSubtitle').textContent = nextScreen === 'camera'
+                ? 'ថតរូបអត្តសញ្ញាណប័ណ្ណ'
+                : nextScreen === 'calculator'
+                    ? 'គណនាការប្រាក់ & កាលវិភាគបង់ប្រាក់'
+                    : 'សូមជ្រើសរើសមុខងារ';
+            document.getElementById('btnShareApp').hidden = nextScreen !== 'calculator';
+            if (nextScreen !== 'camera') {
+                cameraFrame.contentWindow?.postMessage({ type: 'camera-stop' }, '*');
+            }
+        }
+
+        document.querySelectorAll('[data-app-screen]').forEach(button => {
+            button.addEventListener('click', () => setAppScreen(button.dataset.appScreen));
+        });
+
+        appBackButton.addEventListener('click', () => setAppScreen('home'));
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && currentAppScreen !== 'home') {
+                setAppScreen('home');
+            }
+        });
+
+        window.handleAppBack = () => {
+            if (currentAppScreen === 'home') return false;
+            setAppScreen('home');
+            return true;
+        };
 
         // Theme toggle
         const btnTheme = document.getElementById('btnThemeToggle');

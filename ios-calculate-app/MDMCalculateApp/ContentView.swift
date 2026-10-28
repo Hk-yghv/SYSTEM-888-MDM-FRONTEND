@@ -1,5 +1,7 @@
 import SwiftUI
 import WebKit
+import Photos
+import UIKit
 
 struct ContentView: View {
     var body: some View {
@@ -24,6 +26,7 @@ struct WebViewContainer: UIViewRepresentable {
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
         webView.scrollView.bounces = true
         webView.isOpaque = false
         webView.backgroundColor = UIColor(red: 248/255, green: 250/255, blue: 252/255, alpha: 1.0)
@@ -42,7 +45,7 @@ struct WebViewContainer: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 
-    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         var parent: WebViewContainer
 
         init(_ parent: WebViewContainer) {
@@ -64,6 +67,63 @@ struct WebViewContainer: UIViewRepresentable {
                 let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
                 if let rootVC = UIApplication.shared.windows.first?.rootViewController {
                     rootVC.present(activityVC, animated: true, completion: nil)
+                }
+            } else if action == "saveImage",
+                      let dataUrl = dict["dataUrl"] as? String,
+                      let webView = message.webView {
+                saveImage(dataUrl, in: webView)
+            }
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo,
+            type: WKMediaCaptureType,
+            decisionHandler: @escaping (WKPermissionDecision) -> Void
+        ) {
+            guard origin.protocol == "file", type == .camera else {
+                decisionHandler(.deny)
+                return
+            }
+            decisionHandler(.grant)
+        }
+
+        private func saveImage(_ dataUrl: String, in webView: WKWebView) {
+            let prefix = "data:image/jpeg;base64,"
+            guard dataUrl.hasPrefix(prefix),
+                  let imageData = Data(base64Encoded: String(dataUrl.dropFirst(prefix.count))),
+                  let image = UIImage(data: imageData) else {
+                notifyImageSaveResult(false, in: webView)
+                return
+            }
+
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self, weak webView] status in
+                guard let self, let webView else { return }
+                guard status == .authorized || status == .limited else {
+                    self.notifyImageSaveResult(false, in: webView)
+                    return
+                }
+
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAsset(from: image)
+                }) { success, error in
+                    if let error {
+                        NSLog("Unable to save captured ID card image: %@", error.localizedDescription)
+                    }
+                    self.notifyImageSaveResult(success, in: webView)
+                }
+            }
+        }
+
+        private func notifyImageSaveResult(_ success: Bool, in webView: WKWebView) {
+            let script = "document.getElementById('cameraFrame')?.contentWindow?.postMessage("
+                + "{ type: 'camera-image-save-result', success: \(success) }, '*')"
+            DispatchQueue.main.async {
+                webView.evaluateJavaScript(script) { _, error in
+                    if let error {
+                        NSLog("Unable to report ID card image save result: %@", error.localizedDescription)
+                    }
                 }
             }
         }

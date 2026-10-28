@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="km">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="ថត និងរក្សាទុករូបភាពអត្តសញ្ញាណប័ណ្ណតាមទូរស័ព្ទ">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>ថតអត្តសញ្ញាណប័ណ្ណ</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, "Noto Sans Khmer", "Khmer OS System", system-ui, sans-serif;
+      background: #07111f;
+      color: #f3f6fb;
+      font-synthesis: none;
+      --muted: #9aa8bb;
+      --red: #ff5263;
+      --green: #28d99a;
+      --amber: #ffbd5a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 50% -20%, rgba(32, 90, 150, .28), transparent 55%),
+        #07111f;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:focus-visible {
+      outline: 3px solid #8cc8ff;
+      outline-offset: 3px;
+    }
+
+    .app {
+      width: min(100%, 760px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 20px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(151, 190, 230, .2);
+      border-radius: 14px;
+      background: rgba(25, 48, 73, .8);
+      color: #a9d8ff;
+      font-size: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(18px, 4vw, 22px);
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .camera-card {
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid rgba(148, 170, 197, .16);
+      border-radius: 24px;
+      background: #0c1726;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+
+    .camera-stage {
+      position: relative;
+      height: min(66svh, 570px);
+      min-height: 350px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(ellipse, rgba(33, 56, 79, .58), transparent 70%),
+        #080f19;
+    }
+
+    video {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .camera-stage::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(2, 8, 15, .16), transparent 25%, transparent 72%, rgba(2, 8, 15, .38));
+    }
+
+    .camera-message {
+      z-index: 1;
+      max-width: 320px;
+      padding: 20px;
+      color: #cfdae8;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .camera-message[hidden] { display: none; }
+
+    .scan-area {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .level-indicator {
+      position: absolute;
+      z-index: 3;
+      top: 16px;
+      left: 50%;
+      min-width: 220px;
+      padding: 9px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 15px;
+      background: rgba(5, 12, 21, .82);
+      color: #dce5ef;
+      transform: translateX(-50%);
+      backdrop-filter: blur(10px);
+    }
+
+    .level-indicator[hidden] { display: none; }
+
+    .level-gauge {
+      position: relative;
+      width: 70px;
+      height: 28px;
+      flex: 0 0 auto;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .level-gauge::before {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1px;
+      height: 16px;
+      background: rgba(255, 255, 255, .52);
+      content: "";
+      transform: translate(-50%, -50%);
+    }
+
+    .level-line {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 42px;
+      height: 3px;
+      border-radius: 3px;
+      background: var(--amber);
+      box-shadow: 0 0 9px rgba(255, 189, 90, .45);
+      transform: translate(-50%, -50%);
+      transition: transform .12s ease, background .15s ease;
+    }
+
+    .level-indicator.levelled .level-line {
+      background: var(--green);
+      box-shadow: 0 0 9px rgba(40, 217, 154, .55);
+    }
+
+    .level-copy {
+      min-width: 110px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .level-degrees {
+      color: #fff;
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .level-text {
+      color: #c1ccda;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .level-indicator.levelled .level-text { color: #9df3cf; }
+    .level-indicator.unavailable .level-line { background: #8997aa; box-shadow: none; }
+
+    .level-retry {
+      padding: 5px 8px;
+      border: 1px solid rgba(152, 174, 202, .24);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .06);
+      color: #e3eaf3;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: auto;
+    }
+
+    .level-retry[hidden] { display: none; }
+
+    .guide {
+      position: relative;
+      width: min(84%, 540px);
+      aspect-ratio: 1.586 / 1;
+      border: 2px solid var(--red);
+      border-radius: 15px;
+      background: rgba(255, 82, 99, .035);
+      box-shadow: 0 0 0 999px rgba(2, 8, 15, .38), 0 0 22px rgba(255, 82, 99, .13);
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .guide::before,
+    .guide::after {
+      position: absolute;
+      content: "";
+      inset: 11px;
+      border: solid rgba(255, 255, 255, .18);
+      border-width: 1px 0;
+    }
+
+    .guide::after {
+      inset: 11px auto 11px 50%;
+      border-width: 0 0 0 1px;
+    }
+
+    .corner {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: var(--red);
+      border-style: solid;
+      transition: border-color .18s ease;
+    }
+
+    .corner.tl { top: -3px; left: -3px; border-width: 4px 0 0 4px; border-radius: 13px 0 0; }
+    .corner.tr { top: -3px; right: -3px; border-width: 4px 4px 0 0; border-radius: 0 13px 0 0; }
+    .corner.bl { bottom: -3px; left: -3px; border-width: 0 0 4px 4px; border-radius: 0 0 0 13px; }
+    .corner.br { right: -3px; bottom: -3px; border-width: 0 4px 4px 0; border-radius: 0 0 13px; }
+
+    .scan-label {
+      position: absolute;
+      top: calc(50% + min(42vw, 270px) / 1.586 + 14px);
+      left: 50%;
+      width: max-content;
+      max-width: calc(100% - 32px);
+      padding: 8px 13px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 99px;
+      background: rgba(5, 12, 21, .76);
+      color: #dce5ef;
+      font-size: 12px;
+      text-align: center;
+      transform: translateX(-50%);
+      backdrop-filter: blur(8px);
+    }
+
+    .camera-footer {
+      min-height: 77px;
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #c6d0dd;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #77869a;
+      box-shadow: 0 0 0 4px rgba(119, 134, 154, .12);
+    }
+
+    .status-dot.active { background: var(--red); box-shadow: 0 0 0 4px rgba(255, 82, 99, .12); }
+
+    .camera-switch,
+    .secondary-button {
+      padding: 10px 14px;
+      border: 1px solid rgba(152, 174, 202, .2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .045);
+      color: #e3eaf3;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .camera-switch:disabled { opacity: .45; cursor: not-allowed; }
+
+    .actions {
+      width: 100%;
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .capture-button,
+    .primary-button {
+      min-height: 54px;
+      padding: 0 28px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #24c990, #18aa78);
+      color: #042419;
+      font-size: 16px;
+      font-weight: 750;
+      box-shadow: 0 10px 28px rgba(24, 170, 120, .2);
+      transition: opacity .16s ease, transform .16s ease;
+    }
+
+    .capture-button:disabled {
+      background: #243345;
+      color: #78889b;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .capture-button:not(:disabled):active,
+    .primary-button:active { transform: translateY(1px) scale(.99); }
+
+    .help {
+      max-width: 460px;
+      margin: 16px 8px 0;
+      color: #8190a3;
+      font-size: 12px;
+      line-height: 1.8;
+      text-align: center;
+    }
+
+    .error-message {
+      width: 100%;
+      margin: 14px 0 0;
+      color: #ff9aa4;
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .error-message:empty { display: none; }
+
+    .modal {
+      position: fixed;
+      z-index: 5;
+      inset: 0;
+      padding: 20px;
+      display: grid;
+      place-items: center;
+      background: rgba(1, 5, 11, .82);
+      backdrop-filter: blur(12px);
+    }
+
+    .modal[hidden] { display: none; }
+
+    .preview-card {
+      width: min(100%, 620px);
+      padding: 18px;
+      border: 1px solid rgba(152, 174, 202, .18);
+      border-radius: 22px;
+      background: #101b2a;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, .5);
+    }
+
+    .preview-heading {
+      margin: 0 0 6px;
+      font-size: 19px;
+    }
+
+    .preview-note {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .preview-image {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+      background: #080f19;
+      object-fit: contain;
+    }
+
+    .preview-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .primary-button {
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .app { padding-right: 14px; padding-left: 14px; }
+      .camera-stage { height: min(65svh, 540px); min-height: 330px; }
+      .camera-card { border-radius: 19px; }
+      .guide { width: 88%; }
+      .camera-footer { padding-right: 13px; padding-left: 13px; }
+      .status { font-size: 12px; }
+      .camera-switch { padding: 9px 11px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand-mark" aria-hidden="true">▣</div>
+      <div>
+        <h1>ថតអត្តសញ្ញាណប័ណ្ណ</h1>
+        <p class="subtitle">ដាក់ប័ណ្ណឱ្យត្រូវក្នុងស៊ុម ដើម្បីថតរូបច្បាស់</p>
+      </div>
+    </header>
+
+    <section class="camera-card" aria-label="កាមេរ៉ាថតអត្តសញ្ញាណប័ណ្ណ">
+      <div class="camera-stage" id="cameraStage">
+        <video id="video" autoplay muted playsinline aria-label="រូបភាពពីកាមេរ៉ា"></video>
+        <div class="camera-message" id="cameraMessage">
+          ចុចប៊ូតុងខាងក្រោម ដើម្បីបើកកាមេរ៉ា និងអនុញ្ញាតការប្រើប្រាស់កាមេរ៉ា។
+        </div>
+        <div class="level-indicator" id="levelIndicator" role="group" aria-label="សូចនាករតម្រង់កម្រិតទូរស័ព្ទ" hidden>
+          <div class="level-gauge" aria-hidden="true">
+            <span class="level-line" id="levelLine"></span>
+          </div>
+          <div class="level-copy">
+            <span class="level-degrees" id="levelDegrees" aria-live="off">--.-°</span>
+            <span class="level-text" id="levelText">កំពុងវាស់កម្រិត</span>
+          </div>
+          <button class="level-retry" id="levelRetry" type="button" hidden>សាកល្បង</button>
+        </div>
+        <div class="scan-area" aria-hidden="true">
+          <div class="guide" id="guide">
+            <span class="corner tl"></span>
+            <span class="corner tr"></span>
+            <span class="corner bl"></span>
+            <span class="corner br"></span>
+          </div>
+          <div class="scan-label">តម្រង់ប័ណ្ណឱ្យចំក្នុងស៊ុម</div>
+        </div>
+      </div>
+      <div class="camera-footer">
+        <div class="status" role="status" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">កាមេរ៉ាមិនទាន់បើក</span>
+        </div>
+        <button class="camera-switch" id="switchCamera" type="button" disabled>ប្ដូរកាមេរ៉ា</button>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="capture-button" id="captureButton" type="button">បើកកាមេរ៉ា</button>
+    </div>
+    <p class="help">ដាក់ប័ណ្ណឱ្យស្ថិតនៅក្នុងស៊ុមពណ៌ក្រហម ហើយចុចថត។ បន្ទាត់និងដឺក្រេបង្ហាញកម្រិតទូរស័ព្ទ; ពណ៌បៃតងមានន័យថាស្មើ។ អ្នកនៅតែអាចថតបានគ្រប់ពេល។ រូបភាពដែលបានថតនឹងកាត់តាមស៊ុម ហើយអាចរក្សាទុកក្នុង Photos របស់ឧបករណ៍បាន។</p>
+    <p class="error-message" id="errorMessage" role="alert"></p>
+  </main>
+
+  <div class="modal" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewHeading" hidden>
+    <section class="preview-card">
+      <h2 class="preview-heading" id="previewHeading">ពិនិត្យរូបភាព</h2>
+      <p class="preview-note">រូបភាពត្រូវបានកាត់តាមស៊ុមក្រហម។ អ្នកអាចថតម្ដងទៀត ឬរក្សាទុករូបភាពនេះក្នុង Photos។</p>
+      <img class="preview-image" id="previewImage" alt="រូបភាពអត្តសញ្ញាណប័ណ្ណដែលបានថត">
+      <div class="preview-actions">
+        <button class="secondary-button" id="retakeButton" type="button">ថតម្ដងទៀត</button>
+        <button class="primary-button" id="downloadButton" type="button">រក្សាទុករូបភាព</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const video = document.getElementById("video");
+      const stage = document.getElementById("cameraStage");
+      const guide = document.getElementById("guide");
+      const message = document.getElementById("cameraMessage");
+      const captureButton = document.getElementById("captureButton");
+      const switchButton = document.getElementById("switchCamera");
+      const statusText = document.getElementById("statusText");
+      const statusDot = document.getElementById("statusDot");
+      const errorMessage = document.getElementById("errorMessage");
+      const previewModal = document.getElementById("previewModal");
+      const previewImage = document.getElementById("previewImage");
+      const downloadButton = document.getElementById("downloadButton");
+      const retakeButton = document.getElementById("retakeButton");
+      const levelIndicator = document.getElementById("levelIndicator");
+      const levelLine = document.getElementById("levelLine");
+      const levelDegrees = document.getElementById("levelDegrees");
+      const levelText = document.getElementById("levelText");
+      const levelRetry = document.getElementById("levelRetry");
+      let stream = null;
+      let facingMode = "environment";
+      let latestCanvas = null;
+      let cameraRequest = 0;
+      let levelSensorTimer = null;
+      let levelAngle = null;
+      let levelReady = false;
+
+      function setStatus(text, state = "") {
+        statusText.textContent = text;
+        statusDot.className = `status-dot ${state}`.trim();
+      }
+
+      function setError(text = "") {
+        errorMessage.textContent = text;
+      }
+
+      function updateLevel(angle, lineAngle = angle) {
+        const firstReading = levelAngle === null;
+        levelAngle = angle;
+        if (levelSensorTimer !== null) {
+          window.clearTimeout(levelSensorTimer);
+          levelSensorTimer = null;
+        }
+        const displayedAngle = Math.round(angle * 10) / 10;
+        const visibleAngle = Math.max(-35, Math.min(35, lineAngle));
+        levelDegrees.textContent = `${displayedAngle > 0 ? "+" : ""}${displayedAngle.toFixed(1)}°`;
+        levelLine.style.transform = `translate(-50%, -50%) rotate(${visibleAngle}deg)`;
+        const isLevel = Math.abs(angle) <= 2;
+        levelIndicator.classList.toggle("levelled", isLevel);
+        levelIndicator.classList.remove("unavailable");
+        levelRetry.hidden = true;
+        if (isLevel !== levelReady || firstReading) {
+          levelReady = isLevel;
+          levelText.textContent = isLevel
+            ? "ទូរស័ព្ទស្មើហើយ — អាចថត"
+            : "កែទូរស័ព្ទឱ្យស្មើ";
+        }
+      }
+
+      function handleDeviceOrientation(event) {
+        if (typeof event.gamma === "number" && Number.isFinite(event.gamma)) {
+          updateLevel(event.gamma);
+        }
+      }
+
+      function handleDeviceMotion(event) {
+        const gravity = event.accelerationIncludingGravity;
+        if (!gravity || !Number.isFinite(gravity.x) ||
+            !Number.isFinite(gravity.y) || !Number.isFinite(gravity.z)) {
+          return;
+        }
+        const horizontalGravity = Math.hypot(gravity.x, gravity.y);
+        const magnitude = Math.hypot(horizontalGravity, gravity.z);
+        if (magnitude < 1) return;
+        const tilt = Math.atan2(horizontalGravity, Math.abs(gravity.z)) * (180 / Math.PI);
+        const direction = Math.atan2(gravity.y, gravity.x) * (180 / Math.PI);
+        updateLevel(tilt, direction);
+      }
+
+      function setLevelUnavailable(text, canRetry = false) {
+        if (levelSensorTimer !== null) {
+          window.clearTimeout(levelSensorTimer);
+          levelSensorTimer = null;
+        }
+        window.removeEventListener("deviceorientation", handleDeviceOrientation);
+        window.removeEventListener("devicemotion", handleDeviceMotion);
+        levelIndicator.classList.remove("levelled");
+        levelIndicator.classList.add("unavailable");
+        levelDegrees.textContent = "--.-°";
+        levelLine.style.transform = "translate(-50%, -50%)";
+        levelText.textContent = text;
+        levelRetry.hidden = !canRetry;
+        levelAngle = null;
+        levelReady = false;
+      }
+
+      function requestSensorPermission(Sensor) {
+        try {
+          return typeof Sensor.requestPermission === "function"
+            ? Promise.resolve(Sensor.requestPermission())
+            : Promise.resolve("granted");
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      function listenForSensorReadings(orientationAvailable, motionAvailable) {
+        levelIndicator.classList.remove("unavailable");
+        levelDegrees.textContent = "--.-°";
+        levelText.textContent = "កំពុងវាស់កម្រិត";
+        levelRetry.hidden = true;
+        if (orientationAvailable) {
+          window.addEventListener("deviceorientation", handleDeviceOrientation, { passive: true });
+        }
+        if (motionAvailable) {
+          window.addEventListener("devicemotion", handleDeviceMotion, { passive: true });
+        }
+        levelSensorTimer = window.setTimeout(() => {
+          if (levelAngle === null) {
+            setLevelUnavailable("មិនទទួលបានទិន្នន័យសិនស័រ", true);
+          }
+        }, 4000);
+      }
+
+      function startLevelSensor() {
+        if (levelSensorTimer !== null) {
+          window.clearTimeout(levelSensorTimer);
+          levelSensorTimer = null;
+        }
+        window.removeEventListener("deviceorientation", handleDeviceOrientation);
+        window.removeEventListener("devicemotion", handleDeviceMotion);
+        levelAngle = null;
+        levelReady = false;
+        const Orientation = window.DeviceOrientationEvent;
+        const Motion = window.DeviceMotionEvent;
+        if (!Orientation && !Motion) {
+          setLevelUnavailable("ឧបករណ៍នេះមិនគាំទ្រសិនស័រកម្រិត", true);
+          return;
+        }
+        const permissionRequests = [];
+        if (Orientation) permissionRequests.push(requestSensorPermission(Orientation));
+        if (Motion) permissionRequests.push(requestSensorPermission(Motion));
+        listenForSensorReadings(Boolean(Orientation), Boolean(Motion));
+        Promise.allSettled(permissionRequests).then(results => {
+          const anyGranted = results.some(result => result.status === "fulfilled" && result.value === "granted");
+          if (anyGranted || levelAngle !== null) return;
+          if (levelSensorTimer !== null) window.clearTimeout(levelSensorTimer);
+          levelSensorTimer = window.setTimeout(() => {
+            if (levelAngle === null) {
+              setLevelUnavailable("សូមអនុញ្ញាតសិនស័រក្នុងការកំណត់ App", true);
+            }
+          }, 1000);
+        });
+      }
+
+      async function startCamera() {
+        setError();
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setError("កំណែ App នេះមិនអាចប្រើកាមេរ៉ាបានទេ។ សូមធ្វើបច្ចុប្បន្នភាព App រួចសាកល្បងម្ដងទៀត។");
+          return;
+        }
+        const requestId = ++cameraRequest;
+        captureButton.disabled = true;
+        captureButton.textContent = "កំពុងបើកកាមេរ៉ា…";
+        switchButton.disabled = true;
+        setStatus("កំពុងរៀបចំកាមេរ៉ា");
+        startLevelSensor();
+        try {
+          const mediaRequest = navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+          let requestTimedOut = false;
+          mediaRequest.then(lateStream => {
+            if (requestTimedOut || requestId !== cameraRequest) {
+              lateStream.getTracks().forEach(track => track.stop());
+            }
+          }, () => {});
+          const cameraStream = await new Promise((resolve, reject) => {
+            const timeoutId = window.setTimeout(() => {
+                requestTimedOut = true;
+                reject(new Error("CAMERA_PERMISSION_TIMEOUT"));
+            }, 15000);
+            mediaRequest.then(result => {
+              window.clearTimeout(timeoutId);
+              resolve(result);
+            }, error => {
+              window.clearTimeout(timeoutId);
+              reject(error);
+            });
+          });
+          if (requestId !== cameraRequest) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            return;
+          }
+          stream = cameraStream;
+          video.srcObject = stream;
+          await video.play();
+          await waitForVideoFrame();
+          if (requestId !== cameraRequest) return;
+          message.hidden = true;
+          levelIndicator.hidden = false;
+          switchButton.disabled = false;
+          captureButton.textContent = "ថតរូប";
+          captureButton.disabled = false;
+          setStatus("កាមេរ៉ារួចរាល់ — អាចថតបាន", "active");
+        } catch (error) {
+          if (requestId !== cameraRequest) return;
+          stopCamera();
+          message.hidden = false;
+          switchButton.disabled = true;
+          if (error && error.name === "NotAllowedError") {
+            setError("មិនទាន់មានសិទ្ធិប្រើកាមេរ៉ាទេ។ សូមអនុញ្ញាត Camera ក្នុងការកំណត់កម្មវិធីរុករក។");
+          } else if (error && error.name === "NotFoundError") {
+            setError("រកមិនឃើញកាមេរ៉ាទេ។ សូមភ្ជាប់កាមេរ៉ា ហើយសាកល្បងម្ដងទៀត។");
+          } else if (error && error.message === "CAMERA_PERMISSION_TIMEOUT") {
+            setError("ការស្នើសុំកាមេរ៉ាមិនទាន់ឆ្លើយតប។ សូមពិនិត្យសិទ្ធិ Camera របស់ App ក្នុងការកំណត់ទូរស័ព្ទ ហើយចុចសាកល្បងម្ដងទៀត។");
+          } else if (error && error.name === "NotReadableError") {
+            setError("កាមេរ៉ាកំពុងប្រើដោយកម្មវិធីផ្សេង។ សូមបិទកម្មវិធីនោះ រួចសាកល្បងម្ដងទៀត។");
+          } else if (error && error.name === "AbortError") {
+            setError("ការបើកកាមេរ៉ាត្រូវបានផ្អាក។ សូមសាកល្បងម្ដងទៀត។");
+          } else if (error && (error.message === "CAMERA_VIDEO_TIMEOUT" || error.message === "CAMERA_VIDEO_UNAVAILABLE")) {
+            setError("បានភ្ជាប់កាមេរ៉ា ប៉ុន្តែមិនទទួលបានរូបភាពទេ។ សូមបិទ App ហើយបើកម្ដងទៀត ឬសាកល្បងកាមេរ៉ាផ្សេង។");
+          } else {
+            setError("មិនអាចបើកកាមេរ៉ាបានទេ។ សូមពិនិត្យសិទ្ធិ Camera និងសាកល្បងម្ដងទៀត។");
+            console.error("Camera startup failed:", error);
+          }
+          setStatus("មិនអាចបើកកាមេរ៉ា");
+          captureButton.textContent = "សាកល្បងម្ដងទៀត";
+          captureButton.disabled = false;
+        }
+      }
+
+      function waitForVideoFrame() {
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+          return Promise.resolve();
+        }
+        return new Promise((resolve, reject) => {
+          const cleanup = () => {
+            video.removeEventListener("loadeddata", handleReady);
+            video.removeEventListener("error", handleError);
+            window.clearTimeout(timeoutId);
+          };
+          const handleReady = () => {
+            if (video.videoWidth === 0) return;
+            cleanup();
+            resolve();
+          };
+          const handleError = () => {
+            cleanup();
+            reject(new Error("CAMERA_VIDEO_UNAVAILABLE"));
+          };
+          const timeoutId = window.setTimeout(() => {
+            cleanup();
+            reject(new Error("CAMERA_VIDEO_TIMEOUT"));
+          }, 10000);
+          video.addEventListener("loadeddata", handleReady);
+          video.addEventListener("error", handleError);
+          handleReady();
+        });
+      }
+
+      function stopCamera() {
+        cameraRequest += 1;
+        levelIndicator.hidden = true;
+        if (levelSensorTimer !== null) {
+          window.clearTimeout(levelSensorTimer);
+          levelSensorTimer = null;
+        }
+        window.removeEventListener("deviceorientation", handleDeviceOrientation);
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        }
+        video.srcObject = null;
+      }
+
+      window.addEventListener("message", event => {
+        if (event.source !== window.parent || !event.data) return;
+        if (event.data.type === "camera-stop") {
+          stopCamera();
+          message.hidden = false;
+          switchButton.disabled = true;
+          captureButton.textContent = "បើកកាមេរ៉ា";
+          captureButton.disabled = false;
+          setStatus("កាមេរ៉ាមិនទាន់បើក");
+        } else if (event.data.type === "camera-image-save-result") {
+          if (event.data.success) {
+            setStatus("បានរក្សាទុករូបភាពក្នុង Photos", "active");
+            setError();
+          } else {
+            setError("មិនអាចរក្សាទុករូបភាពបានទេ។ សូមពិនិត្យសិទ្ធិ Photos ហើយសាកល្បងម្ដងទៀត។");
+          }
+        }
+      });
+
+      function getGuideInVideoCoordinates() {
+        const bounds = stage.getBoundingClientRect();
+        const guideBounds = guide.getBoundingClientRect();
+        const scale = Math.max(bounds.width / video.videoWidth, bounds.height / video.videoHeight);
+        const renderedWidth = video.videoWidth * scale;
+        const renderedHeight = video.videoHeight * scale;
+        const offsetX = (renderedWidth - bounds.width) / 2;
+        const offsetY = (renderedHeight - bounds.height) / 2;
+        const corners = [
+          { x: guideBounds.left - bounds.left, y: guideBounds.top - bounds.top },
+          { x: guideBounds.right - bounds.left, y: guideBounds.top - bounds.top },
+          { x: guideBounds.right - bounds.left, y: guideBounds.bottom - bounds.top },
+          { x: guideBounds.left - bounds.left, y: guideBounds.bottom - bounds.top }
+        ];
+        return corners.map(point => ({
+          x: (point.x + offsetX) / scale,
+          y: (point.y + offsetY) / scale
+        }));
+      }
+
+      function captureCard() {
+        if (!stream || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+        try {
+          const corners = getGuideInVideoCoordinates();
+          const left = Math.max(0, Math.min(...corners.map(point => point.x)));
+          const top = Math.max(0, Math.min(...corners.map(point => point.y)));
+          const right = Math.min(video.videoWidth, Math.max(...corners.map(point => point.x)));
+          const bottom = Math.min(video.videoHeight, Math.max(...corners.map(point => point.y)));
+          if (right <= left || bottom <= top) {
+            throw new Error("Invalid detected card bounds");
+          }
+          const output = document.createElement("canvas");
+          output.width = 1010;
+          output.height = 638;
+          const outputContext = output.getContext("2d");
+          outputContext.imageSmoothingQuality = "high";
+          outputContext.drawImage(video, left, top, right - left, bottom - top, 0, 0, output.width, output.height);
+          latestCanvas = output;
+          previewImage.src = output.toDataURL("image/jpeg", 0.94);
+          previewModal.hidden = false;
+          stopCamera();
+          captureButton.disabled = false;
+          captureButton.textContent = "បើកកាមេរ៉ា";
+          switchButton.disabled = true;
+          message.hidden = false;
+        } catch (error) {
+          latestCanvas = null;
+          setError("មិនអាចរៀបចំរូបភាពបានទេ។ សូមសាកល្បងថតម្ដងទៀត។");
+          console.error(error);
+        }
+      }
+
+      captureButton.addEventListener("click", () => {
+        if (stream) captureCard();
+        else startCamera();
+      });
+
+      switchButton.addEventListener("click", async () => {
+        facingMode = facingMode === "environment" ? "user" : "environment";
+        stopCamera();
+        await startCamera();
+      });
+
+      levelRetry.addEventListener("click", startLevelSensor);
+
+      retakeButton.addEventListener("click", () => {
+        previewModal.hidden = true;
+        latestCanvas = null;
+        startCamera();
+      });
+
+      downloadButton.addEventListener("click", () => {
+        if (!latestCanvas) return;
+        latestCanvas.toBlob(blob => {
+          if (!blob) {
+            setError("រូបភាពមិនអាចរក្សាទុកបានទេ។ សូមថតម្ដងទៀត។");
+            return;
+          }
+          const fileName = `id-card-${new Date().toISOString().slice(0, 10)}.jpg`;
+          const reader = new FileReader();
+          reader.onerror = () => setError("មិនអាចអានរូបភាពដើម្បីរក្សាទុកបានទេ។");
+          reader.onload = () => {
+            const dataUrl = reader.result;
+            if (window.AndroidBridge && typeof window.AndroidBridge.saveImage === "function") {
+              window.AndroidBridge.saveImage(dataUrl);
+              setStatus("កំពុងរក្សាទុករូបភាពក្នុង Photos");
+              return;
+            }
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosBridge) {
+              window.webkit.messageHandlers.iosBridge.postMessage({ action: "saveImage", dataUrl });
+              setStatus("កំពុងរក្សាទុករូបភាពក្នុង Photos");
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          };
+          reader.readAsDataURL(blob);
+        }, "image/jpeg", 0.94);
+      });
+
+      previewModal.addEventListener("click", event => {
+        if (event.target === previewModal) previewModal.hidden = true;
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && !previewModal.hidden) previewModal.hidden = true;
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") {
+          stopCamera();
+          return;
+        }
+        if (!stream) return;
+        if (stream.getTracks().some(track => track.readyState !== "live")) {
+          stopCamera();
+          message.hidden = false;
+          switchButton.disabled = true;
+          captureButton.textContent = "បើកកាមេរ៉ា";
+          captureButton.disabled = false;
+          setStatus("ចុចបើកកាមេរ៉ាម្ដងទៀត", "");
+          return;
+        }
+        video.play().catch(error => {
+          setError("កាមេរ៉ាត្រូវបានផ្អាក។ សូមចុចសាកល្បងម្ដងទៀត ដើម្បីបើកកាមេរ៉ា។");
+          console.error("Unable to resume camera preview:", error);
+        });
+      });
+
+      window.addEventListener("pagehide", stopCamera);
+    })();
+  </script>
+</body>
+</html>

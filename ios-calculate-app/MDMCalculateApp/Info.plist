@@ -22,6 +22,12 @@
     <string>1</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>ថតរូបអត្តសញ្ញាណប័ណ្ណក្នុងកម្មវិធី</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>រក្សាទុករូបអត្តសញ្ញាណប័ណ្ណដែលបានថតក្នុង Photos</string>
+    <key>NSMotionUsageDescription</key>
+    <string>ប្រើសិនស័រដើម្បីបង្ហាញកម្រិតទូរស័ព្ទពេលថត</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>
