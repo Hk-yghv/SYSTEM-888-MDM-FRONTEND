@@ -17,6 +17,8 @@ import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.PermissionRequest;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -24,6 +26,7 @@ import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.webkit.WebViewAssetLoader;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int CAMERA_PERMISSION_REQUEST = 1001;
     private static final int STORAGE_PERMISSION_REQUEST = 1002;
     private WebView webView;
+    private WebViewAssetLoader assetLoader;
     private PermissionRequest pendingCameraRequest;
     private byte[] pendingImage;
     private boolean pendingScheduleImage;
@@ -50,10 +54,8 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setDomStorageEnabled(true);
         webSettings.setDatabaseEnabled(true);
         webSettings.setMediaPlaybackRequiresUserGesture(false);
-        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowFileAccess(false);
         webSettings.setAllowContentAccess(true);
-        webSettings.setAllowFileAccessFromFileURLs(true);
-        webSettings.setAllowUniversalAccessFromFileURLs(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setUseWideViewPort(true);
@@ -63,11 +65,28 @@ public class MainActivity extends AppCompatActivity {
         // Add JavaScript bridge for native share & clipboard support
         webView.addJavascriptInterface(new WebAppInterface(this), "AndroidBridge");
 
-        webView.setWebViewClient(new WebViewClient());
+        assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(PermissionRequest request) {
                 runOnUiThread(() -> {
+                    Uri origin = request.getOrigin();
+                    boolean trustedOrigin = "https".equals(origin.getScheme())
+                            && "appassets.androidplatform.net".equals(origin.getHost())
+                            && (origin.getPort() == -1 || origin.getPort() == 443);
+                    if (!trustedOrigin) {
+                        request.deny();
+                        return;
+                    }
+
                     boolean requestsCamera = false;
                     for (String resource : request.getResources()) {
                         if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
@@ -95,8 +114,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Load 100% offline local HTML asset
-        webView.loadUrl("file:///android_asset/www/index.html");
+        // Serve bundled app assets from a secure origin so WebView can grant camera access.
+        webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html");
 
         // Handle Back button
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -126,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
             PermissionRequest request = pendingCameraRequest;
             pendingCameraRequest = null;
             if (request != null) {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                     request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
                 } else {
                     request.deny();
