@@ -795,7 +795,7 @@ const CalculateSchedule2 = () => {
                     <div>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                                កាលវិភាគបញ្ចាំ
+                                កាលវិភាគបង់ប្រាក់
                             </h1>
                         </div>
                     </div>

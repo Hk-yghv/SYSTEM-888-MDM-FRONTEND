@@ -20,6 +20,7 @@ import InstallmentSubBrandFilter, {
     addInstallmentSubBrandParams,
     useInstallmentSubBrand
 } from '../components/InstallmentSubBrandFilter';
+import CashTransactionSubmissionChecklist from '../components/CashTransactionSubmissionChecklist';
 
 const LIMIT = 10;
 const getPhotoUrls = item => [...new Set([
@@ -66,6 +67,7 @@ const PenaltyPage = () => {
     });
     const [subBrandOptions, setSubBrandOptions] = useState([]);
     const [submitting, setSubmitting] = useState(false);
+    const [showSubmissionChecklist, setShowSubmissionChecklist] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [imageStorageType, setImageStorageType] = useState('cloudinary');
     const [selectedImages, setSelectedImages] = useState([]);
@@ -215,17 +217,7 @@ const PenaltyPage = () => {
         fetchData(page, searchTerm, startDate, endDate);
     }, [page, fetchData, searchTerm, startDate, endDate, selectedRecord]);
 
-    const handleFormSubmit = async (e) => {
-        e.preventDefault();
-        if (!formData.amount || Number(formData.amount) <= 0) {
-            alert(t('validAmountAlert'));
-            return;
-        }
-        if (!editingItem && !formData.subBrand) {
-            alert('Please select a subbrand to generate Contract.OR.');
-            return;
-        }
-
+    const saveForm = async () => {
         setSubmitting(true);
         try {
             const payload = {
@@ -256,6 +248,7 @@ const PenaltyPage = () => {
             });
 
             if (res.ok) {
+                setShowSubmissionChecklist(false);
                 setIsFormOpen(false);
                 setEditingItem(null);
                 setFormData({
@@ -271,15 +264,37 @@ const PenaltyPage = () => {
                     photoUrls: []
                 });
                 fetchData(1, searchTerm, startDate, endDate);
+                return true;
             } else {
                 const errData = await res.json();
                 alert(errData.error || 'Failed to save record.');
+                return false;
             }
         } catch (err) {
             alert('Error saving record: ' + err.message);
+            return false;
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        if (!formData.amount || Number(formData.amount) <= 0) {
+            alert(t('validAmountAlert'));
+            return;
+        }
+        if (!editingItem && !formData.subBrand) {
+            alert('Please select a subbrand to generate Contract.OR.');
+            return;
+        }
+
+        if (!editingItem) {
+            setShowSubmissionChecklist(true);
+            return;
+        }
+
+        await saveForm();
     };
 
     const handleEdit = (item) => {
@@ -778,6 +793,13 @@ const PenaltyPage = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {showSubmissionChecklist && (
+                <CashTransactionSubmissionChecklist
+                    onCancel={() => setShowSubmissionChecklist(false)}
+                    onComplete={saveForm}
+                />
             )}
 
             {/* Image Preview Modal */}

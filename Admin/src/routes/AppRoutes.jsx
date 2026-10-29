@@ -9,6 +9,7 @@ import { getFirstAllowedRoute } from "../utils/permissionUtils";
 import ScreenRecorderDock from "../components/ScreenRecorderDock";
 
 const Dashboard = lazy(() => import("../App/Dashboard/Dashboard"));
+import Dashboard from "../App/Dashboard/Dashboard";
 const CashFlowTrader = lazy(() => import("../App/CashFlow/pages/CashFlowTrader"));
 const KhmerCalendarPage = lazy(() => import("../App/Calendar/KhmerCalendarPage"));
 const TelegramPage = lazy(() => import("../App/Telegram/TelegramPage"));
