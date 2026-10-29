@@ -550,6 +550,8 @@ const CashInPage = () => {
                                     <th className='px-4 py-1 text-center'>{t('no')}</th>
                                     <th className='px-4 py-1'>{t('date')}</th>
                                     <th className='px-4 py-1'>Contract.OR</th>
+                                    <th className='px-4 py-1'>{t('brand')}</th>
+                                    <th className='px-4 py-1'>{t('subBrand')}</th>
                                     <th className='px-4 py-1'>{t('category')}</th>
                                     <th className='px-4 py-1 text-right'>{t('amount')}</th>
                                     <th className='px-4 py-1'>{t('description')}</th>
@@ -560,15 +562,17 @@ const CashInPage = () => {
                             </thead>
                             <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                                 {loading ? (
-                                    <tr><td colSpan={9} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
+                                    <tr><td colSpan={11} className="text-center py-10 text-emerald-600 font-semibold">{t('loading')}</td></tr>
                                 ) : visibleDataList.length === 0 ? (
-                                    <tr><td colSpan={9} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
+                                    <tr><td colSpan={11} className="text-center py-8 text-slate-500 italic">{t('noData')}</td></tr>
                                 ) : (
                                     visibleDataList.map((item, idx) => (
                                         <tr key={item._id || item.transactionId || idx} className='hover:bg-emerald-50/40 transition-colors'>
                                             <td className='px-4 py-1 text-center font-mono font-bold text-slate-500'>{total - ((page - 1) * LIMIT + idx)}</td>
                                             <td className='px-4 py-1 font-mono font-bold text-slate-900'>{item.date || '-'}</td>
                                             <td className='px-4 py-1 font-mono font-bold text-indigo-700'>{item.contractOR || '-'}</td>
+                                            <td className='px-4 py-1 font-bold text-slate-700'>{item.brand || '-'}</td>
+                                            <td className='px-4 py-1 font-bold text-slate-700'>{item.subBrand || '-'}</td>
                                             <td className='px-4 py-1 font-bold text-slate-900'>
                                                 <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 font-bold">
                                                     {item.category || 'General'}
