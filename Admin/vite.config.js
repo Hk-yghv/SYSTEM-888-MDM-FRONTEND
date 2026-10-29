@@ -1,15 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import pkg from "./package.json";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pkg = require("./package.json");
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
   build: {
+    // oxc is Vite 8's default minifier (Rolldown-based, fast)
     minify: "oxc",
     sourcemap: false,
-    rolldownOptions: {
+    rollupOptions: {
       output: {
         entryFileNames: "assets/js/[hash].js",
         chunkFileNames: "assets/chunks/[hash].js",
@@ -18,9 +21,9 @@ export default defineConfig({
   },
 
   define: {
-    __APP_NAME__: JSON.stringify(pkg.name),
-    __SHORT_NAME__: JSON.stringify(pkg.short_name),
-    __WEBSITE_VERSION__: JSON.stringify(pkg.version),
+    __APP_NAME__: JSON.stringify(pkg.name || 'SYSTEM MDM'),
+    __SHORT_NAME__: JSON.stringify(pkg.short_name || pkg.name || 'MDM'),
+    __WEBSITE_VERSION__: JSON.stringify(pkg.version || '1.0.0'),
   },
   server: {
     host: '0.0.0.0',
