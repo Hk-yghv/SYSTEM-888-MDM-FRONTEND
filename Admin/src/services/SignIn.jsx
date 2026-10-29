@@ -18,6 +18,7 @@ import {
 import { MdOutlineDashboard } from 'react-icons/md';
 import { getFirstAllowedRoute } from '../utils/permissionUtils';
 import { setSecureItem } from '../utils/secureStorage';
+import VersionWebsite from '../utils/VersionWebsite';
 import jsQR from 'jsqr';
 
 const SignIn = () => {
@@ -679,6 +680,7 @@ const SignIn = () => {
 
                 <div className="text-center border-t border-gray-800/80 pt-3">
                     <p className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">SYSTEM MDM &bull; Encrypted &amp; Secured</p>
+                    <p className="mt-1 text-[10px] text-gray-600 font-medium">Version <VersionWebsite /></p>
                 </div>
             </div>
         </div>
