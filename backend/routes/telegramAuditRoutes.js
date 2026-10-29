@@ -683,7 +683,8 @@ router.post('/log', async (req, res) => {
             noteAudit = '',
             auditedBy = 'Staff',
             brand = '',
-            subBrand = ''
+            subBrand = '',
+            auditRound: requestedAuditRound = ''
         } = req.body;
 
         if (!contractId || !auditDate) {
@@ -697,6 +698,9 @@ router.post('/log', async (req, res) => {
         const targetDate = String(auditDate).trim();
         const todayStr = getTodayDateStr();
         const auditRound = getCurrentAuditRound();
+        if (requestedAuditRound && requestedAuditRound !== auditRound) {
+            return res.status(409).json({ success: false, error: 'The audit round changed. Refresh the page before saving.' });
+        }
         const effectiveSubBrand = await resolveSubBrand(brand, subBrand);
         const roundSubmissionFilter = auditRound === 'AM'
             ? {

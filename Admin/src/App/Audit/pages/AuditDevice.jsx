@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import {
@@ -164,6 +164,8 @@ const AuditDevice = () => {
     const todayStr = useMemo(() => formatDateToYMD(new Date()), []);
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const [currentRound, setCurrentRound] = useState(getAuditRound);
+    const [activeAuditTab, setActiveAuditTab] = useState(() => getAuditRound() === 'PM' ? 'pm-pending' : 'am-pending');
+    const selectedAuditRound = activeAuditTab.startsWith('am-') ? 'AM' : 'PM';
     const [auditedDates, setAuditedDates] = useState([]);
     const [selectedSubBrand, setSelectedSubBrand] = useState('');
     const availableSubBrands = useMemo(
@@ -197,13 +199,13 @@ const AuditDevice = () => {
     const [distinctStatuses, setDistinctStatuses] = useState([]);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submissionInfo, setSubmissionInfo] = useState(null);
+    const isSelectedRoundEditable = selectedAuditRound === currentRound && !isSubmitted && selectedDate === todayStr;
 
     // UI & Loading States
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
-    const [activeAuditTab, setActiveAuditTab] = useState('pending');
     const [openMenuId, setOpenMenuId] = useState(null);
     const [menuPlacement, setMenuPlacement] = useState('above');
 
@@ -359,13 +361,24 @@ const AuditDevice = () => {
         fetchAuditState(selectedDate);
     }, [fetchAuditState, selectedDate]);
 
+    const previousRoundRef = useRef(currentRound);
+    useEffect(() => {
+        if (previousRoundRef.current !== currentRound) {
+            setActiveAuditTab(currentRound === 'PM' ? 'pm-pending' : 'am-pending');
+            setCurrentPage(1);
+            setAuditModalItem(null);
+            setContactModalItem(null);
+        }
+        previousRoundRef.current = currentRound;
+    }, [currentRound]);
+
     useEffect(() => {
         const interval = window.setInterval(() => {
             const round = getAuditRound();
             if (round !== currentRound) {
                 setCurrentRound(round);
-                fetchAuditState(selectedDate);
             }
+            fetchAuditState(selectedDate);
         }, 30000);
         return () => window.clearInterval(interval);
     }, [currentRound, fetchAuditState, selectedDate]);
@@ -417,9 +430,9 @@ const AuditDevice = () => {
             const noteAudit2 = audit.noteAudit2 || '';
             const auditDate2 = audit.auditDate2 || '';
             const auditDateTime2 = audit.auditDateTime2 || '';
-            const activeStatusAccount = currentRound === 'PM' ? deviceStatus2 : deviceStatus;
-            const activeAccountActivity = currentRound === 'PM' ? accountActivity2 : accountActivity;
-            const activeNoteAudit = currentRound === 'PM' ? noteAudit2 : noteAudit;
+            const activeStatusAccount = selectedAuditRound === 'PM' ? deviceStatus2 : deviceStatus;
+            const activeAccountActivity = selectedAuditRound === 'PM' ? accountActivity2 : accountActivity;
+            const activeNoteAudit = selectedAuditRound === 'PM' ? noteAudit2 : noteAudit;
 
             const previousStatusAccount = latestAudit.deviceStatus || '';
             const previousAccountActivity = latestAudit.accountActivity || '';
@@ -428,6 +441,8 @@ const AuditDevice = () => {
 
             const hasContactInfo = Boolean(contactName || username || phoneNumber);
             const isAudited = Boolean(activeStatusAccount || activeAccountActivity || activeNoteAudit);
+            const isFirstRoundAudited = Boolean(deviceStatus || accountActivity || noteAudit);
+            const isSecondRoundAudited = Boolean(deviceStatus2 || accountActivity2 || noteAudit2);
 
             return {
                 ...contract,
@@ -438,6 +453,7 @@ const AuditDevice = () => {
                 contactName,
                 username,
                 phoneNumber,
+                serialNumber: contract.serialNumber || '',
                 deviceStatus,
                 accountActivity,
                 noteAudit,
@@ -455,7 +471,9 @@ const AuditDevice = () => {
                 previousNoteAudit,
                 previousAuditDate,
                 hasContactInfo,
-                isAudited
+                isAudited,
+                isFirstRoundAudited,
+                isSecondRoundAudited
             };
         }).filter(item => {
             // Search filter
@@ -467,6 +485,7 @@ const AuditDevice = () => {
                     String(item.contactName).toLowerCase().includes(s) ||
                     String(item.username).toLowerCase().includes(s) ||
                     String(item.phoneNumber).toLowerCase().includes(s) ||
+                    String(item.serialNumber).toLowerCase().includes(s) ||
                     String(item.deviceStatus || item.previousStatusAccount).toLowerCase().includes(s) ||
                     String(item.deviceStatus2).toLowerCase().includes(s) ||
                     String(item.accountActivity).toLowerCase().includes(s) ||
@@ -483,10 +502,10 @@ const AuditDevice = () => {
 
             return true;
         });
-    }, [contracts, contactMap, auditMap, latestAuditMap, searchTerm, statusFilter, currentRound]);
+    }, [contracts, contactMap, auditMap, latestAuditMap, searchTerm, statusFilter, selectedAuditRound]);
 
     const visibleRows = useMemo(
-        () => filteredRows.filter(row => activeAuditTab === 'audited' ? row.isAudited : !row.isAudited),
+        () => filteredRows.filter(row => activeAuditTab.endsWith('audited') ? row.isAudited : !row.isAudited),
         [filteredRows, activeAuditTab]
     );
 
@@ -505,10 +524,14 @@ const AuditDevice = () => {
     // Counters
     const auditedCount = useMemo(() => filteredRows.filter(r => r.isAudited).length, [filteredRows]);
     const pendingCount = filteredRows.length - auditedCount;
+    const firstRoundAuditedCount = useMemo(() => filteredRows.filter(row => row.isFirstRoundAudited).length, [filteredRows]);
+    const secondRoundAuditedCount = useMemo(() => filteredRows.filter(row => row.isSecondRoundAudited).length, [filteredRows]);
+    const firstRoundPendingCount = filteredRows.length - firstRoundAuditedCount;
+    const secondRoundPendingCount = filteredRows.length - secondRoundAuditedCount;
 
     // ─── Open Audit Modal ────────────────────────────────────────────
     const handleOpenAuditModal = (row) => {
-        if (isSubmitted) {
+        if (!isSelectedRoundEditable) {
             alert(t('auditLockedAlert'));
             return;
         }
@@ -533,7 +556,7 @@ const AuditDevice = () => {
     // ─── Save Audit Record ───────────────────────────────────────────
     const handleSaveAudit = async (e) => {
         e?.preventDefault();
-        if (isSubmitted) {
+        if (!isSelectedRoundEditable) {
             alert(t('auditLockedAlert'));
             return;
         }
@@ -564,7 +587,8 @@ const AuditDevice = () => {
                 noteAudit: auditForm.noteAudit.trim(),
                 auditedBy: user?.username || user?.name || 'Staff',
                 brand: user?.brand || auditModalItem.brand || '',
-                subBrand: activeSubBrand || auditModalItem.subBrand || ''
+                subBrand: activeSubBrand || auditModalItem.subBrand || '',
+                auditRound: selectedAuditRound
             };
 
             const res = await fetch(`${base}/device-audit/log`, {
@@ -604,6 +628,10 @@ const AuditDevice = () => {
     // ─── Open Contact Modal (Add / Edit) ─────────────────────────────
     const handleOpenContactModal = (row) => {
         setOpenMenuId(null);
+        if (!isSelectedRoundEditable) {
+            alert(t('auditLockedAlert'));
+            return;
+        }
         if (row.hasContactInfo && !isAdmin) {
             alert(t('auditDeviceAdminOnly'));
             return;
@@ -620,6 +648,10 @@ const AuditDevice = () => {
     const handleSaveContact = async (e) => {
         e?.preventDefault();
         if (!contactModalItem) return;
+        if (!isSelectedRoundEditable) {
+            alert(t('auditLockedAlert'));
+            return;
+        }
 
         if (contactModalItem.hasContactInfo && !isAdmin) {
             alert(t('auditDeviceEditDenied'));
@@ -923,42 +955,40 @@ const AuditDevice = () => {
                 </div>
             </div>
 
-            {/* Audit status tabs */}
+            {/* Audit round and completion tabs */}
             <div className="flex flex-wrap items-center gap-2 border-b border-slate-200">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setActiveAuditTab('pending');
-                        setCurrentPage(1);
-                    }}
-                    aria-pressed={activeAuditTab === 'pending'}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                        activeAuditTab === 'pending'
-                            ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
-                            : 'bg-white text-slate-600 hover:bg-rose-50'
-                    }`}
-                >
-                    <FaExclamationTriangle />
-                    <span>{t('auditNotCompleted')}</span>
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{pendingCount}</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setActiveAuditTab('audited');
-                        setCurrentPage(1);
-                    }}
-                    aria-pressed={activeAuditTab === 'audited'}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${
-                        activeAuditTab === 'audited'
-                            ? 'bg-blue-600 text-white border-b-2 border-blue-400 shadow-md'
-                            : 'bg-white text-slate-600 hover:bg-blue-50'
-                    }`}
-                >
-                    <FaCheckCircle />
-                    <span>{t('auditCompleted')}</span>
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{auditedCount}</span>
-                </button>
+                {[
+                    { id: 'am-pending', round: 'AM', audited: false, count: firstRoundPendingCount, color: 'rose' },
+                    { id: 'am-audited', round: 'AM', audited: true, count: firstRoundAuditedCount, color: 'blue' },
+                    { id: 'pm-pending', round: 'PM', audited: false, count: secondRoundPendingCount, color: 'rose' },
+                    { id: 'pm-audited', round: 'PM', audited: true, count: secondRoundAuditedCount, color: 'blue' }
+                ].map(tab => {
+                    const isActive = activeAuditTab === tab.id;
+                    const isRoundAvailable = tab.round === 'AM' || selectedDate < todayStr || currentRound === 'PM';
+                    const isReadOnly = tab.round !== currentRound || isSubmitted || selectedDate !== todayStr;
+                    const colorStyles = tab.color === 'rose'
+                        ? (isActive ? 'bg-rose-600 text-white border-rose-400' : 'bg-white text-slate-600 hover:bg-rose-50')
+                        : (isActive ? 'bg-blue-600 text-white border-blue-400' : 'bg-white text-slate-600 hover:bg-blue-50');
+                    return (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => {
+                                setActiveAuditTab(tab.id);
+                                setCurrentPage(1);
+                            }}
+                            disabled={!isRoundAvailable}
+                            aria-pressed={isActive}
+                            className={`flex items-center gap-2 px-3 py-2.5 rounded-t-[5px] border-b-2 font-bold text-xs sm:text-sm transition-all ${
+                                isRoundAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'
+                            } ${isActive ? `${colorStyles} shadow-md` : `${colorStyles} border-transparent`}`}
+                        >
+                            <span>{t('audit')} {tab.round === 'AM' ? '1' : '2'} · {t(tab.audited ? 'auditCompleted' : 'auditNotCompleted')}</span>
+                            {isReadOnly && <FaLock className="text-[10px]" title={t('auditSubmittedLocked')} />}
+                            <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">{tab.count}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Table Filter Controls */}
@@ -1039,6 +1069,7 @@ const AuditDevice = () => {
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('deviceName')}</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('deviceVersion')}</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('deviceModel')}</th>
+                                <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('serialNumber')}</th>
                                 <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200 whitespace-nowrap">{t('auditStatusAudit')}</th>
                                 <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('deviceStatus')}</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('auditAccountActivity')}</th>
@@ -1054,7 +1085,7 @@ const AuditDevice = () => {
                         <tbody>
                             {paginatedRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={17} className="px-4 py-12 text-center text-slate-400 font-medium">
+                                    <td colSpan={18} className="px-4 py-12 text-center text-slate-400 font-medium">
                                         {mustChooseSubBrand ? (
                                             t('auditSelectSubBrandToView')
                                         ) : loading ? (
@@ -1144,6 +1175,18 @@ const AuditDevice = () => {
                                                 )}
                                             </td>
 
+                                            {/* Serial Number */}
+                                            <td className={`px-3.5 ${rowCellClass} font-mono font-semibold text-slate-700`}>
+                                                {row.serialNumber ? (
+                                                    <span className="inline-flex items-center gap-1">
+                                                        {row.serialNumber}
+                                                        <CopyButton text={row.serialNumber} />
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-300">—</span>
+                                                )}
+                                            </td>
+
                                             {/* Status Audit (Auto by System) */}
                                             <td className={`px-3.5 ${rowCellClass} text-center whitespace-nowrap`}>
                                                 {row.isAudited ? (
@@ -1168,13 +1211,13 @@ const AuditDevice = () => {
                                                 ) : row.previousStatusAccount ? (
                                                     <span
                                                         className={`inline-block px-2 py-0.5 rounded-[5px] text-[10px] font-bold border border-slate-200 bg-slate-50 text-slate-500 ${
-                                                            isSubmitted
+                                                            !isSelectedRoundEditable
                                                                 ? 'cursor-not-allowed opacity-75'
                                                                 : 'cursor-pointer hover:border-emerald-300 hover:text-emerald-700'
                                                         }`}
                                                         title={`${t('auditPreviousStatus')}: ${row.previousStatusAccount} (${row.previousAuditDate || ''})`}
                                                         onClick={() => {
-                                                            if (isSubmitted) {
+                                                            if (!isSelectedRoundEditable) {
                                                                 alert(t('auditLockedAlert'));
                                                                 return;
                                                             }
@@ -1237,9 +1280,9 @@ const AuditDevice = () => {
                                                     {/* Audit Button (Icon in front of Menu) */}
                                                     <button
                                                         onClick={() => handleOpenAuditModal(row)}
-                                                        disabled={isSubmitted}
-                                                        title={isSubmitted ? t('auditSubmittedLocked') : t('auditRecord')}
-                                                        className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${isSubmitted
+                                                        disabled={!isSelectedRoundEditable}
+                                                        title={!isSelectedRoundEditable ? t('auditSubmittedLocked') : t('auditRecord')}
+                                                        className={`w-8 h-8 rounded-[5px] flex items-center justify-center transition-all cursor-pointer shadow-2xs ${!isSelectedRoundEditable
                                                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                                             : row.isAudited
                                                                 ? 'bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-300 hover:border-blue-600'
