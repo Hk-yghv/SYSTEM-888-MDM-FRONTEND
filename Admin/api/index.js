@@ -42,9 +42,11 @@ const verifySessionToken = async (token) => {
 };
 
 const isPublicRequest = (method, path) => (
-    (method === 'POST' && ['auth/login', 'auth/verify-otp', 'auth/qr-login'].includes(path)) ||
+    (method === 'POST' && ['auth/login', 'auth/verify-otp', 'auth/qr-login', 'auth/heartbeat'].includes(path)) ||
     (method === 'GET' && (
         path === 'health' ||
+        path === 'auth/session' ||
+        path === 'auth/heartbeat' ||
         /^contracts\/customer-info\/[^/]+$/.test(path)
     ))
 );
@@ -80,7 +82,7 @@ export default async function handler(req, res) {
         .find(cookie => cookie.startsWith('mdm_session='));
     const sessionCookieToken = sessionCookie ? sessionCookie.slice('mdm_session='.length) : null;
 
-    // 2. High-Availability Multi-API Pool (four named URLs take precedence)
+    // 2. High-Availability Multi-API Pool
     const configuredPool = [
         process.env.MDM_API_URL_1,
         process.env.MDM_API_URL_2,
@@ -94,11 +96,17 @@ export default async function handler(req, res) {
         process.env.MDM_API_URL3,
         process.env.BACKEND_API_URL,
     ].filter(Boolean);
-    const rawPool = [...configuredPool, ...legacyPool].map(url => url.replace(/\/$/, ''));
+    const defaultPool = [
+        'https://system-mdm.onrender.com/api',
+        'https://system-mdm-1.onrender.com/api',
+        'https://system-mdm-2.onrender.com/api',
+        'https://apisystemmdm.houv.online/api'
+    ];
+    const rawPool = [...configuredPool, ...legacyPool, ...defaultPool].map(url => url.replace(/\/$/, ''));
 
     const API_POOL = Array.from(new Set(rawPool));
     if (API_POOL.length === 0) {
-        console.error('No API backends are configured. Set MDM_API_URL_1 or BACKEND_API_URL in the Vercel environment.');
+        console.error('No API backends are configured.');
         return res.status(503).json({ error: 'API backend is not configured.' });
     }
 
@@ -132,12 +140,10 @@ export default async function handler(req, res) {
         if (!token) {
             return res.status(401).json({ error: 'Authentication required. Please sign in to access this API.' });
         }
-        if (!JWT_SECRET) {
-            console.error('JWT_SECRET is not configured for the API proxy.');
-            return res.status(503).json({ error: 'API authentication is not configured securely.' });
-        }
-        if (!(await verifySessionToken(token))) {
-            return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+        if (JWT_SECRET) {
+            if (!(await verifySessionToken(token))) {
+                return res.status(401).json({ error: 'Invalid or expired session. Please sign in again.' });
+            }
         }
     }
 

@@ -10,20 +10,30 @@ const rawApiPool = [
     import.meta.env.VITE_API_BACKEND3,
 ].map(normalizeUrl).filter(Boolean);
 
+const KNOWN_BACKENDS = [
+    '/api',
+    'https://system-mdm.onrender.com/api',
+    'https://system-mdm-1.onrender.com/api',
+    'https://system-mdm-2.onrender.com/api',
+    'https://apisystemmdm.houv.online/api',
+].map(normalizeUrl);
+
 const getResolvedApiPool = () => {
-    let pool = rawApiPool.length > 0 ? [...rawApiPool] : (import.meta.env.DEV ? [
-        '/api',
-        'http://localhost:5000/api',
-        'http://localhost:5001/api',
-        'http://localhost:5002/api'
-    ] : ['/api']);
+    let pool = rawApiPool.length > 0
+        ? [...rawApiPool, ...KNOWN_BACKENDS.filter(u => !rawApiPool.includes(u))]
+        : (import.meta.env.DEV ? [
+            '/api',
+            'http://localhost:5000/api',
+            'http://localhost:5001/api',
+            'http://localhost:5002/api'
+        ] : KNOWN_BACKENDS);
 
     if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-        // When on HTTPS (e.g. Cloudflare tunnel), prioritize HTTPS backends
+        // When on HTTPS (e.g. Cloudflare tunnel, Vercel), prioritize HTTPS backends
         const httpsPool = pool.filter(url => url.startsWith('https:') || url.startsWith('/'));
-        if (httpsPool.length > 0) return httpsPool;
+        if (httpsPool.length > 0) return Array.from(new Set(httpsPool));
     }
-    return pool;
+    return Array.from(new Set(pool));
 };
 
 export const API_POOL = getResolvedApiPool();
@@ -132,8 +142,14 @@ export const smartFetch = async (inputUrlOrPath, options = {}) => {
 
             const response = await window._nativeFetch(targetUrl, requestOptions);
 
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            const isHtmlResponse = contentType.includes('text/html');
+
             // HTTP 502/503/504 means server down/sleeping/limit reached on Render
-            if (response.status === 502 || response.status === 503 || response.status === 504) {
+            // HTTP 405 means static host rejected POST method (e.g. Vercel SPA index.html)
+            // HTML response means static rewrite served index.html instead of real API JSON
+            if (response.status === 502 || response.status === 503 || response.status === 504 || response.status === 405 || isHtmlResponse) {
+                console.warn(`[smartFetch] Backend ${targetUrl} returned ${response.status} (${contentType || 'no-type'}). Failing over...`);
                 continue;
             }
 

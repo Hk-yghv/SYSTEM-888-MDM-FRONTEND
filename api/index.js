@@ -42,8 +42,13 @@ const verifySessionToken = async (token) => {
 };
 
 const isPublicRequest = (method, path) => (
-    (method === 'POST' && ['auth/login', 'auth/verify-otp', 'auth/qr-login'].includes(path)) ||
-    (method === 'GET' && path === 'health')
+    (method === 'POST' && ['auth/login', 'auth/verify-otp', 'auth/qr-login', 'auth/heartbeat'].includes(path)) ||
+    (method === 'GET' && (
+        path === 'health' ||
+        path === 'auth/session' ||
+        path === 'auth/heartbeat' ||
+        /^contracts\/customer-info\/[^/]+$/.test(path)
+    ))
 );
 
 export default async function handler(req, res) {
@@ -77,7 +82,13 @@ export default async function handler(req, res) {
         .find(cookie => cookie.startsWith('mdm_session='));
     const sessionCookieToken = sessionCookie ? sessionCookie.slice('mdm_session='.length) : null;
 
-    // 2. High-Availability Multi-API Pool from deployment environment variables
+    // 2. High-Availability Multi-API Pool from deployment environment variables + default fallbacks
+    const defaultPool = [
+        'https://system-mdm.onrender.com/api',
+        'https://system-mdm-1.onrender.com/api',
+        'https://system-mdm-2.onrender.com/api',
+        'https://apisystemmdm.houv.online/api'
+    ];
     const rawPool = [
         process.env.MDM_API_URL_1,
         process.env.MDM_API_URL_2,
@@ -88,11 +99,12 @@ export default async function handler(req, res) {
         process.env.MDM_API_URL2,
         process.env.MDM_API_URL3,
         process.env.BACKEND_API_URL,
+        ...defaultPool,
     ].filter(Boolean).map(url => url.replace(/\/$/, ''));
 
     const API_POOL = Array.from(new Set(rawPool));
     if (API_POOL.length === 0) {
-        console.error('No API backends are configured. Set MDM_API_URL or BACKEND_API_URL in the Vercel environment.');
+        console.error('No API backends are configured.');
         return res.status(503).json({ error: 'API backend is not configured.' });
     }
 
