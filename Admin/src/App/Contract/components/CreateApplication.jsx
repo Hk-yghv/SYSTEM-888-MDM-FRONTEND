@@ -139,6 +139,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     const getNumericPart = (value) => String(value || '').match(/(?:\d+(?:\.\d*)?|\.\d*)/)?.[0] || '';
     const getVersionNumber = (value) => String(value || '').replace(/[^\d.]/g, '');
+    const sanitizePhone = (value) => String(value || '').replace(/[^0-9 /]/g, '');
     const getAmountNumber = (value) => {
         const numeric = String(value ?? '').replace(/[^\d.]/g, '');
         const decimalIndex = numeric.indexOf('.');
@@ -274,7 +275,12 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     if (data.scannedDoc && typeof data.scannedDoc === 'object') {
                         const doc = data.scannedDoc;
                         if (doc.customerNameEn || doc.idCardNumber) {
-                            setForm(prev => ({ ...prev, ...doc }));
+                            setForm(prev => ({
+                                ...prev,
+                                ...doc,
+                                phone: doc.phone ? sanitizePhone(doc.phone) : prev.phone,
+                                relativePhone: doc.relativePhone ? sanitizePhone(doc.relativePhone) : prev.relativePhone
+                            }));
                             setAutoFilled(true);
                             fetch(`${API_BASE}/phone-app/consume-scanned-doc`, { method: 'POST' }).catch(() => { });
                         }
@@ -305,6 +311,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 setForm({
                     ...emptyForm,
                     ...editData,
+                    phone: sanitizePhone(editData.phone),
+                    relativePhone: sanitizePhone(editData.relativePhone),
                     contractId: editData.contractId || '',
                     contractIid: editData.contractIid || '',
                     contractSuffix: suffix || '000000001',
@@ -388,9 +396,12 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         const { id, value } = e.target;
         const integerFields = new Set(['contractSuffix', 'imei1', 'imei2', 'meid']);
         const decimalFields = new Set(['amount', 'monthlyPayment']);
+        const phoneFields = new Set(['phone', 'relativePhone']);
         const normalizedValue = integerFields.has(id)
             ? String(value).replace(/\D/g, '')
-            : decimalFields.has(id) ? getAmountNumber(value) : value;
+            : decimalFields.has(id)
+                ? getAmountNumber(value)
+                : phoneFields.has(id) ? sanitizePhone(value) : value;
         if (id === 'brand' && !editData) {
             const nextSuffix = computeNextSuffixForBrand(value, allCustomers);
             // Auto-pick subBrand if only 1 available for this brand
@@ -475,8 +486,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 gender: item.gender || prev.gender,
                 birthAddress: item.birthAddress || prev.birthAddress,
                 currentAddress: item.currentAddress || prev.currentAddress,
-                phone: item.phone || prev.phone,
-                relativePhone: item.relativePhone || prev.relativePhone,
+                phone: item.phone ? sanitizePhone(item.phone) : prev.phone,
+                relativePhone: item.relativePhone ? sanitizePhone(item.relativePhone) : prev.relativePhone,
                 facebookName: item.facebookName || prev.facebookName,
                 telegramName: item.telegramName || prev.telegramName,
                 urlFb: item.urlFb || item.url_fb || prev.urlFb,
@@ -611,6 +622,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             urlFb: form.urlFb || '',
             inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
             version: getVersionNumber(form.version),
+            phone: sanitizePhone(form.phone),
+            relativePhone: sanitizePhone(form.relativePhone),
             imei1: String(form.imei1 || '').replace(/\D/g, '').slice(0, 15),
             imei2: String(form.imei2 || '').replace(/\D/g, '').slice(0, 15),
             status: editData?.status || 'Application',
@@ -708,7 +721,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             <AutoField id="customerNameEn" label={t('nameEnglish')} value={form.customerNameEn} placeholder={t('customerNameEnglish')} list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="customerNameKh" label={t('nameKhmer')} value={form.customerNameKh} placeholder={t('customerNameKhmer')} font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="idCardNumber" label={t('idCardNo')} value={form.idCardNumber} placeholder={t('idNumber')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="phone" label={t('phone')} value={form.phone} placeholder={t('phone')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
+                                            <AutoField id="phone" label={t('phone')} value={form.phone} placeholder={t('phone')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                             <Field label={t('dateOfBirth')}><input className={inp} type="date" id="dob" value={form.dob || ''} onChange={handleChange} /></Field>
