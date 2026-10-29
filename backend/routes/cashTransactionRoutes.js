@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import CashTransaction from '../models/CashTransaction.js';
 import CashTransactionCounter from '../models/CashTransactionCounter.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
-import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
+import { dbInstances, queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
 import { resolveUserIsolation } from '../utils/brandIsolation.js';
 
@@ -20,6 +20,30 @@ const normalizeCashTransaction = (record) => {
     normalized.photoUrls = [...new Set(photoUrls)];
     normalized.photoUrl = normalized.photoUrls[0] || '';
     return normalized;
+};
+
+const queryCashTransactionsAcrossDBs = async (filter) => {
+    const connectedInstances = dbInstances.filter(instance => instance.status === 'connected' && instance.conn);
+    const results = await Promise.all(connectedInstances.map(async instance => {
+        let Model;
+        try {
+            Model = instance.conn.model(CashTransaction.modelName);
+        } catch {
+            Model = instance.conn.model(CashTransaction.modelName, CashTransaction.schema);
+        }
+        return Model.find(filter).sort({ createdAt: -1, _id: -1 }).lean();
+    }));
+
+    const uniqueRecords = new Map();
+    results.flat().forEach(record => {
+        const key = String(record._id || record.transactionId);
+        if (!uniqueRecords.has(key)) uniqueRecords.set(key, record);
+    });
+
+    return [...uniqueRecords.values()].sort((a, b) => {
+        const dateDifference = new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date);
+        return dateDifference || String(b._id).localeCompare(String(a._id));
+    });
 };
 
 // 'cash_in' and 'penalty' share the same OR sequence so numbers are
@@ -191,23 +215,20 @@ router.get('/cash-transactions', async (req, res) => {
 
         let allRecords = [];
         if (isMongoConnected) {
-            allRecords = await queryAllDBs(CashTransaction, (M) => {
-                let f = { ...filter };
-                if (search) {
-                    f.$or = [
-                        { category: { $regex: search, $options: 'i' } },
-                        { description: { $regex: search, $options: 'i' } },
-                        { performedBy: { $regex: search, $options: 'i' } },
-                        { contractOR: { $regex: search, $options: 'i' } }
-                    ];
-                }
-                if (startDate || endDate) {
-                    f.date = {};
-                    if (startDate) f.date.$gte = startDate;
-                    if (endDate) f.date.$lte = endDate;
-                }
-                return M.find(f).sort({ createdAt: -1, _id: -1 });
-            });
+            if (search) {
+                filter.$or = [
+                    { category: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } },
+                    { performedBy: { $regex: search, $options: 'i' } },
+                    { contractOR: { $regex: search, $options: 'i' } }
+                ];
+            }
+            if (startDate || endDate) {
+                filter.date = {};
+                if (startDate) filter.date.$gte = startDate;
+                if (endDate) filter.date.$lte = endDate;
+            }
+            allRecords = await queryCashTransactionsAcrossDBs(filter);
         } else {
             let list = MEM_DB.cashTransactions;
             if (type) list = list.filter(item => item.type === type);

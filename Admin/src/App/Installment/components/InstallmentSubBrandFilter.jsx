@@ -12,6 +12,7 @@ export const useInstallmentSubBrand = (user, requestedSubBrand = '') => {
 
     useEffect(() => {
         setSelectedSubBrand(current => {
+            if (requestedSubBrand === 'All') return 'All';
             if (requestedSubBrand && (!availableSubBrands.length || availableSubBrands.includes(requestedSubBrand))) {
                 return requestedSubBrand;
             }
