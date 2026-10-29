@@ -514,17 +514,19 @@ router.post('/contact', async (req, res) => {
             userRole === 'SuperAdmin'
         );
 
+        const contactIdentity = {
+            $or: [
+                { contractId: String(contractId) },
+                ...(contractIid ? [{ contractIid: String(contractIid) }] : []),
+                ...(customerName ? [{ customerName: String(customerName) }] : [])
+            ]
+        };
+
         // Check if this contact already exists in database
         let existing = null;
         if (isMongoConnected) {
             const results = await queryAllDBs(TelegramAuditContact, (M) =>
-                M.findOne({
-                    $or: [
-                        { contractId: String(contractId) },
-                        ...(contractIid ? [{ contractIid: String(contractIid) }] : []),
-                        ...(customerName ? [{ customerName: String(customerName) }] : [])
-                    ]
-                }).lean()
+                M.findOne(contactIdentity).lean()
             );
             existing = results.find(r => r != null) || null;
         } else {
@@ -556,7 +558,7 @@ router.post('/contact', async (req, res) => {
         if (isMongoConnected) {
             const Model = getWriteModel(TelegramAuditContact);
             savedContact = await Model.findOneAndUpdate(
-                { contractId: String(contractId) },
+                contactIdentity,
                 {
                     $set: {
                         contractId: String(contractId),
@@ -586,7 +588,7 @@ router.post('/contact', async (req, res) => {
                 ).catch(() => {});
             }
         } else {
-            let found = MEM_DB.telegramAuditContacts.find(c => String(c.contractId) === String(contractId));
+            let found = existing;
             if (found) {
                 found.contactName = trimmedContactName;
                 found.username = trimmedUsername;
