@@ -4,7 +4,7 @@ import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
 import ImageUrlListInput from '../../../components/ImageUrlListInput';
-import { formatIMEI } from '../../../utils/imeiFormatter';
+import { formatIMEI, formatIMEIInput } from '../../../utils/imeiFormatter';
 import { getProxyImageUrl, storeImageFiles } from '../../../utils/mediaUtils';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
@@ -14,7 +14,7 @@ const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indig
 const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-gray-100 text-xs outline-none";
 
 /* ── Autocomplete field with suggestions dropdown ── */
-const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '', numeric = false }) => {
+const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '', numeric = false, formatNumeric }) => {
     const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const [focused, setFocused] = useState(false);
@@ -38,14 +38,24 @@ const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelec
             <label htmlFor={id} className="font-semibold text-gray-400 text-[11px]">{label}</label>
             <input
                 className={`${inp} ${font}`}
-                type="text" id={id} value={value || ''}
+                type="text" id={id} value={formatNumeric ? formatNumeric(value) : value || ''}
                 inputMode={numeric ? 'numeric' : undefined}
-                pattern={numeric ? '[0-9]*' : undefined}
+                pattern={numeric && !formatNumeric ? '[0-9]*' : undefined}
                 onChange={e => {
                     if (numeric) {
-                        e.target.value = e.target.value.replace(/\D/g, '');
+                        const input = e.target;
+                        const digits = input.value.replace(/\D/g, '').slice(0, 15);
+                        const digitsBeforeCursor = input.value.slice(0, input.selectionStart || 0).replace(/\D/g, '').length;
+                        onChange({ target: { id, value: digits } });
+                        if (formatNumeric) {
+                            requestAnimationFrame(() => {
+                                const cursorPosition = digitsBeforeCursor + [2, 8, 14].filter(boundary => digitsBeforeCursor >= boundary).length;
+                                input.setSelectionRange(cursorPosition, cursorPosition);
+                            });
+                        }
+                    } else {
+                        onChange(e);
                     }
-                    onChange(e);
                     setOpen(true);
                 }}
                 onFocus={() => { setFocused(true); setOpen(true); }}
@@ -600,6 +610,8 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             urlFb: form.urlFb || '',
             inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
             version: getNumericPart(form.version),
+            imei1: String(form.imei1 || '').replace(/\D/g, '').slice(0, 15),
+            imei2: String(form.imei2 || '').replace(/\D/g, '').slice(0, 15),
             status: editData?.status || 'Application',
             monthlyPayment: Number(form.monthlyPayment) || (Number(form.amount) / 10),
             modifiedByAdmin: isAdmin ? true : Boolean(editData?.modifiedByAdmin),
@@ -813,15 +825,15 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </select>
                             </Field>
                             <AutoField id="serialNumber" label="Serial Number" value={form.serialNumber} placeholder={t('serialNumber')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder={t('imei1')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} numeric />
-                            <Field label="IMEI 2"><input className={`${inp} font-mono`} type="text" inputMode="numeric" pattern="[0-9]*" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder={t('imei2')} /></Field>
+                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder={t('imei1')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} numeric formatNumeric={formatIMEIInput} />
+                            <AutoField id="imei2" label="IMEI 2" value={form.imei2} placeholder={t('imei2')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} numeric formatNumeric={formatIMEIInput} />
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                             <Field label="MEID Number">
                                 <input className={`${inp} font-mono text-pink-400`} type="text" inputMode="numeric" pattern="[0-9]*" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
                             </Field>
                             <Field label="Version">
-                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18" />
+                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" inputMode="text" value={getNumericPart(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18" />
                             </Field>
                             <Field label={t('color')}><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder={t('deviceColorPlaceholder')} /></Field>
                             <Field label={t('capacityStorage')}>

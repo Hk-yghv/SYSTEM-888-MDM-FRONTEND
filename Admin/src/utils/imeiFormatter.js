@@ -12,4 +12,12 @@ export const formatIMEI = (imei) => {
     return str;
 };
 
+export const formatIMEIInput = (imei) => {
+    const digits = String(imei || '').replace(/\D/g, '').slice(0, 15);
+    return digits
+        .replace(/^(\d{2})(?=\d)/, '$1 ')
+        .replace(/^(\d{2}) (\d{6})(?=\d)/, '$1 $2 ')
+        .replace(/^(\d{2}) (\d{6}) (\d{6})(?=\d)/, '$1 $2 $3 ');
+};
+
 export default formatIMEI;
