@@ -528,7 +528,9 @@ router.post('/contact', async (req, res) => {
             const results = await queryAllDBs(TelegramAuditContact, (M) =>
                 M.findOne(contactIdentity).lean()
             );
-            existing = results.find(r => r != null) || null;
+            existing = Array.isArray(results)
+                ? results.find(r => r != null) || null
+                : results || null;
         } else {
             existing = (MEM_DB.telegramAuditContacts || []).find(c =>
                 String(c.contractId) === String(contractId) ||
