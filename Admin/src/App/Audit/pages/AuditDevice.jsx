@@ -794,19 +794,10 @@ const AuditDevice = () => {
             {/* Header & Page Title */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-[5px] border border-slate-200 shadow-xs">
                 <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-[5px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-                        <FaClipboardList size={22} />
-                    </div>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{t('auditDevice')}</h1>
-                            <span className="px-2 py-0.5 rounded-[5px] text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                {t('auditActivateSync')}
-                            </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                            {t('auditDeviceDescription')}
-                        </p>
                     </div>
                 </div>
 
@@ -848,7 +839,6 @@ const AuditDevice = () => {
                     {/* Date Picker (Auto defaults to Today) */}
                     <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-[5px] border border-slate-300">
                         <FaCalendarAlt className="text-emerald-600 text-sm" />
-                        <span className="text-xs font-bold text-slate-600">{t('auditDate')}:</span>
                         <input
                             type="date"
                             value={selectedDate}
@@ -876,19 +866,6 @@ const AuditDevice = () => {
                             </button>
                         )}
                     </div>
-
-                    {/* Status Badge */}
-                    {isSubmitted ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold shadow-2xs">
-                            <FaLock size={12} />
-                            <span>{t('auditSubmittedLocked')}</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-[5px] bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold shadow-2xs">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>{t('auditInProgressEditable')}</span>
-                        </div>
-                    )}
 
                     {/* Submit Daily Audit Button */}
                     <button
