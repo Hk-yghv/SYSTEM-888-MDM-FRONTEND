@@ -221,9 +221,8 @@ router.get('/', async (req, res) => {
                 .map(log => log.auditDate);
         const auditedDates = [...new Set((Array.isArray(auditedDatesRaw) ? auditedDatesRaw : [auditedDatesRaw])
             .filter(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)))].sort().reverse();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate) || targetDate > todayStr ||
-            (targetDate !== todayStr && !auditedDates.includes(targetDate))) {
-            return res.status(400).json({ success: false, error: 'Select today or a date with existing audit records.' });
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate) || targetDate > todayStr) {
+            return res.status(400).json({ success: false, error: 'Invalid audit date or future audit dates are not allowed.' });
         }
 
         let isSubmitted = false;

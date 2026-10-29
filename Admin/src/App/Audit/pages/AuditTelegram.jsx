@@ -164,7 +164,6 @@ const AuditTelegram = () => {
     const todayStr = useMemo(() => formatDateToYMD(new Date()), []);
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const [currentRound, setCurrentRound] = useState(getAuditRound);
-    const [auditedDates, setAuditedDates] = useState([]);
 
     // Admin ធំ (Super Admin) Permission Check
     const isAdmin = useMemo(() => {
@@ -298,7 +297,6 @@ const AuditTelegram = () => {
                 if (data.success) {
                     const round = data.currentRound || getAuditRound();
                     setCurrentRound(round);
-                    setAuditedDates(Array.isArray(data.auditedDates) ? data.auditedDates : []);
                     setContactMap(data.contactMap || {});
                     setContactByName(data.contactByName || {});
                     setAuditMap(data.auditMap || {});
@@ -472,6 +470,10 @@ const AuditTelegram = () => {
 
     // ─── Open Audit Modal ────────────────────────────────────────────
     const handleOpenAuditModal = (row) => {
+        if (selectedDate < todayStr) {
+            alert(t('auditPastDateDenied'));
+            return;
+        }
         if (isSubmitted) {
             alert(t('auditLockedAlert'));
             return;
@@ -497,6 +499,10 @@ const AuditTelegram = () => {
     // ─── Save Audit Record ───────────────────────────────────────────
     const handleSaveAudit = async (e) => {
         e?.preventDefault();
+        if (selectedDate < todayStr) {
+            alert(t('auditPastDateDenied'));
+            return;
+        }
         if (isSubmitted) {
             alert(t('auditLockedAlert'));
             return;
@@ -743,8 +749,8 @@ const AuditTelegram = () => {
                             max={todayStr}
                             onChange={(e) => {
                                 const value = e.target.value;
-                                if (value > todayStr || (value !== todayStr && !auditedDates.includes(value))) {
-                                    alert(t('auditDateUnavailable', 'You can only select today or a date with audit records.'));
+                                if (value > todayStr) {
+                                    alert(t('auditFutureDateUnavailable'));
                                     return;
                                 }
                                 setSelectedDate(value);
