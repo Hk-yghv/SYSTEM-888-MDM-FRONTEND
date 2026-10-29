@@ -59,7 +59,8 @@ export const getRowInterest = (row, contract) => {
     const durationStr = String(contract.duration || '12 Months').toLowerCase();
     const matched = durationStr.match(/\d+/);
     const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ') || durationStr.includes('d');
-    const months = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+    const count = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+    const months = !isDays && durationStr.includes('year') ? count * 12 : count;
 
     if (contract.monthlyInterest && !isNaN(Number(contract.monthlyInterest)) && Number(contract.monthlyInterest) > 0) {
         return Number(contract.monthlyInterest);
@@ -69,7 +70,7 @@ export const getRowInterest = (row, contract) => {
     if (interestStr) {
         const rate = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
         if (!isNaN(rate) && rate > 0) {
-            return principal * (rate / 100);
+            return interestStr.includes('%') ? principal * (rate / 100) : rate;
         }
     }
 
@@ -97,7 +98,8 @@ export const getContractTotalInterest = (contract) => {
     const durationStr = String(contract.duration || '12 Months').toLowerCase();
     const matched = durationStr.match(/\d+/);
     const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ') || durationStr.includes('d');
-    const months = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+    const count = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+    const months = !isDays && durationStr.includes('year') ? count * 12 : count;
 
     if (contract.monthlyInterest && !isNaN(Number(contract.monthlyInterest)) && Number(contract.monthlyInterest) > 0) {
         return Number(contract.monthlyInterest) * (isDays ? 1 : months);
@@ -107,7 +109,7 @@ export const getContractTotalInterest = (contract) => {
     if (interestStr) {
         const rate = parseFloat(interestStr.replace(/[^0-9.]/g, ''));
         if (!isNaN(rate) && rate > 0) {
-            return (principal * (rate / 100)) * (isDays ? 1 : months);
+            return (interestStr.includes('%') ? principal * (rate / 100) : rate) * (isDays ? 1 : months);
         }
     }
 

@@ -141,10 +141,11 @@ function calculateRepayments(contractsList) {
             const matched = durationStr.match(/\d+/);
             const count = matched ? parseInt(matched[0], 10) : 1;
             const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ');
+            const durationMonths = count * (durationStr.includes('year') ? 12 : 1);
             const monthly = Number(c.monthlyPayment) || 0;
             const scheduled = isDays
                 ? (monthly || Number(c.amount) || 0)
-                : (monthly > 0 ? (monthly * count) : (Number(c.amount) || 0));
+                : (monthly > 0 ? (monthly * durationMonths) : (Number(c.amount) || 0));
             totalScheduledRepayment += scheduled;
             totalRepaymentExpected += scheduled;
         }

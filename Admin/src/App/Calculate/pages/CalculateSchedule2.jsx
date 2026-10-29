@@ -191,6 +191,13 @@ const CalculateSchedule2 = () => {
 
     const [searchParams] = useSearchParams();
 
+    useEffect(() => {
+        const requestedSubBrand = searchParams.get('subBrand');
+        if (requestedSubBrand && allowedSubBrands.includes(requestedSubBrand)) {
+            setSelectedSubBrand(requestedSubBrand);
+        }
+    }, [allowedSubBrands, searchParams]);
+
     // ─── Realtime SSE Stream & Polling Sync for Saved Props ─────────
     useEffect(() => {
         if (!API_BASE) return;

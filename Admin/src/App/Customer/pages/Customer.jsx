@@ -123,6 +123,7 @@ const Customer = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
+            params.set('includeCustomerSummary', 'true');
             if (contractId) params.set('locateId', contractId);
             else if (search) params.set('search', search);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
@@ -187,6 +188,7 @@ const Customer = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
+            params.set('includeCustomerSummary', 'true');
             if (selectedContractId) params.set('contractId', selectedContractId);
             else if (searchTerm) params.set('search', searchTerm);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
@@ -204,6 +206,8 @@ const Customer = () => {
         const allData = await fetchAllForExport();
         const excelData = allData.map((c, idx) => ({
             'No': idx + 1,
+            'CU.ID': c.customerId || '',
+            'Registrations': c.customerRegistrationCount || 0,
             'Input Date': c.inputDate || '',
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
@@ -234,6 +238,8 @@ const Customer = () => {
         const allData = await fetchAllForExport();
         const columns = [
             { header: 'No', cell: (_, idx) => idx + 1 },
+            { header: 'CU.ID', accessor: 'customerId' },
+            { header: 'Registrations', accessor: 'customerRegistrationCount' },
             { header: 'Input Date', accessor: 'inputDate' },
             { header: 'Name EN', accessor: 'customerNameEn' },
             { header: 'ID Card', accessor: 'idCardNumber' },
@@ -305,6 +311,8 @@ const Customer = () => {
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
                         <tr>
                             <th className='px-4 py-1 text-center'>{t('no')}</th>
+                            <th className='px-4 py-1'>{t('customerCuId')}</th>
+                            <th className='px-4 py-1 text-center'>{t('customerRegistrationCount')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1'>{t('customerIdCardNumber')}</th>
@@ -320,7 +328,7 @@ const Customer = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {filteredCustomers.length === 0 ? (
                             <tr>
-                                <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={13} className="text-center py-8 text-slate-500 italic font-medium">
                                     {searchTerm || selectedContractId
                                         ? t('customerNoResults').replace('{search}', searchInput)
                                         : t('customerNoActive')}
@@ -337,6 +345,8 @@ const Customer = () => {
                                 return (
                                     <tr key={item._id || idx} className='hover:bg-emerald-50/50 transition-colors'>
                                         <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? total - locatedIndex : total - ((currentPage - 1) * itemsPerPage + idx)}</td>
+                                        <td className='px-4 py-1 font-mono font-bold text-indigo-700'><CopyCell text={item.customerId || '-'} className='font-mono font-bold text-indigo-700' /></td>
+                                        <td className='px-4 py-1 text-center font-mono font-bold text-emerald-700'>{item.customerRegistrationCount || 0}</td>
                                         <td className='px-4 py-1 whitespace-nowrap font-mono text-slate-700'><CopyCell text={item.inputDate || '-'} className='font-mono text-slate-700' /></td>
                                         <td className='px-4 py-1'>
                                             <div className="flex items-center gap-2">

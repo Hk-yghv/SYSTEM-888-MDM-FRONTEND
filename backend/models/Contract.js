@@ -8,6 +8,7 @@ const contractSchema = new mongoose.Schema({
     // Customer Information
     customerNameEn: { type: String, required: true },
     customerNameKh: { type: String, required: true },
+    customerId: { type: String, default: '', index: true },
     idCardNumber: { type: String, default: '' },
     dob: { type: String, default: '' },
     gender: { type: String, default: 'male' },

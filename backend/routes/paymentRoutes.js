@@ -63,6 +63,7 @@ router.get(['/payments', '/'], async (req, res) => {
         } = req.query;
         const isolation = await resolveUserIsolation(req);
         const requestedBrand = isolation.isMasterAdmin ? (brand || isolation.brand) : isolation.brand;
+        const customerIdSearch = /^CU-/i.test(search.trim());
         const isGetAll = limit === 'all' || req.query.all === 'true';
         const parsedLimit = isGetAll ? 999999 : (parseInt(limit) || 10);
         const parsedPage = parseInt(page) || 1;
@@ -70,11 +71,15 @@ router.get(['/payments', '/'], async (req, res) => {
 
         if (isMongoConnected) {
             let matchedContractIds = null;
-            if (requestedBrand || isolation.hasSubBrandRestriction) {
+            if (requestedBrand || isolation.hasSubBrandRestriction || customerIdSearch) {
                 let contractQuery = {};
                 if (requestedBrand) contractQuery.brand = requestedBrand;
                 if (isolation.hasSubBrandRestriction) {
-                    contractQuery.subBrand = { $in: isolation.allowedSubBrands };
+                    contractQuery.subBrand = { $in: isolation.effectiveSubBrands };
+                }
+                if (customerIdSearch) {
+                    const escapedCustomerIdSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    contractQuery.customerId = { $regex: escapedCustomerIdSearch, $options: 'i' };
                 }
                 const matchedContracts = await queryAllDBs(Contract, (M) => M.find(contractQuery).select('contractId'));
                 matchedContractIds = matchedContracts.map(c => c.contractId);
@@ -93,7 +98,7 @@ router.get(['/payments', '/'], async (req, res) => {
             // Normalize paymentImages on every doc
             allPayments = allPayments.map(normalizePayment);
             // Apply search filter in memory (after fetch)
-            if (search) {
+            if (search && !customerIdSearch) {
                 const q = search.toLowerCase();
                 allPayments = allPayments.filter(p =>
                     (p.customerName || '').toLowerCase().includes(q) ||
@@ -119,11 +124,16 @@ router.get(['/payments', '/'], async (req, res) => {
 
         // MEM_DB path
         let filtered = MEM_DB.payments;
-        if (requestedBrand) {
-            const contractIds = MEM_DB.contracts.filter(c => c.brand === requestedBrand).map(c => c.contractId);
+        if (requestedBrand || isolation.hasSubBrandRestriction || customerIdSearch) {
+            const contractIds = MEM_DB.contracts.filter(contract => {
+                if (requestedBrand && contract.brand !== requestedBrand) return false;
+                if (isolation.hasSubBrandRestriction && !isolation.effectiveSubBrands.includes(contract.subBrand)) return false;
+                if (customerIdSearch && !String(contract.customerId || '').toLowerCase().includes(search.trim().toLowerCase())) return false;
+                return true;
+            }).map(contract => contract.contractId);
             filtered = filtered.filter(p => contractIds.includes(p.contractId));
         }
-        if (search) {
+        if (search && !customerIdSearch) {
             const q = search.toLowerCase();
             filtered = filtered.filter(p =>
                 (p.customerName || '').toLowerCase().includes(q) ||

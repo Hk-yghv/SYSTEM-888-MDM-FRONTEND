@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import QRCode from 'qrcode';
 import Contract from '../models/Contract.js';
+import CustomerCounter from '../models/CustomerCounter.js';
 import ActivatedDescriptionStatus from '../models/ActivatedDescriptionStatus.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
@@ -82,7 +83,9 @@ export const calculateContractFinancials = (c) => {
     const matched = durationStr.match(/\d+/);
     const count = matched ? parseInt(matched[0], 10) : 12;
     const isDays = durationStr.includes('day') || durationStr.includes('ថ្ងៃ') || durationStr.includes('d');
-    const months = isDays ? Math.max(1, Math.ceil(count / 30)) : Math.max(1, count);
+    const months = isDays
+        ? Math.max(1, Math.ceil(count / 30))
+        : Math.max(1, count * (durationStr.includes('year') ? 12 : 1));
 
     let monthlyInterest = 0;
     let totalInterest = 0;
@@ -91,7 +94,7 @@ export const calculateContractFinancials = (c) => {
     // 1. Resolve Contract-level Monthly Interest & Total Interest
     if (c.monthlyInterest && !isNaN(Number(c.monthlyInterest)) && Number(c.monthlyInterest) > 0) {
         monthlyInterest = Number(c.monthlyInterest);
-        totalInterest = monthlyInterest * (isDays ? 1 : count);
+        totalInterest = monthlyInterest * (isDays ? 1 : months);
     } else {
         const interestStr = String(c.interest || c.interestType || '').trim();
         if (interestStr.includes('%')) {
@@ -522,7 +525,9 @@ const rotateExpiredComments = async (contractsList) => {
 // GET contracts
 router.get('/', async (req, res) => {
     try {
+        await ensureCustomerIdsBackfilled();
         const { status, userBrand, userRole, username, isImmutable, page = 1, limit = 10, search = '', contractId = '', locateId = '', dateFrom = '', dateTo = '', requireSchedule = false } = req.query;
+        const includeCustomerSummary = req.query.includeCustomerSummary === 'true';
         const isGetAll = limit === 'all' || req.query.all === 'true';
         const parsedLimit = isGetAll ? 999999 : (parseInt(limit) || 10);
         const parsedPage = parseInt(page) || 1;
@@ -579,6 +584,7 @@ router.get('/', async (req, res) => {
                 { phone: { $regex: search, $options: 'i' } },
                 { relativePhone: { $regex: search, $options: 'i' } },
                 { serialNumber: { $regex: search, $options: 'i' } },
+                { customerId: { $regex: search, $options: 'i' } },
                 { contractId: { $regex: search, $options: 'i' } },
                 { contractIid: { $regex: search, $options: 'i' } },
                 { model: { $regex: search, $options: 'i' } }
@@ -612,7 +618,9 @@ router.get('/', async (req, res) => {
                 actualPage = 1;
             }
             const contracts = allContracts.slice(actualSkip, actualSkip + parsedLimit);
-            const data = contracts.map(sanitizeAndDecryptContract);
+            const data = includeCustomerSummary
+                ? await attachCustomerRegistrationCounts(contracts)
+                : contracts.map(sanitizeAndDecryptContract);
             return res.json({
                 data,
                 total,
@@ -667,6 +675,7 @@ router.get('/', async (req, res) => {
             (c.phone || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.relativePhone || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.serialNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+            (c.customerId || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.contractId || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.contractIid || '').toLowerCase().includes(search.toLowerCase()) ||
             (c.model || '').toLowerCase().includes(search.toLowerCase())
@@ -692,7 +701,10 @@ router.get('/', async (req, res) => {
             actualSkip = 0;
             actualPage = 1;
         }
-        const data = filtered.slice(actualSkip, actualSkip + parsedLimit).map(sanitizeAndDecryptContract);
+        const contracts = filtered.slice(actualSkip, actualSkip + parsedLimit);
+        const data = includeCustomerSummary
+            ? await attachCustomerRegistrationCounts(contracts)
+            : contracts.map(sanitizeAndDecryptContract);
         res.json({
             data,
             total,
@@ -955,9 +967,330 @@ const generateUniqueContractId = async (currentYear = new Date().getFullYear()) 
     return `CT-${currentYear}-${Date.now().toString().slice(-6)}${Math.floor(10 + Math.random() * 90)}`;
 };
 
+const normalizeCustomerIdentityValue = (value) => String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase();
+
+const normalizeCustomerIdCardNumber = (value) => normalizeCustomerIdentityValue(value).replace(/[\s-]/g, '');
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildCustomerIdentityQuery = (identity) => {
+    const clauses = [];
+    if (identity.idCardNumber) {
+        const cardPattern = [...normalizeCustomerIdCardNumber(identity.idCardNumber)]
+            .map(escapeRegex)
+            .join('[\\s-]*');
+        clauses.push({ idCardNumber: { $regex: `^\\s*${cardPattern}\\s*$`, $options: 'i' } });
+    }
+    if (identity.customerNameEn) {
+        const name = escapeRegex(identity.customerNameEn).replace(/\s+/g, '\\s+');
+        clauses.push({ customerNameEn: { $regex: `^\\s*${name}\\s*$`, $options: 'i' } });
+    }
+    if (identity.customerNameKh) {
+        const name = escapeRegex(identity.customerNameKh).replace(/\s+/g, '\\s+');
+        clauses.push({ customerNameKh: { $regex: `^\\s*${name}\\s*$`, $options: 'i' } });
+    }
+    return clauses.length ? { $or: clauses } : null;
+};
+
+const isSameCustomer = (identity, candidate) => {
+    const cardNumber = normalizeCustomerIdCardNumber(identity.idCardNumber);
+    const candidateCardNumber = normalizeCustomerIdCardNumber(candidate.idCardNumber);
+    if (cardNumber && candidateCardNumber) {
+        return cardNumber === candidateCardNumber;
+    }
+
+    const nameEn = normalizeCustomerIdentityValue(identity.customerNameEn);
+    const candidateNameEn = normalizeCustomerIdentityValue(candidate.customerNameEn);
+    const nameKh = normalizeCustomerIdentityValue(identity.customerNameKh);
+    const candidateNameKh = normalizeCustomerIdentityValue(candidate.customerNameKh);
+    const matchesEnglishName = Boolean(nameEn && candidateNameEn && nameEn === candidateNameEn);
+    const matchesKhmerName = Boolean(nameKh && candidateNameKh && nameKh === candidateNameKh);
+    if (!matchesEnglishName && !matchesKhmerName) return false;
+
+    const dob = normalizeCustomerIdentityValue(identity.dob);
+    const candidateDob = normalizeCustomerIdentityValue(candidate.dob);
+    if (dob && candidateDob && dob !== candidateDob) return false;
+
+    const hasNameConflict =
+        (nameEn && candidateNameEn && nameEn !== candidateNameEn) ||
+        (nameKh && candidateNameKh && nameKh !== candidateNameKh);
+    const dobMatches = Boolean(dob && candidateDob && dob === candidateDob);
+    return !hasNameConflict || dobMatches;
+};
+
+const getMatchingCustomerContracts = async (identity) => {
+    const query = buildCustomerIdentityQuery(identity);
+    if (!query) return [];
+
+    if (!isMongoConnected) {
+        return MEM_DB.contracts
+            .filter(contract => isSameCustomer(identity, contract))
+            .map(contract => ({ contract, model: null }));
+    }
+
+    const matches = [];
+    for (const instance of dbInstances) {
+        if (instance.status !== 'connected' || !instance.conn) continue;
+        let BoundContract;
+        try {
+            BoundContract = instance.conn.model('Contract');
+        } catch {
+            BoundContract = instance.conn.model('Contract', Contract.schema);
+        }
+        const candidates = await BoundContract.find(query)
+            .select('_id contractId customerId customerNameEn customerNameKh idCardNumber dob createdAt')
+            .sort({ createdAt: 1 })
+            .lean();
+        for (const contract of candidates) {
+            if (isSameCustomer(identity, contract)) {
+                matches.push({ contract, model: BoundContract });
+            }
+        }
+    }
+    return matches;
+};
+
+const getHighestCustomerIdSequence = async () => {
+    const customerIdPattern = /^CU-(\d+)$/;
+    let highestSequence = 0;
+    if (!isMongoConnected) {
+        for (const contract of MEM_DB.contracts) {
+            const match = String(contract.customerId || '').match(customerIdPattern);
+            if (match) highestSequence = Math.max(highestSequence, Number(match[1]));
+        }
+        return highestSequence;
+    }
+
+    for (const instance of dbInstances) {
+        if (instance.status !== 'connected' || !instance.conn) continue;
+        let BoundContract;
+        try {
+            BoundContract = instance.conn.model('Contract');
+        } catch {
+            BoundContract = instance.conn.model('Contract', Contract.schema);
+        }
+        const contracts = await BoundContract.find({ customerId: /^CU-\d+$/ }).select('customerId').lean();
+        for (const contract of contracts) {
+            const match = String(contract.customerId || '').match(customerIdPattern);
+            if (match) highestSequence = Math.max(highestSequence, Number(match[1]));
+        }
+    }
+    return highestSequence;
+};
+
+let customerIdCounterReady = false;
+let customerIdCounterInitialization = null;
+const initializeCustomerIdCounter = async () => {
+    if (customerIdCounterReady) return;
+    if (!customerIdCounterInitialization) {
+        customerIdCounterInitialization = (async () => {
+            const highestSequence = await getHighestCustomerIdSequence();
+            if (!isMongoConnected) {
+                MEM_DB.customerIdSequence = Math.max(MEM_DB.customerIdSequence || 0, highestSequence);
+                return;
+            }
+            const Counter = getWriteModel(CustomerCounter);
+            if (!Counter) throw new Error('No database is available to initialize the customer ID sequence.');
+            await Counter.findOneAndUpdate(
+                { key: 'customer' },
+                { $max: { sequence: highestSequence } },
+                { upsert: true, setDefaultsOnInsert: true }
+            );
+        })();
+    }
+
+    try {
+        await customerIdCounterInitialization;
+        customerIdCounterReady = true;
+    } finally {
+        customerIdCounterInitialization = null;
+    }
+};
+
+const generateCustomerId = async () => {
+    await initializeCustomerIdCounter();
+    if (!isMongoConnected) {
+        MEM_DB.customerIdSequence = (MEM_DB.customerIdSequence || 0) + 1;
+        return `CU-${String(MEM_DB.customerIdSequence).padStart(6, '0')}`;
+    }
+
+    const Counter = getWriteModel(CustomerCounter);
+    if (!Counter) throw new Error('No database is available to generate a customer ID.');
+    const counter = await Counter.findOneAndUpdate(
+        { key: 'customer' },
+        { $inc: { sequence: 1 } },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    return `CU-${String(counter.sequence).padStart(6, '0')}`;
+};
+
+const resolveCustomerId = async (identity) => {
+    const matchingContracts = await getMatchingCustomerContracts(identity);
+    matchingContracts.sort((left, right) =>
+        new Date(left.contract.createdAt || 0) - new Date(right.contract.createdAt || 0)
+    );
+    const existingCustomerId = matchingContracts
+        .map(({ contract }) => contract.customerId)
+        .find(customerId => typeof customerId === 'string' && customerId.trim());
+    const customerId = existingCustomerId || await generateCustomerId();
+
+    if (isMongoConnected) {
+        const updatesByModel = new Map();
+        for (const { contract, model } of matchingContracts) {
+            if (!contract._id || contract.customerId === customerId) continue;
+            if (!updatesByModel.has(model)) updatesByModel.set(model, []);
+            updatesByModel.get(model).push(contract._id);
+        }
+        for (const [model, ids] of updatesByModel) {
+            await model.updateMany({ _id: { $in: ids } }, { $set: { customerId } });
+        }
+    }
+    for (const contract of MEM_DB.contracts) {
+        if (isSameCustomer(identity, contract)) contract.customerId = customerId;
+    }
+
+    return customerId;
+};
+
+let customerIdBackfillCompleted = false;
+let customerIdBackfillPromise = null;
+const createCustomerIdentityIndex = () => ({
+    idCardNumbers: new Map(),
+    englishNames: new Map(),
+    khmerNames: new Map()
+});
+
+const addCustomerIdentityToIndex = (indexes, entry) => {
+    const identityFields = [
+        ['idCardNumbers', normalizeCustomerIdCardNumber(entry.contract.idCardNumber)],
+        ['englishNames', normalizeCustomerIdentityValue(entry.contract.customerNameEn)],
+        ['khmerNames', normalizeCustomerIdentityValue(entry.contract.customerNameKh)]
+    ];
+    for (const [field, value] of identityFields) {
+        if (!value) continue;
+        const bucket = indexes[field].get(value) || [];
+        bucket.push(entry);
+        indexes[field].set(value, bucket);
+    }
+};
+
+const findIndexedCustomerMatches = (identity, indexes) => {
+    const candidates = new Set();
+    const identityFields = [
+        ['idCardNumbers', normalizeCustomerIdCardNumber(identity.idCardNumber)],
+        ['englishNames', normalizeCustomerIdentityValue(identity.customerNameEn)],
+        ['khmerNames', normalizeCustomerIdentityValue(identity.customerNameKh)]
+    ];
+    for (const [field, value] of identityFields) {
+        if (!value) continue;
+        for (const entry of indexes[field].get(value) || []) candidates.add(entry);
+    }
+
+    return [...candidates]
+        .filter(entry => isSameCustomer(identity, entry.contract))
+        .sort((left, right) =>
+            new Date(left.contract.createdAt || 0) - new Date(right.contract.createdAt || 0)
+        );
+};
+
+const backfillMissingCustomerIds = async () => {
+    await initializeCustomerIdCounter();
+
+    let entries;
+    if (!isMongoConnected) {
+        entries = MEM_DB.contracts.map(contract => ({ contract, model: null }));
+    } else {
+        entries = [];
+        for (const instance of dbInstances) {
+            if (instance.status !== 'connected' || !instance.conn) continue;
+            let BoundContract;
+            try {
+                BoundContract = instance.conn.model('Contract');
+            } catch {
+                BoundContract = instance.conn.model('Contract', Contract.schema);
+            }
+            const records = await BoundContract.find({})
+                .select('_id customerId customerNameEn customerNameKh idCardNumber dob createdAt')
+                .lean();
+            entries.push(...records.map(contract => ({ contract, model: BoundContract })));
+        }
+    }
+
+    const indexes = createCustomerIdentityIndex();
+    const missingEntries = [];
+    for (const entry of entries) {
+        if (String(entry.contract.customerId || '').trim()) {
+            addCustomerIdentityToIndex(indexes, entry);
+        } else {
+            missingEntries.push(entry);
+        }
+    }
+    missingEntries.sort((left, right) =>
+        new Date(left.contract.createdAt || 0) - new Date(right.contract.createdAt || 0)
+    );
+
+    for (const entry of missingEntries) {
+        const matches = findIndexedCustomerMatches(entry.contract, indexes);
+        const existingCustomerId = matches
+            .map(match => String(match.contract.customerId || '').trim())
+            .find(Boolean);
+        const customerId = existingCustomerId || await generateCustomerId();
+        entry.contract.customerId = customerId;
+        if (entry.model) {
+            await entry.model.updateOne({ _id: entry.contract._id }, { $set: { customerId } });
+        }
+        addCustomerIdentityToIndex(indexes, entry);
+    }
+};
+
+const ensureCustomerIdsBackfilled = async () => {
+    if (customerIdBackfillCompleted) return;
+    if (!customerIdBackfillPromise) {
+        customerIdBackfillPromise = backfillMissingCustomerIds();
+    }
+    try {
+        await customerIdBackfillPromise;
+        customerIdBackfillCompleted = true;
+    } finally {
+        customerIdBackfillPromise = null;
+    }
+};
+
+const attachCustomerRegistrationCounts = async (contracts) => {
+    const customerIds = [...new Set(contracts.map(contract => contract.customerId).filter(Boolean))];
+    if (customerIds.length === 0) {
+        return contracts.map(contract => ({ ...sanitizeAndDecryptContract(contract), customerRegistrationCount: 0 }));
+    }
+
+    const counts = new Map();
+    if (isMongoConnected) {
+        const groupedCounts = await queryAllDBs(Contract, Model => Model.aggregate([
+            { $match: { customerId: { $in: customerIds } } },
+            { $group: { _id: '$customerId', count: { $sum: 1 } } }
+        ]));
+        for (const item of groupedCounts) counts.set(item._id, item.count);
+    } else {
+        for (const contract of MEM_DB.contracts) {
+            if (customerIds.includes(contract.customerId)) {
+                counts.set(contract.customerId, (counts.get(contract.customerId) || 0) + 1);
+            }
+        }
+    }
+
+    return contracts.map(contract => ({
+        ...sanitizeAndDecryptContract(contract),
+        customerRegistrationCount: counts.get(contract.customerId) || 0
+    }));
+};
+
 // CREATE contract
 router.post('/', async (req, res) => {
     try {
+        await ensureCustomerIdsBackfilled();
         const currentYear = new Date().getFullYear();
         let targetContractId = (req.body.contractId || '').trim();
 
@@ -989,8 +1322,15 @@ router.post('/', async (req, res) => {
             }
         }
 
+        const customerId = await resolveCustomerId({
+            customerNameEn: normalizeCustomerIdentityValue(req.body.customerNameEn),
+            customerNameKh: normalizeCustomerIdentityValue(req.body.customerNameKh),
+            idCardNumber: normalizeCustomerIdCardNumber(req.body.idCardNumber),
+            dob: normalizeCustomerIdentityValue(req.body.dob)
+        });
         const newContract = {
             ...req.body,
+            customerId,
             subBrand: targetSubBrand,
             contractId: targetContractId,
             contractIid: req.body.contractIid || '',
@@ -1107,6 +1447,7 @@ router.put('/:id', async (req, res) => {
         delete updateData.updatedAt;
         delete updateData.commentHistory;
         delete updateData.commentDate;
+        delete updateData.customerId;
         const appendComment = updateData.appendComment === true;
         delete updateData.appendComment;
 

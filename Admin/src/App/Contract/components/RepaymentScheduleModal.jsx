@@ -11,6 +11,11 @@ import { storeImageFile, ensureBase64 } from '../../../utils/mediaUtils';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
 
 const round2 = roundMoney;
+const getPeriodicInterest = (principal, interest) => {
+    const interestText = String(interest || '').trim();
+    const value = parseFloat(interestText.replace(/[^0-9.]/g, '')) || 0;
+    return interestText.includes('%') ? principal * (value / 100) : value;
+};
 
 const formatMoney = (val) => {
     const num = Number(val);
@@ -85,12 +90,12 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
         const principal = Number(contract.amount || contract.totalAmount || 0);
         const rateStr = String(contract.interest || contract.interestType || '14%');
-        const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
 
         const durationStr = String(contract.duration || '12 Months');
         const matched = durationStr.match(/\d+/);
-        const months = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
         const isDays = durationStr.toLowerCase().includes('day') || durationStr.toLowerCase().includes('ថ្ងៃ') || durationStr.toLowerCase().includes('d');
+        const durationCount = matched ? Math.max(1, parseInt(matched[0], 10)) : 1;
+        const months = !isDays && durationStr.toLowerCase().includes('year') ? durationCount * 12 : durationCount;
 
         const baseDate = contract.inputDate ? new Date(`${contract.inputDate}T00:00:00`) : new Date();
         const originalDay = isNaN(baseDate.getTime()) ? new Date().getDate() : baseDate.getDate();
@@ -102,7 +107,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             const m = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
             const dateStr = `${y}-${m}-${day}`;
-            const monthlyInterest = round2(principal * (ratePercent / 100));
+            const monthlyInterest = round2(getPeriodicInterest(principal, rateStr));
             const totalDue = round2(principal + monthlyInterest);
 
             const newRows = [{
@@ -121,7 +126,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             }];
             setRows(newRows);
         } else {
-            const monthlyInterest = round2(principal * (ratePercent / 100));
+            const monthlyInterest = round2(getPeriodicInterest(principal, rateStr));
             const roundedMonthlyPrincipalCents = roundPrincipalToCents(principal / months);
             let remainingPrincipalCents = toCurrencyCents(principal);
 
@@ -286,9 +291,9 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         if (!durationStr) return { isDays: false, count: 3 };
         const str = String(durationStr).toLowerCase().trim();
         const matched = str.match(/\d+/);
-        const count = matched ? Math.max(1, parseInt(matched[0], 10)) : 3;
-
+        const durationCount = matched ? Math.max(1, parseInt(matched[0], 10)) : 3;
         const isDays = str.includes('day') || str.includes('ថ្ងៃ') || str.includes('d');
+        const count = !isDays && str.includes('year') ? durationCount * 12 : durationCount;
         return { isDays, count };
     };
 
@@ -321,8 +326,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             }
         }
         const rateStr = String(ctr?.interest || ctr?.interestType || '14%');
-        const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
-        const defaultInterest = round2(totalLoan * (ratePercent / 100));
+        const defaultInterest = round2(getPeriodicInterest(totalLoan, rateStr));
 
         if (isDays) {
             // For DAYS (e.g. 15 Days): generate ONLY 1 ROW with due date N days later!
@@ -381,7 +385,6 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
         setLightboxIdx(0);
 
         const rateStr = String(contract?.interest || contract?.interestType || '14%');
-        const ratePercent = parseFloat(rateStr.replace(/[^0-9.]/g, '')) || 0;
         const totalLoan = Number(contract?.amount || contract?.totalAmount || 0);
 
         const generatedRows = generateDefaultRows(contract);
@@ -404,7 +407,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
             const total = round2(Number(row.totalAmount || 0)) || round2(scheduledAmount + Number(row.penalty || 0));
             const rowInterest = row.interest !== undefined && row.interest !== null && row.interest !== ''
                 ? round2(Number(row.interest))
-                : (generatedRows[index]?.interest ?? round2(totalLoan * (ratePercent / 100)));
+                : (generatedRows[index]?.interest ?? round2(getPeriodicInterest(totalLoan, rateStr)));
 
             const effectivePenalty = row.isPenaltyWaived
                 ? round2(Number(row.penalty || 0))
@@ -871,7 +874,7 @@ const RepaymentScheduleModal = ({ open, setOpen, contract, mode = 'view_edit', d
 
                                     const displayInterest = row.interest !== undefined && row.interest !== null && row.interest !== ''
                                         ? round2(row.interest)
-                                        : round2(Number(row.loanAmount || contract.amount || 0) * (parseFloat(String(contract.interest || '14%').replace(/[^0-9.]/g, '')) || 0) / 100);
+                                        : round2(getPeriodicInterest(Number(row.loanAmount || contract.amount || 0), contract.interest || '14%'));
 
                                     return (
                                         <tr

@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import InstallmentSubBrandFilter, {
+    addInstallmentSubBrandParams,
+    useInstallmentSubBrand
+} from '../components/InstallmentSubBrandFilter';
 import { MdOutlineSync, MdPictureAsPdf } from "react-icons/md";
 import { FaFileExcel, FaImage, FaFilter, FaEdit, FaTrashAlt, FaTimes, FaSave, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
@@ -16,6 +20,7 @@ const DEFAULT_PAYMENT_METHODS = ['ABA Pay QR', 'Wing Money', 'Cash', 'Bank Trans
 const PaymentHistory = () => {
     const { t } = useLanguage();
     const { API_BASE1, user, hasPermission } = useAuth();
+    const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } = useInstallmentSubBrand(user);
 
     // Check if the logged-in user is Master Admin / Big Admin
     const isMasterAdmin = Boolean(
@@ -107,6 +112,7 @@ const PaymentHistory = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
+            addInstallmentSubBrandParams(params, user, selectedSubBrand);
             if (search) params.set('search', search);
             if (from) params.set('dateFrom', from);
             if (to) params.set('dateTo', to);
@@ -122,7 +128,7 @@ const PaymentHistory = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, activeDateFrom, activeDateTo, searchTerm, t]);
+    }, [API_BASE1, user, activeDateFrom, activeDateTo, searchTerm, t, selectedSubBrand]);
 
     useEffect(() => {
         if (selectedRecord) return;
@@ -160,6 +166,7 @@ const PaymentHistory = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
+            addInstallmentSubBrandParams(params, user, selectedSubBrand);
             if (searchTerm) params.set('search', searchTerm);
             if (activeDateFrom) params.set('dateFrom', activeDateFrom);
             if (activeDateTo) params.set('dateTo', activeDateTo);
@@ -373,6 +380,12 @@ const PaymentHistory = () => {
                     </div>
 
                     <div className='flex items-center gap-3'>
+                        <InstallmentSubBrandFilter
+                            availableSubBrands={availableSubBrands}
+                            selectedSubBrand={selectedSubBrand}
+                            onChange={setSelectedSubBrand}
+                            t={t}
+                        />
                         {hasPermission('/installment/paymentHistory', 'export') && (
                             <ExportDropdown onExportExcel={handleExportExcel} onExportPDF={handleExportPDF} />
                         )}
@@ -386,6 +399,8 @@ const PaymentHistory = () => {
                                 userRole: user?.role || '',
                                 username: user?.username || '',
                                 isImmutable: user?.isImmutable ? 'true' : 'false',
+                                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
+                                ...(selectedSubBrand ? { subBrand: selectedSubBrand } : {}),
                                 ...(activeDateFrom ? { dateFrom: activeDateFrom } : {}),
                                 ...(activeDateTo ? { dateTo: activeDateTo } : {})
                             }}

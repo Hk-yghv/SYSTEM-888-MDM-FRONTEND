@@ -133,6 +133,7 @@ const Application = () => {
             'No': idx + 1,
             'Name (EN)': c.customerNameEn || '',
             'Name (KH)': c.customerNameKh || '',
+            'CU.ID': c.customerId || '',
             'ID Card': c.idCardNumber || '',
             'DOB': c.dob || '',
             'Gender': c.gender || '',
@@ -153,6 +154,7 @@ const Application = () => {
             { header: 'No', cell: (_, idx) => idx + 1 },
             { header: 'Name EN', accessor: 'customerNameEn' },
             { header: 'Name KH', accessor: 'customerNameKh' },
+            { header: 'CU.ID', accessor: 'customerId' },
             { header: 'Phone', accessor: 'phone' },
             { header: 'Model', accessor: 'model' },
             { header: 'Serial No.', accessor: 'serialNumber' },
@@ -223,6 +225,7 @@ const Application = () => {
                             <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
+                            <th className='px-4 py-1'>{t('customerCuId')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
                             <th className='px-4 py-1 text-center'>{t('contract')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
@@ -235,7 +238,7 @@ const Application = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {visibleContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={10} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={11} className="text-center py-8 text-slate-500 italic font-medium">
                                     No pending applications found. Click "Create" to add a new application.
                                 </td>
                             </tr>
@@ -262,6 +265,7 @@ const Application = () => {
                                             )}
                                         </div>
                                     </td>
+                                    <td className='px-4 py-1 font-mono font-bold text-indigo-700'>{item.customerId || '—'}</td>
                                     <td className='px-4 py-1 text-center'>
                                         <span className='px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 rounded-full font-bold text-[10px] uppercase'>
                                             {t('application')}

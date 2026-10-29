@@ -4,6 +4,10 @@ import ReactDOM from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import InstallmentSubBrandFilter, {
+    addInstallmentSubBrandParams,
+    useInstallmentSubBrand
+} from '../components/InstallmentSubBrandFilter';
 import CopyCell from '../../../components/CopyCell';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
 import { AiOutlineMenu } from 'react-icons/ai';
@@ -380,6 +384,8 @@ const InstallmentPage = () => {
     const { t, lang } = useLanguage();
     const { API_BASE1, user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } =
+        useInstallmentSubBrand(user, searchParams.get('subBrand') || '');
 
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -417,6 +423,7 @@ const InstallmentPage = () => {
 
     // QR Payment state
     const [selectedQrContract, setSelectedQrContract] = useState(null);
+    const autoOpenedContractSearch = useRef('');
 
     // ── Close menu on outside click ───────────────────────────────────────────
     useEffect(() => {
@@ -455,6 +462,7 @@ const InstallmentPage = () => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false',
             });
+            addInstallmentSubBrandParams(params, user, selectedSubBrand);
             if (search) params.set('search', search);
             if (from) params.set('dateFrom', from);
             if (to) params.set('dateTo', to);
@@ -470,16 +478,30 @@ const InstallmentPage = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE1, user, limit, dateFrom, dateTo, searchTerm]);
+    }, [API_BASE1, user, limit, dateFrom, dateTo, searchTerm, selectedSubBrand]);
 
     useEffect(() => {
         fetchContracts(currentPage, searchTerm, limit, dateFrom, dateTo);
-    }, [currentPage, limit, dateFrom, dateTo]);
+    }, [currentPage, limit, dateFrom, dateTo, selectedSubBrand]);
 
     useEffect(() => {
         setCurrentPage(1);
         fetchContracts(1, searchTerm, limit, dateFrom, dateTo);
     }, [searchTerm]);
+
+    useEffect(() => {
+        const search = searchTerm.trim().toLowerCase();
+        if (!search || !contracts.length || autoOpenedContractSearch.current === search) return;
+        const contract = contracts.find(item =>
+            [item.contractId, item.contractIid, item.customerId]
+                .some(value => String(value || '').trim().toLowerCase() === search)
+        );
+        if (!contract) return;
+        setScheduleModalContract(contract);
+        setScheduleModalMonthIdx(null);
+        setScheduleModalOpen(true);
+        autoOpenedContractSearch.current = search;
+    }, [contracts, searchTerm]);
 
     // ── Visible rows: next installment by default, matching dates when filtered ─
     const visibleRows = useMemo(() => contracts.flatMap((item, contractIdx) => {
@@ -692,6 +714,15 @@ const InstallmentPage = () => {
                 <div className="flex items-center gap-2.5 flex-wrap">
                     {/* Compact Space-Saving Urgency Filter Droplist */}
                     <div className="flex items-center gap-1.5">
+                        <InstallmentSubBrandFilter
+                            availableSubBrands={availableSubBrands}
+                            selectedSubBrand={selectedSubBrand}
+                            onChange={value => {
+                                setSelectedSubBrand(value);
+                                setCurrentPage(1);
+                            }}
+                            t={t}
+                        />
                         <select
                             value={urgencyFilter}
                             onChange={(e) => {

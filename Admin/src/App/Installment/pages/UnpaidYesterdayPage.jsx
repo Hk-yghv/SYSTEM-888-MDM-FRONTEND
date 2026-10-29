@@ -11,6 +11,10 @@ import { AiOutlineMenu } from 'react-icons/ai';
 import RepaymentScheduleModal from '../../Contract/components/RepaymentScheduleModal';
 import QrPaymentModal from '../components/QrPaymentModal';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import InstallmentSubBrandFilter, {
+    addInstallmentSubBrandParams,
+    useInstallmentSubBrand
+} from '../components/InstallmentSubBrandFilter';
 
 const getActiveRowIdx = (schedule = []) => {
     const payOffIdx = schedule.findIndex(r => r.status === 'PayOff');
@@ -133,6 +137,8 @@ const UnpaidYesterdayPage = () => {
     const { t } = useLanguage();
     const { API_BASE1, user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } =
+        useInstallmentSubBrand(user, searchParams.get('subBrand') || '');
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
@@ -177,12 +183,13 @@ const UnpaidYesterdayPage = () => {
         setReloading(true);
         try {
             const params = new URLSearchParams({ status: 'Activated', page: 1, limit: 10000, requireSchedule: 'true', userBrand: user?.brand || '', userRole: user?.role || '', username: user?.username || '', isImmutable: user?.isImmutable ? 'true' : 'false' });
+            addInstallmentSubBrandParams(params, user, selectedSubBrand);
             if (search) params.set('search', search);
             const res = await fetch(`${API_BASE1}/contracts?${params.toString()}`);
             if (res.ok) { const data = await res.json(); setContracts(data.data || []); }
         } catch (err) { console.error('Fetch unpaid-yesterday contracts error:', err); }
         finally { setLoading(false); setTimeout(() => setReloading(false), 500); }
-    }, [API_BASE1, user, searchTerm]);
+    }, [API_BASE1, user, searchTerm, selectedSubBrand]);
 
     useEffect(() => { fetchContracts(searchTerm); }, [searchTerm, fetchContracts]);
 
@@ -249,6 +256,7 @@ const UnpaidYesterdayPage = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
+                    <InstallmentSubBrandFilter availableSubBrands={availableSubBrands} selectedSubBrand={selectedSubBrand} onChange={setSelectedSubBrand} t={t} />
                     <div className="relative">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
                         <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder={t('activatedSearchPlaceholder')} className="pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[5px] text-xs text-slate-900 placeholder:text-slate-400 focus:border-amber-500 w-52 outline-none font-medium shadow-xs" />

@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import InstallmentSubBrandFilter, {
+    addInstallmentSubBrandParams,
+    useInstallmentSubBrand
+} from '../components/InstallmentSubBrandFilter';
 import { useLanguage } from '../../../context/LanguageContext';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ExportDropdown from '../../../components/ExportDropdown';
@@ -76,6 +80,8 @@ const InstallmentHistory = ({ mode = 'history' }) => {
     const { API_BASE1, user, hasPermission } = useAuth();
     const { t } = useLanguage();
     const [searchParams] = useSearchParams();
+    const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } =
+        useInstallmentSubBrand(user, searchParams.get('subBrand') || '');
     const initialSearch = searchParams.get('search') || '';
     const isHistoryPage = mode === 'history';
     const pageTitle = t(isHistoryPage ? 'installmentHistory' : 'installmentPad');
@@ -158,6 +164,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
+            addInstallmentSubBrandParams(commonParams, user, selectedSubBrand);
             if (isMasterAdmin && selectedBrand) commonParams.set('brand', selectedBrand);
 
             try {
@@ -187,7 +194,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
 
         loadContracts();
         return () => { cancelled = true; };
-    }, [API_BASE1, isMasterAdmin, selectedBrand, user, reloadVersion]);
+    }, [API_BASE1, isMasterAdmin, selectedBrand, user, reloadVersion, selectedSubBrand]);
 
     const today = formatLocalDate(new Date());
     const dateRange = useMemo(() => {
@@ -254,6 +261,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 _id: `${contract._id || contract.contractId}-${row.monthIndex || index + 1}`,
                 contractId: contract.contractId || '',
                 contractIid: contract.contractIid || '',
+                customerId: contract.customerId || '',
                 contract,
                 scheduleIndex: index,
                 customerName: contract.customerNameEn || contract.customerNameKh || 'Customer',
@@ -293,7 +301,7 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                 return true;
             })
             .filter(row => !query || [row.customerName, row.customerNameKh, row.contractId, row.model,
-                row.contractIid, row.serialNumber, row.brand, row.labelName, row.monthLabel]
+                row.contractIid, row.customerId, row.serialNumber, row.brand, row.labelName, row.monthLabel]
                 .some(value => String(value || '').toLowerCase().includes(query)))
             .sort((left, right) => (isHistoryPage ? left.paidDate : left.dueDate).localeCompare(isHistoryPage ? right.paidDate : right.dueDate) || left.customerName.localeCompare(right.customerName));
     }, [scheduleRows, search, isHistoryPage, dateRange, paymentTypeFilter]);
@@ -461,6 +469,12 @@ const InstallmentHistory = ({ mode = 'history' }) => {
                             {brands.map(brand => <option key={brand} value={brand}>{brand}</option>)}
                         </select>
                     </label>}
+                    <InstallmentSubBrandFilter
+                        availableSubBrands={availableSubBrands}
+                        selectedSubBrand={selectedSubBrand}
+                        onChange={setSelectedSubBrand}
+                        t={t}
+                    />
                     <div className="ml-auto self-center text-[11px] font-mono text-slate-500">{dateRange.from || t('anyDate')} → {dateRange.to || t('anyDate')}</div>
                 </div>
             </header>

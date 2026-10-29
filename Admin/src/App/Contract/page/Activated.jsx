@@ -408,6 +408,7 @@ const Activated = () => {
                 (c.phone && c.phone.includes(s)) ||
                 (c.serialNumber && c.serialNumber.toLowerCase().includes(s)) ||
                 (c.model && c.model.toLowerCase().includes(s)) ||
+                (c.customerId && c.customerId.toLowerCase().includes(s)) ||
                 (c.contractId && c.contractId.toLowerCase().includes(s))
             );
         }
@@ -1112,7 +1113,7 @@ const Activated = () => {
                                             {item.contractIid || item.contractId ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => navigate(`/installment/schedule?search=${encodeURIComponent(item.contractIid || item.contractId)}`)}
+                                                    onClick={() => navigate(`/installment/schedule?search=${encodeURIComponent(item.contractIid || item.contractId)}&subBrand=${encodeURIComponent(item.subBrand || '')}`)}
                                                     className='cursor-pointer font-mono font-bold text-blue-600 hover:text-blue-800 hover:underline'
                                                     title={t('activatedOpenInstallmentSchedule')}
                                                 >
@@ -1193,7 +1194,7 @@ const Activated = () => {
                                                                 {matchingCalcSchedule && (
                                                                     <button
                                                                         onClick={() => {
-                                                                            navigate(`/calculate/schedule-2?customerName=${encodeURIComponent(matchingCalcSchedule.customerName || item.customerNameKh || '')}&id=${matchingCalcSchedule._id}`);
+                                                                            navigate(`/calculate/schedule-2?customerName=${encodeURIComponent(matchingCalcSchedule.customerName || item.customerNameKh || '')}&id=${matchingCalcSchedule._id}&subBrand=${encodeURIComponent(item.subBrand || matchingCalcSchedule.subBrand || '')}`);
                                                                             setOpenMenuId(null);
                                                                         }}
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100 rounded-[5px] flex items-center gap-2 cursor-pointer transition-colors"

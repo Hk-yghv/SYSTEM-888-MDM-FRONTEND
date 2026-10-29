@@ -14,7 +14,7 @@ const inp = "w-full p-2 bg-gray-800/80 border border-gray-700 focus:border-indig
 const sel = "w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-gray-100 text-xs outline-none";
 
 /* ── Autocomplete field with suggestions dropdown ── */
-const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '' }) => {
+const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelect, font = '', numeric = false }) => {
     const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const [focused, setFocused] = useState(false);
@@ -39,7 +39,15 @@ const AutoField = ({ id, label, value, onChange, placeholder, list = [], onSelec
             <input
                 className={`${inp} ${font}`}
                 type="text" id={id} value={value || ''}
-                onChange={e => { onChange(e); setOpen(true); }}
+                inputMode={numeric ? 'numeric' : undefined}
+                pattern={numeric ? '[0-9]*' : undefined}
+                onChange={e => {
+                    if (numeric) {
+                        e.target.value = e.target.value.replace(/\D/g, '');
+                    }
+                    onChange(e);
+                    setOpen(true);
+                }}
                 onFocus={() => { setFocused(true); setOpen(true); }}
                 onBlur={() => setTimeout(() => { setFocused(false); setOpen(false); }, 200)}
                 placeholder={placeholder}
@@ -91,6 +99,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         brand: user?.brand || '',
         subBrand: '',
         contractSuffix: '000000001',
+        customerId: '',
         customerNameEn: '', customerNameKh: '',
         idCardNumber: '', dob: '', gender: 'male',
         birthAddress: '', currentAddress: '',
@@ -100,7 +109,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         model: '', serialNumber: '', imei1: '', imei2: '', meid: '', color: '', version: '',
         deviceProblem: '', capacity: '',
         amount: 1000, interest: '14%', adminFee: 20, duration: '12 Months',
-        interestType: '14%', monthlyPayment: 100
+        interestType: '14%', monthlyPayment: 1000
     };
 
     const [form, setForm] = useState(emptyForm);
@@ -109,11 +118,24 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [modelsList, setModelsList] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [allCustomers, setAllCustomers] = useState([]);
+    const [customerIdMatches, setCustomerIdMatches] = useState([]);
     const [autoFilled, setAutoFilled] = useState(false);
     const [activeTab, setActiveTab] = useState('customer');
     const [photoUploading, setPhotoUploading] = useState(false);
     const [imageStorageType, setImageStorageType] = useState('cloudinary');
+    const [capacityUnit, setCapacityUnit] = useState('GB');
+    const [interestUnit, setInterestUnit] = useState('%');
+    const [durationUnit, setDurationUnit] = useState('Months');
+    const [versionPlatform, setVersionPlatform] = useState('Android');
+    const [amountsLinked, setAmountsLinked] = useState(true);
     const photoFileRef = useRef(null);
+
+    const getNumericPart = (value) => String(value || '').match(/\d+(?:\.\d+)?/)?.[0] || '';
+    const getAmountNumber = (value) => {
+        const numeric = String(value ?? '').replace(/[^\d.]/g, '');
+        const [whole, ...decimals] = numeric.split('.');
+        return decimals.length ? `${whole}.${decimals.join('')}` : whole;
+    };
 
     const computeNextSuffixForBrand = (targetBrand, customersList) => {
         const cleanBrand = (targetBrand || user?.brand || 'M8').trim().toLowerCase();
@@ -168,6 +190,37 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     }, [API_BASE1]);
 
     useEffect(() => {
+        const query = String(form.customerId || '').trim();
+        if (!/^CU-/i.test(query) || allCustomers.some(customer =>
+            String(customer.customerId || '').toLowerCase() === query.toLowerCase()
+        )) {
+            setCustomerIdMatches([]);
+            return undefined;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(async () => {
+            try {
+                const params = new URLSearchParams({ search: query, page: '1', limit: '10' });
+                const response = await fetch(`${API_BASE1}/contracts?${params.toString()}`, { signal: controller.signal });
+                if (!response.ok) throw new Error(`Customer CU.ID lookup failed (${response.status}).`);
+                const result = await response.json();
+                setCustomerIdMatches(Array.isArray(result.data) ? result.data : []);
+            } catch (error) {
+                if (!controller.signal.aborted) {
+                    console.error('Customer CU.ID lookup error:', error);
+                    setCustomerIdMatches([]);
+                }
+            }
+        }, 250);
+
+        return () => {
+            clearTimeout(timeout);
+            controller.abort();
+        };
+    }, [API_BASE1, allCustomers, form.customerId]);
+
+    useEffect(() => {
         const go = async () => {
             try {
                 const targetBrand = form.brand || user?.brand || '';
@@ -215,6 +268,19 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         }
     }, [form.brand, brandSubbrands, user?.subBrands, user?.role]);
 
+    useEffect(() => {
+        const capacityMatch = String(form.capacity || '').match(/\b(GB|TB)\b/i);
+        const interestMatch = String(form.interest || '').match(/(%|\$|USD)/i);
+        const durationMatch = String(form.duration || '').match(/\b(day|month|year)s?\b/i);
+        const versionMatch = String(form.version || '').match(/\b(iOS|Android)\b/i);
+        if (capacityMatch) setCapacityUnit(capacityMatch[1].toUpperCase());
+        if (interestMatch) setInterestUnit(interestMatch[1] === '$' || interestMatch[1].toUpperCase() === 'USD' ? '$' : '%');
+        if (durationMatch) {
+            const unit = durationMatch[1].toLowerCase();
+            setDurationUnit(unit === 'day' ? 'Days' : unit === 'year' ? 'Years' : 'Months');
+        }
+        if (versionMatch) setVersionPlatform(versionMatch[1]);
+    }, [form.capacity, form.interest, form.duration, form.version]);
 
     useEffect(() => {
         if (!open) return;
@@ -276,6 +342,16 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     version: editData.version || '',
                     meid: editData.meid || '',
                 });
+                const capacityMatch = String(editData.capacity || editData.storage || editData.Storage || '').match(/(\d+(?:\.\d+)?)\s*(GB|TB)?/i);
+                const interestMatch = String(editData.interest || editData.interestType || '14%').match(/(\d+(?:\.\d+)?)\s*(%|\$|USD)?/i);
+                const durationMatch = String(editData.duration || '12 Months').match(/(\d+)\s*(day|month|year)/i);
+                const versionMatch = String(editData.version || '').match(/(iOS|Android)?\s*(\d+(?:\.\d+)?)/i);
+                setCapacityUnit(capacityMatch?.[2]?.toUpperCase() || 'GB');
+                setInterestUnit(interestMatch?.[2] === '$' || interestMatch?.[2]?.toUpperCase() === 'USD' ? '$' : '%');
+                const durationUnitName = durationMatch?.[2]?.toLowerCase();
+                setDurationUnit(durationUnitName === 'day' ? 'Days' : durationUnitName === 'year' ? 'Years' : 'Months');
+                setVersionPlatform(versionMatch?.[1] || 'Android');
+                setAmountsLinked(Number(editData.amount || 0) === Number(editData.monthlyPayment || 0));
 
 
             } else {
@@ -294,6 +370,11 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     contractId: autoContractId,
                     contractSuffix: autoSuffix
                 });
+                setCapacityUnit('GB');
+                setInterestUnit('%');
+                setDurationUnit('Months');
+                setVersionPlatform('Android');
+                setAmountsLinked(true);
             }
             setAutoFilled(false);
             setActiveTab('customer');
@@ -302,6 +383,11 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     const handleChange = (e) => {
         const { id, value } = e.target;
+        const integerFields = new Set(['contractSuffix', 'imei1', 'imei2', 'meid']);
+        const decimalFields = new Set(['amount', 'monthlyPayment']);
+        const normalizedValue = integerFields.has(id)
+            ? String(value).replace(/\D/g, '')
+            : decimalFields.has(id) ? getAmountNumber(value) : value;
         if (id === 'brand' && !editData) {
             const nextSuffix = computeNextSuffixForBrand(value, allCustomers);
             // Auto-pick subBrand if only 1 available for this brand
@@ -312,7 +398,75 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             setForm(prev => ({ ...prev, [id]: value, contractSuffix: nextSuffix, subBrand: autoSubBrand }));
             return;
         }
-        setForm(prev => ({ ...prev, [id]: value }));
+        setForm(prev => {
+            if (id === 'amount' && amountsLinked) {
+                return { ...prev, amount: normalizedValue, monthlyPayment: normalizedValue };
+            }
+            if (id === 'monthlyPayment' && amountsLinked) {
+                return { ...prev, monthlyPayment: normalizedValue, amount: normalizedValue };
+            }
+            return { ...prev, [id]: normalizedValue };
+        });
+    };
+
+    const handleCapacityNumberChange = (value) => {
+        const numericValue = getAmountNumber(value);
+        setForm(prev => ({ ...prev, capacity: numericValue ? `${numericValue} ${capacityUnit}` : '' }));
+    };
+
+    const handleCapacityUnitChange = (value) => {
+        setCapacityUnit(value);
+        setForm(prev => {
+            const numericValue = getNumericPart(prev.capacity);
+            return { ...prev, capacity: numericValue ? `${numericValue} ${value}` : '' };
+        });
+    };
+
+    const handleInterestNumberChange = (value) => {
+        const numericValue = getAmountNumber(value);
+        setForm(prev => ({
+            ...prev,
+            interest: numericValue ? `${numericValue}${interestUnit}` : '',
+            interestType: numericValue ? `${numericValue}${interestUnit}` : ''
+        }));
+    };
+
+    const handleInterestUnitChange = (value) => {
+        setInterestUnit(value);
+        setForm(prev => {
+            const numericValue = getNumericPart(prev.interest);
+            return {
+                ...prev,
+                interest: numericValue ? `${numericValue}${value}` : '',
+                interestType: numericValue ? `${numericValue}${value}` : ''
+            };
+        });
+    };
+
+    const handleDurationNumberChange = (value) => {
+        const numericValue = String(value || '').replace(/\D/g, '');
+        setForm(prev => ({ ...prev, duration: numericValue ? `${numericValue} ${durationUnit}` : '' }));
+    };
+
+    const handleDurationUnitChange = (value) => {
+        setDurationUnit(value);
+        setForm(prev => {
+            const numericValue = getNumericPart(prev.duration);
+            return { ...prev, duration: numericValue ? `${numericValue} ${value}` : '' };
+        });
+    };
+
+    const handleVersionNumberChange = (value) => {
+        const numericValue = getAmountNumber(value);
+        setForm(prev => ({ ...prev, version: numericValue ? `${versionPlatform} ${numericValue}` : '' }));
+    };
+
+    const handleVersionPlatformChange = (value) => {
+        setVersionPlatform(value);
+        setForm(prev => {
+            const numericValue = getNumericPart(prev.version);
+            return { ...prev, version: numericValue ? `${value} ${numericValue}` : '' };
+        });
     };
 
     const handleAutoFill = (item) => {
@@ -321,6 +475,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 ...prev,
                 customerNameEn: item.customerNameEn || prev.customerNameEn,
                 customerNameKh: item.customerNameKh || prev.customerNameKh,
+                customerId: item.customerId || prev.customerId,
                 idCardNumber: item.idCardNumber || prev.idCardNumber,
                 dob: item.dob || prev.dob,
                 gender: item.gender || prev.gender,
@@ -549,6 +704,9 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                     {/* TAB 1: Customer Info */}
                     {activeTab === 'customer' && (<>
                         <div className="grid grid-cols-4 gap-3">
+                            <AutoField id="customerId" label={t('customerCuId')} value={form.customerId} placeholder="CU-000001" list={[...customerIdMatches, ...allCustomers]} onChange={handleChange} onSelect={handleAutoFill} font="font-mono font-bold text-indigo-300" />
+                        </div>
+                        <div className="grid grid-cols-4 gap-3">
                             <AutoField id="customerNameEn" label={t('nameEnglish')} value={form.customerNameEn} placeholder={t('customerNameEnglish')} list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="customerNameKh" label={t('nameKhmer')} value={form.customerNameKh} placeholder={t('customerNameKhmer')} font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="idCardNumber" label={t('idCardNo')} value={form.idCardNumber} placeholder={t('idNumber')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
@@ -670,18 +828,32 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 </select>
                             </Field>
                             <AutoField id="serialNumber" label="Serial Number" value={form.serialNumber} placeholder={t('serialNumber')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder={t('imei1')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
-                            <Field label="IMEI 2"><input className={`${inp} font-mono`} type="text" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder={t('imei2')} /></Field>
+                            <AutoField id="imei1" label="IMEI 1" value={form.imei1} placeholder={t('imei1')} font="font-mono" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} numeric />
+                            <Field label="IMEI 2"><input className={`${inp} font-mono`} type="text" inputMode="numeric" pattern="[0-9]*" id="imei2" value={form.imei2 || ''} onChange={handleChange} placeholder={t('imei2')} /></Field>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
                             <Field label="MEID Number">
-                                <input className={`${inp} font-mono text-pink-400`} type="text" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
+                                <input className={`${inp} font-mono text-pink-400`} type="text" inputMode="numeric" pattern="[0-9]*" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
                             </Field>
                             <Field label="Version">
-                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" id="version" value={form.version || ''} onChange={handleChange} placeholder="e.g. Android 14 / iOS 18" />
+                                <div className="flex">
+                                    <select value={versionPlatform} onChange={event => handleVersionPlatformChange(event.target.value)} className={`${sel} w-28 rounded-r-none`}>
+                                        <option value="Android">Android</option>
+                                        <option value="iOS">iOS</option>
+                                    </select>
+                                    <input className={`${inp} text-indigo-300 font-semibold rounded-l-none`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18" />
+                                </div>
                             </Field>
                             <Field label={t('color')}><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder={t('deviceColorPlaceholder')} /></Field>
-                            <Field label={t('capacityStorage')}><input className={inp} type="text" id="capacity" value={form.capacity || ''} onChange={handleChange} placeholder={t('deviceCapacityPlaceholder')} /></Field>
+                            <Field label={t('capacityStorage')}>
+                                <div className="flex">
+                                    <input className={`${inp} rounded-r-none`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.capacity)} onChange={event => handleCapacityNumberChange(event.target.value)} placeholder="128" />
+                                    <select value={capacityUnit} onChange={event => handleCapacityUnitChange(event.target.value)} className={`${sel} w-20 rounded-l-none`}>
+                                        <option value="GB">GB</option>
+                                        <option value="TB">TB</option>
+                                    </select>
+                                </div>
+                            </Field>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                             <Field label="Device Problem">
@@ -743,14 +915,50 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                             </Field>
                             <Field label="Total Loan Amount ($)">
                                 <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
-                                    type="number" id="amount" value={form.amount || ''} onChange={handleChange} placeholder={t('amount')} />
+                                    type="text" inputMode="decimal" pattern="[0-9.]*" id="amount" value={form.amount ?? ''} onChange={handleChange} placeholder={t('amount')} />
                             </Field>
                             <Field label="Customer Received ($)">
                                 <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
-                                    type="number" id="monthlyPayment" value={form.monthlyPayment || ''} onChange={handleChange} placeholder={t('monthlyPayment')} />
+                                    type="text" inputMode="decimal" pattern="[0-9.]*" id="monthlyPayment" value={form.monthlyPayment ?? ''} onChange={handleChange} placeholder={t('monthlyPayment')} disabled={amountsLinked} />
                             </Field>
-                            <Field label={t('interestRate')}><input className={`${inp} font-mono`} type="text" id="interest" value={form.interest || ''} onChange={handleChange} placeholder="e.g. 14%" /></Field>
-                            <Field label={t('duration')}><input className={inp} type="text" id="duration" value={form.duration || ''} onChange={handleChange} placeholder="e.g. 12 Months" /></Field>
+                            <Field label={t('matchLoanCustomer')}>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={!amountsLinked}
+                                    onClick={() => {
+                                        if (!amountsLinked) {
+                                            setForm(prev => ({ ...prev, monthlyPayment: prev.amount }));
+                                        }
+                                        setAmountsLinked(!amountsLinked);
+                                    }}
+                                    className={`flex h-9 w-full items-center rounded-full border px-1 transition-colors ${amountsLinked ? 'justify-start border-emerald-600 bg-emerald-950/60' : 'justify-end border-indigo-500 bg-indigo-950/60'}`}
+                                >
+                                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white transition-colors ${amountsLinked ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
+                                        {amountsLinked ? '↔' : '⇄'}
+                                    </span>
+                                    <span className="px-2 text-[10px] font-bold text-gray-200">{amountsLinked ? t('sameAmounts') : t('separateAmounts')}</span>
+                                </button>
+                            </Field>
+                            <Field label={t('interestRate')}>
+                                <div className="flex">
+                                    <input className={`${inp} font-mono rounded-r-none`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.interest)} onChange={event => handleInterestNumberChange(event.target.value)} placeholder="14" />
+                                    <select value={interestUnit} onChange={event => handleInterestUnitChange(event.target.value)} className={`${sel} w-20 rounded-l-none`}>
+                                        <option value="%">%</option>
+                                        <option value="$">$</option>
+                                    </select>
+                                </div>
+                            </Field>
+                            <Field label={t('duration')}>
+                                <div className="flex">
+                                    <input className={`${inp} rounded-r-none`} type="text" inputMode="numeric" pattern="[0-9]*" value={getNumericPart(form.duration)} onChange={event => handleDurationNumberChange(event.target.value)} placeholder="12" />
+                                    <select value={durationUnit} onChange={event => handleDurationUnitChange(event.target.value)} className={`${sel} w-24 rounded-l-none`}>
+                                        <option value="Days">Days</option>
+                                        <option value="Months">Months</option>
+                                        <option value="Years">Years</option>
+                                    </select>
+                                </div>
+                            </Field>
                         </div>
                         <div className="p-2 bg-emerald-900/20 border border-emerald-700/40 rounded-[5px]">
                             <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">{t('loanSummaryPreview')}</p>

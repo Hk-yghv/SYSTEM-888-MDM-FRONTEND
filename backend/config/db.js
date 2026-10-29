@@ -28,6 +28,7 @@ export const MEM_DB = {
         }
     ],
     contracts: [],
+    customerIdSequence: 0,
     payments: [],
     phoneLogs: [],
     wallpaperLogs: [],

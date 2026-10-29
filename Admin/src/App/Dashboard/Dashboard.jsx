@@ -68,8 +68,14 @@ const Dashboard = () => {
         totalInterest: 0
     });
 
-    const [brandFilter, setBrandFilter] = useState('');
+    const [brandFilter, setBrandFilter] = useState(() => user?.brand || '');
     const [brandsList, setBrandsList] = useState([]);
+    const availableSubBrands = useMemo(() => (
+        Array.isArray(user?.subBrands)
+            ? [...new Set(user.subBrands.map(value => String(value || '').trim()).filter(Boolean))]
+            : []
+    ), [user?.subBrands]);
+    const [subBrandFilter, setSubBrandFilter] = useState(() => user?.subBrands?.[0] || 'All');
     const [loading, setLoading] = useState(true);
     const [reloading, setReloading] = useState(false);
     const [rawContracts, setRawContracts] = useState([]);
@@ -118,6 +124,23 @@ const Dashboard = () => {
         if (!isMasterAdmin && user?.brand) return user.brand;
         return brandFilter;
     }, [isMasterAdmin, user, brandFilter]);
+    const activeUserSubBrand = availableSubBrands.length > 0
+        ? (availableSubBrands.includes(subBrandFilter) || subBrandFilter === 'All'
+            ? subBrandFilter
+            : availableSubBrands[0])
+        : '';
+
+    useEffect(() => {
+        setSubBrandFilter(current => (
+            current === 'All' || availableSubBrands.includes(current)
+                ? current
+                : (availableSubBrands[0] || 'All')
+        ));
+    }, [availableSubBrands]);
+
+    useEffect(() => {
+        if (!brandFilter && user?.brand) setBrandFilter(user.brand);
+    }, [brandFilter, user?.brand]);
 
     // Live Clock Update
     useEffect(() => {
@@ -157,6 +180,8 @@ const Dashboard = () => {
             if (user?.username) params.set('username', user.username);
             if (user?.role) params.set('userRole', user.role);
             if (user?.isImmutable) params.set('isImmutable', 'true');
+            if (availableSubBrands.length > 0) params.set('userSubBrands', availableSubBrands.join(','));
+            if (activeUserSubBrand) params.set('subBrand', activeUserSubBrand);
 
             const res = await fetch(`${API_BASE}/dashboard/stats?${params.toString()}`);
             if (res.ok) {
@@ -169,7 +194,7 @@ const Dashboard = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 300);
         }
-    }, [API_BASE, activeUserBrand, user]);
+    }, [API_BASE, activeUserBrand, activeUserSubBrand, availableSubBrands, user]);
 
     // ── Fetch Raw Contracts, Payments, and Penalty Rules ──
     const fetchRawData = useCallback(async () => {
@@ -179,6 +204,8 @@ const Dashboard = () => {
             if (user?.username) params.set('username', user.username);
             if (user?.role) params.set('userRole', user.role);
             if (user?.isImmutable) params.set('isImmutable', 'true');
+            if (availableSubBrands.length > 0) params.set('userSubBrands', availableSubBrands.join(','));
+            if (activeUserSubBrand) params.set('subBrand', activeUserSubBrand);
             params.set('limit', '999999');
 
             const [cRes, pRes] = await Promise.all([
@@ -214,7 +241,7 @@ const Dashboard = () => {
         } catch (err) {
             console.error('Failed to fetch raw data:', err);
         }
-    }, [API_BASE1, activeUserBrand, user]);
+    }, [API_BASE1, activeUserBrand, activeUserSubBrand, availableSubBrands, user]);
 
     useEffect(() => {
         fetchBrands();
@@ -309,9 +336,14 @@ const Dashboard = () => {
     // ── Filter Contracts by Timeframe (Matching Loan Date or Installment Due Date) ──
     const filteredContracts = useMemo(() => {
         if (!rawContracts || rawContracts.length === 0) return [];
-        if (dateRange.isAll) return rawContracts;
+        const scopedContracts = rawContracts.filter(contract => {
+            if (activeUserBrand && String(contract.brand || '').trim().toLowerCase() !== activeUserBrand.toLowerCase()) return false;
+            if (activeUserSubBrand && activeUserSubBrand !== 'All' && contract.subBrand !== activeUserSubBrand) return false;
+            return true;
+        });
+        if (dateRange.isAll) return scopedContracts;
 
-        return rawContracts.filter(c => {
+        return scopedContracts.filter(c => {
             const cDate = String(c.inputDate || c.date || c.createdAt || '').split('T')[0];
             const isContractDateMatch = cDate ? isDateInRange(cDate, dateRange) : false;
 
@@ -324,7 +356,7 @@ const Dashboard = () => {
 
             return isContractDateMatch || isScheduleMatch;
         });
-    }, [rawContracts, dateRange]);
+    }, [rawContracts, dateRange, activeUserBrand, activeUserSubBrand]);
 
     // ── Filter Payments by Timeframe ──
     const filteredPayments = useMemo(() => {
@@ -481,6 +513,9 @@ const Dashboard = () => {
         rawContracts.forEach((contract) => {
             const contractBrand = String(contract.brand || '').trim();
             if (activeUserBrand && contractBrand.toLowerCase() !== activeUserBrand.toLowerCase()) {
+                return;
+            }
+            if (activeUserSubBrand && activeUserSubBrand !== 'All' && contract.subBrand !== activeUserSubBrand) {
                 return;
             }
 
@@ -652,7 +687,7 @@ const Dashboard = () => {
         });
 
         return rows;
-    }, [rawContracts, activeUserBrand, penaltyRulesByBrand, dateRange]);
+    }, [rawContracts, activeUserBrand, activeUserSubBrand, penaltyRulesByBrand, dateRange]);
 
     // Active customer payment details for the tables
     const dueCustomerRows = useMemo(() => {
@@ -1073,6 +1108,19 @@ const Dashboard = () => {
                                         <option key={i} value={typeof b === 'string' ? b : b.name || ''}>
                                             {typeof b === 'string' ? b : b.name || ''}
                                         </option>
+                                    ))}
+                                </select>
+                            )}
+                            {availableSubBrands.length > 1 && (
+                                <select
+                                    value={activeUserSubBrand}
+                                    onChange={(e) => setSubBrandFilter(e.target.value)}
+                                    className="brand-filter-select"
+                                    aria-label={t('subBrand')}
+                                >
+                                    <option value="All">{t('all')}</option>
+                                    {availableSubBrands.map(subBrand => (
+                                        <option key={subBrand} value={subBrand}>{subBrand}</option>
                                     ))}
                                 </select>
                             )}

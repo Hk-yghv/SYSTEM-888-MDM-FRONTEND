@@ -5,6 +5,7 @@ import CashTransactionCounter from '../models/CashTransactionCounter.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { resolveUserIsolation } from '../utils/brandIsolation.js';
 
 const router = express.Router();
 
@@ -168,10 +169,6 @@ router.get('/cash-transactions', async (req, res) => {
     try {
         const {
             type, // 'cash_out' | 'cash_in' | 'penalty'
-            userBrand = '',
-            userRole = '',
-            username = '',
-            isImmutable = 'false',
             page = 1,
             limit = 10,
             search = '',
@@ -179,13 +176,17 @@ router.get('/cash-transactions', async (req, res) => {
             endDate = ''
         } = req.query;
 
-        const isMasterAdmin = (username === '@hakyonghouv' || username === 'hakyonghouv' || isImmutable === 'true' || userRole === 'Administrator');
+        const isolation = await resolveUserIsolation(req);
+        const requestedBrand = isolation.isMasterAdmin
+            ? String(req.query.brand || isolation.brand || '').trim()
+            : isolation.brand;
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         let filter = {};
         if (type) filter.type = type;
-        if (userBrand && !isMasterAdmin) {
-            filter.brand = userBrand;
+        if (requestedBrand) filter.brand = requestedBrand;
+        if (isolation.effectiveSubBrands.length > 0) {
+            filter.subBrand = { $in: isolation.effectiveSubBrands };
         }
 
         let allRecords = [];
@@ -210,7 +211,10 @@ router.get('/cash-transactions', async (req, res) => {
         } else {
             let list = MEM_DB.cashTransactions;
             if (type) list = list.filter(item => item.type === type);
-            if (userBrand && !isMasterAdmin) list = list.filter(item => item.brand === userBrand);
+            if (requestedBrand) list = list.filter(item => item.brand === requestedBrand);
+            if (isolation.effectiveSubBrands.length > 0) {
+                list = list.filter(item => isolation.effectiveSubBrands.includes(item.subBrand));
+            }
             if (search) {
                 const s = search.toLowerCase();
                 list = list.filter(item =>

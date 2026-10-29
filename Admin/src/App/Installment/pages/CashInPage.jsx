@@ -16,6 +16,10 @@ import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
 import ImageGalleryModal from '../../../components/ImageGalleryModal';
 import { storeImageFiles } from '../../../utils/mediaUtils';
 import ImageStorageSelect from '../../../components/ImageStorageSelect';
+import InstallmentSubBrandFilter, {
+    addInstallmentSubBrandParams,
+    useInstallmentSubBrand
+} from '../components/InstallmentSubBrandFilter';
 
 const LIMIT = 10;
 const getPhotoUrls = (item) => [...new Set([
@@ -27,6 +31,7 @@ const CashInPage = () => {
     const { t } = useLanguage();
     const { API_BASE1, API_BASE2, user } = useAuth();
     const API_BASE = API_BASE1 || API_BASE2 || '/api';
+    const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } = useInstallmentSubBrand(user);
 
     const [activeTab, setActiveTab] = useState('dashboard');
     const [dataList, setDataList] = useState([]);
@@ -53,7 +58,7 @@ const CashInPage = () => {
         currency: 'USD',
         category: 'General Income',
         description: '',
-        subBrand: user?.subBrands?.[0] || '',
+        subBrand: selectedSubBrand !== 'All' ? selectedSubBrand : (user?.subBrands?.[0] || ''),
         contractOR: '',
         photoUrls: []
     });
@@ -134,7 +139,7 @@ const CashInPage = () => {
             currency: 'USD',
             category: 'General Income',
             description: '',
-            subBrand: user?.subBrands?.[0] || '',
+            subBrand: selectedSubBrand !== 'All' ? selectedSubBrand : (user?.subBrands?.[0] || ''),
             contractOR: '',
             photoUrls: []
         });
@@ -169,6 +174,7 @@ const CashInPage = () => {
                 page: pg,
                 limit: LIMIT
             });
+            addInstallmentSubBrandParams(params, user, selectedSubBrand);
             if (search) params.set('search', search);
             if (sDate) params.set('startDate', sDate);
             if (eDate) params.set('endDate', eDate);
@@ -182,6 +188,7 @@ const CashInPage = () => {
                 // Fetch full data for chart (no pagination)
                 try {
                     const chartParams = new URLSearchParams({ type: 'cash_in', userBrand: user?.brand || '', userRole: user?.role || '', username: user?.username || '', isImmutable: user?.isImmutable ? 'true' : 'false', page: 1, limit: 999999 });
+                    addInstallmentSubBrandParams(chartParams, user, selectedSubBrand);
                     const chartRes = await fetch(`${API_BASE}/cash-transactions?${chartParams.toString()}`);
                     if (chartRes.ok) { const cr = await chartRes.json(); setAllDataForChart(cr.data || []); }
                 } catch { }
@@ -192,7 +199,7 @@ const CashInPage = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 500);
         }
-    }, [API_BASE, page, searchTerm, startDate, endDate, user]);
+    }, [API_BASE, page, searchTerm, startDate, endDate, user, selectedSubBrand]);
 
     useEffect(() => {
         if (selectedRecord) return;
@@ -247,7 +254,7 @@ const CashInPage = () => {
                     currency: 'USD',
                     category: 'General Income',
                     description: '',
-                    subBrand: user?.subBrands?.[0] || '',
+                    subBrand: selectedSubBrand !== 'All' ? selectedSubBrand : (user?.subBrands?.[0] || ''),
                     contractOR: '',
                     photoUrls: []
                 });
@@ -309,6 +316,7 @@ const CashInPage = () => {
                 page: 1,
                 limit: 999999
             });
+            addInstallmentSubBrandParams(params, user, selectedSubBrand);
             if (searchTerm) params.set('search', searchTerm);
             if (startDate) params.set('startDate', startDate);
             if (endDate) params.set('endDate', endDate);
@@ -381,6 +389,7 @@ const CashInPage = () => {
                 </div>
 
                 <div className='flex items-center gap-2 flex-wrap'>
+                    <InstallmentSubBrandFilter availableSubBrands={availableSubBrands} selectedSubBrand={selectedSubBrand} onChange={setSelectedSubBrand} t={t} />
                     <button onClick={openCreateForm} className='flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[5px] text-xs font-bold cursor-pointer transition-all shadow-md shadow-emerald-600/20'>
                         <FaPlus className="text-xs" /><span>{t('createCashIn')}</span>
                     </button>

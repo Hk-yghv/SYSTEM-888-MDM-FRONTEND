@@ -124,8 +124,9 @@ const ContractFullDetailsModal = ({
         if (!durationStr) return { isDays: false, count: 3 };
         const str = String(durationStr).toLowerCase().trim();
         const matched = str.match(/\d+/);
-        const count = matched ? Math.max(1, parseInt(matched[0], 10)) : 3;
         const isDays = str.includes('day') || str.includes('ថ្ងៃ') || str.includes('d');
+        const durationCount = matched ? Math.max(1, parseInt(matched[0], 10)) : 3;
+        const count = !isDays && str.includes('year') ? durationCount * 12 : durationCount;
         return { isDays, count };
     };
 
