@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import CashTransaction from '../models/CashTransaction.js';
 import CashTransactionCounter from '../models/CashTransactionCounter.js';
+import ControlSystem from '../models/ControlSystem.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { dbInstances, queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
@@ -13,13 +14,71 @@ if (!MEM_DB.cashTransactions) {
     MEM_DB.cashTransactions = [];
 }
 
-const normalizeCashTransaction = (record) => {
+const normalizeCashTransaction = (record, firstSubBrandsByBrand = {}) => {
     const normalized = record && typeof record.toObject === 'function' ? record.toObject() : { ...record };
+    if (!String(normalized.subBrand || '').trim()) {
+        normalized.subBrand = firstSubBrandsByBrand[normalized.brand]?.[0] || '';
+    }
     const photoUrls = Array.isArray(normalized.photoUrls) ? normalized.photoUrls.filter(Boolean) : [];
     if (photoUrls.length === 0 && normalized.photoUrl) photoUrls.push(normalized.photoUrl);
     normalized.photoUrls = [...new Set(photoUrls)];
     normalized.photoUrl = normalized.photoUrls[0] || '';
     return normalized;
+};
+
+const getFirstSubBrandsByBrand = async () => {
+    if (!isMongoConnected) {
+        return MEM_DB.controlSystem?.brand_subbrands ||
+            MEM_DB.controlSystems?.find(item => item.key === 'brand_subbrands' && !item.brand)?.value ||
+            {};
+    }
+
+    const config = await queryAllDBs(ControlSystem, Model => Model.findOne({
+        key: 'brand_subbrands',
+        $or: [{ brand: '' }, { brand: 'Global' }, { brand: { $exists: false } }, { brand: null }]
+    }).select('value').lean());
+    const value = config?.value;
+    return value instanceof Map ? Object.fromEntries(value) : value || {};
+};
+
+const backfillMissingSubBrands = async (records, firstSubBrandsByBrand) => {
+    const updates = records
+        .filter(record => !String(record.subBrand || '').trim())
+        .map(record => ({
+            id: record._id,
+            subBrand: firstSubBrandsByBrand[record.brand]?.[0]
+        }))
+        .filter(update => update.id && update.subBrand);
+    if (updates.length === 0) return;
+
+    const operations = updates.map(({ id, subBrand }) => ({
+        updateOne: {
+            filter: {
+                _id: id,
+                $or: [{ subBrand: { $exists: false } }, { subBrand: null }, { subBrand: '' }]
+            },
+            update: { $set: { subBrand } }
+        }
+    }));
+
+    await Promise.all(dbInstances
+        .filter(instance => instance.status === 'connected' && instance.conn)
+        .map(async instance => {
+            let Model;
+            try {
+                Model = instance.conn.model(CashTransaction.modelName);
+            } catch {
+                Model = instance.conn.model(CashTransaction.modelName, CashTransaction.schema);
+            }
+            await Model.bulkWrite(operations, { ordered: false });
+        }));
+
+    updates.forEach(({ id, subBrand }) => {
+        const memoryRecord = MEM_DB.cashTransactions.find(record => String(record._id) === String(id));
+        if (memoryRecord && !String(memoryRecord.subBrand || '').trim()) {
+            memoryRecord.subBrand = subBrand;
+        }
+    });
 };
 
 const queryCashTransactionsAcrossDBs = async (filter) => {
@@ -201,16 +260,52 @@ router.get('/cash-transactions', async (req, res) => {
         } = req.query;
 
         const isolation = await resolveUserIsolation(req);
+        const firstSubBrandsByBrand = await getFirstSubBrandsByBrand();
         const requestedBrand = isolation.isMasterAdmin
             ? String(req.query.brand || isolation.brand || '').trim()
             : isolation.brand;
+        const requestedSubBrand = String(req.query.subBrand || '').trim();
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         let filter = {};
         if (type) filter.type = type;
         if (requestedBrand) filter.brand = requestedBrand;
-        if (isolation.effectiveSubBrands.length > 0) {
-            filter.subBrand = { $in: isolation.effectiveSubBrands };
+
+        const allowedSubBrands = requestedSubBrand && requestedSubBrand !== 'All'
+            ? (isolation.isMasterAdmin || isolation.effectiveSubBrands.includes(requestedSubBrand)
+                ? [requestedSubBrand]
+                : ['__UNAUTHORIZED__'])
+            : isolation.effectiveSubBrands;
+        const missingSubBrandClauses = Object.entries(firstSubBrandsByBrand)
+            .filter(([brand, subBrands]) => {
+                const firstSubBrand = subBrands?.[0];
+                if (!firstSubBrand || (requestedBrand && brand.toLowerCase() !== requestedBrand.toLowerCase())) return false;
+                if (requestedSubBrand && requestedSubBrand !== 'All') {
+                    return firstSubBrand.toLowerCase() === requestedSubBrand.toLowerCase() &&
+                        (isolation.isMasterAdmin || allowedSubBrands.includes(firstSubBrand));
+                }
+                return allowedSubBrands.length === 0 || allowedSubBrands.some(
+                    subBrand => subBrand.toLowerCase() === firstSubBrand.toLowerCase()
+                );
+            })
+            .map(([brand]) => ({
+                brand,
+                $or: [
+                    { subBrand: { $exists: false } },
+                    { subBrand: null },
+                    { subBrand: '' }
+                ]
+            }));
+
+        if (allowedSubBrands.length > 0 || missingSubBrandClauses.length > 0) {
+            const subBrandConditions = [];
+            if (allowedSubBrands.length > 0) {
+                subBrandConditions.push({ subBrand: { $in: allowedSubBrands } });
+            }
+            subBrandConditions.push(...missingSubBrandClauses);
+            filter.$and = [{
+                $or: subBrandConditions
+            }];
         }
 
         let allRecords = [];
@@ -233,9 +328,14 @@ router.get('/cash-transactions', async (req, res) => {
             let list = MEM_DB.cashTransactions;
             if (type) list = list.filter(item => item.type === type);
             if (requestedBrand) list = list.filter(item => item.brand === requestedBrand);
-            if (isolation.effectiveSubBrands.length > 0) {
-                list = list.filter(item => isolation.effectiveSubBrands.includes(item.subBrand));
-            }
+            list = list.filter(item => {
+                const subBrand = String(
+                    item.subBrand || firstSubBrandsByBrand[item.brand]?.[0] || ''
+                ).trim();
+                return allowedSubBrands.length === 0 || allowedSubBrands.some(
+                    allowed => allowed.toLowerCase() === subBrand.toLowerCase()
+                );
+            });
             if (search) {
                 const s = search.toLowerCase();
                 list = list.filter(item =>
@@ -248,10 +348,19 @@ router.get('/cash-transactions', async (req, res) => {
             if (startDate) list = list.filter(item => item.date >= startDate);
             if (endDate) list = list.filter(item => item.date <= endDate);
             allRecords = list.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+            allRecords.forEach(record => {
+                if (!String(record.subBrand || '').trim()) {
+                    record.subBrand = firstSubBrandsByBrand[record.brand]?.[0] || '';
+                }
+            });
         }
 
+        if (isMongoConnected) {
+            await backfillMissingSubBrands(allRecords, firstSubBrandsByBrand);
+        }
         const total = allRecords.length;
-        const data = allRecords.slice(skip, skip + parseInt(limit)).map(normalizeCashTransaction);
+        const data = allRecords.slice(skip, skip + parseInt(limit))
+            .map(record => normalizeCashTransaction(record, firstSubBrandsByBrand));
 
         // Aggregations for KPI
         let totalUSD = 0;
