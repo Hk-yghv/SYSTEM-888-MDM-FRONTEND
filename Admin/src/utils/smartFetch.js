@@ -2,12 +2,13 @@
 import { getAuthToken } from './authToken';
 const normalizeUrl = (url) => (url ? url.replace(/\/$/, '') : '');
 
-const rawApiPool = import.meta.env.DEV ? [
+// Always collect all configured API backends (works in both DEV and PROD)
+const rawApiPool = [
     import.meta.env.VITE_API_BACKEND,
     import.meta.env.VITE_API_BACKEND1,
     import.meta.env.VITE_API_BACKEND2,
     import.meta.env.VITE_API_BACKEND3,
-].map(normalizeUrl).filter(Boolean) : [];
+].map(normalizeUrl).filter(Boolean);
 
 const getResolvedApiPool = () => {
     let pool = rawApiPool.length > 0 ? [...rawApiPool] : (import.meta.env.DEV ? [

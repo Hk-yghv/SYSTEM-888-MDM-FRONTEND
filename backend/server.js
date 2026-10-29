@@ -105,19 +105,31 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const PORT = process.env.PORT || 5000;
 
+// Detect if running on Vercel (serverless environment)
+const IS_VERCEL = !!process.env.VERCEL;
+
 // Initialize Telegram Bot if token provided
+// NOTE: Polling is disabled on Vercel (serverless) — use webhooks instead on Vercel
 let bot = null;
 if (process.env.TELEGRAM_BOT_TOKEN) {
     try {
-        bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+        if (IS_VERCEL) {
+            // Vercel: use webhook mode (no polling — serverless can't hold long connections)
+            bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+            console.log('Telegram Bot initialized in webhook mode (Vercel serverless)');
+        } else {
+            // Render / local: use polling mode
+            bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+            bot.on('polling_error', (err) => {
+                // Log warning without crashing server on transient network glitches
+                console.warn('[TelegramBot Polling]:', err.message);
+            });
+            console.log('Telegram Bot initialized in polling mode (Render/local)');
+        }
         installTelegramSendRetry(bot);
-        bot.on('polling_error', (err) => {
-            // Log warning without crashing server on transient network glitches
-            console.warn('[TelegramBot Polling]:', err.message);
-        });
         setSecurityTelegramBot(bot);
         initTelegramBotService(bot);
-        console.log('Telegram Bot initialized successfully & Interactive /sys Bot Service connected');
+        console.log('Telegram Bot & Interactive /sys Bot Service connected');
     } catch (err) {
         console.error('Telegram Bot init error:', err.message);
     }
@@ -230,9 +242,23 @@ app.use((err, req, res, next) => {
 });
 
 // ── Connect All Databases & Start Server ──
-connectDB().then(() => {
-    startFirebaseBackupScheduler();
-    app.listen(PORT, () => {
-        console.log(`SYSTEM MDM Backend Server 0 (Auth/Users/Control/Dashboard) active on port ${PORT} with Ultimate Security Shield`);
+// On Vercel (serverless): export app as handler — Vercel calls it per-request
+// On Render / local: connect DB and start listening on PORT
+if (IS_VERCEL) {
+    // Vercel serverless: connect DB once and export app
+    connectDB().then(() => {
+        startFirebaseBackupScheduler();
+        console.log('SYSTEM MDM Backend ready (Vercel serverless mode)');
+    }).catch(err => console.error('DB connection error:', err.message));
+} else {
+    // Render / local: traditional server
+    connectDB().then(() => {
+        startFirebaseBackupScheduler();
+        app.listen(PORT, () => {
+            console.log(`SYSTEM MDM Backend Server active on port ${PORT} with Ultimate Security Shield`);
+        });
     });
-});
+}
+
+// ── Export for Vercel Serverless Handler ──
+export default app;

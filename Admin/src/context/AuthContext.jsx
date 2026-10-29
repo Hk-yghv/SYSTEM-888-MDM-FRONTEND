@@ -11,12 +11,18 @@ export const getDynamicApiBase = () => {
     const configuredApiBase = import.meta.env.VITE_API_BACKEND;
     if (configuredApiBase) return configuredApiBase.replace(/\/+$/, '');
     if (import.meta.env.DEV) return 'http://localhost:5000/api';
+    // Production fallback — only used if VITE_API_BACKEND is not set in Vercel env vars
     return '/api';
 };
 
 const API_BASE = getDynamicApiBase();
-const API_BASE1 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND1 || API_BASE) : API_BASE;
-const API_BASE2 = import.meta.env.DEV ? (import.meta.env.VITE_API_BACKEND2 || API_BASE) : API_BASE;
+// Always use VITE_API_BACKEND1/2 if set (works in both DEV and PROD for multi-server failover)
+const API_BASE1 = import.meta.env.VITE_API_BACKEND1
+    ? import.meta.env.VITE_API_BACKEND1.replace(/\/+$/, '')
+    : API_BASE;
+const API_BASE2 = import.meta.env.VITE_API_BACKEND2
+    ? import.meta.env.VITE_API_BACKEND2.replace(/\/+$/, '')
+    : API_BASE;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 
 

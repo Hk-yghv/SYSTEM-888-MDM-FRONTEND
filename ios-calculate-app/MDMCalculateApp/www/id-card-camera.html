@@ -88,6 +88,17 @@
       white-space: nowrap;
     }
 
+    .install-button {
+      margin-left: auto;
+      padding: 10px 13px;
+      border: 1px solid rgba(152, 174, 202, .2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .045);
+      color: #e3eaf3;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
     h1 {
       margin: 0;
       font-size: clamp(18px, 4vw, 22px);
@@ -470,7 +481,14 @@
 </head>
 <body>
   <main class="app">
-
+    <header>
+      <div class="brand-mark" aria-hidden="true">▣</div>
+      <div>
+        <h1>ថតអត្តសញ្ញាណប័ណ្ណ</h1>
+        <p class="subtitle">ដាក់ប័ណ្ណឱ្យត្រូវក្នុងស៊ុម ដើម្បីថតរូបច្បាស់</p>
+      </div>
+      <button class="install-button" id="installButton" type="button" hidden>ដំឡើង App</button>
+    </header>
     <section class="camera-card" aria-label="កាមេរ៉ាថតអត្តសញ្ញាណប័ណ្ណ">
       <div class="camera-stage" id="cameraStage">
         <video id="video" autoplay muted playsinline aria-label="រូបភាពពីកាមេរ៉ា"></video>
@@ -509,17 +527,18 @@
     <div class="actions">
       <button class="capture-button" id="captureButton" type="button">បើកកាមេរ៉ា</button>
     </div>
+    <p class="help">ដាក់ប័ណ្ណឱ្យស្ថិតនៅក្នុងស៊ុមពណ៌ក្រហម ហើយចុចថត។ បន្ទាត់និងដឺក្រេបង្ហាញកម្រិតទូរស័ព្ទ; ពណ៌បៃតងមានន័យថាស្មើ។ អ្នកនៅតែអាចថតបានគ្រប់ពេល។ រូបភាពដែលបានថតនឹងកាត់តាមស៊ុម ហើយអាចរក្សាទុកក្នុង Photos របស់ឧបករណ៍បាន។</p>
     <p class="error-message" id="errorMessage" role="alert"></p>
   </main>
 
   <div class="modal" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewHeading" hidden>
     <section class="preview-card">
       <h2 class="preview-heading" id="previewHeading">ពិនិត្យរូបភាព</h2>
-      <p class="preview-note">រូបភាពត្រូវបានកាត់តាមស៊ុមក្រហម។ អ្នកអាចថតម្ដងទៀត ឬទាញយករូបភាពនេះ។</p>
+      <p class="preview-note">រូបភាពត្រូវបានកាត់តាមស៊ុមក្រហម។ អ្នកអាចថតម្ដងទៀត ឬរក្សាទុករូបភាពនេះក្នុង Photos។</p>
       <img class="preview-image" id="previewImage" alt="រូបភាពអត្តសញ្ញាណប័ណ្ណដែលបានថត">
       <div class="preview-actions">
         <button class="secondary-button" id="retakeButton" type="button">ថតម្ដងទៀត</button>
-        <button class="primary-button" id="downloadButton" type="button">ទាញយករូបភាព</button>
+        <button class="primary-button" id="downloadButton" type="button">រក្សាទុករូបភាព</button>
       </div>
     </section>
   </div>
@@ -804,6 +823,25 @@
         video.srcObject = null;
       }
 
+      window.addEventListener("message", event => {
+        if (event.source !== window.parent || !event.data) return;
+        if (event.data.type === "camera-stop") {
+          stopCamera();
+          message.hidden = false;
+          switchButton.disabled = true;
+          captureButton.textContent = "បើកកាមេរ៉ា";
+          captureButton.disabled = false;
+          setStatus("កាមេរ៉ាមិនទាន់បើក");
+        } else if (event.data.type === "camera-image-save-result") {
+          if (event.data.success) {
+            setStatus("បានរក្សាទុករូបភាពក្នុង Photos", "active");
+            setError();
+          } else {
+            setError("មិនអាចរក្សាទុករូបភាពបានទេ។ សូមពិនិត្យសិទ្ធិ Photos ហើយសាកល្បងម្ដងទៀត។");
+          }
+        }
+      });
+
       function getGuideInVideoCoordinates() {
         const bounds = stage.getBoundingClientRect();
         const guideBounds = guide.getBoundingClientRect();
@@ -882,14 +920,31 @@
             setError("រូបភាពមិនអាចរក្សាទុកបានទេ។ សូមថតម្ដងទៀត។");
             return;
           }
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `id-card-${new Date().toISOString().slice(0, 10)}.jpg`;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          const fileName = `id-card-${new Date().toISOString().slice(0, 10)}.jpg`;
+          const reader = new FileReader();
+          reader.onerror = () => setError("មិនអាចអានរូបភាពដើម្បីរក្សាទុកបានទេ។");
+          reader.onload = () => {
+            const dataUrl = reader.result;
+            if (window.AndroidBridge && typeof window.AndroidBridge.saveImage === "function") {
+              window.AndroidBridge.saveImage(dataUrl);
+              setStatus("កំពុងរក្សាទុករូបភាពក្នុង Photos");
+              return;
+            }
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosBridge) {
+              window.webkit.messageHandlers.iosBridge.postMessage({ action: "saveImage", dataUrl });
+              setStatus("កំពុងរក្សាទុករូបភាពក្នុង Photos");
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          };
+          reader.readAsDataURL(blob);
         }, "image/jpeg", 0.94);
       });
 
@@ -920,7 +975,11 @@
       });
 
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible" || !stream) return;
+        if (document.visibilityState !== "visible") {
+          stopCamera();
+          return;
+        }
+        if (!stream) return;
         if (stream.getTracks().some(track => track.readyState !== "live")) {
           stopCamera();
           message.hidden = false;

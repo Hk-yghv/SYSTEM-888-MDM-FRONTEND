@@ -122,7 +122,8 @@ dist-ssr
 *.sw?
 
 # For push github
-
+WORK : https://github.com/Hacker122-qpwi/SYSTEM-MDM.git
+TEST : https://github.com/Hk-yghv/SYSTEM-888-MDM-FRONTEND.git
 # If make new website project in github
 
 git init
@@ -147,7 +148,7 @@ git push -u origin main
 # If want see your remote
 
 git remote -v
-
+`
 
 
 # Update vesion

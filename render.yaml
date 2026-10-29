@@ -1,0 +1,16 @@
+﻿services:
+  - type: web
+    name: system-mdm-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Add all secrets in Render Dashboard -> Environment
+    healthCheckPath: /api/health
+    autoDeploy: true
+
