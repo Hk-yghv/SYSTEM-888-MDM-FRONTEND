@@ -10,10 +10,12 @@ import AppRoutes from "./AppRoutes";
 import { MusicPlayerProvider } from "../context/MusicPlayerContext";
 import { installTableInteractions } from "../utils/tableInteractions";
 import { installModalAnimations } from "../utils/modalAnimations";
+import { installAsciiNumericInputGuard } from "../utils/asciiNumericInputGuard";
 
 const App = () => {
   useEffect(() => installTableInteractions(), []);
   useEffect(() => installModalAnimations(), []);
+  useEffect(() => installAsciiNumericInputGuard(), []);
 
   useEffect(() => {
     const copyVisibleValue = (event) => {

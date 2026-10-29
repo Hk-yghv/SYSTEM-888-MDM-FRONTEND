@@ -138,6 +138,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const photoFileRef = useRef(null);
 
     const getNumericPart = (value) => String(value || '').match(/(?:\d+(?:\.\d*)?|\.\d*)/)?.[0] || '';
+    const getVersionNumber = (value) => String(value || '').replace(/[^\d.]/g, '');
     const getAmountNumber = (value) => {
         const numeric = String(value ?? '').replace(/[^\d.]/g, '');
         const decimalIndex = numeric.indexOf('.');
@@ -459,7 +460,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     };
 
     const handleVersionNumberChange = (value) => {
-        const numericValue = getAmountNumber(value);
+        const numericValue = getVersionNumber(value);
         setForm(prev => ({ ...prev, version: numericValue }));
     };
 
@@ -609,7 +610,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             mosyleUrl: form.mosyleUrl || '',
             urlFb: form.urlFb || '',
             inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
-            version: getNumericPart(form.version),
+            version: getVersionNumber(form.version),
             imei1: String(form.imei1 || '').replace(/\D/g, '').slice(0, 15),
             imei2: String(form.imei2 || '').replace(/\D/g, '').slice(0, 15),
             status: editData?.status || 'Application',
@@ -833,7 +834,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 <input className={`${inp} font-mono text-pink-400`} type="text" inputMode="numeric" pattern="[0-9]*" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
                             </Field>
                             <Field label="Version">
-                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" inputMode="text" value={getNumericPart(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18" />
+                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" inputMode="text" value={getVersionNumber(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18.1.1" />
                             </Field>
                             <Field label={t('color')}><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder={t('deviceColorPlaceholder')} /></Field>
                             <Field label={t('capacityStorage')}>
