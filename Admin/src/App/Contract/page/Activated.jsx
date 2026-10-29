@@ -1020,6 +1020,7 @@ const Activated = () => {
                         <tr>
                             <th className='px-4 py-1 text-center'>{t('no')}</th>
                             <th className='px-4 py-1'>{t('inputDate')}</th>
+                            <th className='px-4 py-1'>{t('customerCuId')}</th>
                             <th className='px-4 py-1'>{t('customerName')}</th>
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
                             <th className='px-4 py-1 text-center'>{t('contract')}</th>
@@ -1036,7 +1037,7 @@ const Activated = () => {
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {displayedContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={12} className="text-center py-8 text-slate-500 italic font-medium">
+                                <td colSpan={14} className="text-center py-8 text-slate-500 italic font-medium">
                                     {searchTerm || selectedContractId
                                         ? t('customerNoResults').replace('{search}', searchInput)
                                         : isSummaryFilterActive
@@ -1093,6 +1094,7 @@ const Activated = () => {
                                     >
                                         <td className='px-4 py-1 text-center font-mono text-slate-600 font-semibold'>{selectedContractId && locatedIndex !== null ? total - locatedIndex : total - ((currentPage - 1) * itemsPerPage + idx)}</td>
                                         <td className='px-4 py-1 font-mono text-slate-700 font-medium'>{item.inputDate}</td>
+                                        <td className='px-4 py-1 font-mono font-bold text-indigo-700'><CopyCell text={item.customerId} className='font-mono font-bold text-indigo-700' /></td>
                                         <td className='px-4 py-1'>
                                             <div className="flex items-center gap-2">
                                                 <div>

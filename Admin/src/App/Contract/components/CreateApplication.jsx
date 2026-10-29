@@ -99,7 +99,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         brand: user?.brand || '',
         subBrand: '',
         contractSuffix: '000000001',
-        customerId: '',
         customerNameEn: '', customerNameKh: '',
         idCardNumber: '', dob: '', gender: 'male',
         birthAddress: '', currentAddress: '',
@@ -118,7 +117,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [modelsList, setModelsList] = useState([]);
     const [submitting, setSubmitting] = useState(false);
     const [allCustomers, setAllCustomers] = useState([]);
-    const [customerIdMatches, setCustomerIdMatches] = useState([]);
     const [autoFilled, setAutoFilled] = useState(false);
     const [activeTab, setActiveTab] = useState('customer');
     const [photoUploading, setPhotoUploading] = useState(false);
@@ -126,15 +124,15 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     const [capacityUnit, setCapacityUnit] = useState('GB');
     const [interestUnit, setInterestUnit] = useState('%');
     const [durationUnit, setDurationUnit] = useState('Months');
-    const [versionPlatform, setVersionPlatform] = useState('Android');
     const [amountsLinked, setAmountsLinked] = useState(true);
     const photoFileRef = useRef(null);
 
-    const getNumericPart = (value) => String(value || '').match(/\d+(?:\.\d+)?/)?.[0] || '';
+    const getNumericPart = (value) => String(value || '').match(/(?:\d+(?:\.\d*)?|\.\d*)/)?.[0] || '';
     const getAmountNumber = (value) => {
         const numeric = String(value ?? '').replace(/[^\d.]/g, '');
-        const [whole, ...decimals] = numeric.split('.');
-        return decimals.length ? `${whole}.${decimals.join('')}` : whole;
+        const decimalIndex = numeric.indexOf('.');
+        if (decimalIndex === -1) return numeric;
+        return `${numeric.slice(0, decimalIndex)}.${numeric.slice(decimalIndex + 1).replace(/\./g, '')}`;
     };
 
     const computeNextSuffixForBrand = (targetBrand, customersList) => {
@@ -190,37 +188,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
     }, [API_BASE1]);
 
     useEffect(() => {
-        const query = String(form.customerId || '').trim();
-        if (!/^CU-/i.test(query) || allCustomers.some(customer =>
-            String(customer.customerId || '').toLowerCase() === query.toLowerCase()
-        )) {
-            setCustomerIdMatches([]);
-            return undefined;
-        }
-
-        const controller = new AbortController();
-        const timeout = setTimeout(async () => {
-            try {
-                const params = new URLSearchParams({ search: query, page: '1', limit: '10' });
-                const response = await fetch(`${API_BASE1}/contracts?${params.toString()}`, { signal: controller.signal });
-                if (!response.ok) throw new Error(`Customer CU.ID lookup failed (${response.status}).`);
-                const result = await response.json();
-                setCustomerIdMatches(Array.isArray(result.data) ? result.data : []);
-            } catch (error) {
-                if (!controller.signal.aborted) {
-                    console.error('Customer CU.ID lookup error:', error);
-                    setCustomerIdMatches([]);
-                }
-            }
-        }, 250);
-
-        return () => {
-            clearTimeout(timeout);
-            controller.abort();
-        };
-    }, [API_BASE1, allCustomers, form.customerId]);
-
-    useEffect(() => {
         const go = async () => {
             try {
                 const targetBrand = form.brand || user?.brand || '';
@@ -272,15 +239,13 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
         const capacityMatch = String(form.capacity || '').match(/\b(GB|TB)\b/i);
         const interestMatch = String(form.interest || '').match(/(%|\$|USD)/i);
         const durationMatch = String(form.duration || '').match(/\b(day|month|year)s?\b/i);
-        const versionMatch = String(form.version || '').match(/\b(iOS|Android)\b/i);
         if (capacityMatch) setCapacityUnit(capacityMatch[1].toUpperCase());
         if (interestMatch) setInterestUnit(interestMatch[1] === '$' || interestMatch[1].toUpperCase() === 'USD' ? '$' : '%');
         if (durationMatch) {
             const unit = durationMatch[1].toLowerCase();
             setDurationUnit(unit === 'day' ? 'Days' : unit === 'year' ? 'Years' : 'Months');
         }
-        if (versionMatch) setVersionPlatform(versionMatch[1]);
-    }, [form.capacity, form.interest, form.duration, form.version]);
+    }, [form.capacity, form.interest, form.duration]);
 
     useEffect(() => {
         if (!open) return;
@@ -345,12 +310,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 const capacityMatch = String(editData.capacity || editData.storage || editData.Storage || '').match(/(\d+(?:\.\d+)?)\s*(GB|TB)?/i);
                 const interestMatch = String(editData.interest || editData.interestType || '14%').match(/(\d+(?:\.\d+)?)\s*(%|\$|USD)?/i);
                 const durationMatch = String(editData.duration || '12 Months').match(/(\d+)\s*(day|month|year)/i);
-                const versionMatch = String(editData.version || '').match(/(iOS|Android)?\s*(\d+(?:\.\d+)?)/i);
                 setCapacityUnit(capacityMatch?.[2]?.toUpperCase() || 'GB');
                 setInterestUnit(interestMatch?.[2] === '$' || interestMatch?.[2]?.toUpperCase() === 'USD' ? '$' : '%');
                 const durationUnitName = durationMatch?.[2]?.toLowerCase();
                 setDurationUnit(durationUnitName === 'day' ? 'Days' : durationUnitName === 'year' ? 'Years' : 'Months');
-                setVersionPlatform(versionMatch?.[1] || 'Android');
                 setAmountsLinked(Number(editData.amount || 0) === Number(editData.monthlyPayment || 0));
 
 
@@ -373,13 +336,42 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 setCapacityUnit('GB');
                 setInterestUnit('%');
                 setDurationUnit('Months');
-                setVersionPlatform('Android');
                 setAmountsLinked(true);
             }
             setAutoFilled(false);
             setActiveTab('customer');
         }
     }, [open, editData, allCustomers.length]);
+
+    const matchedCustomer = useMemo(() => {
+        const normalize = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+        const cardNumber = normalize(form.idCardNumber).replace(/[\s-]/g, '');
+        const nameEn = normalize(form.customerNameEn);
+        const nameKh = normalize(form.customerNameKh);
+        const dob = normalize(form.dob);
+        if (!cardNumber && !nameEn && !nameKh) return null;
+
+        return allCustomers.find(customer => {
+            const candidateCardNumber = normalize(customer.idCardNumber).replace(/[\s-]/g, '');
+            if (cardNumber && candidateCardNumber) return cardNumber === candidateCardNumber;
+
+            const candidateNameEn = normalize(customer.customerNameEn);
+            const candidateNameKh = normalize(customer.customerNameKh);
+            const matchesName = Boolean(
+                (nameEn && candidateNameEn && nameEn === candidateNameEn) ||
+                (nameKh && candidateNameKh && nameKh === candidateNameKh)
+            );
+            if (!matchesName) return false;
+            const candidateDob = normalize(customer.dob);
+            if (dob && candidateDob && dob !== candidateDob) return false;
+            const hasNameConflict =
+                (nameEn && candidateNameEn && nameEn !== candidateNameEn) ||
+                (nameKh && candidateNameKh && nameKh !== candidateNameKh);
+            return !hasNameConflict || Boolean(dob && candidateDob && dob === candidateDob);
+        }) || null;
+    }, [allCustomers, form.customerNameEn, form.customerNameKh, form.idCardNumber, form.dob]);
+
+    const displayedCustomerId = editData?.customerId || matchedCustomer?.customerId;
 
     const handleChange = (e) => {
         const { id, value } = e.target;
@@ -458,15 +450,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
     const handleVersionNumberChange = (value) => {
         const numericValue = getAmountNumber(value);
-        setForm(prev => ({ ...prev, version: numericValue ? `${versionPlatform} ${numericValue}` : '' }));
-    };
-
-    const handleVersionPlatformChange = (value) => {
-        setVersionPlatform(value);
-        setForm(prev => {
-            const numericValue = getNumericPart(prev.version);
-            return { ...prev, version: numericValue ? `${value} ${numericValue}` : '' };
-        });
+        setForm(prev => ({ ...prev, version: numericValue }));
     };
 
     const handleAutoFill = (item) => {
@@ -475,7 +459,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                 ...prev,
                 customerNameEn: item.customerNameEn || prev.customerNameEn,
                 customerNameKh: item.customerNameKh || prev.customerNameKh,
-                customerId: item.customerId || prev.customerId,
                 idCardNumber: item.idCardNumber || prev.idCardNumber,
                 dob: item.dob || prev.dob,
                 gender: item.gender || prev.gender,
@@ -616,6 +599,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
             mosyleUrl: form.mosyleUrl || '',
             urlFb: form.urlFb || '',
             inputDate: form.inputDate || editData?.inputDate || new Date().toISOString().split('T')[0],
+            version: getNumericPart(form.version),
             status: editData?.status || 'Application',
             monthlyPayment: Number(form.monthlyPayment) || (Number(form.amount) / 10),
             modifiedByAdmin: isAdmin ? true : Boolean(editData?.modifiedByAdmin),
@@ -673,6 +657,10 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                         </h3>
                     </div>
                     <div className="flex gap-2">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-950/70 border border-indigo-700 rounded-[5px] font-mono font-bold text-indigo-300">
+                            <span className="text-[10px] text-indigo-400">{t('customerCuId')}:</span>
+                            <span>{displayedCustomerId || 'Auto'}</span>
+                        </div>
                         <button type="button" onClick={() => setOpen(false)}
                             className="px-3 py-1.5 bg-red-700 hover:bg-red-600 text-white font-bold rounded-[5px] text-xs cursor-pointer transition-all flex items-center gap-1.5">
                             <MdClose /> {t('cancel')}
@@ -703,9 +691,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
 
                     {/* TAB 1: Customer Info */}
                     {activeTab === 'customer' && (<>
-                        <div className="grid grid-cols-4 gap-3">
-                            <AutoField id="customerId" label={t('customerCuId')} value={form.customerId} placeholder="CU-000001" list={[...customerIdMatches, ...allCustomers]} onChange={handleChange} onSelect={handleAutoFill} font="font-mono font-bold text-indigo-300" />
-                        </div>
                         <div className="grid grid-cols-4 gap-3">
                             <AutoField id="customerNameEn" label={t('nameEnglish')} value={form.customerNameEn} placeholder={t('customerNameEnglish')} list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
                             <AutoField id="customerNameKh" label={t('nameKhmer')} value={form.customerNameKh} placeholder={t('customerNameKhmer')} font="font-khmer" list={allCustomers} onChange={handleChange} onSelect={handleAutoFill} />
@@ -836,13 +821,7 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 <input className={`${inp} font-mono text-pink-400`} type="text" inputMode="numeric" pattern="[0-9]*" id="meid" value={form.meid || ''} onChange={handleChange} placeholder="e.g. 35173227736075" />
                             </Field>
                             <Field label="Version">
-                                <div className="flex">
-                                    <select value={versionPlatform} onChange={event => handleVersionPlatformChange(event.target.value)} className={`${sel} w-28 rounded-r-none`}>
-                                        <option value="Android">Android</option>
-                                        <option value="iOS">iOS</option>
-                                    </select>
-                                    <input className={`${inp} text-indigo-300 font-semibold rounded-l-none`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18" />
-                                </div>
+                                <input className={`${inp} text-indigo-300 font-semibold`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.version)} onChange={event => handleVersionNumberChange(event.target.value)} placeholder="18" />
                             </Field>
                             <Field label={t('color')}><input className={inp} type="text" id="color" value={form.color || ''} onChange={handleChange} placeholder={t('deviceColorPlaceholder')} /></Field>
                             <Field label={t('capacityStorage')}>
@@ -921,25 +900,6 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                 <input className="w-full p-2 bg-gray-800/80 border border-gray-700 rounded-[5px] text-emerald-400 font-bold font-mono text-xs outline-none focus:border-emerald-500"
                                     type="text" inputMode="decimal" pattern="[0-9.]*" id="monthlyPayment" value={form.monthlyPayment ?? ''} onChange={handleChange} placeholder={t('monthlyPayment')} disabled={amountsLinked} />
                             </Field>
-                            <Field label={t('matchLoanCustomer')}>
-                                <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={!amountsLinked}
-                                    onClick={() => {
-                                        if (!amountsLinked) {
-                                            setForm(prev => ({ ...prev, monthlyPayment: prev.amount }));
-                                        }
-                                        setAmountsLinked(!amountsLinked);
-                                    }}
-                                    className={`flex h-9 w-full items-center rounded-full border px-1 transition-colors ${amountsLinked ? 'justify-start border-emerald-600 bg-emerald-950/60' : 'justify-end border-indigo-500 bg-indigo-950/60'}`}
-                                >
-                                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white transition-colors ${amountsLinked ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
-                                        {amountsLinked ? '↔' : '⇄'}
-                                    </span>
-                                    <span className="px-2 text-[10px] font-bold text-gray-200">{amountsLinked ? t('sameAmounts') : t('separateAmounts')}</span>
-                                </button>
-                            </Field>
                             <Field label={t('interestRate')}>
                                 <div className="flex">
                                     <input className={`${inp} font-mono rounded-r-none`} type="text" inputMode="decimal" pattern="[0-9.]*" value={getNumericPart(form.interest)} onChange={event => handleInterestNumberChange(event.target.value)} placeholder="14" />
@@ -959,6 +919,25 @@ const CreateApplication = ({ open, setOpen, editData, onSaved }) => {
                                     </select>
                                 </div>
                             </Field>
+                        </div>
+                        <div className="flex justify-end">
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-label={t('matchLoanCustomer')}
+                                aria-checked={amountsLinked}
+                                onClick={() => {
+                                    if (!amountsLinked) {
+                                        setForm(prev => ({ ...prev, monthlyPayment: prev.amount }));
+                                    }
+                                    setAmountsLinked(!amountsLinked);
+                                }}
+                                className={`flex h-9 w-14 items-center rounded-full border px-1 transition-colors ${amountsLinked ? 'justify-start border-emerald-600 bg-emerald-950/60' : 'justify-end border-indigo-500 bg-indigo-950/60'}`}
+                            >
+                                <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white transition-colors ${amountsLinked ? 'bg-emerald-500' : 'bg-indigo-500'}`}>
+                                    ↔
+                                </span>
+                            </button>
                         </div>
                         <div className="p-2 bg-emerald-900/20 border border-emerald-700/40 rounded-[5px]">
                             <p className="text-[10px] text-emerald-400 font-bold uppercase mb-3">{t('loanSummaryPreview')}</p>
