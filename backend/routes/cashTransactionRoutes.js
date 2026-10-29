@@ -61,7 +61,7 @@ const backfillMissingSubBrands = async (records, firstSubBrandsByBrand) => {
         }
     }));
 
-    await Promise.all(dbInstances
+    const writeResults = await Promise.allSettled(dbInstances
         .filter(instance => instance.status === 'connected' && instance.conn)
         .map(async instance => {
             let Model;
@@ -72,6 +72,13 @@ const backfillMissingSubBrands = async (records, firstSubBrandsByBrand) => {
             }
             await Model.bulkWrite(operations, { ordered: false });
         }));
+    writeResults.forEach(result => {
+        if (result.status === 'rejected') {
+            console.warn(
+                `[CashTransactions] Could not backfill missing subbrands on a database: ${result.reason?.message || result.reason}`
+            );
+        }
+    });
 
     updates.forEach(({ id, subBrand }) => {
         const memoryRecord = MEM_DB.cashTransactions.find(record => String(record._id) === String(id));
@@ -275,9 +282,12 @@ router.get('/cash-transactions', async (req, res) => {
             ? (isolation.isMasterAdmin || isolation.effectiveSubBrands.includes(requestedSubBrand)
                 ? [requestedSubBrand]
                 : ['__UNAUTHORIZED__'])
-            : isolation.effectiveSubBrands;
+            : isolation.isMasterAdmin
+                ? []
+                : isolation.effectiveSubBrands;
         const missingSubBrandClauses = Object.entries(firstSubBrandsByBrand)
             .filter(([brand, subBrands]) => {
+                if (isolation.isMasterAdmin && (!requestedSubBrand || requestedSubBrand === 'All')) return false;
                 const firstSubBrand = subBrands?.[0];
                 if (!firstSubBrand || (requestedBrand && brand.toLowerCase() !== requestedBrand.toLowerCase())) return false;
                 if (requestedSubBrand && requestedSubBrand !== 'All') {
