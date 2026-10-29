@@ -165,6 +165,16 @@ const AuditDevice = () => {
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const [currentRound, setCurrentRound] = useState(getAuditRound);
     const [auditedDates, setAuditedDates] = useState([]);
+    const [selectedSubBrand, setSelectedSubBrand] = useState('');
+    const availableSubBrands = useMemo(
+        () => [...new Set((Array.isArray(user?.subBrands) ? user.subBrands : []).map(value => String(value || '').trim()).filter(Boolean))],
+        [user?.subBrands]
+    );
+    const requiresSubBrandSelection = availableSubBrands.length > 1;
+    const activeSubBrand = requiresSubBrandSelection
+        ? (availableSubBrands.includes(selectedSubBrand) ? selectedSubBrand : '')
+        : (availableSubBrands[0] || '');
+    const mustChooseSubBrand = requiresSubBrandSelection && !activeSubBrand;
 
     // Admin ធំ (Super Admin) Permission Check
     const isAdmin = useMemo(() => {
@@ -263,10 +273,15 @@ const AuditDevice = () => {
                 limit: 500,
                 userBrand: user?.brand || '',
                 userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
+                subBrand: activeSubBrand,
                 userRole: user?.role || '',
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
             });
+            if (mustChooseSubBrand) {
+                setContracts([]);
+                return;
+            }
             const res = await fetch(`${base}/contracts?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
@@ -276,10 +291,22 @@ const AuditDevice = () => {
         } catch (err) {
             console.error('Error fetching contracts in AuditDevice:', err);
         }
-    }, [API_BASE, API_BASE1, user]);
+    }, [API_BASE, API_BASE1, activeSubBrand, mustChooseSubBrand, user]);
 
     // ─── Fetch Daily Audit State ────────────────────────────────────
     const fetchAuditState = useCallback(async (targetDate = selectedDate) => {
+        if (mustChooseSubBrand) {
+            setContactMap({});
+            setContactByName({});
+            setAuditMap({});
+            setLatestAuditMap({});
+            setDistinctStatuses([]);
+            setIsSubmitted(false);
+            setSubmissionInfo(null);
+            setLoading(false);
+            setReloading(false);
+            return;
+        }
         setReloading(true);
         try {
             const base = API_BASE || '';
@@ -288,6 +315,7 @@ const AuditDevice = () => {
                 brand: user?.brand || '',
                 userBrand: user?.brand || '',
                 userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
+                subBrand: activeSubBrand,
                 userRole: user?.role || '',
                 username: user?.username || '',
                 isImmutable: user?.isImmutable ? 'true' : 'false'
@@ -319,7 +347,7 @@ const AuditDevice = () => {
             setLoading(false);
             setTimeout(() => setReloading(false), 400);
         }
-    }, [API_BASE, selectedDate, user]);
+    }, [API_BASE, activeSubBrand, mustChooseSubBrand, selectedDate, user]);
 
     // Initial Load & on selectedDate Change
     useEffect(() => {
@@ -527,7 +555,8 @@ const AuditDevice = () => {
                 accountActivity: auditForm.accountActivity.trim(),
                 noteAudit: auditForm.noteAudit.trim(),
                 auditedBy: user?.username || user?.name || 'Staff',
-                brand: user?.brand || auditModalItem.brand || ''
+                brand: user?.brand || auditModalItem.brand || '',
+                subBrand: activeSubBrand || auditModalItem.subBrand || ''
             };
 
             const res = await fetch(`${base}/device-audit/log`, {
@@ -600,6 +629,7 @@ const AuditDevice = () => {
                 username: contactForm.username.trim(),
                 phoneNumber: contactForm.phoneNumber.trim(),
                 brand: user?.brand || contactModalItem.brand || '',
+                subBrand: activeSubBrand || contactModalItem.subBrand || '',
                 userRole: user?.role || '',
                 requesterUsername: user?.username || '',
                 isImmutable: Boolean(user?.isImmutable)
@@ -646,7 +676,15 @@ const AuditDevice = () => {
 
         try {
             const base = API_BASE || '';
-            const res = await fetch(`${base}/device-audit/history/${encodeURIComponent(row.rawContractId)}`);
+            const params = new URLSearchParams({
+                userBrand: user?.brand || '',
+                userSubBrands: Array.isArray(user?.subBrands) ? user.subBrands.join(',') : '',
+                userRole: user?.role || '',
+                username: user?.username || '',
+                isImmutable: user?.isImmutable ? 'true' : 'false',
+                subBrand: activeSubBrand
+            });
+            const res = await fetch(`${base}/device-audit/history/${encodeURIComponent(row.rawContractId)}?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && Array.isArray(data.data)) {
@@ -689,7 +727,8 @@ const AuditDevice = () => {
                 body: JSON.stringify({
                     auditDate: selectedDate,
                     submittedBy: user?.username || user?.name || 'Staff',
-                    brand: user?.brand || ''
+                    brand: user?.brand || '',
+                    subBrand: activeSubBrand
                 })
             });
             const data = await res.json();
@@ -733,6 +772,39 @@ const AuditDevice = () => {
 
                 {/* Date Search & Status & Daily Submit Button */}
                 <div className="flex flex-wrap items-center gap-2.5">
+                    {requiresSubBrandSelection && (
+                        <div className="flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-[5px] border border-indigo-200">
+                            <FaFilter className="text-indigo-600 text-sm" />
+                            <label htmlFor="device-audit-subbrand" className="text-xs font-bold text-indigo-700">
+                                {t('subBrand')}:
+                            </label>
+                            <select
+                                id="device-audit-subbrand"
+                                value={activeSubBrand}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSelectedSubBrand(value);
+                                    setContracts([]);
+                                    setContactMap({});
+                                    setContactByName({});
+                                    setAuditMap({});
+                                    setLatestAuditMap({});
+                                    setDistinctStatuses([]);
+                                    setIsSubmitted(false);
+                                    setSubmissionInfo(null);
+                                    setAuditedDates([]);
+                                    setLoading(Boolean(value));
+                                    setCurrentPage(1);
+                                }}
+                                className="text-xs font-bold text-slate-800 bg-white border border-indigo-200 rounded-[5px] px-2 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                            >
+                                <option value="">{t('selectSubBrand')}</option>
+                                {availableSubBrands.map(subBrand => (
+                                    <option key={subBrand} value={subBrand}>{subBrand}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     {/* Date Picker (Auto defaults to Today) */}
                     <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-[5px] border border-slate-300">
                         <FaCalendarAlt className="text-emerald-600 text-sm" />
@@ -781,8 +853,8 @@ const AuditDevice = () => {
                     {/* Submit Daily Audit Button */}
                     <button
                         onClick={() => setConfirmSubmitModal(true)}
-                        disabled={isSubmitted || submittingDaily}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer ${isSubmitted
+                        disabled={mustChooseSubBrand || isSubmitted || submittingDaily}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[5px] text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer ${mustChooseSubBrand || isSubmitted
                             ? 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed'
                             : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/20 active:scale-95'
                             }`}
@@ -798,7 +870,7 @@ const AuditDevice = () => {
                     {/* Refresh Button */}
                     <button
                         onClick={() => fetchAuditState(selectedDate)}
-                        disabled={reloading}
+                        disabled={reloading || mustChooseSubBrand}
                         title={t('reload')}
                         className="p-2.5 rounded-[5px] bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 shadow-2xs cursor-pointer transition-colors"
                     >
@@ -939,7 +1011,9 @@ const AuditDevice = () => {
                             {paginatedRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={17} className="px-4 py-12 text-center text-slate-400 font-medium">
-                                        {loading ? (
+                                        {mustChooseSubBrand ? (
+                                            t('auditSelectSubBrandToView')
+                                        ) : loading ? (
                                             <div className="flex flex-col items-center justify-center gap-2">
                                                 <FaSpinner className="animate-spin text-2xl text-emerald-600" />
                                                 <span>{t('auditLoadingActivate')}</span>

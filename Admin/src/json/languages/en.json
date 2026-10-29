@@ -820,6 +820,7 @@
   "auditNote": "Audit Note",
   "auditNote2": "Audit Note 2",
   "auditDateUnavailable": "You can only select today or a date with audit records.",
+  "auditSelectSubBrandToView": "Select a sub-brand to view its audit data.",
   "auditFutureDateUnavailable": "Future audit dates cannot be selected.",
   "auditPastDateDenied": "You cannot audit a past date. You can only view its data.",
   "auditOf": "of",

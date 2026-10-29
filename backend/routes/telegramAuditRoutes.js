@@ -203,6 +203,7 @@ router.get('/', async (req, res) => {
         const submissionFilter = { auditDate: targetDate };
         const contactFilter = {};
         const logScopeFilter = {};
+        const requestedSubBrand = String(req.query.subBrand || '').trim();
         if (!isolation.isMasterAdmin) {
             applyIsolationFilter(contactFilter, isolation);
             applyIsolationFilter(logScopeFilter, isolation);
@@ -212,12 +213,18 @@ router.get('/', async (req, res) => {
             logScopeFilter.brand = brand;
             submissionFilter.brand = brand;
         }
+        if (isolation.isMasterAdmin && requestedSubBrand && requestedSubBrand !== 'All') {
+            contactFilter.subBrand = requestedSubBrand;
+            logScopeFilter.subBrand = requestedSubBrand;
+            submissionFilter.subBrand = requestedSubBrand;
+        }
         const auditFilter = { ...logScopeFilter, auditDate: targetDate };
 
         const auditedDatesRaw = isMongoConnected
             ? await queryAllDBs(TelegramAuditLog, M => M.distinct('auditDate', logScopeFilter))
             : filterInMemoryRecords(MEM_DB.telegramAuditLogs || [], isolation)
                 .filter(log => !isolation.isMasterAdmin || !brand || log.brand === brand)
+                .filter(log => !requestedSubBrand || log.subBrand === requestedSubBrand)
                 .map(log => log.auditDate);
         const auditedDates = [...new Set((Array.isArray(auditedDatesRaw) ? auditedDatesRaw : [auditedDatesRaw])
             .filter(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)))].sort().reverse();
@@ -288,7 +295,8 @@ router.get('/', async (req, res) => {
             if (!isSubmitted && Array.isArray(MEM_DB.telegramAuditSubmissions)) {
                 const memFound = filterInMemoryRecords(
                     MEM_DB.telegramAuditSubmissions.filter(
-                        s => s.auditDate === targetDate && matchesAuditRound(s, currentRound)
+                        s => s.auditDate === targetDate && matchesAuditRound(s, currentRound) &&
+                            (!requestedSubBrand || s.subBrand === requestedSubBrand)
                     ),
                     isolation
                 ).find(s => s.isSubmitted && (!isolation.isMasterAdmin || !brand || s.brand === brand));
@@ -392,19 +400,23 @@ router.get('/', async (req, res) => {
             if (!isSubmitted) {
                 submissionInfo = filterInMemoryRecords(
                     MEM_DB.telegramAuditSubmissions.filter(
-                        s => s.auditDate === targetDate && matchesAuditRound(s, currentRound)
+                        s => s.auditDate === targetDate && matchesAuditRound(s, currentRound) &&
+                            (!requestedSubBrand || s.subBrand === requestedSubBrand)
                     ),
                     isolation
-                ).find(s => !isolation.isMasterAdmin || !brand || s.brand === brand) || null;
+                ).find(s => (!isolation.isMasterAdmin || !brand || s.brand === brand) &&
+                    (!requestedSubBrand || s.subBrand === requestedSubBrand)) || null;
                 if (submissionInfo && submissionInfo.isSubmitted) {
                     isSubmitted = true;
                 }
             }
 
             contacts = filterInMemoryRecords(MEM_DB.telegramAuditContacts || [], isolation)
-                .filter(c => isolation.isMasterAdmin && brand ? c.brand === brand : true);
+                .filter(c => isolation.isMasterAdmin && brand ? c.brand === brand : true)
+                .filter(c => !requestedSubBrand || c.subBrand === requestedSubBrand);
             const scopedLogs = filterInMemoryRecords(MEM_DB.telegramAuditLogs || [], isolation)
-                .filter(l => isolation.isMasterAdmin && brand ? l.brand === brand : true);
+                .filter(l => isolation.isMasterAdmin && brand ? l.brand === brand : true)
+                .filter(l => !requestedSubBrand || l.subBrand === requestedSubBrand);
             audits = scopedLogs.filter(l => l.auditDate === targetDate);
             distinctStatuses = [
                 ...new Set(
@@ -517,7 +529,10 @@ router.post('/contact', async (req, res) => {
             $or: [
                 { contractId: String(contractId) },
                 ...(contractIid ? [{ contractIid: String(contractIid) }] : []),
-                ...(customerName ? [{ customerName: String(customerName) }] : [])
+                ...(customerName ? [{
+                    customerName: String(customerName),
+                    ...(subBrand ? { subBrand: String(subBrand) } : {})
+                }] : [])
             ]
         };
 
@@ -534,7 +549,8 @@ router.post('/contact', async (req, res) => {
             existing = (MEM_DB.telegramAuditContacts || []).find(c =>
                 String(c.contractId) === String(contractId) ||
                 (contractIid && String(c.contractIid) === String(contractIid)) ||
-                (customerName && c.customerName === customerName)
+                (customerName && c.customerName === customerName &&
+                    (!subBrand || c.subBrand === String(subBrand)))
             );
         }
 
@@ -578,7 +594,11 @@ router.post('/contact', async (req, res) => {
             // Also keep all records for this customerName synchronized
             if (customerName) {
                 await Model.updateMany(
-                    { customerName: String(customerName), contractId: { $ne: String(contractId) } },
+                    {
+                        customerName: String(customerName),
+                        contractId: { $ne: String(contractId) },
+                        ...(subBrand ? { subBrand: String(subBrand) } : {})
+                    },
                     {
                         $set: {
                             contactName: trimmedContactName,
@@ -618,7 +638,8 @@ router.post('/contact', async (req, res) => {
 
             if (customerName) {
                 MEM_DB.telegramAuditContacts.forEach(c => {
-                    if (c.customerName === customerName && String(c.contractId) !== String(contractId)) {
+                    if (c.customerName === customerName && String(c.contractId) !== String(contractId) &&
+                        (!subBrand || c.subBrand === String(subBrand))) {
                         c.contactName = trimmedContactName;
                         c.username = trimmedUsername;
                         c.phoneNumber = trimmedPhone;
@@ -676,13 +697,15 @@ router.post('/log', async (req, res) => {
         const targetDate = String(auditDate).trim();
         const todayStr = getTodayDateStr();
         const auditRound = getCurrentAuditRound();
+        const effectiveSubBrand = await resolveSubBrand(brand, subBrand);
         const roundSubmissionFilter = auditRound === 'AM'
             ? {
                 auditDate: targetDate,
                 brand: String(brand || ''),
+                subBrand: effectiveSubBrand,
                 $or: [{ auditRound: 'AM' }, { auditRound: { $exists: false } }]
             }
-            : { auditDate: targetDate, auditRound, brand: String(brand || '') };
+            : { auditDate: targetDate, auditRound, brand: String(brand || ''), subBrand: effectiveSubBrand };
 
         // Check if day is locked/submitted
         if (targetDate < todayStr) {
@@ -718,7 +741,7 @@ router.post('/log', async (req, res) => {
         if (!isAlreadySubmitted && Array.isArray(MEM_DB.telegramAuditSubmissions)) {
             const memSub = MEM_DB.telegramAuditSubmissions.find(
                 s => s.auditDate === targetDate && matchesAuditRound(s, auditRound) &&
-                    s.brand === String(brand || '') && s.isSubmitted
+                    s.brand === String(brand || '') && s.subBrand === effectiveSubBrand && s.isSubmitted
             );
             if (memSub) isAlreadySubmitted = true;
         }
@@ -731,7 +754,6 @@ router.post('/log', async (req, res) => {
         }
 
         const nowFormatted = formatAuditDateTime();
-        const effectiveSubBrand = await resolveSubBrand(brand, subBrand);
         const roundFields = auditRound === 'PM'
             ? {
                 statusAccount2: String(statusAccount || '').trim(),
@@ -828,14 +850,23 @@ router.get('/history/:contractId', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Contract ID is required.' });
         }
 
+        const isolation = await resolveUserIsolation(req);
+        const historyFilter = { contractId: String(contractId) };
+        applyIsolationFilter(historyFilter, isolation);
+        const requestedSubBrand = String(req.query.subBrand || '').trim();
+        if (isolation.isMasterAdmin && requestedSubBrand && requestedSubBrand !== 'All') {
+            historyFilter.subBrand = requestedSubBrand;
+        }
+
         let history = [];
         if (isMongoConnected) {
             history = await queryAllDBs(TelegramAuditLog, (M) =>
-                M.find({ contractId: String(contractId) }).sort({ auditDate: -1, createdAt: -1 }).lean()
+                M.find(historyFilter).sort({ auditDate: -1, createdAt: -1 }).lean()
             );
         } else {
-            history = (MEM_DB.telegramAuditLogs || [])
+            history = filterInMemoryRecords(MEM_DB.telegramAuditLogs || [], isolation)
                 .filter(l => String(l.contractId) === String(contractId))
+                .filter(l => !requestedSubBrand || l.subBrand === requestedSubBrand)
                 .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         }
 
@@ -983,9 +1014,10 @@ router.post('/submit', async (req, res) => {
             ? {
                 auditDate: targetDate,
                 brand: String(brand || ''),
+                subBrand: effectiveSubBrand,
                 $or: [{ auditRound: 'AM' }, { auditRound: { $exists: false } }]
             }
-            : { auditDate: targetDate, auditRound, brand: String(brand || '') };
+            : { auditDate: targetDate, auditRound, brand: String(brand || ''), subBrand: effectiveSubBrand };
 
         let subDoc = null;
         if (isMongoConnected) {
@@ -1041,7 +1073,8 @@ router.post('/submit', async (req, res) => {
 
         // Always keep memory updated as cache/fallback
         let found = MEM_DB.telegramAuditSubmissions.find(
-            s => s.auditDate === targetDate && matchesAuditRound(s, auditRound) && s.brand === String(brand || '')
+            s => s.auditDate === targetDate && matchesAuditRound(s, auditRound) &&
+                s.brand === String(brand || '') && s.subBrand === effectiveSubBrand
         );
         if (found) {
             found.auditRound = auditRound;

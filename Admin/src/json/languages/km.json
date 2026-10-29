@@ -821,6 +821,7 @@
   "auditNote": "កំណត់សម្គាល់សវនកម្ម",
   "auditNote2": "កំណត់សម្គាល់សវនកម្ម ២",
   "auditDateUnavailable": "អាចជ្រើសបានតែថ្ងៃនេះ ឬថ្ងៃដែលមានទិន្នន័យ Audit ប៉ុណ្ណោះ។",
+  "auditSelectSubBrandToView": "សូមជ្រើសរើស Sub-brand ដើម្បីមើលទិន្នន័យ Audit។",
   "auditFutureDateUnavailable": "មិនអាចជ្រើសកាលបរិច្ឆេទនៅថ្ងៃអនាគតបានទេ។",
   "auditPastDateDenied": "មិនអាចធ្វើ Audit សម្រាប់ថ្ងៃកន្លងផុតបានទេ។ អ្នកអាចមើលទិន្នន័យបានតែប៉ុណ្ណោះ។",
   "auditOf": "ក្នុងចំណោម",
