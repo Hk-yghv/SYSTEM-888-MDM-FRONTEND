@@ -1,5 +1,5 @@
 import { useLanguage } from '../../../context/LanguageContext';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FaUserCheck, FaUser, FaMobileAlt, FaDollarSign } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import { useAuth } from '../../../context/AuthContext';
