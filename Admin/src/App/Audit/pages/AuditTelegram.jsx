@@ -766,9 +766,6 @@ const AuditTelegram = () => {
                             <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{t('auditTelegram')}</h1>
 
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                            {t('auditTelegramDescription')}
-                        </p>
                     </div>
                 </div>
 
@@ -809,7 +806,7 @@ const AuditTelegram = () => {
                     {/* Date Picker (Auto defaults to Today) */}
                     <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-[5px] border border-slate-300">
                         <FaCalendarAlt className="text-emerald-600 text-sm" />
-                        <span className="text-xs font-bold text-slate-600">{t('auditDate')}:</span>
+                        {/* <span className="text-xs font-bold text-slate-600">{t('auditDate')}:</span> */}
                         <input
                             type="date"
                             value={selectedDate}
