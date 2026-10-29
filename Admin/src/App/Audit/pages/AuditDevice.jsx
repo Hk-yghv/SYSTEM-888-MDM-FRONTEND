@@ -203,6 +203,7 @@ const AuditDevice = () => {
     const [reloading, setReloading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [activeAuditTab, setActiveAuditTab] = useState('pending');
     const [openMenuId, setOpenMenuId] = useState(null);
     const [menuPlacement, setMenuPlacement] = useState('above');
 
@@ -477,26 +478,33 @@ const AuditDevice = () => {
 
             // Status filter
             if (statusFilter !== 'All') {
-                if (statusFilter === 'Audited' && !item.isAudited) return false;
-                if (statusFilter === 'Pending' && item.isAudited) return false;
-                if (statusFilter !== 'Audited' && statusFilter !== 'Pending' && item.deviceStatus !== statusFilter && item.deviceStatus2 !== statusFilter && item.previousStatusAccount !== statusFilter) return false;
+                if (item.deviceStatus !== statusFilter && item.deviceStatus2 !== statusFilter && item.previousStatusAccount !== statusFilter) return false;
             }
 
             return true;
         });
     }, [contracts, contactMap, auditMap, latestAuditMap, searchTerm, statusFilter, currentRound]);
 
+    const visibleRows = useMemo(
+        () => filteredRows.filter(row => activeAuditTab === 'audited' ? row.isAudited : !row.isAudited),
+        [filteredRows, activeAuditTab]
+    );
+
     // Pagination slice
-    const totalItems = filteredRows.length;
+    const totalItems = visibleRows.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const paginatedRows = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
-        return filteredRows.slice(start, start + itemsPerPage);
-    }, [filteredRows, currentPage, itemsPerPage]);
+        return visibleRows.slice(start, start + itemsPerPage);
+    }, [visibleRows, currentPage, itemsPerPage]);
+
+    useEffect(() => {
+        setCurrentPage(page => Math.min(page, totalPages));
+    }, [totalPages]);
 
     // Counters
     const auditedCount = useMemo(() => filteredRows.filter(r => r.isAudited).length, [filteredRows]);
-    const pendingCount = totalItems - auditedCount;
+    const pendingCount = filteredRows.length - auditedCount;
 
     // ─── Open Audit Modal ────────────────────────────────────────────
     const handleOpenAuditModal = (row) => {
@@ -883,7 +891,7 @@ const AuditDevice = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white p-3.5 rounded-[5px] border border-slate-200 shadow-2xs">
                     <p className="text-xs font-bold text-slate-500">{t('auditTotalCustomers')}</p>
-                    <p className="text-xl font-black text-slate-800 mt-1">{totalItems}</p>
+                    <p className="text-xl font-black text-slate-800 mt-1">{filteredRows.length}</p>
                 </div>
                 <div className="bg-white p-3.5 rounded-[5px] border border-blue-200 shadow-2xs bg-blue-50/25">
                     <p className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
@@ -913,6 +921,44 @@ const AuditDevice = () => {
                         )}
                     </p>
                 </div>
+            </div>
+
+            {/* Audit status tabs */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200">
+                <button
+                    type="button"
+                    onClick={() => {
+                        setActiveAuditTab('pending');
+                        setCurrentPage(1);
+                    }}
+                    aria-pressed={activeAuditTab === 'pending'}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                        activeAuditTab === 'pending'
+                            ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-rose-50'
+                    }`}
+                >
+                    <FaExclamationTriangle />
+                    <span>{t('auditNotCompleted')}</span>
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{pendingCount}</span>
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setActiveAuditTab('audited');
+                        setCurrentPage(1);
+                    }}
+                    aria-pressed={activeAuditTab === 'audited'}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                        activeAuditTab === 'audited'
+                            ? 'bg-blue-600 text-white border-b-2 border-blue-400 shadow-md'
+                            : 'bg-white text-slate-600 hover:bg-blue-50'
+                    }`}
+                >
+                    <FaCheckCircle />
+                    <span>{t('auditCompleted')}</span>
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{auditedCount}</span>
+                </button>
             </div>
 
             {/* Table Filter Controls */}
@@ -953,8 +999,6 @@ const AuditDevice = () => {
                             className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-[5px] px-2.5 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer"
                         >
                             <option value="All">{t('auditAllStatuses')}</option>
-                            <option value="Audited">🔵 {t('auditCompletedFilter')}</option>
-                            <option value="Pending">🔴 {t('auditPendingFilter')}</option>
                             {availableStatuses.map(st => (
                                 <option key={st} value={st}>{st}</option>
                             ))}
