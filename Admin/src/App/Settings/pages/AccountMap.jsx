@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { FaMapMarkerAlt, FaSearch, FaSyncAlt } from 'react-icons/fa';
+import { FaLocationArrow, FaMapMarkerAlt, FaSearch, FaSyncAlt } from 'react-icons/fa';
 import { useAuth } from '../../../context/AuthContext';
 import { getAuthToken } from '../../../utils/authToken';
 
@@ -38,12 +38,46 @@ const AccountMap = () => {
     const mapRef = useRef(null);
     const markerLayerRef = useRef(null);
     const pathLayerRef = useRef(null);
+    const viewerLayerRef = useRef(null);
     const hasFittedInitialBoundsRef = useRef(false);
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [lastUpdated, setLastUpdated] = useState(null);
+    const [viewerLocation, setViewerLocation] = useState(null);
+    const [viewerLocationError, setViewerLocationError] = useState('');
+    const [locatingViewer, setLocatingViewer] = useState(false);
+
+    const locateViewer = () => {
+        if (!navigator.geolocation) {
+            setViewerLocationError('Browser នេះមិនអាចចាប់ទីតាំង GPS បានទេ។');
+            return;
+        }
+
+        setLocatingViewer(true);
+        setViewerLocationError('');
+        navigator.geolocation.getCurrentPosition(
+            ({ coords }) => {
+                setViewerLocation({
+                    latitude: coords.latitude,
+                    longitude: coords.longitude,
+                    accuracy: coords.accuracy
+                });
+                setLocatingViewer(false);
+            },
+            locationError => {
+                const message = locationError.code === 1
+                    ? 'សូមអនុញ្ញាត Location ក្នុង Browser ដើម្បីចាប់ទីតាំង។'
+                    : locationError.code === 3
+                        ? 'ចាប់ទីតាំងមិនទាន់បានទាន់ពេល។ សូមសាកល្បងម្ដងទៀត។'
+                        : 'មិនអាចចាប់ទីតាំងបានទេ។ សូមពិនិត្យ GPS និងសាកល្បងម្ដងទៀត។';
+                setViewerLocationError(message);
+                setLocatingViewer(false);
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 }
+        );
+    };
 
     const fetchAccounts = useCallback(async () => {
         try {
@@ -82,14 +116,43 @@ const AccountMap = () => {
         mapRef.current = map;
         markerLayerRef.current = L.layerGroup().addTo(map);
         pathLayerRef.current = L.layerGroup().addTo(map);
+        viewerLayerRef.current = L.layerGroup().addTo(map);
 
         return () => {
             map.remove();
             mapRef.current = null;
             markerLayerRef.current = null;
             pathLayerRef.current = null;
+            viewerLayerRef.current = null;
         };
     }, []);
+
+    useEffect(() => {
+        const viewerLayer = viewerLayerRef.current;
+        const map = mapRef.current;
+        if (!viewerLayer || !map || !viewerLocation) return;
+
+        viewerLayer.clearLayers();
+        const coordinates = [viewerLocation.latitude, viewerLocation.longitude];
+        const accuracy = Number.isFinite(viewerLocation.accuracy) ? viewerLocation.accuracy : 0;
+        if (accuracy > 0) {
+            L.circle(coordinates, {
+                radius: accuracy,
+                color: '#2563eb',
+                fillColor: '#3b82f6',
+                fillOpacity: 0.1,
+                weight: 1
+            }).addTo(viewerLayer);
+        }
+        L.circleMarker(coordinates, {
+            radius: 9,
+            color: '#1d4ed8',
+            weight: 3,
+            fillColor: '#60a5fa',
+            fillOpacity: 1
+        }).bindPopup('ទីតាំងបច្ចុប្បន្នរបស់អ្នក').addTo(viewerLayer);
+        map.flyTo(coordinates, Math.max(map.getZoom(), 15));
+    }, [viewerLocation]);
 
     useEffect(() => {
         const markerLayer = markerLayerRef.current;
@@ -161,6 +224,15 @@ const AccountMap = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={locateViewer}
+                        disabled={locatingViewer}
+                        className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                    >
+                        <FaLocationArrow className={locatingViewer ? 'animate-pulse' : ''} />
+                        {locatingViewer ? 'កំពុងចាប់ទីតាំង...' : 'ទីតាំងខ្ញុំ'}
+                    </button>
                     <span className="text-[11px] text-slate-500">
                         {lastUpdated ? `បានធ្វើបច្ចុប្បន្នភាព ${formatTimestamp(lastUpdated)}` : ''}
                     </span>
@@ -174,6 +246,29 @@ const AccountMap = () => {
                     </button>
                 </div>
             </header>
+
+            {(viewerLocation || viewerLocationError) && (
+                <div
+                    className={`rounded-lg border px-4 py-3 text-xs ${
+                        viewerLocationError
+                            ? 'border-rose-200 bg-rose-50 text-rose-700'
+                            : 'border-blue-200 bg-blue-50 text-blue-800'
+                    }`}
+                    role={viewerLocationError ? 'alert' : 'status'}
+                >
+                    {viewerLocationError ? (
+                        viewerLocationError
+                    ) : (
+                        <div className="flex flex-wrap gap-x-5 gap-y-1">
+                            <span>រយៈទទឹង (Latitude): <strong className="font-mono">{viewerLocation.latitude.toFixed(6)}</strong></span>
+                            <span>រយៈបណ្តោយ (Longitude): <strong className="font-mono">{viewerLocation.longitude.toFixed(6)}</strong></span>
+                            {viewerLocation.accuracy > 0 && (
+                                <span>ភាពត្រឹមត្រូវ: ±{Math.round(viewerLocation.accuracy)}m</span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {error && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700" role="alert">
