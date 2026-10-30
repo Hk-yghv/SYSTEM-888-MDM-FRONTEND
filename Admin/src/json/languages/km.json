@@ -35,7 +35,7 @@
   "saveUrl": "រក្សាទុក URL",
   "audit": "Audit",
   "auditTelegram": "Audit Telegram",
-  "auditDevice": "Audit ឧបករណ៍",
+  "auditDevice": "Audit MDM",
   "auditDeviceDescription": "គ្រប់គ្រង និងតាមដានការធ្វើ Audit ឧបករណ៍ប្រចាំថ្ងៃរបស់អតិថិជន។",
   "auditDeviceRecord": "Audit ឧបករណ៍",
   "deviceName": "ឈ្មោះឧបករណ៍",

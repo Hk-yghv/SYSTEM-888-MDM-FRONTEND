@@ -1050,7 +1050,6 @@ const AuditDevice = () => {
                             <tr className="text-slate-700 font-black tracking-wider uppercase text-[11px]">
                                 <th className="px-2.5 py-2 text-center w-12 bg-slate-100/90 border-b border-slate-200 first:rounded-l-[5px]">#</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('customerName')}</th>
-                                <th className="px-2.5 py-2 text-center bg-slate-100/90 border-b border-slate-200">{t('contract')}</th>
                                 <th className="px-2.5 py-2 text-right bg-slate-100/90 border-b border-slate-200">{t('amount')}</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('deviceName')}</th>
                                 <th className="px-2.5 py-2 bg-slate-100/90 border-b border-slate-200">{t('deviceVersion')}</th>
@@ -1071,7 +1070,7 @@ const AuditDevice = () => {
                         <tbody>
                             {paginatedRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={18} className="px-4 py-12 text-center text-slate-400 font-medium">
+                                    <td colSpan={17} className="px-4 py-12 text-center text-slate-400 font-medium">
                                         {mustChooseSubBrand ? (
                                             t('auditSelectSubBrandToView')
                                         ) : loading ? (
@@ -1116,14 +1115,6 @@ const AuditDevice = () => {
                                                 <div className="flex items-center gap-1.5 font-bold text-slate-800">
                                                     <span>{row.customerName}</span>
                                                     <CopyButton text={row.customerName} />
-                                                </div>
-                                            </td>
-
-                                            {/* Contract iid */}
-                                            <td className={`px-3.5 ${rowCellClass} text-center font-mono font-bold text-indigo-700`}>
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <span>{row.contractIid}</span>
-                                                    <CopyButton text={row.contractIid} />
                                                 </div>
                                             </td>
 

@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
+import { FOLLOW_UP_NAMES } from '../../../utils/followUpNames';
 import ExportDropdown from '../../../components/ExportDropdown';
 import CopyCell from '../../../components/CopyCell';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
@@ -1125,7 +1126,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-slate-800/80 p-2 rounded-[5px] border border-slate-700/60 shadow-xl">
                 <div>
                     <h1 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
-                        Follow Up {workspaceId} System
+                        {FOLLOW_UP_NAMES[workspaceId]}
                     </h1>
                 </div>
 

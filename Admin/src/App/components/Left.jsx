@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import json from "../../routes/Routes.json";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
+import { FOLLOW_UP_NAMES } from "../../utils/followUpNames";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
@@ -605,23 +606,23 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <div className={`overflow-hidden transition-all duration-300 ${openMenus["followUp"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.followUp?.followUp1 || '/follow-up/follow-up-1', 'read') && (
                                     <Link to={json.followUp?.followUp1 || '/follow-up/follow-up-1'} className={subItemClass(json.followUp?.followUp1 || '/follow-up/follow-up-1')} style={subItemStyle(json.followUp?.followUp1 || '/follow-up/follow-up-1')}>
-                                        {t('followUp1')}
+                                        {FOLLOW_UP_NAMES[1]}
                                     </Link>
                                 )}
                                 {hasPermission(json.followUp?.followUp2 || '/follow-up/follow-up-2', 'read') && (
                                     <Link to={json.followUp?.followUp2 || '/follow-up/follow-up-2'} className={subItemClass(json.followUp?.followUp2 || '/follow-up/follow-up-2')} style={subItemStyle(json.followUp?.followUp2 || '/follow-up/follow-up-2')}>
-                                        {t('followUp2')}
+                                        {FOLLOW_UP_NAMES[2]}
                                     </Link>
                                 )}
                                 {(hasPermission(json.followUp?.followUp3 || '/follow-up/follow-up-3', 'read') ||
                                     hasPermission('/follow-up/sen-sok', 'read')) && (
                                         <Link to={json.followUp?.followUp3 || '/follow-up/follow-up-3'} className={subItemClass(json.followUp?.followUp3 || '/follow-up/follow-up-3')} style={subItemStyle(json.followUp?.followUp3 || '/follow-up/follow-up-3')}>
-                                            {t('followUp3')}
+                                            {FOLLOW_UP_NAMES[3]}
                                         </Link>
                                     )}
                                 {hasPermission(json.followUp?.followUp4 || '/follow-up/follow-up-4', 'read') && (
                                     <Link to={json.followUp?.followUp4 || '/follow-up/follow-up-4'} className={subItemClass(json.followUp?.followUp4 || '/follow-up/follow-up-4')} style={subItemStyle(json.followUp?.followUp4 || '/follow-up/follow-up-4')}>
-                                        {t('followUp4')}
+                                        {FOLLOW_UP_NAMES[4]}
                                     </Link>
                                 )}
                             </div>
