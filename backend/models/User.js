@@ -24,6 +24,24 @@ const userSchema = new mongoose.Schema({
     twoFactorEnabled: { type: Boolean, default: false },
     lastSeen: { type: Date, default: Date.now },
     lastOtp: { type: String, default: '' },
+    accessPolicy: {
+        locationRequired: { type: Boolean, default: false },
+        locations: [{
+            name: { type: String, default: '' },
+            latitude: { type: Number },
+            longitude: { type: Number },
+            radiusMeters: { type: Number, default: 100 }
+        }],
+        loginSchedule: {
+            enabled: { type: Boolean, default: false },
+            windows: [{
+                days: { type: [Number], default: [] },
+                start: { type: String, default: '08:00' },
+                end: { type: String, default: '17:00' }
+            }]
+        }
+    },
+    accessPolicyVersion: { type: Number, default: 1 },
     otpHistory: [{
         otp: { type: String, required: true },
         createdAt: { type: Date, default: Date.now },

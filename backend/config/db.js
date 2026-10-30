@@ -27,6 +27,8 @@ export const MEM_DB = {
             permissions: {}
         }
     ],
+    accountLocations: [],
+    loginLogs: [],
     contracts: [],
     customerIdSequence: 0,
     payments: [],

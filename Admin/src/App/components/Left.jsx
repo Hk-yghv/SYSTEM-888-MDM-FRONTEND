@@ -732,6 +732,11 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 {hasPermission('/settings/all-account', 'read') && (
                                     <Link to="/settings/all-account" className={subItemClass('/settings/all-account')} style={subItemStyle('/settings/all-account')}>{t('allAccount')}</Link>
                                 )}
+                                {hasPermission('/settings/all-account', 'read') && (
+                                    <Link to={json.settings.accountMap || '/settings/account-map'} className={subItemClass(json.settings.accountMap || '/settings/account-map')} style={subItemStyle(json.settings.accountMap || '/settings/account-map')}>
+                                        Account Map
+                                    </Link>
+                                )}
                                 {hasPermission(json.settings.controlSystem, 'read') && (
                                     <Link to={json.settings.controlSystem} className={subItemClass(json.settings.controlSystem)} style={subItemStyle(json.settings.controlSystem)}>{t('controlSystem')}</Link>
                                 )}

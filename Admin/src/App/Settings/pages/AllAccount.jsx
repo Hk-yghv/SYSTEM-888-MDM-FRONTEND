@@ -23,6 +23,13 @@ import {
 } from 'react-icons/fa';
 import { MdOutlineSync, MdDelete, MdEdit, MdCheckCircle } from 'react-icons/md';
 import { CONTROL_SYSTEM_SECTIONS } from '../../../utils/controlSystemPermissions';
+import AccountAccessPolicyEditor from '../components/AccountAccessPolicyEditor';
+
+const EMPTY_ACCESS_POLICY = {
+    locationRequired: false,
+    locations: [],
+    loginSchedule: { enabled: false, windows: [] }
+};
 
 const ALL_SYSTEM_PAGES = [
     { category: 'Main Systems', path: '/dashboard', label: 'Dashboard Analysis', actions: ['read', 'export'] },
@@ -260,7 +267,8 @@ const AllAccount = () => {
         role: 'Staff',
         brand: '',
         subBrands: [],
-        permissions: {}
+        permissions: {},
+        accessPolicy: EMPTY_ACCESS_POLICY
     });
 
     const handleRoleChange = (newRole) => {
@@ -292,7 +300,8 @@ const AllAccount = () => {
             role: 'Staff',
             brand: '',
             subBrands: [],
-            permissions: {}
+            permissions: {},
+            accessPolicy: structuredClone(EMPTY_ACCESS_POLICY)
         });
         setOpenCreateModal(true);
     };
@@ -315,7 +324,10 @@ const AllAccount = () => {
             subBrands: isSalary ? [] : (userObj.subBrands || []),
             permissions: isSalary
                 ? (userObj.permissions && Object.keys(userObj.permissions).length > 0 ? userObj.permissions : getSalaryPermissions())
-                : (userObj.permissions || {})
+                : (userObj.permissions || {}),
+            accessPolicy: userObj.accessPolicy
+                ? structuredClone(userObj.accessPolicy)
+                : structuredClone(EMPTY_ACCESS_POLICY)
         });
     };
 
@@ -1142,6 +1154,10 @@ const AllAccount = () => {
                                         );
                                     })()}
                                 </div>
+                                <AccountAccessPolicyEditor
+                                    value={formData.accessPolicy}
+                                    onChange={accessPolicy => setFormData(prev => ({ ...prev, accessPolicy }))}
+                                />
                             </div>
                         )}
 

@@ -5,10 +5,12 @@ import jwt from 'jsonwebtoken';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import User from '../models/User.js';
 import LoginLog from '../models/LoginLog.js';
+import AccountLocation from '../models/AccountLocation.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
-import { parseUserAgent } from '../middleware/security.js';
+import { parseUserAgent, revokeToken } from '../middleware/security.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import { getAccessPolicyFailure, getDistanceMeters, logAccessPolicyFailure } from '../utils/accountAccessPolicy.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -83,7 +85,7 @@ const formatPermissions = (perms) => {
     return perms;
 };
 
-const formatAuthUser = (user) => ({
+const formatAuthUser = (user, accessDeadlineAt = null) => ({
     userId: user.userId,
     name: user.name,
     nameKh: user.nameKh || '',
@@ -95,29 +97,130 @@ const formatAuthUser = (user) => ({
     isImmutable: user.isImmutable,
     telegramId: user.telegramId,
     twoFactorEnabled: user.twoFactorEnabled,
-    permissions: formatPermissions(user.permissions)
+    permissions: formatPermissions(user.permissions),
+    accessPolicy: user.accessPolicy || {},
+    accessPolicyVersion: user.accessPolicyVersion || 1,
+    accessDeadlineAt
 });
 
 const recordLoginLog = async ({ userId = '', username, name = 'Unknown User', role = 'Guest', brand = 'SYSTEM', ip, deviceInfo, status = 'Failed', reason = '' }) => {
-    try {
-        if (isMongoConnected) {
+    const timestamp = new Date();
+    const logRecord = {
+        id: `mem-${timestamp.getTime()}-${randomBytes(4).toString('hex')}`,
+        userId,
+        username,
+        name,
+        role,
+        brand,
+        ip,
+        deviceInfo,
+        status,
+        reason,
+        timestamp
+    };
+    if (isMongoConnected) {
+        try {
             const LogModel = getWriteModel(LoginLog) || LoginLog;
-            await LogModel.create({
-                userId,
-                username,
-                name,
-                role,
-                brand,
-                ip,
-                deviceInfo,
-                status,
-                reason,
-                timestamp: new Date()
+            await LogModel.create(logRecord);
+            return;
+        } catch (err) {
+            console.error('Record login log error:', err.message);
+        }
+    }
+    MEM_DB.loginLogs = [logRecord, ...(MEM_DB.loginLogs || [])].slice(0, 5000);
+};
+
+const recordAccountLocation = async (user, location, ip, deviceInfo, now = new Date()) => {
+    if (!user.accessPolicy?.locationRequired || !location) return;
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+    const accuracyMeters = Number(location.accuracy);
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const LocationModel = isMongoConnected ? getWriteModel(AccountLocation) || AccountLocation : null;
+    const previous = isMongoConnected
+        ? await LocationModel.findOne({
+            userId: user.userId,
+            recordType: 'latest',
+            expiresAt: { $gt: now }
+        }).lean()
+        : (MEM_DB.accountLocations || []).find(entry =>
+            entry.userId === user.userId &&
+            entry.recordType === 'latest' &&
+            new Date(entry.expiresAt).getTime() > now.getTime()
+        );
+    const elapsed = previous?.lastHistoryAt
+        ? now.getTime() - new Date(previous.lastHistoryAt).getTime()
+        : Infinity;
+    const distance = previous
+        ? getDistanceMeters(latitude, longitude, Number(previous.latitude), Number(previous.longitude))
+        : Infinity;
+    const snapshot = {
+        latitude,
+        longitude,
+        accuracyMeters: Number.isFinite(accuracyMeters) ? accuracyMeters : null,
+        timestamp: now,
+        ip,
+        deviceInfo
+    };
+    const shouldRecordHistory = elapsed >= 5 * 60_000 || distance >= 50;
+    const latestRecord = {
+        userId: user.userId,
+        username: user.username,
+        recordType: 'latest',
+        ...snapshot,
+        lastHistoryAt: shouldRecordHistory ? now : previous?.lastHistoryAt || now,
+        expiresAt
+    };
+    if (isMongoConnected) {
+        if (shouldRecordHistory) {
+            await LocationModel.create({
+                userId: user.userId,
+                username: user.username,
+                recordType: 'history',
+                ...snapshot,
+                expiresAt
             });
         }
-    } catch (err) {
-        console.error('Record login log error:', err.message);
+        await LocationModel.findOneAndUpdate(
+            { userId: user.userId, recordType: 'latest' },
+            { $set: latestRecord },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    } else {
+        MEM_DB.accountLocations = (MEM_DB.accountLocations || [])
+            .filter(entry => new Date(entry.expiresAt).getTime() > now.getTime());
+        if (shouldRecordHistory) {
+            MEM_DB.accountLocations.push({
+                ...latestRecord,
+                recordType: 'history',
+                lastHistoryAt: null
+            });
+        }
+        MEM_DB.accountLocations = MEM_DB.accountLocations.filter(entry =>
+            entry.userId !== user.userId || entry.recordType !== 'latest'
+        );
+        MEM_DB.accountLocations.push(latestRecord);
     }
+};
+
+const createSessionToken = (user, windowEnd, res, req) => {
+    const accessDeadlineAt = windowEnd
+        ? new Date(windowEnd.getTime() + 15 * 60 * 1000)
+        : null;
+    const tokenPayload = {
+        userId: user.userId,
+        username: user.username,
+        role: user.role,
+        sessionVersion: 2,
+        accessPolicyVersion: user.accessPolicyVersion || 1,
+        ...(windowEnd ? { accessWindowEnd: windowEnd.getTime() } : {})
+    };
+    const tokenOptions = accessDeadlineAt
+        ? { expiresIn: Math.max(1, Math.floor((accessDeadlineAt.getTime() - Date.now()) / 1000)) }
+        : { expiresIn: '30d' };
+    const token = jwt.sign(tokenPayload, JWT_SECRET, tokenOptions);
+    setAuthCookie(res, token, req);
+    return { token, accessDeadlineAt };
 };
 
 export default function createAuthRoutes(bot) {
@@ -259,7 +362,7 @@ export default function createAuthRoutes(bot) {
 
     router.post('/login', async (req, res) => {
         try {
-            const { username, password } = req.body;
+            const { username, password, location } = req.body;
             if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
 
             const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
@@ -369,13 +472,32 @@ export default function createAuthRoutes(bot) {
                 });
             }
 
+            const accessCheck = getAccessPolicyFailure(user.accessPolicy, location);
+            if (accessCheck.code) {
+                await logAccessPolicyFailure(recordLoginLog, {
+                    userId: user.userId,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role,
+                    brand: user.brand || 'SYSTEM',
+                    ip,
+                    deviceInfo
+                }, accessCheck);
+                return res.status(403).json({ error: accessCheck.message, code: accessCheck.code });
+            }
+
             if (user.twoFactorEnabled && user.telegramId) {
                 await sendLoginOtp(user, ip);
-                return res.json({ require2FA: true, username: user.username });
+                return res.json({
+                    require2FA: true,
+                    username: user.username,
+                    locationRequired: Boolean(user.accessPolicy?.locationRequired)
+                });
             }
 
             user.status = 'Online';
             user.lastSeen = new Date();
+            await recordAccountLocation(user, location, ip, deviceInfo);
 
             try {
                 if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
@@ -443,16 +565,11 @@ export default function createAuthRoutes(bot) {
                 } catch (tErr) { }
             }
 
-            const token = jwt.sign(
-                { userId: user.userId, username: user.username, role: user.role, sessionVersion: 2 },
-                JWT_SECRET,
-                { expiresIn: '30d' }
-            );
-            setAuthCookie(res, token, req);
+            const { token, accessDeadlineAt } = createSessionToken(user, accessCheck.windowEnd, res, req);
             res.json({
                 token,
                 deviceInfo: { ip, os, browser },
-                user: formatAuthUser(user)
+                user: formatAuthUser(user, accessDeadlineAt)
             });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -461,7 +578,7 @@ export default function createAuthRoutes(bot) {
 
     router.post('/verify-otp', async (req, res) => {
         try {
-            const { username, otp, secondPassword } = req.body;
+            const { username, otp, secondPassword, location } = req.body;
             const trimmedUsername = (username || '').trim();
             const withAt = trimmedUsername.startsWith('@') ? trimmedUsername : `@${trimmedUsername}`;
             const withoutAt = trimmedUsername.startsWith('@') ? trimmedUsername.substring(1) : trimmedUsername;
@@ -487,21 +604,58 @@ export default function createAuthRoutes(bot) {
                 );
             }
             if (!user || user.lastOtp !== otp) {
+                await recordLoginLog({
+                    username: trimmedUsername || 'Unknown',
+                    name: user?.name || 'Unknown User',
+                    role: user?.role || 'Guest',
+                    brand: user?.brand || 'SYSTEM',
+                    ip: req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1',
+                    deviceInfo: req.headers['user-agent'] || 'Unknown Browser',
+                    status: 'Failed',
+                    reason: 'Invalid OTP'
+                });
                 return res.status(400).json({ error: 'Invalid OTP Verification Code' });
             }
 
             if (user.secondPassword) {
                 const isMatch = await bcrypt.compare(secondPassword || '', user.secondPassword);
                 if (!isMatch) {
+                    await recordLoginLog({
+                        userId: user.userId,
+                        username: user.username,
+                        name: user.name,
+                        role: user.role,
+                        brand: user.brand || 'SYSTEM',
+                        ip: req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1',
+                        deviceInfo: req.headers['user-agent'] || 'Unknown Browser',
+                        status: 'Failed',
+                        reason: 'Wrong Second-Tier Password'
+                    });
                     return res.status(401).json({ error: 'Invalid Second-Tier Password (Password តង់ទី២ មិនត្រឹមត្រូវ)' });
                 }
             }
 
             const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
-            user.status = 'Online';
-            user.lastSeen = new Date();
             const ua = req.headers['user-agent'] || 'Unknown Browser';
             const { os, browser } = parseUserAgent(ua);
+            const deviceInfo = `${browser} on ${os}`;
+            const accessCheck = getAccessPolicyFailure(user.accessPolicy, location);
+            if (accessCheck.code) {
+                await logAccessPolicyFailure(recordLoginLog, {
+                    userId: user.userId,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role,
+                    brand: user.brand || 'SYSTEM',
+                    ip,
+                    deviceInfo
+                }, accessCheck);
+                return res.status(403).json({ error: accessCheck.message, code: accessCheck.code });
+            }
+
+            user.status = 'Online';
+            user.lastSeen = new Date();
+            await recordAccountLocation(user, location, ip, deviceInfo);
 
             try {
                 // Update OTP History status
@@ -566,16 +720,11 @@ export default function createAuthRoutes(bot) {
                 path: '/api/auth/verify-otp'
             }).catch(() => { });
 
-            const token = jwt.sign(
-                { userId: user.userId, username: user.username, role: user.role, sessionVersion: 2 },
-                JWT_SECRET,
-                { expiresIn: '30d' }
-            );
-            setAuthCookie(res, token, req);
+            const { token, accessDeadlineAt } = createSessionToken(user, accessCheck.windowEnd, res, req);
             res.json({
                 token,
                 deviceInfo: { ip, os, browser },
-                user: formatAuthUser(user)
+                user: formatAuthUser(user, accessDeadlineAt)
             });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -617,7 +766,10 @@ export default function createAuthRoutes(bot) {
             if (!user) return res.status(401).json({ error: 'Authenticated account not found' });
             if (user.isBlocked) return res.status(423).json({ error: 'Account is blocked', code: 'ACCOUNT_BLOCKED' });
 
-            return res.json({ user: formatAuthUser(user) });
+            const accessDeadlineAt = req.user.accessWindowEnd
+                ? new Date(req.user.accessWindowEnd + 15 * 60 * 1000)
+                : null;
+            return res.json({ user: formatAuthUser(user, accessDeadlineAt) });
         } catch (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -713,12 +865,57 @@ export default function createAuthRoutes(bot) {
             }
 
             const now = new Date();
+            const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+            const ua = req.headers['user-agent'] || 'Unknown Browser';
+            const { os, browser } = parseUserAgent(ua);
+            const deviceInfo = `${browser} on ${os}`;
+            const activeUser = users[0];
+            const policy = activeUser.accessPolicy || {};
+            let accessFailure = null;
+            if ((req.user.accessPolicyVersion || 1) !== (activeUser.accessPolicyVersion || 1)) {
+                accessFailure = {
+                    code: 'ACCESS_POLICY_CHANGED',
+                    message: 'Your account access settings changed. Please sign in again.'
+                };
+            }
+            if (!accessFailure && policy.loginSchedule?.enabled) {
+                const deadline = req.user.accessWindowEnd
+                    ? req.user.accessWindowEnd + 15 * 60 * 1000
+                    : 0;
+                if (!deadline || now.getTime() > deadline) {
+                    accessFailure = {
+                        code: 'LOGIN_TIME_EXPIRED',
+                        message: 'Your permitted login time has ended.'
+                    };
+                }
+            }
+            if (!accessFailure) {
+                accessFailure = getAccessPolicyFailure({
+                    ...policy,
+                    loginSchedule: { enabled: false, windows: [] }
+                }, req.body?.location);
+            }
+            if (accessFailure.code) {
+                await logAccessPolicyFailure(recordLoginLog, {
+                    userId: activeUser.userId,
+                    username: activeUser.username,
+                    name: activeUser.name,
+                    role: activeUser.role,
+                    brand: activeUser.brand || 'SYSTEM',
+                    ip,
+                    deviceInfo
+                }, accessFailure);
+                revokeToken(req.authToken);
+                clearAuthCookie(res);
+                return res.status(403).json({ error: accessFailure.message, code: accessFailure.code });
+            }
+
             let hadPending = false;
             let updatedPermissions = null;
             let updatedRole = null;
             let updatedBrand = null;
 
-            for (const user of users) {
+            for (const [userIndex, user] of users.entries()) {
                 user.status = 'Online';
                 user.lastSeen = now;
                 if (user.permissionPending || user.syncStatus === 'Pending') {
@@ -736,6 +933,9 @@ export default function createAuthRoutes(bot) {
                         latest.lastSeen = now;
                         latest.durationSeconds = Math.max(0, Math.round((now.getTime() - new Date(latest.loginTime).getTime()) / 1000));
                     }
+                }
+                if (userIndex === 0) {
+                    await recordAccountLocation(user, req.body?.location, ip, deviceInfo, now);
                 }
                 if (isMongoConnected) await user.save();
             }
@@ -756,7 +956,13 @@ export default function createAuthRoutes(bot) {
                 hasUpdatedPermissions: hadPending,
                 permissions: hadPending ? updatedPermissions : undefined,
                 role: hadPending ? updatedRole : undefined,
-                brand: hadPending ? updatedBrand : undefined
+                brand: hadPending ? updatedBrand : undefined,
+                accessDeadlineAt: req.user.accessWindowEnd
+                    ? new Date(req.user.accessWindowEnd + 15 * 60 * 1000).toISOString()
+                    : null,
+                workWindowEndsAt: req.user.accessWindowEnd
+                    ? new Date(req.user.accessWindowEnd).toISOString()
+                    : null
             });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -769,9 +975,23 @@ export default function createAuthRoutes(bot) {
         const ua = req.headers['user-agent'] || 'Unknown Browser';
         const { os, browser } = parseUserAgent(ua);
         const deviceInfo = `${browser} on ${os}`;
+        const accessCheck = getAccessPolicyFailure(user.accessPolicy, req.body?.location);
+        if (accessCheck.code) {
+            await logAccessPolicyFailure(recordLoginLog, {
+                userId: user.userId,
+                username: user.username,
+                name: user.name,
+                role: user.role,
+                brand: user.brand || 'SYSTEM',
+                ip,
+                deviceInfo
+            }, accessCheck);
+            return res.status(403).json({ error: accessCheck.message, code: accessCheck.code });
+        }
 
         user.status = 'Online';
         user.lastSeen = new Date();
+        await recordAccountLocation(user, req.body?.location, ip, deviceInfo);
 
         try {
             if (!Array.isArray(user.loginHistory)) user.loginHistory = [];
@@ -840,17 +1060,12 @@ export default function createAuthRoutes(bot) {
             } catch (tErr) { }
         }
 
-        const token = jwt.sign(
-            { userId: user.userId, username: user.username, role: user.role, sessionVersion: 2 },
-            JWT_SECRET,
-            { expiresIn: '30d' }
-        );
-        setAuthCookie(res, token, req);
+        const { token, accessDeadlineAt } = createSessionToken(user, accessCheck.windowEnd, res, req);
 
         return res.json({
             token,
             deviceInfo: { ip, os, browser },
-            user: formatAuthUser(user)
+            user: formatAuthUser(user, accessDeadlineAt)
         });
     };
 
@@ -1056,8 +1271,27 @@ export default function createAuthRoutes(bot) {
 
             if (user.twoFactorEnabled) {
                 const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+                const ua = req.headers['user-agent'] || 'Unknown Browser';
+                const { os, browser } = parseUserAgent(ua);
+                const accessCheck = getAccessPolicyFailure(user.accessPolicy, req.body?.location);
+                if (accessCheck.code) {
+                    await logAccessPolicyFailure(recordLoginLog, {
+                        userId: user.userId,
+                        username: user.username,
+                        name: user.name,
+                        role: user.role,
+                        brand: user.brand || 'SYSTEM',
+                        ip,
+                        deviceInfo: `${browser} on ${os}`
+                    }, accessCheck);
+                    return res.status(403).json({ error: accessCheck.message, code: accessCheck.code });
+                }
                 await sendLoginOtp(user, ip);
-                return res.json({ require2FA: true, username: user.username });
+                return res.json({
+                    require2FA: true,
+                    username: user.username,
+                    locationRequired: Boolean(user.accessPolicy?.locationRequired)
+                });
             }
 
             return await handleSuccessfulAuth(user, req, res, 'QR Code');

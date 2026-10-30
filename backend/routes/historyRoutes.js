@@ -263,6 +263,25 @@ export function createHistoryRoutes(bot) {
                 });
             }
 
+            (MEM_DB?.loginLogs || []).forEach(log => {
+                if (!isMasterAdmin && userUsername && log.username !== userUsername) return;
+                const idStr = log.id || `mem-log-${log.username}-${log.timestamp}`;
+                if (seenIds.has(idStr)) return;
+                seenIds.add(idStr);
+                allLogs.push({
+                    id: idStr,
+                    userId: log.userId || '-',
+                    username: log.username || 'Unknown',
+                    name: log.name || 'Unknown User',
+                    role: log.role || 'Guest',
+                    brand: log.brand || 'SYSTEM',
+                    ip: log.ip || '127.0.0.1',
+                    deviceInfo: log.deviceInfo || 'Web Browser',
+                    timestamp: log.timestamp,
+                    status: log.status || 'Failed'
+                });
+            });
+
             allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             if (search) {

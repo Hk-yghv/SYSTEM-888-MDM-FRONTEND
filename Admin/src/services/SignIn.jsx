@@ -21,6 +21,23 @@ import { setSecureItem } from '../utils/secureStorage';
 import VersionWebsite from '../utils/VersionWebsite';
 import jsQR from 'jsqr';
 
+const requestBrowserLocation = () => new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+        reject(new Error('Browser or device does not support Location.'));
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        ({ coords }) => resolve({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            accuracy: coords.accuracy
+        }),
+        () => reject(new Error('សូមបើក Location និងអនុញ្ញាតសិទ្ធិទីតាំងក្នុង Browser រួចសាកល្បងម្ដងទៀត។')),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
+});
+
 const SignIn = () => {
     // Mode: 'password' | 'qrcode'
     const [loginMode, setLoginMode] = useState('password');
@@ -31,6 +48,7 @@ const SignIn = () => {
     const [otp, setOtp] = useState('');
     const [secondPassword, setSecondPassword] = useState('');
     const [require2FA, setRequire2FA] = useState(false);
+    const [requireLocationForOtp, setRequireLocationForOtp] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -172,11 +190,19 @@ const SignIn = () => {
         setLoading(true);
 
         try {
-            const res = await login(username, password);
+            let res;
+            try {
+                res = await login(username, password);
+            } catch (loginError) {
+                if (loginError.code !== 'LOCATION_REQUIRED') throw loginError;
+                const location = await requestBrowserLocation();
+                res = await login(username, password, location);
+            }
             setLoading(false);
 
             if (res.require2FA) {
                 setRequire2FA(true);
+                setRequireLocationForOtp(Boolean(res.locationRequired));
                 setAttempts(0);
                 setCooldownSec(0);
             } else if (res.success) {
@@ -221,11 +247,26 @@ const SignIn = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ qrPayload: rawPayload })
             });
-            const data = await res.json();
+            let data = await res.json();
             setLoading(false);
 
+            if (!res.ok && data.code === 'LOCATION_REQUIRED') {
+                const location = await requestBrowserLocation();
+                setLoading(true);
+                const locationRes = await fetch(`${API_BASE}/auth/qr-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ qrPayload: rawPayload, location })
+                });
+                data = await locationRes.json();
+                setLoading(false);
+                if (!locationRes.ok) throw new Error(data.error || 'QR Code login failed');
+            }
+
             if (!res.ok) {
-                throw new Error(data.error || 'QR Code login failed');
+                if (!data.token && !data.require2FA && data.error) {
+                    throw new Error(data.error);
+                }
             }
 
             stopAllStreams();
@@ -234,6 +275,7 @@ const SignIn = () => {
                 setOtp('');
                 setSecondPassword('');
                 setRequire2FA(true);
+                setRequireLocationForOtp(Boolean(data.locationRequired));
                 return;
             }
 
@@ -335,7 +377,8 @@ const SignIn = () => {
         setLoading(true);
 
         try {
-            const res = await verifyOtp(username, otp, secondPassword);
+            const location = requireLocationForOtp ? await requestBrowserLocation() : undefined;
+            const res = await verifyOtp(username, otp, secondPassword, location);
             setLoading(false);
             if (res.success) {
                 if (res.deviceInfo) {

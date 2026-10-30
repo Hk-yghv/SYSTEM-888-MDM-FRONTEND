@@ -55,7 +55,7 @@ export const securityHeadersMiddleware = (req, res, next) => {
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=(), usb=()');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     // CSP: Allow styles, fonts, and connections from Cloudflare tunnel domains & CDNs
@@ -450,6 +450,7 @@ export const verifySecurityAuth = (req, res, next) => {
                 return res.status(401).json({ error: 'Browser session expired. Please log in again.' });
             }
             req.user = decoded;
+            req.authToken = token;
             return next();
         } catch (err) {
             return res.status(403).json({ error: 'Security Protection: Invalid or Expired Token signature.' });

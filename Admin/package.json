@@ -20,6 +20,7 @@
     "html2pdf.js": "^0.14.0",
     "jsqr": "^1.4.0",
     "khmer-chhankitek-calendar": "^1.2.1",
+    "leaflet": "^1.9.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

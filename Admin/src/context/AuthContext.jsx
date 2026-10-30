@@ -23,7 +23,57 @@ const API_BASE1 = import.meta.env.VITE_API_BACKEND1
 const API_BASE2 = import.meta.env.VITE_API_BACKEND2
     ? import.meta.env.VITE_API_BACKEND2.replace(/\/+$/, '')
     : API_BASE;
-const TEN_MINUTES_MS = 10 * 60 * 1000;
+const HEARTBEAT_INTERVAL_MS = 30 * 1000;
+const LOCATION_CHECK_INTERVAL_MS = 15 * 1000;
+const LOCATION_WINDOW_MS = 15 * 60 * 1000;
+
+const getCurrentLocation = () => new Promise((resolve) => {
+    if (!navigator.geolocation) {
+        resolve(null);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        ({ coords }) => resolve({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            accuracy: coords.accuracy
+        }),
+        () => resolve(null),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: LOCATION_CHECK_INTERVAL_MS }
+    );
+});
+
+const AccessDeadlineNotice = ({ deadlineAt, onExpire }) => {
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        if (!deadlineAt) return undefined;
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, [deadlineAt]);
+
+    useEffect(() => {
+        const deadline = new Date(deadlineAt).getTime();
+        if (deadlineAt && Number.isFinite(deadline) && now >= deadline) onExpire();
+    }, [deadlineAt, now, onExpire]);
+
+    if (!deadlineAt) return null;
+    const deadline = new Date(deadlineAt).getTime();
+    const remainingMs = deadline - now;
+    if (!Number.isFinite(deadline) || remainingMs > LOCATION_WINDOW_MS || remainingMs <= 0) return null;
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+
+    return (
+        <div className="fixed right-4 top-4 z-[10001] max-w-sm rounded-xl border border-amber-400/60 bg-amber-950/95 px-4 py-3 text-amber-100 shadow-2xl" role="alert" aria-live="assertive">
+            <p className="text-xs font-bold">ពេលប្រើប្រាស់ជិតផុតកំណត់</p>
+            <p className="mt-1 text-[11px]">ប្រព័ន្ធនឹង logout ស្វ័យប្រវត្តិក្នុង</p>
+            <p className="mt-1 text-lg font-black tabular-nums">{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</p>
+        </div>
+    );
+};
 
 
 export const AuthProvider = ({ children }) => {
@@ -141,6 +191,9 @@ export const AuthProvider = ({ children }) => {
                 while (isActive) {
                     try {
                         const token = getAuthToken();
+                        const location = user.accessPolicy?.locationRequired
+                            ? await getCurrentLocation()
+                            : undefined;
                         const response = await request(API_BASE + '/auth/heartbeat', {
                             method: 'POST',
                             headers: {
@@ -148,7 +201,7 @@ export const AuthProvider = ({ children }) => {
                                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                             },
                             credentials: 'include',
-                            body: JSON.stringify({ username: user.username }),
+                            body: JSON.stringify({ username: user.username, location }),
                             cache: 'no-store'
                         });
 
@@ -161,7 +214,9 @@ export const AuthProvider = ({ children }) => {
                                         ...prev,
                                         permissions: hbData.permissions !== undefined ? hbData.permissions : prev?.permissions,
                                         role: hbData.role || prev?.role,
-                                        brand: hbData.brand !== undefined ? hbData.brand : prev?.brand
+                                        brand: hbData.brand !== undefined ? hbData.brand : prev?.brand,
+                                        accessPolicy: hbData.accessPolicy || prev?.accessPolicy,
+                                        accessPolicyVersion: hbData.accessPolicyVersion || prev?.accessPolicyVersion
                                     }));
                                 }
                             } catch (e) { /* ignore json parse */ }
@@ -213,7 +268,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         void sendHeartbeat();
-        const heartbeatInterval = window.setInterval(() => { void sendHeartbeat(); }, TEN_MINUTES_MS);
+        const heartbeatInterval = window.setInterval(() => { void sendHeartbeat(); }, HEARTBEAT_INTERVAL_MS);
         const handleVisibilityChange = () => {
             if (!document.hidden) void sendHeartbeat();
         };
@@ -225,9 +280,9 @@ export const AuthProvider = ({ children }) => {
             window.clearInterval(heartbeatInterval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [user?.username, logout]);
+    }, [user?.username, user?.accessPolicy?.locationRequired, user?.accessPolicyVersion, logout]);
 
-    const login = async (username, password) => {
+    const login = async (username, password, location) => {
         authOperationRef.current += 1;
         setLoading(true);
         try {
@@ -235,7 +290,7 @@ export const AuthProvider = ({ children }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password, location })
             });
             const data = await res.json();
             setLoading(false);
@@ -246,11 +301,16 @@ export const AuthProvider = ({ children }) => {
                 err.cooldownMs = data.cooldownMs;
                 err.waitSeconds = data.waitSeconds;
                 err.lockUntil = data.lockUntil;
+                err.code = data.code;
                 throw err;
             }
 
             if (data.require2FA) {
-                return { require2FA: true, username: data.username };
+                return {
+                    require2FA: true,
+                    username: data.username,
+                    locationRequired: Boolean(data.locationRequired)
+                };
             }
 
             if (data.token) setAuthToken(data.token);
@@ -263,7 +323,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const verifyOtp = async (username, otp, secondPassword) => {
+    const verifyOtp = async (username, otp, secondPassword, location) => {
         authOperationRef.current += 1;
         setLoading(true);
         try {
@@ -271,13 +331,15 @@ export const AuthProvider = ({ children }) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ username, otp, secondPassword })
+                body: JSON.stringify({ username, otp, secondPassword, location })
             });
             const data = await res.json();
             setLoading(false);
 
             if (!res.ok) {
-                throw new Error(data.error || 'OTP Verification failed');
+                const error = new Error(data.error || 'OTP Verification failed');
+                error.code = data.code;
+                throw error;
             }
 
             if (data.token) setAuthToken(data.token);
@@ -405,6 +467,7 @@ export const AuthProvider = ({ children }) => {
                 </div>
             )}
 
+            <AccessDeadlineNotice deadlineAt={user?.accessDeadlineAt} onExpire={logout} />
             {children}
         </AuthContext.Provider>
     );

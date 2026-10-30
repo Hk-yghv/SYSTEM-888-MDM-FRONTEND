@@ -88,6 +88,7 @@
         "controlSupportHelp": "/settings/control-support-help",
         "products": "/settings/products",
         "allAccount": "/settings/all-account",
+        "accountMap": "/settings/account-map",
         "phoneApp": "/settings/phone-app",
         "profile": "/profile"
     }

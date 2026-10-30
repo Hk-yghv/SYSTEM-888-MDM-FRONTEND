@@ -71,6 +71,7 @@ import PrintIdCard from "../App/Print/pages/PrintIdCard";
 import HelpSupport from "../App/Support/pages/HelpSupport";
 import ControlSupportHelp from "../App/Settings/pages/ControlSupportHelp";
 import MusicPage from "../App/Music/MusicPage";
+import AccountMap from "../App/Settings/pages/AccountMap";
 
 /**
  * Redirect root or unauthenticated users to their first permitted page
@@ -206,6 +207,7 @@ const AppRoutes = () => {
 
       {/* Settings & Profile */}
       <Route path={json.settings.allAccount} element={renderProtected(json.settings.allAccount, AllAccount)} />
+      <Route path={json.settings.accountMap} element={renderProtected(json.settings.allAccount, AccountMap)} />
       <Route path={json.settings.controlSystem} element={renderProtected(json.settings.controlSystem, ControlSystem)} />
       <Route path={json.settings.products || "/settings/products"} element={renderProtected(json.settings.products || "/settings/products", PhoneProductsPage)} />
       <Route path={json.settings?.controlSupportHelp || "/settings/control-support-help"} element={renderProtected(json.settings?.controlSupportHelp || "/settings/control-support-help", ControlSupportHelp)} />

@@ -4,6 +4,8 @@ import User from '../models/User.js';
 import { isMongoConnected, MEM_DB } from '../config/db.js';
 import { queryAllDBs, getWriteModel } from '../config/multiDB.js';
 import { recordSystemAudit } from '../utils/auditLogger.js';
+import AccountLocation from '../models/AccountLocation.js';
+import { normalizeAccessPolicy } from '../utils/accountAccessPolicy.js';
 
 const router = express.Router();
 
@@ -30,6 +32,121 @@ const formatUserStatus = (u) => {
     rawObj.permissions = formatPermissions(rawObj.permissions);
     return rawObj;
 };
+
+const isAllowedToViewAccountMap = (user) => {
+    const permissions = formatPermissions(user?.permissions);
+    return Boolean(
+        user?.isImmutable ||
+        user?.username === '@hakyonghouv' ||
+        user?.username === 'hakyonghouv' ||
+        user?.role === 'Administrator' ||
+        permissions?.['/settings/all-account']?.read
+    );
+};
+
+router.get('/account-map', async (req, res) => {
+    try {
+        const identity = req.user || {};
+        let viewer = null;
+        if (isMongoConnected) {
+            const viewers = await queryAllDBs(User, (Model) => Model.find({
+                userId: identity.userId,
+                username: identity.username
+            }).select('userId username role isImmutable permissions'));
+            viewer = viewers[0] || null;
+        } else {
+            viewer = MEM_DB.users.find(user =>
+                user.userId === identity.userId && user.username === identity.username
+            ) || null;
+        }
+        if (!isAllowedToViewAccountMap(viewer)) {
+            return res.status(403).json({ error: 'All Account read permission is required.' });
+        }
+
+        let users = [];
+        let locations = [];
+        let latestLocations = [];
+        const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        if (isMongoConnected) {
+            users = await queryAllDBs(User, (Model) => Model.find()
+                .select('userId name nameKh username role brand status lastSeen accessPolicy')
+                .sort({ lastSeen: -1 }));
+            locations = await queryAllDBs(AccountLocation, (Model) => Model.find({ timestamp: { $gte: cutoff } })
+                .where('recordType').equals('history')
+                .sort({ timestamp: -1 }));
+            latestLocations = await queryAllDBs(AccountLocation, (Model) => Model.find({
+                recordType: 'latest',
+                expiresAt: { $gt: new Date() }
+            }).sort({ timestamp: -1 }));
+        } else {
+            users = MEM_DB.users;
+            locations = (MEM_DB.accountLocations || [])
+                .filter(location =>
+                    location.recordType === 'history' &&
+                    new Date(location.timestamp).getTime() >= cutoff.getTime()
+                )
+                .sort((left, right) => new Date(right.timestamp) - new Date(left.timestamp));
+            latestLocations = (MEM_DB.accountLocations || [])
+                .filter(location =>
+                    location.recordType === 'latest' &&
+                    new Date(location.expiresAt).getTime() > Date.now()
+                );
+        }
+
+        const locationsByUserId = new Map();
+        for (const location of locations) {
+            const entries = locationsByUserId.get(location.userId) || [];
+            entries.push({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracyMeters: location.accuracyMeters,
+                timestamp: location.timestamp,
+                ip: location.ip,
+                deviceInfo: location.deviceInfo
+            });
+            locationsByUserId.set(location.userId, entries);
+        }
+        const latestByUserId = new Map(latestLocations.map(location => [location.userId, {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracyMeters: location.accuracyMeters,
+            timestamp: location.timestamp,
+            ip: location.ip,
+            deviceInfo: location.deviceInfo
+        }]));
+
+        const result = users.map(user => {
+            const userId = user.userId;
+            const userLocations = locationsByUserId.get(userId) || [];
+            const lastHistoryLocation = userLocations[0] || null;
+            const latestLocation = latestByUserId.get(userId);
+            const lastLocation = latestLocation &&
+                (!lastHistoryLocation || new Date(latestLocation.timestamp).getTime() >= new Date(lastHistoryLocation.timestamp).getTime())
+                ? latestLocation
+                : lastHistoryLocation;
+            const lastSeen = user.lastSeen ? new Date(user.lastSeen) : null;
+            const isOnline = Boolean(lastSeen && Date.now() - lastSeen.getTime() <= OFFLINE_THRESHOLD_MS && user.status !== 'Offline');
+            return {
+                userId,
+                name: user.name,
+                nameKh: user.nameKh || '',
+                username: user.username,
+                role: user.role,
+                brand: user.brand || '',
+                status: isOnline ? 'Online' : 'Offline',
+                lastSeen,
+                lastLocation,
+                locationHistory: userLocations,
+                locationRequired: Boolean(user.accessPolicy?.locationRequired)
+            };
+        });
+
+        return res.json({ accounts: result, locationRetentionDays: 7 });
+    } catch (err) {
+        console.error('Account map data error:', err);
+        return res.status(500).json({ error: 'Unable to load account map data.' });
+    }
+});
 
 // GET all users — merged from all 3 DBs with real-time status evaluation
 router.get('/', async (req, res) => {
@@ -84,7 +201,7 @@ router.get('/status-check', async (req, res) => {
 // CREATE user — write to active DB
 router.post('/', async (req, res) => {
     try {
-        const { name, username, email, password, role, permissions, brand, subBrands } = req.body;
+        const { name, username, email, password, role, permissions, brand, subBrands, accessPolicy } = req.body;
         const isSalary = role && role.toLowerCase() === 'salary';
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
         const memId = 'u-' + Date.now();
@@ -112,7 +229,9 @@ router.post('/', async (req, res) => {
                 subBrands: finalSubBrands,
                 role: role || 'Staff',
                 status: 'Offline',
-                permissions: finalPermissions
+                permissions: finalPermissions,
+                accessPolicy: normalizeAccessPolicy(accessPolicy),
+                accessPolicyVersion: 1
             });
             await doc.save();
             const saved = doc.toObject();
@@ -132,11 +251,14 @@ router.post('/', async (req, res) => {
             subBrands: finalSubBrands,
             role: role || 'Staff',
             status: 'Offline',
-            permissions: finalPermissions
+            permissions: finalPermissions,
+            accessPolicy: normalizeAccessPolicy(accessPolicy),
+            accessPolicyVersion: 1
         };
         MEM_DB.users.push(newUser);
         res.status(201).json(newUser);
     } catch (err) {
+        if (err.code === 'INVALID_ACCESS_POLICY') return res.status(400).json({ error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
@@ -144,7 +266,7 @@ router.post('/', async (req, res) => {
 // UPDATE user — search all DBs, write to the DB that has it
 router.put('/:id', async (req, res) => {
     try {
-        const { name, username, email, password, role, brand, subBrands, permissions } = req.body;
+        const { name, username, email, password, role, brand, subBrands, permissions, accessPolicy } = req.body;
         let user = null;
         if (isMongoConnected) {
             const results = await queryAllDBs(User, (M) => {
@@ -158,13 +280,15 @@ router.put('/:id', async (req, res) => {
         } else {
             user = MEM_DB.users.find(u => u._id === req.params.id || u.userId === req.params.id);
         }
-
         if (!user) return res.status(404).json({ error: 'User not found' });
-
+        if (!user) return res.status(404).json({ error: 'User not found' });
         if (user.isImmutable || user.username === '@hakyonghouv') {
             return res.status(403).json({ error: 'Master Admin account (@hakyonghouv) is protected and CANNOT be edited!' });
         }
 
+        const normalizedAccessPolicy = accessPolicy !== undefined
+            ? normalizeAccessPolicy(accessPolicy)
+            : undefined;
         const isSalary = (role && role.toLowerCase() === 'salary') || (!role && user.role && user.role.toLowerCase() === 'salary');
 
         if (name) user.name = name;
@@ -183,6 +307,11 @@ router.put('/:id', async (req, res) => {
             if (typeof user.markModified === 'function') {
                 user.markModified('permissions');
             }
+        }
+        if (accessPolicy !== undefined) {
+            user.accessPolicy = normalizedAccessPolicy;
+            user.accessPolicyVersion = (user.accessPolicyVersion || 0) + 1;
+            if (typeof user.markModified === 'function') user.markModified('accessPolicy');
         }
         if (password && password.trim() !== '') {
             user.password = await bcrypt.hash(password, 10);
@@ -214,6 +343,7 @@ router.put('/:id', async (req, res) => {
 
         res.json({ message: 'User updated successfully', user });
     } catch (err) {
+        if (err.code === 'INVALID_ACCESS_POLICY') return res.status(400).json({ error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
