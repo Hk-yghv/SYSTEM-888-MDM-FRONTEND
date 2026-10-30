@@ -8,6 +8,9 @@ import {
     FaClipboardList, FaEdit
 } from 'react-icons/fa';
 import { AiOutlineMenu } from 'react-icons/ai';
+import SlidingTabs, { useTabDirection } from '../../../components/SlidingTabs';
+
+const AUDIT_TAB_ORDER = ['am-pending', 'am-audited', 'pm-pending', 'pm-audited'];
 
 const formatDateToYMD = (d) => {
     if (!d || !(d instanceof Date) || isNaN(d)) return '';
@@ -165,6 +168,7 @@ const AuditTelegram = () => {
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const [currentRound, setCurrentRound] = useState(getAuditRound);
     const [activeAuditTab, setActiveAuditTab] = useState(() => getAuditRound() === 'PM' ? 'pm-pending' : 'am-pending');
+    const auditTabDirection = useTabDirection(activeAuditTab, AUDIT_TAB_ORDER);
     const selectedAuditRound = activeAuditTab.startsWith('am-') ? 'AM' : 'PM';
     const [selectedSubBrand, setSelectedSubBrand] = useState('');
     const availableSubBrands = useMemo(
@@ -942,40 +946,45 @@ const AuditTelegram = () => {
             </div>
 
             {/* Audit round and completion tabs */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200">
-                {[
+            <SlidingTabs
+                className="flex flex-wrap items-center gap-2 border-b border-slate-200"
+                activeTab={activeAuditTab}
+                onChange={tabId => {
+                    setActiveAuditTab(tabId);
+                    setCurrentPage(1);
+                }}
+                tabs={[
                     { id: 'am-pending', round: 'AM', audited: false, count: firstRoundPendingCount, color: 'rose' },
                     { id: 'am-audited', round: 'AM', audited: true, count: firstRoundAuditedCount, color: 'blue' },
                     { id: 'pm-pending', round: 'PM', audited: false, count: secondRoundPendingCount, color: 'rose' },
                     { id: 'pm-audited', round: 'PM', audited: true, count: secondRoundAuditedCount, color: 'blue' }
-                ].map(tab => {
-                    const isActive = activeAuditTab === tab.id;
-                    const isRoundAvailable = tab.round === 'AM' || selectedDate < todayStr || currentRound === 'PM';
-                    const isReadOnly = tab.round !== currentRound || isSubmitted || selectedDate !== todayStr;
-                    const colorStyles = tab.color === 'rose'
-                        ? (isActive ? 'bg-rose-600 text-white border-rose-400' : 'bg-white text-slate-600 hover:bg-rose-50')
-                        : (isActive ? 'bg-blue-600 text-white border-blue-400' : 'bg-white text-slate-600 hover:bg-blue-50');
-                    return (
-                        <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => {
-                                setActiveAuditTab(tab.id);
-                                setCurrentPage(1);
-                            }}
-                            disabled={!isRoundAvailable}
-                            aria-pressed={isActive}
-                            className={`flex items-center gap-2 px-3 py-2.5 rounded-t-[5px] border-b-2 font-bold text-xs sm:text-sm transition-all ${
-                                isRoundAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'
-                            } ${isActive ? `${colorStyles} shadow-md` : `${colorStyles} border-transparent`}`}
-                        >
-                            <span>{t('audit')} {tab.round === 'AM' ? '1' : '2'} · {t(tab.audited ? 'auditCompleted' : 'auditNotCompleted')}</span>
-                            {isReadOnly && <FaLock className="text-[10px]" title={t('auditSubmittedLocked')} />}
-                            <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">{tab.count}</span>
-                        </button>
-                    );
-                })}
-            </div>
+                ]
+                    .map(tab => {
+                        const isRoundAvailable = tab.round === 'AM' || selectedDate < todayStr || currentRound === 'PM';
+                        const isReadOnly = tab.round !== currentRound || isSubmitted || selectedDate !== todayStr;
+                        const inactiveClassName = tab.color === 'rose'
+                            ? 'bg-white text-slate-600 hover:bg-rose-50 border-transparent'
+                            : 'bg-white text-slate-600 hover:bg-blue-50 border-transparent';
+                        const indicatorClassName = tab.color === 'rose'
+                            ? 'bg-rose-600 border-b-2 border-rose-400 shadow-md'
+                            : 'bg-blue-600 border-b-2 border-blue-400 shadow-md';
+                        return {
+                            id: tab.id,
+                            disabled: !isRoundAvailable,
+                            label: (
+                                <>
+                                    <span>{t('audit')} {tab.round === 'AM' ? '1' : '2'} · {t(tab.audited ? 'auditCompleted' : 'auditNotCompleted')}</span>
+                                    {isReadOnly && <FaLock className="text-[10px]" title={t('auditSubmittedLocked')} />}
+                                    <span className="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">{tab.count}</span>
+                                </>
+                            ),
+                            className: 'flex items-center gap-2 px-3 py-2.5 rounded-t-[5px] border-b-2 font-bold text-xs sm:text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-45',
+                            activeClassName: 'text-white border-transparent',
+                            inactiveClassName,
+                            indicatorClassName
+                        };
+                    })}
+            />
 
             {/* Table Filter Controls */}
             <div className="bg-white p-3 rounded-[5px] border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
@@ -1045,7 +1054,7 @@ const AuditTelegram = () => {
             {/* Main Data Table */}
             <div className="bg-white rounded-[5px] border border-slate-200 shadow-xs overflow-hidden flex min-h-0 flex-1 flex-col">
                 <div className="audit-telegram-table-scroll min-h-0 flex-1 overflow-auto p-1">
-                    <table className="w-full text-left border-separate border-spacing-y-1 border-spacing-x-0 text-xs">
+                    <table key={activeAuditTab} className={`w-full text-left border-separate border-spacing-y-1 border-spacing-x-0 text-xs tab-panel-slide-${auditTabDirection}`}>
                         <thead>
                             <tr className="text-slate-700 font-black tracking-wider uppercase text-[11px]">
                                 <th className="px-2.5 py-2 text-center w-12 bg-slate-100/90 border-b border-slate-200 first:rounded-l-[5px]">#</th>

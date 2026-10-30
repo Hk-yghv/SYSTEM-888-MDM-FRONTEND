@@ -441,7 +441,7 @@ const PaymentHistory = () => {
                         onClear={handleClearDateFilter}
                     />
                     {hasDateFilter && (
-                        <span className='text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-[4px]'>
+                        <span className='text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-sm'>
                             {activeDateFrom || '...'} → {activeDateTo || '...'}
                         </span>
                     )}
@@ -593,7 +593,7 @@ const PaymentHistory = () => {
             {/* MASTER ADMIN EDIT PAYMENT MODAL */}
             {editModalOpen && (
                 <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-xs"
+                    className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-xs"
                     onClick={closeEditModal}
                 >
                     <div
@@ -601,7 +601,7 @@ const PaymentHistory = () => {
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-3.5 text-white">
+                        <div className="flex items-center justify-between border-b border-slate-200 bg-linear-to-r from-slate-900 to-slate-800 px-5 py-3.5 text-white">
                             <div className="flex items-center gap-2">
                                 <span className="rounded-lg bg-amber-500/20 p-2 text-amber-400">
                                     <FaEdit size={16} />

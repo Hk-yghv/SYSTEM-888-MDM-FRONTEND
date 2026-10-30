@@ -176,6 +176,79 @@ table tbody tr.table-scroll-row:hover > th:last-child {
     }
 }
 
+.sliding-tabs {
+    position: relative;
+    isolation: isolate;
+}
+
+.sliding-tabs__indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 5px 5px 0 0;
+    transition:
+        transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+        width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+        height 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+        background-color 0.24s ease,
+        border-color 0.24s ease;
+}
+
+.sliding-tab-button {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    cursor: pointer;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.sliding-tab-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.tab-panel-slide-next {
+    animation: tab-panel-enter-next 0.28s cubic-bezier(0.2, 0.75, 0.35, 1) both;
+}
+
+.tab-panel-slide-previous {
+    animation: tab-panel-enter-previous 0.28s cubic-bezier(0.2, 0.75, 0.35, 1) both;
+}
+
+@keyframes tab-panel-enter-next {
+    from {
+        opacity: 0.65;
+        translate: 18px 0;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+@keyframes tab-panel-enter-previous {
+    from {
+        opacity: 0.65;
+        translate: -18px 0;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sliding-tabs__indicator,
+    .sliding-tab-button,
+    .tab-panel-slide-next,
+    .tab-panel-slide-previous {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 .mobile-content-area > * {
     animation: page-enter-from-bottom 0.2s cubic-bezier(0.2, 0.75, 0.35, 1) both;
 }

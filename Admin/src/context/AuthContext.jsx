@@ -353,7 +353,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{ user, authInitialized, loading, login, verifyOtp, loginWithAuthData, logout, hasPermission, updateUserState, API_BASE, API_BASE1, API_BASE2, smartFetch, getActiveApiBase, API_POOL }}>
             {/* Fullscreen Blocked Modal — shown immediately when admin blocks the user */}
             {isBlocked && (
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">
+                <div className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-black/95 backdrop-blur-md select-none animate-fade-in">
                     <div className="flex flex-col items-center gap-6 text-center max-w-sm px-6">
                         {/* Pulsing red lock icon */}
                         <div className="w-24 h-24 rounded-full bg-red-950/80 border-2 border-red-700 flex items-center justify-center text-red-400 text-4xl shadow-2xl shadow-red-900/50 animate-pulse">
@@ -394,7 +394,7 @@ export const AuthProvider = ({ children }) => {
             )}
 
             {isBackendRecovering && (
-                <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-black/90 backdrop-blur-md" role="status" aria-live="polite">
+                <div className="fixed inset-0 z-10000 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md" role="status" aria-live="polite">
                     <div className="flex flex-col items-center gap-5 px-6 text-center">
                         <div className="h-12 w-12 rounded-full border-4 border-cyan-900 border-t-cyan-400 animate-spin" />
                         <div className="space-y-2">

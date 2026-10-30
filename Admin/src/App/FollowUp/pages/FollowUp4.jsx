@@ -12,12 +12,15 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ExportDropdown from '../../../components/ExportDropdown';
 import CopyCell from '../../../components/CopyCell';
 import DateRangeDropdown from '../../../components/DateRangeDropdown';
+import SlidingTabs, { useTabDirection } from '../../../components/SlidingTabs';
 
 // Modular Prop-driven Subcomponents (Center Screen Modals)
 import FollowUp4SubmitModal from '../components/FollowUp4SubmitModal';
 import RejectSubmitModal from '../components/RejectSubmitModal';
 import RejectCsModal from '../components/RejectCsModal';
 import FollowUp4DetailModal from '../components/FollowUp4DetailModal';
+
+const FOLLOW_UP_TAB_ORDER = ['submit', 'rejectSubmit', 'rejectCs', 'detail'];
 
 const FollowUp4 = ({ workspaceId = 4 }) => {
     const { t } = useLanguage();
@@ -28,6 +31,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
 
     // Active Tab
     const [activeTab, setActiveTab] = useState('submit'); // 'submit' | 'rejectSubmit' | 'rejectCs' | 'detail'
+    const tabDirection = useTabDirection(activeTab, FOLLOW_UP_TAB_ORDER);
 
     // Brand filtering & list
     const [selectedBrand, setSelectedBrand] = useState('');
@@ -1154,59 +1158,51 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80">
-                <button
-                    onClick={() => {
-                        setActiveTab('submit');
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'submit'
-                        ? 'bg-emerald-600 text-white border-b-2 border-emerald-400 shadow-md'
-                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                        }`}
-                >
-                    <FaListUl />
-                    <span>{t('followUpSubmit')}</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab('rejectSubmit')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectSubmit'
-                        ? 'bg-rose-600 text-white border-b-2 border-rose-400 shadow-md'
-                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                        }`}
-                >
-                    <FaBan />
-                    <span>{t('rejectSubmit')}</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab('rejectCs')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'rejectCs'
-                        ? 'bg-amber-600 text-white border-b-2 border-amber-400 shadow-md'
-                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                        }`}
-                >
-                    <FaBan />
-                    <span>{t('rejectCs')}</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab('detail')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm transition-all cursor-pointer ${activeTab === 'detail'
-                        ? 'bg-sky-600 text-white border-b-2 border-sky-400 shadow-md'
-                        : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                        }`}
-                >
-                    <FaCalculator />
-                    <span>{t('detailMetrics')}</span>
-                </button>
-            </div>
+            <SlidingTabs
+                className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-700/80"
+                activeTab={activeTab}
+                onChange={setActiveTab}
+                tabs={[
+                    {
+                        id: 'submit',
+                        label: <><FaListUl /><span>{t('followUpSubmit')}</span></>,
+                        className: 'flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm',
+                        activeClassName: 'text-white',
+                        inactiveClassName: 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                        indicatorClassName: 'bg-emerald-600 border-b-2 border-emerald-400 shadow-md'
+                    },
+                    {
+                        id: 'rejectSubmit',
+                        label: <><FaBan /><span>{t('rejectSubmit')}</span></>,
+                        className: 'flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm',
+                        activeClassName: 'text-white',
+                        inactiveClassName: 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                        indicatorClassName: 'bg-rose-600 border-b-2 border-rose-400 shadow-md'
+                    },
+                    {
+                        id: 'rejectCs',
+                        label: <><FaBan /><span>{t('rejectCs')}</span></>,
+                        className: 'flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm',
+                        activeClassName: 'text-white',
+                        inactiveClassName: 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                        indicatorClassName: 'bg-amber-600 border-b-2 border-amber-400 shadow-md'
+                    },
+                    {
+                        id: 'detail',
+                        label: <><FaCalculator /><span>{t('detailMetrics')}</span></>,
+                        className: 'flex items-center gap-2 px-4 py-2.5 rounded-t-[5px] font-bold text-xs sm:text-sm',
+                        activeClassName: 'text-white',
+                        inactiveClassName: 'bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                        indicatorClassName: 'bg-sky-600 border-b-2 border-sky-400 shadow-md'
+                    }
+                ]}
+            />
 
             {/* =========================================================
                 TAB 1: FOLLOW UP SUBMIT
                ========================================================= */}
             {activeTab === 'submit' && (
-                <div className="space-y-4">
+                <div className={`space-y-4 tab-panel-slide-${tabDirection}`}>
                     {/* Filters & Actions Bar */}
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/60 p-2 rounded-[5px] border border-slate-700/50 relative z-40">
                         <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -1417,7 +1413,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
                 TAB 2: REJECT SUBMIT (Summary Table & Create Modal Trigger)
                ========================================================= */}
             {activeTab === 'rejectSubmit' && (
-                <div className="space-y-4">
+                <div className={`space-y-4 tab-panel-slide-${tabDirection}`}>
                     {/* Top Action Bar */}
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg relative z-40">
                         <div>
@@ -1546,7 +1542,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
                 TAB 3: REJECT CS (Summary Table & Create Modal Trigger)
                ========================================================= */}
             {activeTab === 'rejectCs' && (
-                <div className="space-y-4">
+                <div className={`space-y-4 tab-panel-slide-${tabDirection}`}>
                     {/* Top Action Bar */}
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg relative z-40">
                         <div>
@@ -1675,7 +1671,7 @@ const FollowUp4 = ({ workspaceId = 4 }) => {
                 TAB 4: DETAIL (Automated Calculations & History Table)
                ========================================================= */}
             {activeTab === 'detail' && (
-                <div className="space-y-6">
+                <div className={`space-y-6 tab-panel-slide-${tabDirection}`}>
                     {/* Top Action Bar */}
                     <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-slate-800/70 p-2 rounded-[5px] border border-slate-700/60 shadow-lg relative z-40">
                         <div>
