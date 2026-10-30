@@ -596,7 +596,7 @@
 
         .schedule-body-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 6px;
             background: rgba(0, 0, 0, 0.02);
             padding: 8px;
@@ -1117,6 +1117,10 @@
                         <div class="s-col">
                             <span class="s-lbl">ដើមត្រូវបង់</span>
                             <span class="s-val">${formatMoney(row.principalDue)}</span>
+                        </div>
+                        <div class="s-col">
+                            <span class="s-lbl">ប្រាក់ដើមនៅសល់</span>
+                            <span class="s-val">${formatMoney(row.remainingPrincipal)}</span>
                         </div>
                         <div class="s-col">
                             <span class="s-lbl">ការប្រាក់</span>
