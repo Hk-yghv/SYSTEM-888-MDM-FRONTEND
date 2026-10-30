@@ -826,7 +826,7 @@
 
                 <!-- 3. Monthly Interest USD -->
                 <div class="kpi-card">
-                    <div class="kpi-label">ការប្រាក់ក្នុង ១ ខែ</div>
+                    <div class="kpi-label">ការប្រាក់ថេរក្នុង ១ ខែ</div>
                     <div class="kpi-value amber" id="resMonthlyInterest">$0.00</div>
                     <div class="kpi-sub" id="resInterestFormula">$0 × 0%</div>
                 </div>
@@ -1020,7 +1020,7 @@
             return '$' + Number(num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // Build a fixed-payment schedule using the remaining principal balance.
+        // Build a fixed-principal schedule with interest calculated on the original principal.
         function calculate() {
             const enteredPrincipal = parseFloat(document.getElementById('inpPrincipal').value) || 0;
             const principal = Math.round((enteredPrincipal + Number.EPSILON) * 100) / 100;
@@ -1032,11 +1032,9 @@
 
             const monthsCount = currentDurationUnit === 'days' ? Math.max(1, Math.ceil(duration / 30)) : duration;
             const principalCents = Math.round(principal * 100);
-            const monthlyRate = ratePercent / 100;
-            const unroundedPaymentCents = monthlyRate === 0
-                ? principalCents / monthsCount
-                : (principalCents * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -monthsCount));
-            const regularPaymentCents = Math.round(unroundedPaymentCents);
+            const fixedInterestCents = Math.round((principalCents * ratePercent / 100) + Number.EPSILON);
+            const principalCentsPerPayment = Math.floor(principalCents / monthsCount);
+            const extraPrincipalCents = principalCents % monthsCount;
 
             // Generate Schedule table rows
             const schedule = [];
@@ -1056,15 +1054,8 @@
                     dueDate = addMonthsSafe(baseDate, i, originalDay);
                 }
 
-                const interestCents = Math.round(
-                    (remainingPrincipalCents * monthlyRate) + Number.EPSILON
-                );
-                const currentPrincipalCents = i === monthsCount
-                    ? remainingPrincipalCents
-                    : Math.min(
-                        remainingPrincipalCents,
-                        Math.max(1, regularPaymentCents - interestCents)
-                    );
+                const currentPrincipalCents = principalCentsPerPayment + (i <= extraPrincipalCents ? 1 : 0);
+                const interestCents = fixedInterestCents;
                 const currentPrincipalDue = currentPrincipalCents / 100;
                 const interestDue = interestCents / 100;
                 const totalDueMonth = (currentPrincipalCents + interestCents) / 100;
@@ -1107,7 +1098,7 @@
             document.getElementById('resInterestFormula').innerText = `$${principal} × ${ratePercent}%`;
 
             document.getElementById('resMonthlyPayment').innerText = formatMoney(paymentPerMonth);
-            document.getElementById('resPaymentFormula').innerText = `បង់ថេរ: ${formatMoney(paymentPerMonth)}`;
+            document.getElementById('resPaymentFormula').innerText = `ដើមបង់ថេរ + ការប្រាក់ថេរ`;
 
             document.getElementById('resTotalInterest').innerText = formatMoney(totalInterest);
             document.getElementById('resTotalInterestSub').innerText = `សរុប ${monthsCount} ខែ`;
@@ -1169,7 +1160,7 @@
 📊 អត្រាការប្រាក់: ${ratePercent}% / ខែ
 ⏳ រយៈពេលកម្ចី: ${monthsCount} ខែ
 ━━━━━━━━━━━━━━━━━━━━━━━━
-💰 ការប្រាក់ក្នុង ១ ខែ: $${monthlyInterestUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💰 ការប្រាក់ថេរក្នុង ១ ខែ: $${monthlyInterestUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 💳 ត្រូវបង់ថេរក្នុង ១ ខែ: $${paymentPerMonth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 💵 សរុបការប្រាក់ទាំងអស់ (${monthsCount}ខែ): $${totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 ✨ សរុបប្រាក់ត្រូវបង់ត្រឡប់មកវិញ: $${totalRepayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
