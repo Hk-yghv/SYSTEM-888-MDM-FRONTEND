@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const WEEKDAYS = [
     { value: 1, label: 'ចន្ទ' },
@@ -9,6 +11,102 @@ const WEEKDAYS = [
     { value: 6, label: 'សៅរ៍' },
     { value: 0, label: 'អាទិត្យ' }
 ];
+
+const DEFAULT_MAP_CENTER = [12.5657, 104.9915];
+
+const getCoordinates = (location) => {
+    if (location.latitude === '' || location.latitude == null ||
+        location.longitude === '' || location.longitude == null) return null;
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+    return Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 &&
+        Number.isFinite(longitude) && longitude >= -180 && longitude <= 180
+        ? [latitude, longitude]
+        : null;
+};
+
+const LocationMapPicker = ({ location, onChange }) => {
+    const elementRef = useRef(null);
+    const mapRef = useRef(null);
+    const markerRef = useRef(null);
+    const radiusRef = useRef(null);
+    const onChangeRef = useRef(onChange);
+    const coordinates = getCoordinates(location);
+
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    }, [onChange]);
+
+    useEffect(() => {
+        if (!elementRef.current || mapRef.current) return undefined;
+
+        const map = L.map(elementRef.current).setView(coordinates || DEFAULT_MAP_CENTER, coordinates ? 15 : 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const marker = L.marker(coordinates || DEFAULT_MAP_CENTER, {
+            draggable: true,
+            opacity: coordinates ? 1 : 0
+        }).addTo(map);
+        const radius = L.circle(coordinates || DEFAULT_MAP_CENTER, {
+            radius: Math.max(1, Number(location.radiusMeters) || 100),
+            color: '#10b981',
+            fillColor: '#10b981',
+            fillOpacity: 0.12,
+            opacity: coordinates ? 0.8 : 0
+        }).addTo(map);
+
+        const selectCoordinates = (point) => {
+            const latitude = Number(point.lat.toFixed(6));
+            const longitude = Number(point.lng.toFixed(6));
+            marker.setLatLng([latitude, longitude]).setOpacity(1);
+            radius.setLatLng([latitude, longitude]).setStyle({ opacity: 0.8, fillOpacity: 0.12 });
+            onChangeRef.current({ latitude: String(latitude), longitude: String(longitude) });
+        };
+        map.on('click', event => selectCoordinates(event.latlng));
+        marker.on('dragend', () => selectCoordinates(marker.getLatLng()));
+
+        mapRef.current = map;
+        markerRef.current = marker;
+        radiusRef.current = radius;
+        window.requestAnimationFrame(() => map.invalidateSize());
+
+        return () => {
+            map.remove();
+            mapRef.current = null;
+            markerRef.current = null;
+            radiusRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        const map = mapRef.current;
+        const marker = markerRef.current;
+        const radius = radiusRef.current;
+        if (!map || !marker || !radius) return;
+
+        const center = coordinates || DEFAULT_MAP_CENTER;
+        marker.setLatLng(center).setOpacity(coordinates ? 1 : 0);
+        radius.setLatLng(center)
+            .setRadius(Math.max(1, Number(location.radiusMeters) || 100))
+            .setStyle({ opacity: coordinates ? 0.8 : 0, fillOpacity: coordinates ? 0.12 : 0 });
+    }, [location.latitude, location.longitude, location.radiusMeters]);
+
+    return (
+        <div>
+            <div
+                ref={elementRef}
+                className="h-52 w-full overflow-hidden rounded-lg border border-slate-700"
+                aria-label="Map for choosing an allowed account location"
+            />
+            <p className="mt-1 text-[10px] text-slate-400">
+                ចុចលើផែនទី ឬអូសសញ្ញាទីតាំង ដើម្បីជ្រើសចំណុច។ រង្វង់បង្ហាញកាំចម្ងាយដែលអនុញ្ញាត។
+            </p>
+        </div>
+    );
+};
 
 const AccountAccessPolicyEditor = ({ value, onChange }) => {
     const policyValue = value || {};
@@ -65,7 +163,7 @@ const AccountAccessPolicyEditor = ({ value, onChange }) => {
             {policy.locationRequired && (
                 <div className="space-y-3">
                     {policy.locations.map((location, index) => (
-                        <div key={index} className="grid grid-cols-1 sm:grid-cols-6 gap-2 rounded-lg border border-slate-800 p-3">
+                        <div key={index} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-800 p-3 sm:grid-cols-6">
                             <input
                                 value={location.name}
                                 onChange={event => updateLocation(index, { name: event.target.value })}
@@ -109,10 +207,16 @@ const AccountAccessPolicyEditor = ({ value, onChange }) => {
                             <button
                                 type="button"
                                 onClick={() => updatePolicy({ locations: policy.locations.filter((_, locationIndex) => locationIndex !== index) })}
-                                className="h-9 rounded-lg border border-rose-900/70 px-2 text-[11px] font-bold text-rose-300 hover:bg-rose-950/50"
+                                className="h-9 rounded-lg border border-rose-900/70 px-2 text-[11px] font-bold text-rose-300 hover:bg-rose-950/50 sm:col-span-6"
                             >
                                 ដកចេញ
                             </button>
+                            <div className="sm:col-span-6">
+                                <LocationMapPicker
+                                    location={location}
+                                    onChange={coordinates => updateLocation(index, coordinates)}
+                                />
+                            </div>
                         </div>
                     ))}
                     <button
