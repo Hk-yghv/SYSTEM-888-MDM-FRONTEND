@@ -125,7 +125,7 @@ const AccountAccessPolicyEditor = ({ value, onChange }) => {
     });
 
     const addLocation = () => updatePolicy({
-        locations: [...policy.locations, { name: '', latitude: '', longitude: '', radiusMeters: 100 }]
+        locations: [...policy.locations, { name: '', latitude: '', longitude: '', radiusMeters: 100, enabled: true }]
     });
     const updateLocation = (index, updates) => updatePolicy({
         locations: policy.locations.map((location, locationIndex) =>
@@ -163,13 +163,26 @@ const AccountAccessPolicyEditor = ({ value, onChange }) => {
             {policy.locationRequired && (
                 <div className="space-y-3">
                     {policy.locations.map((location, index) => (
-                        <div key={index} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-800 p-3 sm:grid-cols-6">
-                            <input
-                                value={location.name}
-                                onChange={event => updateLocation(index, { name: event.target.value })}
-                                placeholder="ឈ្មោះទីតាំង"
-                                className="sm:col-span-2 h-9 rounded-lg border border-slate-700 bg-slate-900 px-2 text-xs text-white"
-                            />
+                        <div key={index} className={`grid grid-cols-1 gap-2 rounded-lg border p-3 sm:grid-cols-6 ${
+                            location.enabled === false ? 'border-slate-700 opacity-70' : 'border-slate-800'
+                        }`}>
+                            <div className="flex items-center gap-2 sm:col-span-2">
+                                <input
+                                    value={location.name}
+                                    onChange={event => updateLocation(index, { name: event.target.value })}
+                                    placeholder="ឈ្មោះទីតាំង"
+                                    className="h-9 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-2 text-xs text-white"
+                                />
+                                <label className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-slate-300">
+                                    <input
+                                        type="checkbox"
+                                        checked={location.enabled !== false}
+                                        onChange={event => updateLocation(index, { enabled: event.target.checked })}
+                                        className="accent-emerald-500"
+                                    />
+                                    {location.enabled === false ? 'ផ្អាក' : 'សកម្ម'}
+                                </label>
+                            </div>
                             <input
                                 type="number"
                                 min="-90"

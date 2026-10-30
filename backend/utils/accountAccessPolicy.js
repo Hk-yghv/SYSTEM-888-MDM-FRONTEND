@@ -65,7 +65,8 @@ export const getAccessPolicyFailure = (accessPolicy = {}, location, now = new Da
             return { code: 'LOCATION_REQUIRED', message: 'Enable device location and try again.' };
         }
 
-        const allowedLocations = Array.isArray(accessPolicy.locations) ? accessPolicy.locations : [];
+        const allowedLocations = (Array.isArray(accessPolicy.locations) ? accessPolicy.locations : [])
+            .filter(allowed => allowed.enabled !== false);
         if (!allowedLocations.length) {
             return { code: 'LOCATION_REQUIRED', message: 'No allowed locations are configured for this account.' };
         }
@@ -115,7 +116,8 @@ export const normalizeAccessPolicy = (value) => {
             name: String(location.name || '').trim().slice(0, 100),
             latitude,
             longitude,
-            radiusMeters
+            radiusMeters,
+            enabled: location.enabled !== false
         };
     });
     if (locationRequired && locations.length === 0) {

@@ -30,7 +30,8 @@ const userSchema = new mongoose.Schema({
             name: { type: String, default: '' },
             latitude: { type: Number },
             longitude: { type: Number },
-            radiusMeters: { type: Number, default: 100 }
+            radiusMeters: { type: Number, default: 100 },
+            enabled: { type: Boolean, default: true }
         }],
         loginSchedule: {
             enabled: { type: Boolean, default: false },
