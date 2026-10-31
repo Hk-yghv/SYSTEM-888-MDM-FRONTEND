@@ -70,6 +70,7 @@ import telegramAuditRoutes from './routes/telegramAuditRoutes.js';
 import deviceAuditRoutes from './routes/deviceAuditRoutes.js';
 import cashFlowTraderRoutes from './routes/cashFlowTraderRoutes.js';
 import phoneProductRoutes from './routes/phoneProductRoutes.js';
+import inventoryRoutes from './routes/inventoryRoutes.js';
 import { installTelegramSendRetry } from './utils/telegramSendRetry.js';
 
 const app = express();
@@ -188,6 +189,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/controlsystem', controlRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/phone-products', phoneProductRoutes);
+app.use('/api/inventory', inventoryRoutes);
 app.use('/api/phone-app', phoneAppRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/contracts', contractRoutes);

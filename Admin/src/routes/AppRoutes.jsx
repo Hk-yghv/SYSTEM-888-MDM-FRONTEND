@@ -57,6 +57,7 @@ import FollowUp1 from "../App/FollowUp/pages/FollowUp1";
 import FollowUp2 from "../App/FollowUp/pages/FollowUp2";
 import FollowUp3 from "../App/FollowUp/pages/FollowUp3";
 import FollowUp4 from "../App/FollowUp/pages/FollowUp4";
+import InventoryLocationPage from "../App/Inventory/pages/InventoryLocationPage";
 import SalaryPage from "../App/Salary/pages/SalaryPage";
 import ControlSystem from "../App/Settings/pages/ControlSystem";
 import PhoneProductsPage from "../App/Settings/pages/PhoneProductsPage";
@@ -181,6 +182,11 @@ const AppRoutes = () => {
       <Route path={json.followUp?.followUp3 || "/follow-up/follow-up-3"} element={renderProtected(json.followUp?.followUp3 || "/follow-up/follow-up-3", FollowUp3)} />
       <Route path={json.followUp?.followUp4 || "/follow-up/follow-up-4"} element={renderProtected(json.followUp?.followUp4 || "/follow-up/follow-up-4", FollowUp4)} />
       <Route path="/follow-up/sen-sok" element={renderProtected("/follow-up/follow-up-3", FollowUp3)} />
+
+      {/* Inventory */}
+      <Route path={json.inventory.senSok} element={renderProtected(json.inventory.senSok, InventoryLocationPage, { locationCode: "sen-sok" })} />
+      <Route path={json.inventory.chbarAmpov} element={renderProtected(json.inventory.chbarAmpov, InventoryLocationPage, { locationCode: "chbar-ampov" })} />
+      <Route path={json.inventory.stuengMeanChey} element={renderProtected(json.inventory.stuengMeanChey, InventoryLocationPage, { locationCode: "stueng-mean-chey" })} />
 
       {/* Salary */}
       <Route path={json.salary || "/salary"} element={renderProtected(json.salary || "/salary", SalaryPage)} />

@@ -91,6 +91,10 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow Up 3', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-4', label: 'Follow up 4 (Follow Up 4 System)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
+    { category: 'Inventory System', path: '/inventory/sen-sok', label: 'Inventory - SEN SOK', actions: ['read', 'create', 'delete', 'export'] },
+    { category: 'Inventory System', path: '/inventory/chbar-ampov', label: 'Inventory - CHBAR AMPOV', actions: ['read', 'create', 'delete', 'export'] },
+    { category: 'Inventory System', path: '/inventory/stueng-mean-chey', label: 'Inventory - STUENG MEAN CHEY', actions: ['read', 'create', 'delete', 'export'] },
+
     { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Tools & Utilities', path: '/save-url', label: 'Save URL (រក្សាទុក URL)', actions: ['read', 'create', 'edit', 'delete'] },
@@ -125,6 +129,7 @@ const PERMISSION_CATEGORY_KEYS = {
     'Reports & Analytics': 'permissionCategory_reportsAnalytics',
     'Audit & History Logs': 'permissionCategory_auditHistoryLogs',
     'Follow Up System': 'permissionCategory_followUpSystem',
+    'Inventory System': 'permissionCategory_inventorySystem',
     'Salary System': 'permissionCategory_salarySystem',
     'Tools & Utilities': 'permissionCategory_toolsUtilities',
     'Audit System': 'permissionCategory_auditSystem',

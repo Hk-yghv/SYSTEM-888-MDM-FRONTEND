@@ -7,7 +7,7 @@ import { FOLLOW_UP_NAMES } from "../../utils/followUpNames";
 
 import { MdDashboard, MdOutlineContactPhone, MdOutlinePhoneIphone, MdOutlineWallpaper, MdOutlineBarChart, MdCalculate, MdOutlinePhotoLibrary } from "react-icons/md";
 import { IoMdArrowDropdown, IoIosContact, IoIosSettings, IoMdWallet } from "react-icons/io";
-import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronRight, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping, FaShieldAlt, FaMobileAlt, FaMusic } from "react-icons/fa";
+import { FaHistory, FaClipboardCheck, FaMoneyBillWave, FaCalendarAlt, FaUserCircle, FaUserCog, FaSignOutAlt, FaChevronRight, FaGlobe, FaExpand, FaCompress, FaEyeSlash, FaEye, FaTelegramPlane, FaBookmark, FaTasks, FaFileAlt, FaChartBar, FaPrint, FaIdCard, FaQuestionCircle, FaHandsHelping, FaShieldAlt, FaMobileAlt, FaMusic, FaBoxes } from "react-icons/fa";
 
 
 const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onToggleHeader }) => {
@@ -624,6 +624,32 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                     <Link to={json.followUp?.followUp4 || '/follow-up/follow-up-4'} className={subItemClass(json.followUp?.followUp4 || '/follow-up/follow-up-4')} style={subItemStyle(json.followUp?.followUp4 || '/follow-up/follow-up-4')}>
                                         {FOLLOW_UP_NAMES[4]}
                                     </Link>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                {/* Inventory */}
+                {(hasPermission(json.inventory.senSok, 'read') ||
+                    hasPermission(json.inventory.chbarAmpov, 'read') ||
+                    hasPermission(json.inventory.stuengMeanChey, 'read')) && (
+                        <div className="flex-shrink-0">
+                            <div onClick={() => toggleMenu("inventory")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("inventory")}>
+                                <span className="flex items-center gap-3">
+                                    <FaBoxes size={16} className="text-emerald-600 group-hover:text-emerald-700 transition-colors" />
+                                    <span>{t('inventory')}</span>
+                                </span>
+                                <IoMdArrowDropdown size={18} className={`transition-transform duration-300 text-slate-400 ${openMenus["inventory"] ? "rotate-180 text-emerald-600" : ""}`} />
+                            </div>
+                            <div className={`overflow-hidden transition-all duration-300 ${openMenus["inventory"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
+                                {hasPermission(json.inventory.senSok, 'read') && (
+                                    <Link to={json.inventory.senSok} className={subItemClass(json.inventory.senSok)} style={subItemStyle(json.inventory.senSok)}>SEN SOK</Link>
+                                )}
+                                {hasPermission(json.inventory.chbarAmpov, 'read') && (
+                                    <Link to={json.inventory.chbarAmpov} className={subItemClass(json.inventory.chbarAmpov)} style={subItemStyle(json.inventory.chbarAmpov)}>CHBAR AMPOV</Link>
+                                )}
+                                {hasPermission(json.inventory.stuengMeanChey, 'read') && (
+                                    <Link to={json.inventory.stuengMeanChey} className={subItemClass(json.inventory.stuengMeanChey)} style={subItemStyle(json.inventory.stuengMeanChey)}>STUENG MEAN CHEY</Link>
                                 )}
                             </div>
                         </div>

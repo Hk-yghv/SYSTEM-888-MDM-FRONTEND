@@ -70,6 +70,11 @@
         "followUp4": "/follow-up/follow-up-4",
         "followUpSenSok": "/follow-up/follow-up-3"
     },
+    "inventory": {
+        "senSok": "/inventory/sen-sok",
+        "chbarAmpov": "/inventory/chbar-ampov",
+        "stuengMeanChey": "/inventory/stueng-mean-chey"
+    },
     "salary": "/salary",
     "music": "/music",
     "allPicture": "/all-picture",

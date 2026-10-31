@@ -42,6 +42,7 @@ export const MEM_DB = {
     calendarEvents: [],
     cashTransactions: [],
     activatedDescriptionStatuses: [],
+    inventoryItems: [],
     controlSystem: {
         droplists: [
             { category: 'Device Models', items: ['iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 14', 'Samsung Galaxy S24 Ultra', 'iPad Air 5'] },
@@ -81,6 +82,7 @@ const SYSTEM_PAGES = [
     '/history/login-history', '/history/device-history',
     '/report/all', '/report/activated', '/report/redeem', '/report/lock-phone', '/report/set-wallpaper', '/report/installment', '/report/follow-up',
     '/follow-up/follow-up-1', '/follow-up/follow-up-2', '/follow-up/follow-up-3', '/follow-up/sen-sok',
+    '/inventory/sen-sok', '/inventory/chbar-ampov', '/inventory/stueng-mean-chey',
     '/settings/all-account', '/settings/control-system', '/settings/products',
     '/phone-valuation', '/calendar', '/profile', '/audit/device'
 ];
