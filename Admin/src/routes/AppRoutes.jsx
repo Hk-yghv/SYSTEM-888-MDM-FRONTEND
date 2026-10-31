@@ -185,8 +185,11 @@ const AppRoutes = () => {
 
       {/* Inventory */}
       <Route path={json.inventory.senSok} element={renderProtected(json.inventory.senSok, InventoryLocationPage, { locationCode: "sen-sok" })} />
+      <Route path={`${json.inventory.senSok}/preview`} element={renderProtected(json.inventory.senSok, InventoryLocationPage, { locationCode: "sen-sok" })} />
       <Route path={json.inventory.chbarAmpov} element={renderProtected(json.inventory.chbarAmpov, InventoryLocationPage, { locationCode: "chbar-ampov" })} />
+      <Route path={`${json.inventory.chbarAmpov}/preview`} element={renderProtected(json.inventory.chbarAmpov, InventoryLocationPage, { locationCode: "chbar-ampov" })} />
       <Route path={json.inventory.stuengMeanChey} element={renderProtected(json.inventory.stuengMeanChey, InventoryLocationPage, { locationCode: "stueng-mean-chey" })} />
+      <Route path={`${json.inventory.stuengMeanChey}/preview`} element={renderProtected(json.inventory.stuengMeanChey, InventoryLocationPage, { locationCode: "stueng-mean-chey" })} />
 
       {/* Salary */}
       <Route path={json.salary || "/salary"} element={renderProtected(json.salary || "/salary", SalaryPage)} />

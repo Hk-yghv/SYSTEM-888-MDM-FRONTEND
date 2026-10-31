@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { FaBoxes, FaFilePdf, FaImage, FaPlus, FaPrint, FaTrashAlt } from 'react-icons/fa';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -14,8 +15,11 @@ const LOCATIONS = {
 const InventoryLocationPage = ({ locationCode }) => {
     const { API_BASE1, API_BASE2, hasPermission, smartFetch } = useAuth();
     const { t, lang } = useLanguage();
+    const currentLocation = useLocation();
     const apiBase = API_BASE1 || API_BASE2 || '/api';
     const permissionPath = `/inventory/${locationCode}`;
+    const previewPath = `${permissionPath}/preview`;
+    const isPreviewPage = currentLocation.pathname === previewPath;
     const locationName = LOCATIONS[locationCode];
     const printAreaRef = useRef(null);
 
@@ -183,6 +187,17 @@ const InventoryLocationPage = ({ locationCode }) => {
         }
     };
 
+    const handlePrint = async () => {
+        if (!printAreaRef.current) return;
+        try {
+            const images = Array.from(printAreaRef.current.querySelectorAll('img'));
+            await Promise.all(images.map((image) => image.decode()));
+            window.print();
+        } catch (error) {
+            setFeedback({ type: 'error', text: `${t('inventoryPrintFailed')} ${error.message || ''}`.trim() });
+        }
+    };
+
     const formatDate = (date) => {
         if (!date) return '-';
         return new Intl.DateTimeFormat(lang === 'km' ? 'km-KH' : lang, {
@@ -196,6 +211,31 @@ const InventoryLocationPage = ({ locationCode }) => {
     return (
         <main className="inventory-page-root inventory-page-enter h-full overflow-y-auto p-3 sm:p-5 lg:p-7">
             <div className="mx-auto max-w-7xl space-y-5">
+                <nav aria-label={t('inventoryPages')} className="inventory-no-print flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                    <Link
+                        to={permissionPath}
+                        aria-current={!isPreviewPage ? 'page' : undefined}
+                        className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                            !isPreviewPage
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                        }`}
+                    >
+                        {t('inventoryEntryPage')}
+                    </Link>
+                    <Link
+                        to={previewPath}
+                        aria-current={isPreviewPage ? 'page' : undefined}
+                        className={`rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                            isPreviewPage
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                        }`}
+                    >
+                        {t('inventoryPreviewPage')}
+                    </Link>
+                </nav>
+
                 {feedback && (
                     <div
                         role="status"
@@ -209,7 +249,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                     </div>
                 )}
 
-                {canCreate && (
+                {!isPreviewPage && canCreate && (
                     <section className="inventory-no-print rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                         <div className="mb-5 flex items-center gap-3">
                             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
@@ -272,6 +312,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                     </section>
                 )}
 
+                {isPreviewPage && (
                 <section ref={printAreaRef} className="inventory-print-area space-y-5 rounded-2xl">
                     <header className="inventory-heading overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-500 p-5 text-white shadow-lg sm:p-7">
                         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
@@ -293,7 +334,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => window.print()}
+                                        onClick={handlePrint}
                                         disabled={loading}
                                         className="flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20 disabled:opacity-60"
                                     >
@@ -386,6 +427,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                         )}
                     </section>
                 </section>
+                )}
             </div>
         </main>
     );
