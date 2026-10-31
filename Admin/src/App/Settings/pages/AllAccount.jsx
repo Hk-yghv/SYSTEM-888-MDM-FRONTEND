@@ -82,6 +82,10 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Reports & Analytics', path: '/report/follow-up', label: 'Follow Up Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/follow-up-4', label: 'Follow Up 4 Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/audit/telegram/report', label: 'Report Audit Telegram (របាយការណ៍ Audit)', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/audit/telegram/report/follow-up-1', label: 'Follow Up 1 Report (Audit Telegram)', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/audit/telegram/report/follow-up-2', label: 'CHBAR AMPOV Report (Audit Telegram)', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/audit/telegram/report/follow-up-3', label: 'STUENG MEAN CHEY Report (Audit Telegram)', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/audit/telegram/report/follow-up-4', label: 'SEN SOK Report (Audit Telegram)', actions: ['read', 'export'] },
 
     { category: 'Audit & History Logs', path: '/history/login-history', label: 'Login History Log', actions: ['read', 'export'] },
     { category: 'Audit & History Logs', path: '/history/device-history', label: 'Device Action Log', actions: ['read', 'edit', 'export'] },

@@ -83,7 +83,11 @@ const getDailyReportText = (date, detail, rejectSubmitRows, t, lang) => {
     ].join('\n');
 };
 
-const FollowUp4Report = () => {
+const FollowUp4Report = ({
+    workspaceId = 4,
+    permissionPath = '/report/follow-up-4',
+    reportTitle
+}) => {
     const { API_BASE1, API_BASE2, user, hasPermission } = useAuth();
     const { t, lang } = useLanguage();
     const API_BASE = API_BASE1 || API_BASE2 || '/api';
@@ -147,7 +151,7 @@ const FollowUp4Report = () => {
 
             const endpoints = ['detail', 'reject-cs', 'reject-submit'];
             const responses = await Promise.all(endpoints.map((endpoint) =>
-                fetch(`${API_BASE}/follow-up-4/${endpoint}?${query}`)
+                fetch(`${API_BASE}/follow-up-${workspaceId}/${endpoint}?${query}`)
             ));
             const failedResponse = responses.find((response) => !response.ok);
             if (failedResponse) {
@@ -166,7 +170,7 @@ const FollowUp4Report = () => {
         } finally {
             setLoading(false);
         }
-    }, [API_BASE, endDate, selectedBrand, startDate, user]);
+    }, [API_BASE, endDate, selectedBrand, startDate, user, workspaceId]);
 
     useEffect(() => {
         fetchReportData();
@@ -291,7 +295,11 @@ const FollowUp4Report = () => {
         ];
         setCopied(false);
         setCopyError('');
-        setActiveReport({ title: t('followUp4TotalReport') || 'Follow Up 4 Total Report', text: totalReportText, rows: tableRows });
+        setActiveReport({
+            title: `${reportTitle || t('followUp4Report') || 'Follow Up 4'} - ${t('total') || 'Total'}`,
+            text: totalReportText,
+            rows: tableRows
+        });
         setActiveReportView('text');
     };
 
@@ -323,7 +331,8 @@ const FollowUp4Report = () => {
         }
     };
 
-    const permissionToView = hasPermission('/report/follow-up-4', 'read');
+    const permissionToView = hasPermission(permissionPath, 'read');
+    const canExport = hasPermission(permissionPath, 'export');
 
     if (!permissionToView) {
         return (
@@ -387,7 +396,7 @@ const FollowUp4Report = () => {
                 <div>
                     <h1 className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-800">
                         <FaFileAlt className="text-emerald-600" />
-                        {t('followUp4Report') || 'Follow Up 4 Report'}
+                        {reportTitle || t('followUp4Report') || 'Follow Up 4 Report'}
                     </h1>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -483,7 +492,7 @@ const FollowUp4Report = () => {
                                     <button onClick={() => setActiveReportView('text')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'text' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{t('textReport', 'Text Report')}</button>
                                     <button onClick={() => setActiveReportView('table')} className={`rounded-[5px] px-3 py-1.5 text-xs font-bold ${activeReportView === 'table' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{t('summaryTable')}</button>
                                 </div>
-                                {activeReportView === 'table' && <ExportDropdown onExportExcel={exportTotalReportExcel} onExportPDF={exportTotalReportPdf} />}
+                                {canExport && activeReportView === 'table' && <ExportDropdown onExportExcel={exportTotalReportExcel} onExportPDF={exportTotalReportPdf} />}
                             </nav>
                         )}
                         {activeReport.rows && activeReportView === 'table' ? (

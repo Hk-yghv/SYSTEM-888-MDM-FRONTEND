@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
+import FollowUp4Report from '../../Report/pages/FollowUp4Report';
+import { FOLLOW_UP_NAMES } from '../../../utils/followUpNames';
 import {
     FaTelegramPlane, FaClipboardList, FaSync, FaSearch,
     FaTimes, FaCalendarAlt, FaChartBar, FaSpinner,
@@ -25,9 +27,10 @@ const getTodayStr = () => {
 
 // ─── component ───────────────────────────────────────────────────────────────
 const ReportAuditTelegram = () => {
-    const { API_BASE } = useAuth();
+    const { API_BASE, hasPermission } = useAuth();
     const { t } = useLanguage();
 
+    const [activeFollowUp, setActiveFollowUp] = useState(null);
     const [days, setDays] = useState(7);
     const [searchDate, setSearchDate] = useState('');
     const [data, setData] = useState(null);
@@ -66,6 +69,8 @@ const ReportAuditTelegram = () => {
     const allStatusKeys = useMemo(() => data?.allStatusKeys || [], [data]);
     const allActivityKeys = useMemo(() => data?.allActivityKeys || [], [data]);
     const allNoteKeys = useMemo(() => data?.allNoteKeys || [], [data]);
+    const activeFollowUpAllowed = activeFollowUp !== null &&
+        hasPermission(`/audit/telegram/report/follow-up-${activeFollowUp}`, 'read');
 
     // filtered dates
     const filteredDates = useMemo(() => {
@@ -100,6 +105,49 @@ const ReportAuditTelegram = () => {
     }, [filteredDates, report, allStatusKeys, allActivityKeys, allNoteKeys]);
 
     return (
+        <>
+        <nav aria-label={t('followUpReports')} className="mx-4 mt-4 flex flex-wrap gap-2 rounded-[5px] border border-slate-200 bg-white p-2 sm:mx-6">
+            <button
+                type="button"
+                onClick={() => setActiveFollowUp(null)}
+                aria-current={activeFollowUp === null ? 'page' : undefined}
+                className={`rounded-[5px] px-4 py-2 text-sm font-bold transition ${
+                    activeFollowUp === null
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                }`}
+            >
+                {t('reportAuditTelegram')}
+            </button>
+            {[1, 2, 3, 4].map((workspaceId) => {
+                const permissionPath = `/audit/telegram/report/follow-up-${workspaceId}`;
+                if (!hasPermission(permissionPath, 'read')) return null;
+                const title = workspaceId === 1 ? t('followUp1') : FOLLOW_UP_NAMES[workspaceId];
+                return (
+                    <button
+                        key={workspaceId}
+                        type="button"
+                        onClick={() => setActiveFollowUp(workspaceId)}
+                        aria-current={activeFollowUp === workspaceId ? 'page' : undefined}
+                        className={`rounded-[5px] px-4 py-2 text-sm font-bold transition ${
+                            activeFollowUp === workspaceId
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
+                        }`}
+                    >
+                        {title}
+                    </button>
+                );
+            })}
+        </nav>
+        {activeFollowUpAllowed ? (
+            <FollowUp4Report
+                key={activeFollowUp}
+                workspaceId={activeFollowUp}
+                permissionPath={`/audit/telegram/report/follow-up-${activeFollowUp}`}
+                reportTitle={activeFollowUp === 1 ? t('followUp1') : FOLLOW_UP_NAMES[activeFollowUp]}
+            />
+        ) : (
         <div className="p-4 sm:p-6 space-y-4 bg-slate-50 font-sans">
 
             {/* ── Header ── */}
@@ -403,6 +451,8 @@ const ReportAuditTelegram = () => {
                 </p>
             )}
         </div>
+        )}
+        </>
     );
 };
 
