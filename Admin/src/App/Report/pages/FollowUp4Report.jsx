@@ -92,8 +92,12 @@ const FollowUp4Report = ({
     const { t, lang } = useLanguage();
     const API_BASE = API_BASE1 || API_BASE2 || '/api';
     const today = useMemo(() => dateToInputValue(new Date()), []);
-    const monthStart = useMemo(() => `${today.slice(0, 7)}-01`, [today]);
-    const [startDate, setStartDate] = useState(monthStart);
+    const lastSevenDaysStart = useMemo(() => {
+        const date = new Date();
+        date.setDate(date.getDate() - 6);
+        return dateToInputValue(date);
+    }, []);
+    const [startDate, setStartDate] = useState(lastSevenDaysStart);
     const [endDate, setEndDate] = useState(today);
     const [selectedBrand, setSelectedBrand] = useState('');
     const [brands, setBrands] = useState([]);
