@@ -69,8 +69,15 @@ const ReportAuditTelegram = () => {
     const allStatusKeys = useMemo(() => data?.allStatusKeys || [], [data]);
     const allActivityKeys = useMemo(() => data?.allActivityKeys || [], [data]);
     const allNoteKeys = useMemo(() => data?.allNoteKeys || [], [data]);
-    const activeFollowUpAllowed = activeFollowUp !== null &&
-        hasPermission(`/audit/telegram/report/follow-up-${activeFollowUp}`, 'read');
+    const canViewAuditReport = hasPermission('/audit/telegram/report', 'read');
+    const permittedFollowUps = [1, 2, 3, 4].filter((workspaceId) =>
+        hasPermission(`/audit/telegram/report/follow-up-${workspaceId}`, 'read')
+    );
+    const selectedFollowUp = activeFollowUp === null && !canViewAuditReport
+        ? permittedFollowUps[0] ?? null
+        : activeFollowUp;
+    const activeFollowUpAllowed = selectedFollowUp !== null &&
+        hasPermission(`/audit/telegram/report/follow-up-${selectedFollowUp}`, 'read');
 
     // filtered dates
     const filteredDates = useMemo(() => {
@@ -107,18 +114,18 @@ const ReportAuditTelegram = () => {
     return (
         <>
         <nav aria-label={t('followUpReports')} className="mx-4 mt-4 flex flex-wrap gap-2 rounded-[5px] border border-slate-200 bg-white p-2 sm:mx-6">
-            <button
+            {canViewAuditReport && <button
                 type="button"
                 onClick={() => setActiveFollowUp(null)}
-                aria-current={activeFollowUp === null ? 'page' : undefined}
+                aria-current={selectedFollowUp === null ? 'page' : undefined}
                 className={`rounded-[5px] px-4 py-2 text-sm font-bold transition ${
-                    activeFollowUp === null
+                    selectedFollowUp === null
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
                 }`}
             >
                 {t('reportAuditTelegram')}
-            </button>
+            </button>}
             {[1, 2, 3, 4].map((workspaceId) => {
                 const permissionPath = `/audit/telegram/report/follow-up-${workspaceId}`;
                 if (!hasPermission(permissionPath, 'read')) return null;
@@ -128,9 +135,9 @@ const ReportAuditTelegram = () => {
                         key={workspaceId}
                         type="button"
                         onClick={() => setActiveFollowUp(workspaceId)}
-                        aria-current={activeFollowUp === workspaceId ? 'page' : undefined}
+                        aria-current={selectedFollowUp === workspaceId ? 'page' : undefined}
                         className={`rounded-[5px] px-4 py-2 text-sm font-bold transition ${
-                            activeFollowUp === workspaceId
+                            selectedFollowUp === workspaceId
                                 ? 'bg-emerald-600 text-white shadow-sm'
                                 : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
                         }`}
@@ -142,10 +149,10 @@ const ReportAuditTelegram = () => {
         </nav>
         {activeFollowUpAllowed ? (
             <FollowUp4Report
-                key={activeFollowUp}
-                workspaceId={activeFollowUp}
-                permissionPath={`/audit/telegram/report/follow-up-${activeFollowUp}`}
-                reportTitle={activeFollowUp === 1 ? t('followUp1') : FOLLOW_UP_NAMES[activeFollowUp]}
+                key={selectedFollowUp}
+                workspaceId={selectedFollowUp}
+                permissionPath={`/audit/telegram/report/follow-up-${selectedFollowUp}`}
+                reportTitle={selectedFollowUp === 1 ? t('followUp1') : FOLLOW_UP_NAMES[selectedFollowUp]}
             />
         ) : (
         <div className="p-4 sm:p-6 space-y-4 bg-slate-50 font-sans">

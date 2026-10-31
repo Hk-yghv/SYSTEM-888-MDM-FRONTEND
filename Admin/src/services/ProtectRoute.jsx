@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { FaLock } from 'react-icons/fa';
 import { getFirstAllowedRoute } from '../utils/permissionUtils';
 
-const ProtectRoute = ({ children, pagePath }) => {
+const ProtectRoute = ({ children, pagePath, anyPermissionPaths = [] }) => {
     const { user, authInitialized, hasPermission } = useAuth();
     const { t } = useLanguage();
     const location = useLocation();
@@ -25,7 +25,9 @@ const ProtectRoute = ({ children, pagePath }) => {
     const currentPath = pagePath || location.pathname;
 
     // Check RBAC permission for reading this page
-    if (!hasPermission(currentPath, 'read')) {
+    const hasPagePermission = hasPermission(currentPath, 'read') ||
+        anyPermissionPaths.some((path) => hasPermission(path, 'read'));
+    if (!hasPagePermission) {
         // If the user does not have permission for the dashboard, auto-redirect to their first allowed page
         if (currentPath === '/dashboard') {
             const firstRoute = getFirstAllowedRoute(user, hasPermission);

@@ -93,8 +93,8 @@ export const RootRedirect = () => {
 /**
  * Route wrapper helper to keep route declaration concise
  */
-const renderProtected = (pagePath, Component, props = {}) => (
-  <ProtectRoute pagePath={pagePath}>
+const renderProtected = (pagePath, Component, props = {}, anyPermissionPaths = []) => (
+  <ProtectRoute pagePath={pagePath} anyPermissionPaths={anyPermissionPaths}>
     <MainLayout>
       <Component {...props} />
     </MainLayout>
@@ -203,7 +203,15 @@ const AppRoutes = () => {
       {/* Audit */}
       <Route path={json.audit?.telegram || "/audit/telegram"} element={renderProtected(json.audit?.telegram || "/audit/telegram", AuditTelegram)} />
       <Route path={json.audit?.device || "/audit/device"} element={renderProtected(json.audit?.device || "/audit/device", AuditDevice)} />
-      <Route path={json.audit?.reportTelegram || "/audit/telegram/report"} element={renderProtected(json.audit?.reportTelegram || "/audit/telegram/report", ReportAuditTelegram)} />
+      <Route
+        path={json.audit?.reportTelegram || "/audit/telegram/report"}
+        element={renderProtected(
+          json.audit?.reportTelegram || "/audit/telegram/report",
+          ReportAuditTelegram,
+          {},
+          [1, 2, 3, 4].map((workspaceId) => `/audit/telegram/report/follow-up-${workspaceId}`)
+        )}
+      />
 
       {/* Print */}
       <Route path={json.print?.idCard || "/print/id-card"} element={renderProtected(json.print?.idCard || "/print/id-card", PrintIdCard)} />

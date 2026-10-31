@@ -520,6 +520,7 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                     hasPermission(json.report?.followUpReport || '/report/follow-up', 'read') ||
                     hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read') ||
                     hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') ||
+                    [1, 2, 3, 4].some((workspaceId) => hasPermission(`/audit/telegram/report/follow-up-${workspaceId}`, 'read')) ||
                     hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
                         <div className="flex-shrink-0">
                             <div onClick={() => toggleMenu("report")} className={dropdownHeaderClass()} style={dropdownHeaderStyle("report")}>
@@ -557,7 +558,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                                 {hasPermission(json.report?.followUp4Report || '/report/follow-up-4', 'read') && (
                                     <Link to={json.report?.followUp4Report || '/report/follow-up-4'} className={subItemClass(json.report?.followUp4Report || '/report/follow-up-4')} style={subItemStyle(json.report?.followUp4Report || '/report/follow-up-4')}>{t('followUp4Report')}</Link>
                                 )}
-                                {(hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') || hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
+                                {(hasPermission(json.report?.reportTelegram || '/audit/telegram/report', 'read') ||
+                                    [1, 2, 3, 4].some((workspaceId) => hasPermission(`/audit/telegram/report/follow-up-${workspaceId}`, 'read')) ||
+                                    hasPermission(json.audit?.telegram || '/audit/telegram', 'read')) && (
                                     <Link to={json.report?.reportTelegram || json.audit?.reportTelegram || '/audit/telegram/report'} className={subItemClass(json.report?.reportTelegram || '/audit/telegram/report')} style={subItemStyle(json.report?.reportTelegram || '/audit/telegram/report')}>
                                         {t('reportAuditTelegram')}
                                     </Link>
