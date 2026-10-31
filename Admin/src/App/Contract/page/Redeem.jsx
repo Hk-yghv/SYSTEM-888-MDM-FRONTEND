@@ -85,9 +85,8 @@ const Redeem = () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    notes: commentInput.trim(),
-                    lastModifiedBy: user?.username || 'Staff',
-                    appendComment: true
+                    redeemComment: commentInput.trim(),
+                    lastModifiedBy: user?.username || 'Staff'
                 })
             });
             const result = await response.json();
@@ -271,9 +270,9 @@ const Redeem = () => {
                                     <td className='px-4 py-1 text-slate-600'>
                                         <p
                                             className='line-clamp-2 max-w-[260px] whitespace-pre-wrap break-words'
-                                            title={item.notes || ''}
+                                            title={item.redeemComment || item.notes || ''}
                                         >
-                                            {item.notes?.trim() || '—'}
+                                            {item.redeemComment?.trim() || item.notes?.trim() || '—'}
                                         </p>
                                     </td>
                                     <td className="px-4 py-1 text-center relative">
@@ -294,14 +293,14 @@ const Redeem = () => {
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedCommentItem(item);
-                                                                setCommentInput('');
+                                                                setCommentInput(item.redeemComment || item.notes || '');
                                                                 setCommentFeedback(null);
                                                                 setOpenMenuId(null);
                                                             }}
                                                             className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2"
                                                         >
                                                             <MdComment className="text-cyan-600 text-base" />
-                                                            {t('comments')}
+                                                            {item.redeemComment?.trim() || item.notes?.trim() ? t('edit') : t('comments')}
                                                         </button>
                                                     )}
                                                     {(user?.isImmutable || user?.username === '@hakyonghouv') && (
@@ -351,7 +350,9 @@ const Redeem = () => {
                         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                             <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
                                 <MdComment className="text-cyan-600" />
-                                {t('activatedAddCommentNote')}
+                                {selectedCommentItem.redeemComment?.trim() || selectedCommentItem.notes?.trim()
+                                    ? t('edit')
+                                    : t('activatedAddCommentNote')}
                             </h2>
                             <button
                                 type="button"

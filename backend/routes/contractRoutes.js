@@ -1448,6 +1448,12 @@ router.put('/:id', async (req, res) => {
         delete updateData.commentHistory;
         delete updateData.commentDate;
         delete updateData.customerId;
+        if (Object.prototype.hasOwnProperty.call(updateData, 'redeemComment')) {
+            if (typeof updateData.redeemComment !== 'string' || updateData.redeemComment.length > 3000) {
+                return res.status(400).json({ error: 'Redeem comment must be text with at most 3000 characters.' });
+            }
+            updateData.redeemComment = updateData.redeemComment.trim();
+        }
         const appendComment = updateData.appendComment === true;
         delete updateData.appendComment;
 

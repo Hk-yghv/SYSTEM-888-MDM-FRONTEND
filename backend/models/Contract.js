@@ -54,6 +54,7 @@ const contractSchema = new mongoose.Schema({
         default: 'Application'
     },
     redeemDate: { type: String, default: '' },
+    redeemComment: { type: String, default: '', maxlength: 3000 },
     lockPhoneStatus: { type: String, enum: ['Unlocked', 'Locked'], default: 'Unlocked' },
     lockWallpaperStatus: { type: String, enum: ['Unlocked', 'Locked'], default: 'Unlocked' },
     notes: { type: String, default: '' },
