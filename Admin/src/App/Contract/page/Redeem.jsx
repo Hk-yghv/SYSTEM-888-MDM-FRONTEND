@@ -3,7 +3,7 @@ import ExportDropdown from '../../../components/ExportDropdown';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
 import { AiOutlineMenu } from "react-icons/ai";
-import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz } from "react-icons/md";
+import { MdOutlineSync, MdEdit, MdDelete, MdPictureAsPdf, MdSwapHoriz, MdComment, MdDateRange } from "react-icons/md";
 import { FaFileExcel } from 'react-icons/fa';
 import CreateApplication from '../components/CreateApplication';
 import Pagination from '../../../components/Pagination';
@@ -12,6 +12,7 @@ import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 
 import RepaymentScheduleModal from '../components/RepaymentScheduleModal';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
+import { getKhmerCurrentDateString } from '../../../utils/khmerDateUtils';
 
 const Redeem = () => {
     const { t } = useLanguage();
@@ -27,6 +28,10 @@ const Redeem = () => {
     const [openEditModal, setOpenEditModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedSearchRecord, setSelectedSearchRecord] = useState(null);
+    const [selectedCommentItem, setSelectedCommentItem] = useState(null);
+    const [commentInput, setCommentInput] = useState('');
+    const [commentSaving, setCommentSaving] = useState(false);
+    const [commentFeedback, setCommentFeedback] = useState(null);
 
     // Repayment Schedule Modal State
     const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -67,6 +72,49 @@ const Redeem = () => {
         } catch (err) {
             console.error('Restore to Activated error:', err);
         }
+    };
+
+    const handleSaveComment = async (event) => {
+        event.preventDefault();
+        if (!selectedCommentItem || !commentInput.trim()) return;
+
+        setCommentSaving(true);
+        setCommentFeedback(null);
+        try {
+            const response = await fetch(`${API_BASE1}/contracts/${selectedCommentItem._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    notes: commentInput.trim(),
+                    lastModifiedBy: user?.username || 'Staff',
+                    appendComment: true
+                })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || result.message || t('saveCommentFailed'));
+            }
+
+            if (selectedSearchRecord?._id === selectedCommentItem._id && result?._id) {
+                setSelectedSearchRecord(result);
+            }
+            setSelectedCommentItem(null);
+            setCommentInput('');
+            setCommentFeedback({ type: 'success', text: t('commentSaved') });
+            fetchRedeemContracts();
+        } catch (error) {
+            setCommentFeedback({ type: 'error', text: error.message || t('saveCommentFailed') });
+        } finally {
+            setCommentSaving(false);
+        }
+    };
+
+    const handleAppendCommentDate = () => {
+        const dateText = getKhmerCurrentDateString();
+        setCommentInput((current) => {
+            const trimmed = current.trim();
+            return trimmed.endsWith(dateText) ? trimmed : [trimmed, dateText].filter(Boolean).join(' ');
+        });
     };
 
     const handleDelete = async (id) => {
@@ -170,6 +218,19 @@ const Redeem = () => {
                 </div>
             </header>
 
+            {commentFeedback && (
+                <div
+                    role="status"
+                    className={`rounded-md border px-3 py-2 text-sm ${
+                        commentFeedback.type === 'error'
+                            ? 'border-red-200 bg-red-50 text-red-700'
+                            : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    }`}
+                >
+                    {commentFeedback.text}
+                </div>
+            )}
+
             <div className='w-full overflow-x-auto h-[calc(100vh-250px)] pb-14 rounded-[5px] border border-slate-200 bg-white shadow-md table-container'>
                 <table className='w-full text-left text-xs'>
                     <thead className='bg-slate-50 text-slate-700 uppercase tracking-wider border-b border-slate-200'>
@@ -220,6 +281,20 @@ const Redeem = () => {
                                                     >
                                                         <FaFileExcel className="text-indigo-600 text-sm" /> View Schedule ($)
                                                     </button>
+                                                    {hasPermission('/contract/redeem', 'comment') && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedCommentItem(item);
+                                                                setCommentInput('');
+                                                                setCommentFeedback(null);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2"
+                                                        >
+                                                            <MdComment className="text-cyan-600 text-base" />
+                                                            {t('comments')}
+                                                        </button>
+                                                    )}
                                                     {(user?.isImmutable || user?.username === '@hakyonghouv') && (
                                                         <button
                                                             onClick={() => handleRestoreToActivated(item)}
@@ -260,6 +335,75 @@ const Redeem = () => {
                 contract={scheduleModalContract}
                 mode="read_only"
             />
+
+            {selectedCommentItem && (
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm">
+                    <form onSubmit={handleSaveComment} className="w-full max-w-md space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                            <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
+                                <MdComment className="text-cyan-600" />
+                                {t('activatedAddCommentNote')}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedCommentItem(null)}
+                                disabled={commentSaving}
+                                aria-label={t('cancel')}
+                                className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="rounded-md bg-slate-50 p-3 text-xs">
+                            <p className="text-slate-500">{t('customerName')}: <span className="font-bold text-slate-800">{selectedCommentItem.customerNameEn}</span></p>
+                            <p className="mt-1 text-slate-500">{t('model')}: <span className="font-semibold text-slate-700">{selectedCommentItem.model}</span></p>
+                        </div>
+
+                        <label className="block">
+                            <span className="mb-1.5 block text-xs font-semibold text-slate-600">{t('activatedEnterCommentNote')}</span>
+                            <textarea
+                                autoFocus
+                                required
+                                rows={4}
+                                maxLength={3000}
+                                value={commentInput}
+                                onChange={(event) => setCommentInput(event.target.value)}
+                                placeholder={t('activatedCommentPlaceholder')}
+                                className="w-full rounded-md border border-slate-300 p-3 text-sm text-slate-800 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100"
+                            />
+                        </label>
+
+                        <div className="flex flex-wrap justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={handleAppendCommentDate}
+                                disabled={commentSaving}
+                                className="flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                                <MdDateRange />
+                                {t('inputCommentDate')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedCommentItem(null)}
+                                disabled={commentSaving}
+                                className="rounded-md border border-slate-300 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={commentSaving || !commentInput.trim()}
+                                className="flex items-center gap-1.5 rounded-md bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {commentSaving && <MdOutlineSync className="animate-spin" />}
+                                {t('save')}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 };

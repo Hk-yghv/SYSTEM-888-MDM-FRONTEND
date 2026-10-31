@@ -1151,6 +1151,8 @@
   "openFacebook": "បើក Facebook",
   "activatedAddCommentNote": "បន្ថែមកំណត់ចំណាំមតិយោបល់",
   "activatedEnterCommentNote": "បញ្ចូលកំណត់ចំណាំមតិយោបល់",
+  "inputCommentDate": "បញ្ចូលកាលបរិច្ឆេទ",
+  "commentSaved": "បានរក្សាទុកមតិយោបល់ដោយជោគជ័យ។",
   "optional": "ស្រេចចិត្ត",
   "activatedCommentPlaceholder": "វាយមតិយោបល់ ឬទុកទទេ...",
   "activatedDescriptionHistory": "ប្រវត្តិការពិពណ៌នាកិច្ចសន្យាសកម្ម",

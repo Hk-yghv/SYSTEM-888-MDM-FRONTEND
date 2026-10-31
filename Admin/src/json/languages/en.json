@@ -1153,6 +1153,8 @@
   "openFacebook": "Open Facebook",
   "activatedAddCommentNote": "Add Comment Note",
   "activatedEnterCommentNote": "Enter Comment Note",
+  "inputCommentDate": "Add date",
+  "commentSaved": "Comment saved successfully.",
   "optional": "optional",
   "activatedCommentPlaceholder": "Type comment or leave blank...",
   "activatedDescriptionHistory": "Activated Description History",

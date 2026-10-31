@@ -43,7 +43,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Contract Management', path: '/contract/application', label: 'Contract Application', actions: ['read', 'export', 'create', 'edit', 'delete', 'information', 'activate'] },
     { category: 'Contract Management', path: '/contract/activated', label: 'Contract Activated', actions: ['read', 'export', 'openFacebook', 'history', 'comment', 'lockDevice', 'setWallpaper', 'check', 'blacklist'] },
     { category: 'Contract Management', path: '/contract/check', label: 'Contract Check', actions: ['read', 'export', 'edit', 'delete'] },
-    { category: 'Contract Management', path: '/contract/redeem', label: 'Contract Redeem', actions: ['read', 'export', 'edit', 'delete'] },
+    { category: 'Contract Management', path: '/contract/redeem', label: 'Contract Redeem', actions: ['read', 'export', 'edit', 'delete', 'comment'] },
     { category: 'Contract Management', path: '/contract/comments', label: 'Contract Comments', actions: ['read', 'export', 'create', 'edit', 'delete', 'information'] },
     { category: 'Contract Management', path: '/contract/blacklist', label: 'Contract Blacklist', actions: ['read', 'export', 'create', 'edit', 'delete'] },
     { category: 'Calculation & Tools', path: '/calculate/schedule-1', label: 'Calculate Schedule 1', actions: ['read', 'export'] },
