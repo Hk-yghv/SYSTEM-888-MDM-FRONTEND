@@ -398,6 +398,92 @@ const InventoryLocationPage = ({ locationCode }) => {
         }).format(new Date(date));
     };
 
+    const renderInventoryList = (className = '') => (
+        <section className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>
+            <div className="inventory-no-print flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
+                    <FaBoxes className="text-emerald-600" />
+                    {t('inventoryList')}
+                </h2>
+                <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white sm:max-w-xs"
+                    placeholder={t('searchInventory')}
+                />
+            </div>
+
+            {loading ? (
+                <div className="p-10 text-center text-sm font-medium text-slate-500">{t('loadingInventory')}</div>
+            ) : visibleItems.length === 0 ? (
+                <div className="p-10 text-center text-sm text-slate-500">
+                    {items.length ? t('noInventorySearchResults') : t('noInventoryItems')}
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="inventory-table w-full min-w-[680px] border-collapse text-left">
+                        <thead>
+                            <tr className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                <th className="px-5 py-3">{t('inventoryPhoto')}</th>
+                                <th className="px-5 py-3">{t('inventoryAssetName')}</th>
+                                <th className="px-5 py-3 text-right">{t('inventoryQuantity')}</th>
+                                <th className="px-5 py-3">{t('inventoryDate')}</th>
+                                {(canEdit || canDelete) && <th className="inventory-no-print px-5 py-3 text-center">{t('actions')}</th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {visibleItems.map((item) => (
+                                <tr key={item._id} className="inventory-table-row border-t border-slate-100 transition hover:bg-emerald-50/40">
+                                    <td className="px-5 py-3">
+                                        <img
+                                            src={item.imageUrl}
+                                            alt={item.assetName}
+                                            className="inventory-item-image h-16 w-16 rounded-xl border border-slate-200 bg-slate-50 object-cover"
+                                        />
+                                    </td>
+                                    <td className="px-5 py-3 font-semibold text-slate-800">{item.assetName}</td>
+                                    <td className="px-5 py-3 text-right">
+                                        <span className="inline-flex min-w-12 justify-center rounded-full bg-emerald-50 px-3 py-1 font-bold tabular-nums text-emerald-700">
+                                            {Number(item.quantity).toLocaleString()}
+                                        </span>
+                                    </td>
+                                    <td className="px-5 py-3 text-xs text-slate-500">{formatDate(item.createdAt)}</td>
+                                    {(canEdit || canDelete) && (
+                                        <td className="inventory-no-print px-5 py-3 text-center">
+                                            <div className="flex items-center justify-center gap-1">
+                                                {canEdit && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleEdit(item)}
+                                                        aria-label={`${t('editInventory')} ${item.assetName}`}
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-800"
+                                                    >
+                                                        <FaEdit />
+                                                    </button>
+                                                )}
+                                                {canDelete && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(item)}
+                                                        disabled={deletingId === item._id}
+                                                        aria-label={`${t('delete')} ${item.assetName}`}
+                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                                                    >
+                                                        <FaTrashAlt />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </section>
+    );
+
     if (!locationName) return null;
 
     return (
@@ -517,6 +603,8 @@ const InventoryLocationPage = ({ locationCode }) => {
                     </section>
                 )}
 
+                {!isPreviewPage && renderInventoryList('inventory-no-print')}
+
                 {isPreviewPage && (
                 <section ref={printAreaRef} className="inventory-print-area space-y-5 rounded-2xl">
                     <header className="inventory-heading overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-500 p-5 text-white shadow-lg sm:p-7">
@@ -562,89 +650,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                         </article>
                     </div>
 
-                    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div className="inventory-no-print flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                            <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
-                                <FaBoxes className="text-emerald-600" />
-                                {t('inventoryList')}
-                            </h2>
-                            <input
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white sm:max-w-xs"
-                                placeholder={t('searchInventory')}
-                            />
-                        </div>
-
-                        {loading ? (
-                            <div className="p-10 text-center text-sm font-medium text-slate-500">{t('loadingInventory')}</div>
-                        ) : visibleItems.length === 0 ? (
-                            <div className="p-10 text-center text-sm text-slate-500">
-                                {items.length ? t('noInventorySearchResults') : t('noInventoryItems')}
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="inventory-table w-full min-w-[680px] border-collapse text-left">
-                                    <thead>
-                                        <tr className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
-                                            <th className="px-5 py-3">{t('inventoryPhoto')}</th>
-                                            <th className="px-5 py-3">{t('inventoryAssetName')}</th>
-                                            <th className="px-5 py-3 text-right">{t('inventoryQuantity')}</th>
-                                            <th className="px-5 py-3">{t('inventoryDate')}</th>
-                                            {(canEdit || canDelete) && <th className="inventory-no-print px-5 py-3 text-center">{t('actions')}</th>}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {visibleItems.map((item) => (
-                                            <tr key={item._id} className="inventory-table-row border-t border-slate-100 transition hover:bg-emerald-50/40">
-                                                <td className="px-5 py-3">
-                                                    <img
-                                                        src={item.imageUrl}
-                                                        alt={item.assetName}
-                                                        className="inventory-item-image h-16 w-16 rounded-xl border border-slate-200 bg-slate-50 object-cover"
-                                                    />
-                                                </td>
-                                                <td className="px-5 py-3 font-semibold text-slate-800">{item.assetName}</td>
-                                                <td className="px-5 py-3 text-right">
-                                                    <span className="inline-flex min-w-12 justify-center rounded-full bg-emerald-50 px-3 py-1 font-bold tabular-nums text-emerald-700">
-                                                        {Number(item.quantity).toLocaleString()}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-3 text-xs text-slate-500">{formatDate(item.createdAt)}</td>
-                                                {(canEdit || canDelete) && (
-                                                    <td className="inventory-no-print px-5 py-3 text-center">
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            {canEdit && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleEdit(item)}
-                                                                    aria-label={`${t('editInventory')} ${item.assetName}`}
-                                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-800"
-                                                                >
-                                                                    <FaEdit />
-                                                                </button>
-                                                            )}
-                                                            {canDelete && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleDelete(item)}
-                                                                    disabled={deletingId === item._id}
-                                                                    aria-label={`${t('delete')} ${item.assetName}`}
-                                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
-                                                                >
-                                                                    <FaTrashAlt />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                )}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </section>
+                    {renderInventoryList()}
                 </section>
                 )}
             </div>
