@@ -28,7 +28,7 @@ const ReportAuditTelegram = () => {
         workspaceId === 1 ? t('followUp1') : FOLLOW_UP_NAMES[workspaceId];
 
     return (
-        <div className="space-y-4">
+        <div data-allow-scroll="true" className="w-full min-w-0 space-y-4">
             <nav
                 aria-label={t('followUpReports')}
                 className="mx-4 mt-4 flex flex-wrap gap-2 rounded-[5px] border border-slate-200 bg-white p-2 sm:mx-6"

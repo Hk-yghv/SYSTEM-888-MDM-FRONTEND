@@ -343,12 +343,12 @@ const FollowUp4Report = ({
     }
 
     const renderRejectTable = (title, table, accent) => (
-        <section className="overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm">
+        <section className="min-w-0 overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
                 <h2 className={`text-sm font-black ${accent}`}>{title}</h2>
                 <span className="text-xs font-semibold text-slate-500">{table.rows.length} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
             </div>
-            <div className="overflow-x-auto">
+            <div className="max-w-full overflow-x-auto overflow-y-hidden">
                 <table className="w-full min-w-max text-xs">
                     <thead className="bg-slate-100 text-[10px] font-bold uppercase text-slate-500">
                         <tr>
@@ -391,8 +391,8 @@ const FollowUp4Report = ({
     );
 
     return (
-        <main className="mx-auto max-w-[1800px] space-y-4 bg-slate-50 p-4 font-sans sm:p-6">
-            <header className="flex flex-col justify-between gap-4 rounded-[5px] border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
+        <main data-allow-scroll="true" className="mx-auto w-full min-w-0 max-w-[1800px] space-y-4 bg-slate-50 p-3 font-sans sm:p-6">
+            <header className="flex min-w-0 flex-col justify-between gap-4 rounded-[5px] border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
                 <div className="flex items-center gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[5px] bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20">
                         <FaFileAlt size={19} />
@@ -408,12 +408,12 @@ const FollowUp4Report = ({
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-2 rounded-[5px] border border-slate-300 bg-slate-100 px-3 py-2">
+                <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                    <div className="flex max-w-full flex-wrap items-center gap-2 rounded-[5px] border border-slate-300 bg-slate-100 px-3 py-2">
                         <FaCalendarAlt className="text-emerald-600" />
-                        <input aria-label={t('startDate')} type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
+                        <input aria-label={t('startDate')} type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="w-[110px] bg-transparent text-xs text-slate-700 outline-none sm:w-[130px]" />
                         <span className="text-xs text-slate-400">-</span>
-                        <input aria-label={t('endDate')} type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="w-[130px] bg-transparent text-xs text-slate-700 outline-none" />
+                        <input aria-label={t('endDate')} type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="w-[110px] bg-transparent text-xs text-slate-700 outline-none sm:w-[130px]" />
                     </div>
                     {isMasterAdmin && (
                         <select aria-label={t('brand')} value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)} className="rounded-[5px] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none">
@@ -433,7 +433,7 @@ const FollowUp4Report = ({
 
             {error && <div role="alert" className="rounded-[5px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>}
 
-            <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <section className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
                     {
                         label: t('auditVisibleDays'),
@@ -471,12 +471,12 @@ const FollowUp4Report = ({
                 ))}
             </section>
 
-            <section className="overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-xs">
+            <section className="min-w-0 overflow-hidden rounded-[5px] border border-slate-200 bg-white shadow-xs">
                 <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
                     <h2 className="text-sm font-black text-sky-700">{t('detail', lang === 'km' ? 'លម្អិត' : 'DETAIL')}</h2>
                     <span className="text-xs font-semibold text-slate-500">{reportRows.length} {t('days', lang === 'km' ? 'ថ្ងៃ' : 'days')}</span>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="max-w-full overflow-x-auto overflow-y-hidden">
                     <table className="w-full min-w-max text-xs">
                         <thead className="bg-slate-100 text-[10px] font-bold uppercase text-slate-500">
                             <tr>
