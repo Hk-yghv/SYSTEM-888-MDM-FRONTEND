@@ -137,6 +137,57 @@ router.post('/:location', async (req, res) => {
     }
 });
 
+router.put('/:location/:id', async (req, res) => {
+    try {
+        const { location, id } = req.params;
+        if (!validateLocation(location, res)) return;
+        const identity = await getRequestIdentity(req);
+        if (!identity) return res.status(401).json({ success: false, message: 'Authenticated user not found.' });
+        if (!hasInventoryPermission(identity, location, 'edit')) {
+            return res.status(403).json({ success: false, message: 'Inventory edit permission required.' });
+        }
+
+        const existingItem = await getItemById(id);
+        if (!existingItem || existingItem.location !== location) {
+            return res.status(404).json({ success: false, message: 'Inventory item not found.' });
+        }
+
+        const assetName = String(req.body.assetName || '').trim();
+        const imageUrl = String(req.body.imageUrl || existingItem.imageUrl || '').trim();
+        const quantity = Number(req.body.quantity);
+        const isAllowedImage = /^(https?:\/\/|data:image\/(?:jpeg|png|webp|gif);base64,)/i.test(imageUrl);
+        if (!assetName || assetName.length > 160) {
+            return res.status(400).json({ success: false, message: 'Asset name is required and must be 160 characters or fewer.' });
+        }
+        if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000000000) {
+            return res.status(400).json({ success: false, message: 'Quantity must be a positive whole number.' });
+        }
+        if (!isAllowedImage || imageUrl.length > 5000) {
+            return res.status(400).json({ success: false, message: 'A valid image URL is required.' });
+        }
+
+        const updates = {
+            assetName,
+            quantity,
+            imageUrl,
+            updatedBy: identity.username
+        };
+        let item;
+        if (isMongoConnected) {
+            const InventoryWrite = getWriteModel(InventoryItem) || InventoryItem;
+            item = await InventoryWrite.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+        } else {
+            item = MEM_DB.inventoryItems.find((entry) => entry._id === id);
+            Object.assign(item, updates, { updatedAt: new Date() });
+        }
+
+        res.json({ success: true, data: item });
+    } catch (error) {
+        console.error('Error updating inventory item:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 router.delete('/:location/:id', async (req, res) => {
     try {
         const { location, id } = req.params;

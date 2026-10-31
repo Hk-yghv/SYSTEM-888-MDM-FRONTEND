@@ -91,9 +91,9 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Follow Up System', path: '/follow-up/follow-up-3', label: 'Follow Up 3', actions: ['read', 'create', 'edit', 'delete', 'export'] },
     { category: 'Follow Up System', path: '/follow-up/follow-up-4', label: 'Follow up 4 (Follow Up 4 System)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
-    { category: 'Inventory System', path: '/inventory/sen-sok', label: 'Inventory - SEN SOK', actions: ['read', 'create', 'delete', 'export'] },
-    { category: 'Inventory System', path: '/inventory/chbar-ampov', label: 'Inventory - CHBAR AMPOV', actions: ['read', 'create', 'delete', 'export'] },
-    { category: 'Inventory System', path: '/inventory/stueng-mean-chey', label: 'Inventory - STUENG MEAN CHEY', actions: ['read', 'create', 'delete', 'export'] },
+    { category: 'Inventory System', path: '/inventory/sen-sok', label: 'Inventory - SEN SOK', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Inventory System', path: '/inventory/chbar-ampov', label: 'Inventory - CHBAR AMPOV', actions: ['read', 'create', 'edit', 'delete', 'export'] },
+    { category: 'Inventory System', path: '/inventory/stueng-mean-chey', label: 'Inventory - STUENG MEAN CHEY', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 
     { category: 'Salary System', path: '/salary', label: 'Salary Management (គ្រប់គ្រងប្រាក់ខែ)', actions: ['read', 'create', 'edit', 'delete', 'export'] },
 

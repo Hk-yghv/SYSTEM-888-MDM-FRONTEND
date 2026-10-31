@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { FaBoxes, FaFilePdf, FaImage, FaPlus, FaPrint, FaTrashAlt } from 'react-icons/fa';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaBoxes, FaEdit, FaFilePdf, FaImage, FaPlus, FaPrint, FaSave, FaTimes, FaTrashAlt } from 'react-icons/fa';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { storeImageFile } from '../../../utils/mediaUtils';
+import khmerFontUrl from '../../../assets/font/font_khmer.ttf?url';
 import './InventoryLocationPage.css';
 
 const LOCATIONS = {
@@ -12,10 +13,43 @@ const LOCATIONS = {
     'stueng-mean-chey': 'STUENG MEAN CHEY'
 };
 
+const wrapCanvasText = (context, value, maxWidth, maxLines) => {
+    const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+    if (!text) return [''];
+
+    const segments = typeof Intl.Segmenter === 'function'
+        ? Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text), ({ segment }) => segment)
+        : Array.from(text);
+    const lines = [];
+    let currentLine = '';
+
+    for (const segment of segments) {
+        const candidate = currentLine + segment;
+        if (currentLine && context.measureText(candidate).width > maxWidth) {
+            if (lines.length === maxLines - 1) {
+                let lastLine = currentLine.trimEnd();
+                while (lastLine && context.measureText(`${lastLine}…`).width > maxWidth) {
+                    lastLine = Array.from(lastLine).slice(0, -1).join('');
+                }
+                lines.push(`${lastLine}…`);
+                return lines;
+            }
+            lines.push(currentLine.trimEnd());
+            currentLine = segment.trimStart();
+        } else {
+            currentLine = candidate;
+        }
+    }
+
+    if (currentLine) lines.push(currentLine.trimEnd());
+    return lines.slice(0, maxLines);
+};
+
 const InventoryLocationPage = ({ locationCode }) => {
     const { API_BASE1, API_BASE2, hasPermission, smartFetch } = useAuth();
     const { t, lang } = useLanguage();
     const currentLocation = useLocation();
+    const navigate = useNavigate();
     const apiBase = API_BASE1 || API_BASE2 || '/api';
     const permissionPath = `/inventory/${locationCode}`;
     const previewPath = `${permissionPath}/preview`;
@@ -27,12 +61,15 @@ const InventoryLocationPage = ({ locationCode }) => {
     const [assetName, setAssetName] = useState('');
     const [quantity, setQuantity] = useState('');
     const [imageFile, setImageFile] = useState(null);
+    const [existingImageUrl, setExistingImageUrl] = useState('');
+    const [editingId, setEditingId] = useState('');
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [deletingId, setDeletingId] = useState('');
     const [feedback, setFeedback] = useState(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
     const loadItems = useCallback(async () => {
         setLoading(true);
@@ -55,8 +92,6 @@ const InventoryLocationPage = ({ locationCode }) => {
         loadItems();
     }, [loadItems]);
 
-    const [imagePreviewUrl, setImagePreviewUrl] = useState('');
-
     useEffect(() => {
         if (!imageFile) {
             setImagePreviewUrl('');
@@ -66,6 +101,18 @@ const InventoryLocationPage = ({ locationCode }) => {
         setImagePreviewUrl(previewUrl);
         return () => URL.revokeObjectURL(previewUrl);
     }, [imageFile]);
+
+    useEffect(() => {
+        const item = currentLocation.state?.editItem;
+        if (isPreviewPage || !item) return;
+        setEditingId(item._id);
+        setAssetName(item.assetName || '');
+        setQuantity(String(item.quantity || ''));
+        setExistingImageUrl(item.imageUrl || '');
+        setImageFile(null);
+        setFeedback(null);
+        navigate(permissionPath, { replace: true, state: null });
+    }, [currentLocation.state, isPreviewPage, navigate, permissionPath]);
 
     const visibleItems = useMemo(() => {
         const normalizedSearch = search.trim().toLocaleLowerCase();
@@ -79,6 +126,7 @@ const InventoryLocationPage = ({ locationCode }) => {
     );
 
     const canCreate = hasPermission(permissionPath, 'create');
+    const canEdit = hasPermission(permissionPath, 'edit');
     const canDelete = hasPermission(permissionPath, 'delete');
     const canExport = hasPermission(permissionPath, 'export') || hasPermission(permissionPath, 'print');
 
@@ -103,7 +151,7 @@ const InventoryLocationPage = ({ locationCode }) => {
             setFeedback({ type: 'error', text: t('inventorySaveFailed') });
             return;
         }
-        if (!imageFile) {
+        if (!imageFile && !existingImageUrl) {
             setFeedback({ type: 'error', text: t('chooseImage') });
             return;
         }
@@ -111,28 +159,56 @@ const InventoryLocationPage = ({ locationCode }) => {
         setSaving(true);
         setFeedback(null);
         try {
-            const imageUrl = await storeImageFile(imageFile, 'cloudinary', apiBase);
-            const response = await smartFetch(`${apiBase}/inventory/${locationCode}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ assetName: normalizedName, quantity: parsedQuantity, imageUrl })
-            });
+            const imageUrl = imageFile
+                ? await storeImageFile(imageFile, 'cloudinary', apiBase)
+                : existingImageUrl;
+            const response = await smartFetch(
+                editingId
+                    ? `${apiBase}/inventory/${locationCode}/${encodeURIComponent(editingId)}`
+                    : `${apiBase}/inventory/${locationCode}`,
+                {
+                    method: editingId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assetName: normalizedName, quantity: parsedQuantity, imageUrl })
+                }
+            );
             const result = await response.json();
             if (!response.ok || !result.success) {
-                throw new Error(result.message || t('inventorySaveFailed'));
+                throw new Error(result.message || t(editingId ? 'inventoryUpdateFailed' : 'inventorySaveFailed'));
             }
 
-            setItems((currentItems) => [result.data, ...currentItems]);
+            setItems((currentItems) => editingId
+                ? currentItems.map((item) => item._id === editingId ? result.data : item)
+                : [result.data, ...currentItems]);
             setAssetName('');
             setQuantity('');
             setImageFile(null);
+            setExistingImageUrl('');
+            setEditingId('');
             form.reset();
-            setFeedback({ type: 'success', text: t('inventorySaved') });
+            setFeedback({ type: 'success', text: t(editingId ? 'inventoryUpdated' : 'inventorySaved') });
         } catch (error) {
-            setFeedback({ type: 'error', text: error.message || t('inventorySaveFailed') });
+            setFeedback({
+                type: 'error',
+                text: error.message || t(editingId ? 'inventoryUpdateFailed' : 'inventorySaveFailed')
+            });
         } finally {
             setSaving(false);
         }
+    };
+
+    const cancelEdit = () => {
+        setEditingId('');
+        setAssetName('');
+        setQuantity('');
+        setImageFile(null);
+        setExistingImageUrl('');
+        setFeedback(null);
+        navigate(permissionPath, { replace: true, state: null });
+    };
+
+    const handleEdit = (item) => {
+        navigate(permissionPath, { state: { editItem: item } });
     };
 
     const handleDelete = async (item) => {
@@ -157,29 +233,145 @@ const InventoryLocationPage = ({ locationCode }) => {
     };
 
     const handleExportPdf = async () => {
-        if (!printAreaRef.current) return;
         setExporting(true);
         setFeedback(null);
         try {
-            const images = Array.from(printAreaRef.current.querySelectorAll('img'));
-            await Promise.all(images.map((image) => image.decode()));
-            const html2pdf = (await import('html2pdf.js')).default;
-            await html2pdf()
-                .set({
-                    margin: 0.35,
-                    filename: `inventory-${locationCode}-${new Date().toISOString().slice(0, 10)}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        backgroundColor: '#ffffff',
-                        ignoreElements: (element) => element.classList?.contains('inventory-no-print')
-                    },
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
-                    pagebreak: { mode: ['css', 'legacy'] }
-                })
-                .from(printAreaRef.current)
-                .save();
+            const pdfItems = await Promise.all(visibleItems.map(async (item) => {
+                if (!item.imageUrl) return { ...item, pdfImageUrl: '' };
+                if (String(item.imageUrl || '').startsWith('data:image/')) {
+                    return { ...item, pdfImageUrl: item.imageUrl };
+                }
+                const imageResponse = await smartFetch(
+                    `${apiBase}/media/to-base64?url=${encodeURIComponent(item.imageUrl)}`,
+                    { bypassCache: true }
+                );
+                const imageResult = await imageResponse.json();
+                if (!imageResponse.ok || !imageResult.success || !String(imageResult.base64 || '').startsWith('data:image/')) {
+                    throw new Error(imageResult.error || t('inventoryImageExportFailed'));
+                }
+                return { ...item, pdfImageUrl: imageResult.base64 };
+            }));
+
+            const imageObjects = await Promise.all(pdfItems.map(async (item) => {
+                if (!item.pdfImageUrl) return null;
+                const image = new Image();
+                image.src = item.pdfImageUrl;
+                await image.decode();
+                return image;
+            }));
+            const fontFace = new FontFace('InventoryKhmer', `url("${khmerFontUrl}")`);
+            await fontFace.load();
+            document.fonts.add(fontFace);
+            await document.fonts.load('16px InventoryKhmer');
+
+            const { jsPDF } = await import('jspdf');
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+            const pageWidth = 297;
+            const pageHeight = 210;
+            const pixelsPerMm = 6;
+            const canvas = document.createElement('canvas');
+            canvas.width = pageWidth * pixelsPerMm;
+            canvas.height = pageHeight * pixelsPerMm;
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error(t('inventoryPdfFailed'));
+
+            const pageSize = 5;
+            const pageCount = Math.max(1, Math.ceil(pdfItems.length / pageSize));
+            const xPositions = [12, 40, 172, 207, 285];
+            const mm = (value) => value * pixelsPerMm;
+            const drawPage = (pageIndex) => {
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.textBaseline = 'middle';
+                context.fillStyle = '#047857';
+                context.font = `bold ${mm(7)}px InventoryKhmer, Arial, sans-serif`;
+                context.fillText(locationName, mm(12), mm(18));
+
+                context.fillStyle = '#64748b';
+                context.font = `${mm(4)}px InventoryKhmer, Arial, sans-serif`;
+                context.fillText(t('inventoryList'), mm(12), mm(29));
+
+                const quantityTotal = pdfItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+                context.fillStyle = '#ecfdf5';
+                context.fillRect(mm(12), mm(37), mm(273), mm(12));
+                context.fillStyle = '#065f46';
+                context.font = `${mm(3.8)}px InventoryKhmer, Arial, sans-serif`;
+                context.fillText(
+                    `${t('totalAssets')}: ${pdfItems.length.toLocaleString()}   |   ${t('totalQuantity')}: ${quantityTotal.toLocaleString()}`,
+                    mm(16),
+                    mm(43)
+                );
+
+                context.fillStyle = '#047857';
+                context.fillRect(mm(12), mm(56), mm(273), mm(11));
+                context.fillStyle = '#ffffff';
+                context.font = `bold ${mm(3.5)}px InventoryKhmer, Arial, sans-serif`;
+                context.textAlign = 'left';
+                context.fillText(t('inventoryPhoto'), mm(14), mm(61.5));
+                context.fillText(t('inventoryAssetName'), mm(42), mm(61.5));
+                context.textAlign = 'center';
+                context.fillText(t('inventoryQuantity'), mm((172 + 207) / 2), mm(61.5));
+                context.fillText(t('inventoryDate'), mm((207 + 285) / 2), mm(61.5));
+
+                const firstItemIndex = pageIndex * pageSize;
+                const pageItems = pdfItems.slice(firstItemIndex, firstItemIndex + pageSize);
+                pageItems.forEach((item, rowIndex) => {
+                    const rowTop = 67 + rowIndex * 24;
+                    const rowBottom = rowTop + 24;
+                    context.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    context.fillRect(mm(12), mm(rowTop), mm(273), mm(24));
+                    context.strokeStyle = '#e2e8f0';
+                    context.lineWidth = 1;
+                    context.beginPath();
+                    context.moveTo(mm(12), mm(rowBottom));
+                    context.lineTo(mm(285), mm(rowBottom));
+                    context.stroke();
+
+                    const image = imageObjects[firstItemIndex + rowIndex];
+                    if (image) {
+                        const maxImageSize = mm(19);
+                        const imageScale = Math.min(maxImageSize / image.width, maxImageSize / image.height);
+                        const imageWidth = image.width * imageScale;
+                        const imageHeight = image.height * imageScale;
+                        context.drawImage(
+                            image,
+                            mm(25) - imageWidth / 2,
+                            mm(rowTop + 12) - imageHeight / 2,
+                            imageWidth,
+                            imageHeight
+                        );
+                    }
+
+                    context.fillStyle = '#1e293b';
+                    context.font = `${mm(3.8)}px InventoryKhmer, Arial, sans-serif`;
+                    context.textAlign = 'left';
+                    const nameLines = wrapCanvasText(context, item.assetName, mm(124), 2);
+                    const nameTop = rowTop + (24 - nameLines.length * 5) / 2;
+                    nameLines.forEach((line, lineIndex) => {
+                        context.fillText(line, mm(44), mm(nameTop + lineIndex * 5));
+                    });
+
+                    context.textAlign = 'center';
+                    context.fillText(Number(item.quantity).toLocaleString(), mm(189.5), mm(rowTop + 12));
+                    const dateLines = wrapCanvasText(context, formatDate(item.createdAt), mm(70), 2);
+                    const dateTop = rowTop + (24 - dateLines.length * 5) / 2;
+                    dateLines.forEach((line, lineIndex) => {
+                        context.fillText(line, mm(246), mm(dateTop + lineIndex * 5));
+                    });
+                });
+
+                context.fillStyle = '#64748b';
+                context.font = `${mm(3)}px InventoryKhmer, Arial, sans-serif`;
+                context.textAlign = 'right';
+                context.fillText(`${pageIndex + 1} / ${pageCount}`, mm(285), mm(202));
+            };
+
+            for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+                if (pageIndex > 0) pdf.addPage();
+                drawPage(pageIndex);
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pageWidth, pageHeight);
+            }
+            pdf.save(`inventory-${locationCode}-${new Date().toISOString().slice(0, 10)}.pdf`);
         } catch (error) {
             setFeedback({ type: 'error', text: `${t('inventoryPdfFailed')} ${error.message || ''}`.trim() });
         } finally {
@@ -249,14 +441,14 @@ const InventoryLocationPage = ({ locationCode }) => {
                     </div>
                 )}
 
-                {!isPreviewPage && canCreate && (
+                {!isPreviewPage && (canCreate || (editingId && canEdit)) && (
                     <section className="inventory-no-print rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                         <div className="mb-5 flex items-center gap-3">
                             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                                <FaPlus />
+                                {editingId ? <FaEdit /> : <FaPlus />}
                             </span>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-800">{t('addAsset')}</h2>
+                                <h2 className="text-lg font-bold text-slate-800">{t(editingId ? 'editInventoryItem' : 'addAsset')}</h2>
                                 <p className="text-sm text-slate-500">{locationName}</p>
                             </div>
                         </div>
@@ -292,22 +484,35 @@ const InventoryLocationPage = ({ locationCode }) => {
                             <label className="block">
                                 <span className="mb-1.5 block text-sm font-semibold text-slate-700">{t('inventoryPhoto')}</span>
                                 <span className="flex min-h-[46px] cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600 transition hover:border-emerald-400 hover:bg-emerald-50">
-                                    {imagePreviewUrl
-                                        ? <img src={imagePreviewUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
+                                    {imagePreviewUrl || existingImageUrl
+                                        ? <img src={imagePreviewUrl || existingImageUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
                                         : <FaImage className="text-lg text-emerald-600" />}
                                     <span className="min-w-0 flex-1 truncate">{imageFile?.name || t('chooseImage')}</span>
                                     <input type="file" accept="image/*" onChange={handleImageChange} className="sr-only" />
                                 </span>
                             </label>
 
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                <FaPlus />
-                                {saving ? t('loading') : t('addAsset')}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {editingId ? <FaSave /> : <FaPlus />}
+                                    {saving ? t('loading') : t(editingId ? 'saveInventoryChanges' : 'addAsset')}
+                                </button>
+                                {editingId && (
+                                    <button
+                                        type="button"
+                                        onClick={cancelEdit}
+                                        disabled={saving}
+                                        className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                                    >
+                                        <FaTimes />
+                                        {t('cancel')}
+                                    </button>
+                                )}
+                            </div>
                         </form>
                     </section>
                 )}
@@ -386,7 +591,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                                             <th className="px-5 py-3">{t('inventoryAssetName')}</th>
                                             <th className="px-5 py-3 text-right">{t('inventoryQuantity')}</th>
                                             <th className="px-5 py-3">{t('inventoryDate')}</th>
-                                            {canDelete && <th className="inventory-no-print px-5 py-3 text-center">{t('actions')}</th>}
+                                            {(canEdit || canDelete) && <th className="inventory-no-print px-5 py-3 text-center">{t('actions')}</th>}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -406,17 +611,31 @@ const InventoryLocationPage = ({ locationCode }) => {
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-3 text-xs text-slate-500">{formatDate(item.createdAt)}</td>
-                                                {canDelete && (
+                                                {(canEdit || canDelete) && (
                                                     <td className="inventory-no-print px-5 py-3 text-center">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDelete(item)}
-                                                            disabled={deletingId === item._id}
-                                                            aria-label={`${t('delete')} ${item.assetName}`}
-                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
-                                                        >
-                                                            <FaTrashAlt />
-                                                        </button>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            {canEdit && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleEdit(item)}
+                                                                    aria-label={`${t('editInventory')} ${item.assetName}`}
+                                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-800"
+                                                                >
+                                                                    <FaEdit />
+                                                                </button>
+                                                            )}
+                                                            {canDelete && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDelete(item)}
+                                                                    disabled={deletingId === item._id}
+                                                                    aria-label={`${t('delete')} ${item.assetName}`}
+                                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                                                                >
+                                                                    <FaTrashAlt />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 )}
                                             </tr>
