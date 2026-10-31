@@ -67,6 +67,7 @@ const InventoryLocationPage = ({ locationCode }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [pdfOrientation, setPdfOrientation] = useState('landscape');
     const [deletingId, setDeletingId] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [imagePreviewUrl, setImagePreviewUrl] = useState('');
@@ -265,9 +266,15 @@ const InventoryLocationPage = ({ locationCode }) => {
             await document.fonts.load('16px InventoryKhmer');
 
             const { jsPDF } = await import('jspdf');
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-            const pageWidth = 297;
-            const pageHeight = 210;
+            const pdf = new jsPDF({ orientation: pdfOrientation, unit: 'mm', format: 'a4', compress: true });
+            const isPortrait = pdfOrientation === 'portrait';
+            const pageWidth = isPortrait ? 210 : 297;
+            const pageHeight = isPortrait ? 297 : 210;
+            const pageMargin = 12;
+            const contentWidth = pageWidth - pageMargin * 2;
+            const tableLayout = isPortrait
+                ? { photoCenter: 24, nameX: 38, nameWidth: 82, quantityCenter: 132, dateCenter: 174, dateWidth: 44 }
+                : { photoCenter: 25, nameX: 44, nameWidth: 124, quantityCenter: 189.5, dateCenter: 246, dateWidth: 70 };
             const pixelsPerMm = 6;
             const canvas = document.createElement('canvas');
             canvas.width = pageWidth * pixelsPerMm;
@@ -275,9 +282,8 @@ const InventoryLocationPage = ({ locationCode }) => {
             const context = canvas.getContext('2d');
             if (!context) throw new Error(t('inventoryPdfFailed'));
 
-            const pageSize = 5;
+            const pageSize = isPortrait ? 9 : 5;
             const pageCount = Math.max(1, Math.ceil(pdfItems.length / pageSize));
-            const xPositions = [12, 40, 172, 207, 285];
             const mm = (value) => value * pixelsPerMm;
             const drawPage = (pageIndex) => {
                 context.fillStyle = '#ffffff';
@@ -293,7 +299,7 @@ const InventoryLocationPage = ({ locationCode }) => {
 
                 const quantityTotal = pdfItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
                 context.fillStyle = '#ecfdf5';
-                context.fillRect(mm(12), mm(37), mm(273), mm(12));
+                context.fillRect(mm(pageMargin), mm(37), mm(contentWidth), mm(12));
                 context.fillStyle = '#065f46';
                 context.font = `${mm(3.8)}px InventoryKhmer, Arial, sans-serif`;
                 context.fillText(
@@ -303,15 +309,15 @@ const InventoryLocationPage = ({ locationCode }) => {
                 );
 
                 context.fillStyle = '#047857';
-                context.fillRect(mm(12), mm(56), mm(273), mm(11));
+                context.fillRect(mm(pageMargin), mm(56), mm(contentWidth), mm(11));
                 context.fillStyle = '#ffffff';
                 context.font = `bold ${mm(3.5)}px InventoryKhmer, Arial, sans-serif`;
                 context.textAlign = 'left';
-                context.fillText(t('inventoryPhoto'), mm(14), mm(61.5));
-                context.fillText(t('inventoryAssetName'), mm(42), mm(61.5));
+                context.fillText(t('inventoryPhoto'), mm(pageMargin + 2), mm(61.5));
+                context.fillText(t('inventoryAssetName'), mm(tableLayout.nameX), mm(61.5));
                 context.textAlign = 'center';
-                context.fillText(t('inventoryQuantity'), mm((172 + 207) / 2), mm(61.5));
-                context.fillText(t('inventoryDate'), mm((207 + 285) / 2), mm(61.5));
+                context.fillText(t('inventoryQuantity'), mm(tableLayout.quantityCenter), mm(61.5));
+                context.fillText(t('inventoryDate'), mm(tableLayout.dateCenter), mm(61.5));
 
                 const firstItemIndex = pageIndex * pageSize;
                 const pageItems = pdfItems.slice(firstItemIndex, firstItemIndex + pageSize);
@@ -319,12 +325,12 @@ const InventoryLocationPage = ({ locationCode }) => {
                     const rowTop = 67 + rowIndex * 24;
                     const rowBottom = rowTop + 24;
                     context.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    context.fillRect(mm(12), mm(rowTop), mm(273), mm(24));
+                    context.fillRect(mm(pageMargin), mm(rowTop), mm(contentWidth), mm(24));
                     context.strokeStyle = '#e2e8f0';
                     context.lineWidth = 1;
                     context.beginPath();
-                    context.moveTo(mm(12), mm(rowBottom));
-                    context.lineTo(mm(285), mm(rowBottom));
+                    context.moveTo(mm(pageMargin), mm(rowBottom));
+                    context.lineTo(mm(pageWidth - pageMargin), mm(rowBottom));
                     context.stroke();
 
                     const image = imageObjects[firstItemIndex + rowIndex];
@@ -335,7 +341,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                         const imageHeight = image.height * imageScale;
                         context.drawImage(
                             image,
-                            mm(25) - imageWidth / 2,
+                            mm(tableLayout.photoCenter) - imageWidth / 2,
                             mm(rowTop + 12) - imageHeight / 2,
                             imageWidth,
                             imageHeight
@@ -345,25 +351,25 @@ const InventoryLocationPage = ({ locationCode }) => {
                     context.fillStyle = '#1e293b';
                     context.font = `${mm(3.8)}px InventoryKhmer, Arial, sans-serif`;
                     context.textAlign = 'left';
-                    const nameLines = wrapCanvasText(context, item.assetName, mm(124), 2);
+                    const nameLines = wrapCanvasText(context, item.assetName, mm(tableLayout.nameWidth), 2);
                     const nameTop = rowTop + (24 - nameLines.length * 5) / 2;
                     nameLines.forEach((line, lineIndex) => {
-                        context.fillText(line, mm(44), mm(nameTop + lineIndex * 5));
+                        context.fillText(line, mm(tableLayout.nameX), mm(nameTop + lineIndex * 5));
                     });
 
                     context.textAlign = 'center';
-                    context.fillText(Number(item.quantity).toLocaleString(), mm(189.5), mm(rowTop + 12));
-                    const dateLines = wrapCanvasText(context, formatDate(item.createdAt), mm(70), 2);
+                    context.fillText(Number(item.quantity).toLocaleString(), mm(tableLayout.quantityCenter), mm(rowTop + 12));
+                    const dateLines = wrapCanvasText(context, formatDate(item.createdAt), mm(tableLayout.dateWidth), 2);
                     const dateTop = rowTop + (24 - dateLines.length * 5) / 2;
                     dateLines.forEach((line, lineIndex) => {
-                        context.fillText(line, mm(246), mm(dateTop + lineIndex * 5));
+                        context.fillText(line, mm(tableLayout.dateCenter), mm(dateTop + lineIndex * 5));
                     });
                 });
 
                 context.fillStyle = '#64748b';
                 context.font = `${mm(3)}px InventoryKhmer, Arial, sans-serif`;
                 context.textAlign = 'right';
-                context.fillText(`${pageIndex + 1} / ${pageCount}`, mm(285), mm(202));
+                context.fillText(`${pageIndex + 1} / ${pageCount}`, mm(pageWidth - pageMargin), mm(pageHeight - 8));
             };
 
             for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
@@ -616,6 +622,18 @@ const InventoryLocationPage = ({ locationCode }) => {
                             </div>
                             {canExport && (
                                 <div className="inventory-no-print flex flex-wrap gap-2">
+                                    <label className="flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-3 py-2 text-sm font-semibold text-white">
+                                        <span>{t('inventoryPdfOrientation')}</span>
+                                        <select
+                                            value={pdfOrientation}
+                                            onChange={(event) => setPdfOrientation(event.target.value)}
+                                            disabled={exporting || loading}
+                                            className="rounded-lg border border-white/30 bg-white px-2 py-1.5 text-sm font-semibold text-emerald-800 outline-none focus:ring-2 focus:ring-white/70"
+                                        >
+                                            <option value="portrait">{t('portrait')}</option>
+                                            <option value="landscape">{t('landscape')}</option>
+                                        </select>
+                                    </label>
                                     <button
                                         type="button"
                                         onClick={handleExportPdf}
