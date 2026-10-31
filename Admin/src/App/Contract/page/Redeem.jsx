@@ -241,13 +241,14 @@ const Redeem = () => {
                             <th className='px-4 py-1 text-center'>{t('status')}</th>
                             <th className='px-4 py-1 text-center'>{t('contract')}</th>
                             <th className='px-4 py-1'>{t('model')}</th>
+                            <th className='px-4 py-1'>{t('commentLabel')}</th>
                             <th className='px-4 py-1 text-center'>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className='divide-y divide-slate-100 font-medium text-slate-800'>
                         {visibleContracts.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-8 text-slate-500 italic font-medium">{t('noRedeemContracts')}</td>
+                                <td colSpan={8} className="text-center py-8 text-slate-500 italic font-medium">{t('noRedeemContracts')}</td>
                             </tr>
                         ) : (
                             visibleContracts.map((item, idx) => (
@@ -267,6 +268,14 @@ const Redeem = () => {
                                         <CopyCell text={item.contractIid || '—'} className='font-mono font-bold text-indigo-700' />
                                     </td>
                                     <td className='px-4 py-1 font-semibold text-slate-800'><CopyCell text={item.model} className='font-semibold text-slate-800' /></td>
+                                    <td className='px-4 py-1 text-slate-600'>
+                                        <p
+                                            className='line-clamp-2 max-w-[260px] whitespace-pre-wrap break-words'
+                                            title={item.notes || ''}
+                                        >
+                                            {item.notes?.trim() || '—'}
+                                        </p>
+                                    </td>
                                     <td className="px-4 py-1 text-center relative">
                                         <div className="relative inline-block text-left">
                                             <button onClick={() => setOpenMenuId(openMenuId === item._id ? null : item._id)} className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 transition-all cursor-pointer shadow-2xs">
