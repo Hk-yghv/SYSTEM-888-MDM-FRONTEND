@@ -62,8 +62,11 @@ const getPaymentBreakdown = (payment, contract) => {
 const DailyReport = () => {
     const { API_BASE, API_BASE1, user } = useAuth();
     const { t } = useLanguage();
+    const userSubBrandCount = new Set(
+        (user?.subBrands || []).map((subBrand) => String(subBrand || '').trim()).filter(Boolean)
+    ).size;
     const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } =
-        useInstallmentSubBrand(user);
+        useInstallmentSubBrand(user, userSubBrandCount >= 2 ? 'All' : '');
     const [selectedDate, setSelectedDate] = useState(getLocalDate);
     const [report, setReport] = useState({ contracts: [], allContracts: [], payments: [], penalties: [] });
     const [loading, setLoading] = useState(true);
@@ -92,6 +95,10 @@ const DailyReport = () => {
         });
         const penaltyParams = new URLSearchParams({
             type: 'penalty',
+            userBrand: user?.brand || '',
+            userRole: user?.role || '',
+            username: user?.username || '',
+            isImmutable: user?.isImmutable ? 'true' : 'false',
             page: '1',
             limit: '999999',
             startDate: selectedDate,
@@ -169,14 +176,24 @@ const DailyReport = () => {
 
         return {
             submittedGuests: report.contracts.length,
+            paidGuests: new Set(report.payments
+                .filter((payment) => (Number(payment.amount) || 0) > 0)
+                .map((payment) => {
+                    const contract = contractsById.get(payment.contractId);
+                    return contract?.customerId || payment.customerId ||
+                        payment.contractId || payment.customerName || payment.paymentId;
+                })
+                .filter(Boolean)).size,
             requestedAmount: report.contracts.reduce(
                 (total, contract) => total + (Number(contract.amount || contract.totalAmount) || 0),
                 0
             ),
             paidAmount: paymentBreakdown.total,
+            normalPaidAmount: paymentBreakdown.principal + paymentBreakdown.interest,
             principalPaid: paymentBreakdown.principal,
             interestPaid: paymentBreakdown.interest,
             installmentPenalty: paymentBreakdown.paymentPenalty,
+            penaltyEntries: report.penalties.length,
             penaltyAmount: report.penalties.reduce((total, penalty) => {
                 const amount = Number(penalty.amount) || 0;
                 const amountUSD = penalty.amountUSD == null
@@ -210,6 +227,20 @@ const DailyReport = () => {
             background: 'bg-violet-50'
         },
         {
+            label: t('dailyReportPaidGuests'),
+            value: summary.paidGuests.toLocaleString(),
+            icon: FaUsers,
+            color: 'text-teal-600',
+            background: 'bg-teal-50'
+        },
+        {
+            label: t('dailyReportNormalPaid'),
+            value: formatMoney(summary.normalPaidAmount),
+            icon: FaMoneyBillWave,
+            color: 'text-sky-600',
+            background: 'bg-sky-50'
+        },
+        {
             label: t('dailyReportPrincipalPaid'),
             value: formatMoney(summary.principalPaid),
             icon: FaMoneyBillWave,
@@ -233,6 +264,7 @@ const DailyReport = () => {
         {
             label: t('dailyReportExtraPenalty'),
             value: formatMoney(summary.penaltyAmount),
+            detail: `${t('dailyReportPenaltyEntryCount')}: ${summary.penaltyEntries.toLocaleString()}`,
             icon: FaExclamationTriangle,
             color: 'text-rose-600',
             background: 'bg-rose-50'
@@ -283,7 +315,7 @@ const DailyReport = () => {
             )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {cards.map(({ label, value, icon: Icon, color, background }) => (
+                {cards.map(({ label, value, detail, icon: Icon, color, background }) => (
                     <div key={label} className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
                         <div className="flex items-start justify-between gap-3">
                             <div>
@@ -291,6 +323,11 @@ const DailyReport = () => {
                                 <p className="mt-2 text-2xl font-black tabular-nums text-slate-800">
                                     {loading ? '—' : value}
                                 </p>
+                                {detail && (
+                                    <p className="mt-1 text-[11px] font-medium text-slate-500">
+                                        {loading ? '—' : detail}
+                                    </p>
+                                )}
                             </div>
                             <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${background} ${color}`}>
                                 <Icon size={18} />
