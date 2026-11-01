@@ -3,6 +3,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { FaDollarSign, FaExclamationTriangle, FaMoneyBillWave, FaUsers } from 'react-icons/fa';
 import { MdOutlineSync } from 'react-icons/md';
+import InstallmentSubBrandFilter, {
+    addInstallmentSubBrandParams,
+    useInstallmentSubBrand
+} from '../../Installment/components/InstallmentSubBrandFilter';
+import { getRowInterest } from '../../../utils/repaymentUtils';
 
 const getLocalDate = () => {
     const date = new Date();
@@ -24,11 +29,43 @@ const formatMoney = (value) =>
         maximumFractionDigits: 2
     })}`;
 
+const getPaymentBreakdown = (payment, contract) => {
+    const amountPaid = Math.max(0, Number(payment.amount) || 0);
+    const schedule = Array.isArray(contract?.repaymentSchedule)
+        ? contract.repaymentSchedule.find((row) => Number(row.monthIndex) === Number(payment.monthIndex))
+        : null;
+    const scheduledAmount = Math.max(
+        0,
+        Number(payment.scheduledAmount) || Number(schedule?.scheduledAmount) || 0
+    );
+    const interestDue = Math.min(
+        scheduledAmount,
+        Math.max(0, Number(getRowInterest(schedule, contract)) || 0)
+    );
+    const principalDue = Math.max(0, scheduledAmount - interestDue);
+    const penaltyDue = Math.max(0, Number(payment.penalty) || Number(schedule?.penalty) || 0);
+    const expectedTotal = scheduledAmount + penaltyDue;
+
+    if (expectedTotal === 0) {
+        return { principal: amountPaid, interest: 0, penalty: 0 };
+    }
+
+    const paymentRatio = Math.min(1, amountPaid / expectedTotal);
+    const excessPayment = Math.max(0, amountPaid - expectedTotal);
+    return {
+        principal: principalDue * paymentRatio + excessPayment,
+        interest: interestDue * paymentRatio,
+        penalty: penaltyDue * paymentRatio
+    };
+};
+
 const DailyReport = () => {
     const { API_BASE, API_BASE1, user } = useAuth();
     const { t } = useLanguage();
+    const { availableSubBrands, selectedSubBrand, setSelectedSubBrand } =
+        useInstallmentSubBrand(user);
     const [selectedDate, setSelectedDate] = useState(getLocalDate);
-    const [report, setReport] = useState({ contracts: [], payments: [], penalties: [] });
+    const [report, setReport] = useState({ contracts: [], allContracts: [], payments: [], penalties: [] });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
@@ -45,6 +82,7 @@ const DailyReport = () => {
             page: '1',
             limit: '999999'
         });
+        if (selectedSubBrand) contractParams.set('subBrand', selectedSubBrand);
         const paymentParams = new URLSearchParams({
             ...userParams,
             page: '1',
@@ -59,6 +97,7 @@ const DailyReport = () => {
             startDate: selectedDate,
             endDate: selectedDate
         });
+        addInstallmentSubBrandParams(penaltyParams, user, selectedSubBrand);
 
         const responses = await Promise.all([
             fetch(`${API_BASE1}/contracts?${contractParams}`, { signal }),
@@ -73,27 +112,35 @@ const DailyReport = () => {
         const [contractResult, paymentResult, penaltyResult] = await Promise.all(
             responses.map((response) => response.json())
         );
-        const contracts = (contractResult.data || []).filter((contract) =>
+        const allContracts = contractResult.data || [];
+        const contracts = allContracts.filter((contract) =>
             getDateOnly(contract.inputDate || contract.createdAt || contract.date) === selectedDate
         );
+        const contractById = new Map(allContracts.map((contract) => [contract.contractId, contract]));
+        const payments = (paymentResult.data || []).filter((payment) => {
+            if (!selectedSubBrand || selectedSubBrand === 'All') return true;
+            return payment.subBrand === selectedSubBrand ||
+                contractById.get(payment.contractId)?.subBrand === selectedSubBrand;
+        });
 
         setReport({
             contracts,
-            payments: paymentResult.data || [],
+            allContracts,
+            payments,
             penalties: penaltyResult.data || []
         });
-    }, [API_BASE, API_BASE1, selectedDate, user]);
+    }, [API_BASE, API_BASE1, selectedDate, selectedSubBrand, user]);
 
     useEffect(() => {
         if (!selectedDate) {
-            setReport({ contracts: [], payments: [], penalties: [] });
+            setReport({ contracts: [], allContracts: [], payments: [], penalties: [] });
             setError('');
             setLoading(false);
             return undefined;
         }
 
         const controller = new AbortController();
-        setReport({ contracts: [], payments: [], penalties: [] });
+        setReport({ contracts: [], allContracts: [], payments: [], penalties: [] });
         setLoading(true);
         setError('');
         fetchReport(controller.signal)
@@ -109,24 +156,36 @@ const DailyReport = () => {
         return () => controller.abort();
     }, [fetchReport, refreshKey]);
 
-    const summary = useMemo(() => ({
-        submittedGuests: report.contracts.length,
-        requestedAmount: report.contracts.reduce(
-            (total, contract) => total + (Number(contract.amount || contract.totalAmount) || 0),
-            0
-        ),
-        paidAmount: report.payments.reduce(
-            (total, payment) => total + (Number(payment.amount) || 0),
-            0
-        ),
-        penaltyAmount: report.penalties.reduce((total, penalty) => {
-            const amount = Number(penalty.amount) || 0;
-            const amountUSD = penalty.amountUSD == null
-                ? (penalty.currency === 'KHR' ? amount / 4000 : amount)
-                : Number(penalty.amountUSD) || 0;
-            return total + amountUSD;
-        }, 0)
-    }), [report]);
+    const summary = useMemo(() => {
+        const contractsById = new Map(report.allContracts.map((contract) => [contract.contractId, contract]));
+        const paymentBreakdown = report.payments.reduce((totals, payment) => {
+            const breakdown = getPaymentBreakdown(payment, contractsById.get(payment.contractId));
+            totals.principal += breakdown.principal;
+            totals.interest += breakdown.interest;
+            totals.paymentPenalty += breakdown.penalty;
+            totals.total += Number(payment.amount) || 0;
+            return totals;
+        }, { principal: 0, interest: 0, paymentPenalty: 0, total: 0 });
+
+        return {
+            submittedGuests: report.contracts.length,
+            requestedAmount: report.contracts.reduce(
+                (total, contract) => total + (Number(contract.amount || contract.totalAmount) || 0),
+                0
+            ),
+            paidAmount: paymentBreakdown.total,
+            principalPaid: paymentBreakdown.principal,
+            interestPaid: paymentBreakdown.interest,
+            installmentPenalty: paymentBreakdown.paymentPenalty,
+            penaltyAmount: report.penalties.reduce((total, penalty) => {
+                const amount = Number(penalty.amount) || 0;
+                const amountUSD = penalty.amountUSD == null
+                    ? (penalty.currency === 'KHR' ? amount / 4000 : amount)
+                    : Number(penalty.amountUSD) || 0;
+                return total + amountUSD;
+            }, 0)
+        };
+    }, [report]);
 
     const cards = [
         {
@@ -151,7 +210,28 @@ const DailyReport = () => {
             background: 'bg-violet-50'
         },
         {
-            label: t('penaltyAmount'),
+            label: t('dailyReportPrincipalPaid'),
+            value: formatMoney(summary.principalPaid),
+            icon: FaMoneyBillWave,
+            color: 'text-cyan-600',
+            background: 'bg-cyan-50'
+        },
+        {
+            label: t('dailyReportInterestPaid'),
+            value: formatMoney(summary.interestPaid),
+            icon: FaDollarSign,
+            color: 'text-indigo-600',
+            background: 'bg-indigo-50'
+        },
+        {
+            label: t('dailyReportInstallmentPenalty'),
+            value: formatMoney(summary.installmentPenalty),
+            icon: FaExclamationTriangle,
+            color: 'text-amber-600',
+            background: 'bg-amber-50'
+        },
+        {
+            label: t('dailyReportExtraPenalty'),
             value: formatMoney(summary.penaltyAmount),
             icon: FaExclamationTriangle,
             color: 'text-rose-600',
@@ -177,6 +257,12 @@ const DailyReport = () => {
                         value={selectedDate}
                         onChange={(event) => setSelectedDate(event.target.value)}
                         className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-emerald-500"
+                    />
+                    <InstallmentSubBrandFilter
+                        availableSubBrands={availableSubBrands}
+                        selectedSubBrand={selectedSubBrand}
+                        onChange={setSelectedSubBrand}
+                        t={t}
                     />
                     <button
                         type="button"
