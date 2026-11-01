@@ -73,6 +73,7 @@ const ALL_SYSTEM_PAGES = [
     { category: 'Wallpaper Control', path: '/wallpaper/unlockphone', label: 'Unlock Wallpaper Log', actions: ['read', 'export'] },
 
     { category: 'Reports & Analytics', path: '/report/all-customers', label: 'All Customer Report', actions: ['read', 'export'] },
+    { category: 'Reports & Analytics', path: '/report/daily', label: 'Daily Report', actions: ['read'] },
     { category: 'Reports & Analytics', path: '/report/all', label: 'Master Executive Report All', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/activated', label: 'Activated Contract Report', actions: ['read', 'export'] },
     { category: 'Reports & Analytics', path: '/report/redeem', label: 'Redeem Contract Report', actions: ['read', 'export'] },

@@ -511,7 +511,8 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
 
                 {/* Report */}
                 {(hasPermission(json.report.allCustomers, 'read') ||
-                    hasPermission(json.report.reportAll, 'read') ||
+                   hasPermission(json.report.daily, 'read') ||
+                   hasPermission(json.report.reportAll, 'read') ||
                     hasPermission(json.report.activated, 'read') ||
                     hasPermission(json.report.redeem, 'read') ||
                     hasPermission(json.report.lockPhone, 'read') ||
@@ -533,6 +534,9 @@ const Left = ({ isOpen = false, onClose, onHideHeader, isHeaderOpen = true, onTo
                             <div className={`overflow-hidden transition-all duration-300 ${openMenus["report"] ? "max-h-[1000px] mt-1 space-y-1" : "max-h-0"}`}>
                                 {hasPermission(json.report.allCustomers, 'read') && (
                                     <Link to={json.report.allCustomers} className={subItemClass(json.report.allCustomers)} style={subItemStyle(json.report.allCustomers)}>{t('allCustomerReport')}</Link>
+                                )}
+                                {hasPermission(json.report.daily, 'read') && (
+                                    <Link to={json.report.daily} className={subItemClass(json.report.daily)} style={subItemStyle(json.report.daily)}>{t('dailyReport')}</Link>
                                 )}
                                 {hasPermission(json.report.reportAll, 'read') && (
                                     <Link to={json.report.reportAll} className={subItemClass(json.report.reportAll)} style={subItemStyle(json.report.reportAll)}>{t('reportAll')}</Link>

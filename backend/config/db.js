@@ -80,7 +80,7 @@ const SYSTEM_PAGES = [
     '/installment/schedule', '/installment/pad', '/installment/history', '/installment/paymentHistory', '/lostphone/actions', '/lostphone/lockphone', '/lostphone/unlockphone',
     '/wallpaper/actions', '/wallpaper/lockphone', '/wallpaper/unlockphone',
     '/history/login-history', '/history/device-history',
-    '/report/all', '/report/activated', '/report/redeem', '/report/lock-phone', '/report/set-wallpaper', '/report/installment', '/report/follow-up',
+    '/report/all', '/report/daily', '/report/activated', '/report/redeem', '/report/lock-phone', '/report/set-wallpaper', '/report/installment', '/report/follow-up',
     '/follow-up/follow-up-1', '/follow-up/follow-up-2', '/follow-up/follow-up-3', '/follow-up/sen-sok',
     '/inventory/sen-sok', '/inventory/chbar-ampov', '/inventory/stueng-mean-chey',
     '/settings/all-account', '/settings/control-system', '/settings/products',

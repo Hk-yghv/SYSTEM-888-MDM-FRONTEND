@@ -12,6 +12,7 @@
     "report": {
         "report": "/report",
         "allCustomers": "/report/all-customers",
+        "daily": "/report/daily",
         "reportAll": "/report/all",
         "activated": "/report/activated",
         "redeem": "/report/redeem",

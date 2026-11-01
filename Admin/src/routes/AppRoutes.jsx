@@ -35,6 +35,7 @@ import Overdue3DaysPage from "../App/Installment/pages/Overdue3DaysPage";
 import UnpaidYesterdayPage from "../App/Installment/pages/UnpaidYesterdayPage";
 import Overdue7DaysPage from "../App/Installment/pages/Overdue7DaysPage";
 import AllCustomersReport from "../App/Report/pages/AllCustomersReport";
+import DailyReport from "../App/Report/pages/DailyReport";
 import ReportAll from "../App/Report/pages/ReportAll";
 import ActivatedReport from "../App/Report/pages/ActivatedReport";
 import RedeemReport from "../App/Report/pages/RedeemReport";
@@ -148,6 +149,7 @@ const AppRoutes = () => {
       {/* Reports */}
       <Route path={json.report.report} element={<Navigate to={json.report.allCustomers} replace />} />
       <Route path={json.report?.allCustomers} element={renderProtected(json.report?.allCustomers, AllCustomersReport)} />
+      <Route path={json.report?.daily} element={renderProtected(json.report?.daily, DailyReport)} />
       <Route path={json.report?.reportAll} element={renderProtected(json.report?.reportAll, ReportAll)} />
       <Route path={json.report?.activated} element={renderProtected(json.report?.activated, ActivatedReport)} />
       <Route path={json.report?.redeem} element={renderProtected(json.report?.redeem, RedeemReport)} />

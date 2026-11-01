@@ -1212,6 +1212,8 @@
   "reject": "បដិសេធ",
   "paymentEntry": "កំណត់ត្រាបង់ប្រាក់",
   "dailyReport": "របាយការណ៍ប្រចាំថ្ងៃ",
+  "dailyReportSubmittedGuests": "ភ្ញៀវបានដាក់ស្នើ",
+  "dailyReportLoadError": "មិនអាចទាញយករបាយការណ៍ប្រចាំថ្ងៃបានទេ",
   "followUp4TotalReport": "របាយការណ៍ Follow Up 4 សរុប",
   "copyFailed": "ចម្លងមិនបានសម្រេច។ សូមចម្លងអត្ថបទរបាយការណ៍ដោយដៃ។",
   "viewTotalReport": "មើលរបាយការណ៍សរុប",

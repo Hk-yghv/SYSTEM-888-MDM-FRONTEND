@@ -1214,6 +1214,8 @@
   "reject": "Reject",
   "paymentEntry": "Payment Entry",
   "dailyReport": "Daily Report",
+  "dailyReportSubmittedGuests": "Submitted Guests",
+  "dailyReportLoadError": "Could not load the daily report",
   "followUp4TotalReport": "Follow Up 4 Total Report",
   "copyFailed": "Copy failed. Please copy the report text manually.",
   "viewTotalReport": "View Total Report",

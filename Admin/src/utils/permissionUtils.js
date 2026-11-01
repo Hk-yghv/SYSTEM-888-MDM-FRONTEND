@@ -35,6 +35,7 @@ export const ORDERED_SYSTEM_ROUTES = [
     '/wallpaper/lockphone',
     '/wallpaper/unlockphone',
     '/report/all-customers',
+    '/report/daily',
     '/report/all',
     '/report/activated',
     '/report/redeem',
