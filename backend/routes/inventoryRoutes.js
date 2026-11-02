@@ -27,23 +27,54 @@ const getRequestIdentity = async (req) => {
 
     return {
         username: user.username,
+        brand: String(user.brand || '').trim(),
         role: user.role || '',
         isImmutable: Boolean(user.isImmutable),
         permissions
     };
 };
 
-const isMasterAdmin = (identity) => (
+const isGlobalAdmin = (identity) => (
     identity.username === '@hakyonghouv' ||
     identity.username === 'hakyonghouv' ||
-    identity.isImmutable ||
+    identity.isImmutable
+);
+
+const canManageAllInventoryPermissions = (identity) => (
+    isGlobalAdmin(identity) ||
     identity.role === 'Administrator' ||
     identity.role === 'Admin'
 );
 
 const hasInventoryPermission = (identity, location, action) => (
-    isMasterAdmin(identity) || identity.permissions[getPermissionPath(location)]?.[action] === true
+    canManageAllInventoryPermissions(identity) ||
+    identity.permissions[getPermissionPath(location)]?.[action] === true
 );
+
+const getLegacyOwnerBrands = async (items) => {
+    const usernames = [...new Set(items
+        .filter((item) => !String(item.brand || '').trim() && item.createdBy)
+        .map((item) => item.createdBy))];
+    if (usernames.length === 0) return new Map();
+
+    const users = isMongoConnected
+        ? await queryAllDBs(User, (Model) => Model.find({ username: { $in: usernames } }).select('username brand').lean())
+        : MEM_DB.users.filter((user) => usernames.includes(user.username));
+
+    return new Map(users.map((user) => [user.username, String(user.brand || '').trim()]));
+};
+
+const isItemInIdentityBrand = (item, identity, ownerBrands) => {
+    if (isGlobalAdmin(identity)) return true;
+
+    const identityBrand = String(identity.brand || '').trim().toLowerCase();
+    if (!identityBrand) {
+        return !String(item.brand || '').trim() && item.createdBy === identity.username;
+    }
+
+    const itemBrand = String(item.brand || ownerBrands.get(item.createdBy) || '').trim().toLowerCase();
+    return itemBrand === identityBrand;
+};
 
 const validateLocation = (location, res) => {
     if (!INVENTORY_LOCATIONS.has(location)) {
@@ -77,7 +108,9 @@ router.get('/:location', async (req, res) => {
                 .filter((item) => item.location === location)
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        res.json({ success: true, data: items });
+        const ownerBrands = isGlobalAdmin(identity) ? new Map() : await getLegacyOwnerBrands(items);
+        const visibleItems = items.filter((item) => isItemInIdentityBrand(item, identity, ownerBrands));
+        res.json({ success: true, data: visibleItems });
     } catch (error) {
         console.error('Error fetching inventory items:', error);
         res.status(500).json({ success: false, message: error.message });
@@ -110,6 +143,7 @@ router.post('/:location', async (req, res) => {
 
         const itemData = {
             location,
+            brand: identity.brand,
             assetName,
             quantity,
             imageUrl,
@@ -151,6 +185,10 @@ router.put('/:location/:id', async (req, res) => {
         if (!existingItem || existingItem.location !== location) {
             return res.status(404).json({ success: false, message: 'Inventory item not found.' });
         }
+        const ownerBrands = await getLegacyOwnerBrands([existingItem]);
+        if (!isItemInIdentityBrand(existingItem, identity, ownerBrands)) {
+            return res.status(404).json({ success: false, message: 'Inventory item not found.' });
+        }
 
         const assetName = String(req.body.assetName || '').trim();
         const imageUrl = String(req.body.imageUrl || existingItem.imageUrl || '').trim();
@@ -167,6 +205,7 @@ router.put('/:location/:id', async (req, res) => {
         }
 
         const updates = {
+            ...(!String(existingItem.brand || '').trim() && identity.brand ? { brand: identity.brand } : {}),
             assetName,
             quantity,
             imageUrl,
@@ -200,6 +239,10 @@ router.delete('/:location/:id', async (req, res) => {
 
         const item = await getItemById(id);
         if (!item || item.location !== location) {
+            return res.status(404).json({ success: false, message: 'Inventory item not found.' });
+        }
+        const ownerBrands = await getLegacyOwnerBrands([item]);
+        if (!isItemInIdentityBrand(item, identity, ownerBrands)) {
             return res.status(404).json({ success: false, message: 'Inventory item not found.' });
         }
 

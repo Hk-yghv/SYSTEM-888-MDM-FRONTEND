@@ -7,6 +7,7 @@ const inventoryItemSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    brand: { type: String, default: '', trim: true, index: true },
     assetName: { type: String, required: true, trim: true, maxlength: 160 },
     quantity: { type: Number, required: true, min: 1, validate: Number.isInteger },
     imageUrl: { type: String, required: true, maxlength: 5000 },
