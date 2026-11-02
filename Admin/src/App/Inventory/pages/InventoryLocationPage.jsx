@@ -75,7 +75,7 @@ const InventoryLocationPage = ({ locationCode }) => {
     const loadItems = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await smartFetch(`${apiBase}/inventory/${locationCode}`, { bypassCache: true });
+            const response = await smartFetch(`${apiBase}/inventory/${locationCode}`);
             const result = await response.json();
             if (!response.ok || !result.success) {
                 throw new Error(result.message || t('inventoryLoadFailed'));

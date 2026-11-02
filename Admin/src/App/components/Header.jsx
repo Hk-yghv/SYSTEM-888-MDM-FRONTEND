@@ -15,7 +15,7 @@ const isStandaloneApp = () => (
 
 const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleSidebar, onHideHeader }) => {
     const { t, lang } = useLanguage();
-    const { user, API_BASE, API_BASE1, hasPermission } = useAuth();
+    const { user, API_BASE, hasPermission } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -171,16 +171,13 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             if (user?.username) params.set('username', user.username);
             if (user?.isImmutable) params.set('isImmutable', 'true');
 
-            const contractParams = new URLSearchParams(params);
-            contractParams.set('limit', '999999');
             const penaltyParams = new URLSearchParams(params);
             penaltyParams.set('type', 'penalty');
             penaltyParams.set('page', '1');
             penaltyParams.set('limit', '1');
 
-            const [statsRes, contractsRes, penaltyRes] = await Promise.all([
+            const [statsRes, penaltyRes] = await Promise.all([
                 fetch(`${API_BASE}/dashboard/stats?${params.toString()}`),
-                fetch(`${API_BASE1}/contracts?${contractParams.toString()}`),
                 fetch(`${API_BASE}/cash-transactions?${penaltyParams.toString()}`)
             ]);
 
@@ -189,28 +186,8 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
             }
             const data = await statsRes.json();
 
-            let totalCustomerPaid = 0;
-            let totalExpected = 0;
-
-            if (contractsRes.ok) {
-                const cData = await contractsRes.json();
-                const contracts = cData.data || cData.contracts || (Array.isArray(cData) ? cData : []);
-                contracts.forEach(c => {
-                    if (Array.isArray(c.repaymentSchedule) && c.repaymentSchedule.length > 0) {
-                        c.repaymentSchedule.forEach(row => {
-                            totalCustomerPaid += Number(row.paidAmount || row.paid || 0);
-                            totalExpected += (Number(row.scheduledAmount || 0) + Number(row.penalty || 0));
-                        });
-                    } else {
-                        totalCustomerPaid += Number(c.paidAmount || 0);
-                    }
-                });
-            } else {
-                console.error(`Header contracts request failed: HTTP ${contractsRes.status}`);
-            }
-
-            const resolvedExpected = totalExpected || data.totalRepaymentExpected || 0;
-            const resolvedOutstanding = Math.max(resolvedExpected - totalCustomerPaid, 0);
+            const totalRevenue = Number(data.totalCustomerPaid ?? data.totalRevenue) || 0;
+            const totalRepaymentExpected = Number(data.totalExpectedRepayment) || Number(data.totalRepaymentExpected) || 0;
 
             let totalPenaltyReceived;
             if (penaltyRes.ok) {
@@ -231,9 +208,9 @@ const Header = ({ onOpenAlerts, alertCount = 0, isSidebarOpen = false, onToggleS
 
             setBalance(current => ({
                 totalLoanAmount: data.totalLoanAmount || 0,
-                totalRevenue: contractsRes.ok ? totalCustomerPaid : (data.totalRevenue || 0),
-                totalRepaymentExpected: resolvedExpected,
-                outstandingBalance: resolvedOutstanding,
+                totalRevenue,
+                totalRepaymentExpected,
+                outstandingBalance: Math.max(totalRepaymentExpected - totalRevenue, 0),
                 totalPenaltyReceived: totalPenaltyReceived ?? current.totalPenaltyReceived
             }));
         } catch (err) {

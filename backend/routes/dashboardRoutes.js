@@ -16,7 +16,9 @@ router.get('/stats', async (req, res) => {
         let totalContracts, activatedContracts, applicationContracts, checkContracts,
             redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
-            totalRevenue, paymentCount, totalLoanAmount, totalCustomerReceived, totalBorrowers;
+            totalRevenue, paymentCount, totalLoanAmount, totalCustomerReceived, totalBorrowers,
+            totalExpectedRepayment;
+        let totalCustomerPaid = 0;
 
         let query = {};
         if (!isolation.isMasterAdmin) {
@@ -25,6 +27,8 @@ router.get('/stats', async (req, res) => {
 
         if (isMongoConnected) {
             const allContracts = await queryAllDBs(Contract, (M) => M.find(query));
+            totalCustomerPaid = calculateCustomerPaid(allContracts);
+            totalExpectedRepayment = calculateExpectedRepayment(allContracts);
             totalContracts = allContracts.length;
             activatedContracts = allContracts.filter(c => c.status === 'Activated').length;
             applicationContracts = allContracts.filter(c => c.status === 'Application').length;
@@ -60,6 +64,8 @@ router.get('/stats', async (req, res) => {
         } else {
             // MEM_DB fallback with brand & subBrand isolation
             const contracts = filterInMemoryRecords([...MEM_DB.contracts], isolation);
+            totalCustomerPaid = calculateCustomerPaid(contracts);
+            totalExpectedRepayment = calculateExpectedRepayment(contracts);
             totalContracts = contracts.length;
             activatedContracts = contracts.filter(c => c.status === 'Activated').length;
             applicationContracts = contracts.filter(c => c.status === 'Application').length;
@@ -98,6 +104,8 @@ router.get('/stats', async (req, res) => {
             checkContracts, redeemContracts, blacklistContracts, commentsContracts,
             lockedPhones, unlockedPhones, lockedWallpapers, unlockedWallpapers,
             totalRevenue, paymentCount,
+            totalCustomerPaid,
+            totalExpectedRepayment,
             totalLoanAmount: totalLoanAmount || 0,
             totalCustomerReceived: totalCustomerReceived || 0,
             totalBorrowers: totalBorrowers || 0,
@@ -152,6 +160,28 @@ function calculateRepayments(contractsList) {
     });
 
     return { totalRepaymentExpected, totalScheduledRepayment, totalPenaltyRepayment, totalInterest };
+}
+
+function calculateCustomerPaid(contracts) {
+    return contracts.reduce((total, contract) => {
+        if (Array.isArray(contract.repaymentSchedule) && contract.repaymentSchedule.length > 0) {
+            return total + contract.repaymentSchedule.reduce(
+                (scheduleTotal, row) => scheduleTotal + Number(row.paidAmount || row.paid || 0),
+                0
+            );
+        }
+        return total + (Number(contract.paidAmount) || 0);
+    }, 0);
+}
+
+function calculateExpectedRepayment(contracts) {
+    return contracts.reduce((total, contract) => {
+        if (!Array.isArray(contract.repaymentSchedule)) return total;
+        return total + contract.repaymentSchedule.reduce(
+            (scheduleTotal, row) => scheduleTotal + (Number(row.scheduledAmount) || 0) + (Number(row.penalty) || 0),
+            0
+        );
+    }, 0);
 }
 
 export default router;

@@ -93,7 +93,7 @@ const AllPicture = () => {
         setMessage('');
         try {
             const params = new URLSearchParams({ page: String(pg), limit: '48', category: cat });
-            const res = await smartFetch(`/media/all-images?${params.toString()}`, { bypassCache: true });
+            const res = await smartFetch(`/media/all-images?${params.toString()}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
             setImages(data.images || []);
