@@ -12,7 +12,7 @@ import Pagination from '../../../components/Pagination';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import ContractActivityHistoryModal from '../components/ContractActivityHistoryModal';
 import ContractSearchInput from '../../../components/ContractSearchInput';
-import { getKhmerCurrentDateString } from '../../../utils/khmerDateUtils';
+import { getCambodiaDateInputValue, getKhmerCurrentDateString } from '../../../utils/khmerDateUtils';
 
 const Activated = () => {
     const { t } = useLanguage();
@@ -41,6 +41,8 @@ const Activated = () => {
     const [selectedCommentItem, setSelectedCommentItem] = useState(null);
     const [commentInput, setCommentInput] = useState('');
     const [isDateAppended, setIsDateAppended] = useState(false);
+    const [commentExpiryMode, setCommentExpiryMode] = useState('1day');
+    const [commentExpiryDate, setCommentExpiryDate] = useState('');
     const [commentSaving, setCommentSaving] = useState(false);
     const [activatedDescriptionStatuses, setActivatedDescriptionStatuses] = useState([]);
     const [selectedDescriptionContract, setSelectedDescriptionContract] = useState(null);
@@ -560,7 +562,9 @@ const Activated = () => {
                 body: JSON.stringify({
                     notes: commentInput,
                     lastModifiedBy: user?.username || 'Staff',
-                    appendComment: true
+                    appendComment: true,
+                    commentExpiryMode,
+                    commentExpiryDate: commentExpiryMode === 'date' ? commentExpiryDate : undefined
                 })
             });
 
@@ -574,10 +578,21 @@ const Activated = () => {
                 setSelectedCommentItem(null);
                 setCommentInput('');
                 setIsDateAppended(false);
+                setCommentExpiryMode('1day');
+                setCommentExpiryDate('');
                 fetchActivatedContracts();
+            } else {
+                const result = await res.json().catch(() => ({}));
+                throw new Error(result.error || `Failed to save comment (${res.status})`);
             }
         } catch (err) {
             console.error('Save comment error:', err);
+            setUiModal({
+                open: true,
+                title: t('saveCommentFailed'),
+                message: err.message || t('saveCommentFailed'),
+                type: 'error'
+            });
         } finally {
             setCommentSaving(false);
         }
@@ -1241,6 +1256,8 @@ const Activated = () => {
                                                                             setSelectedCommentItem(item);
                                                                             setCommentInput('');
                                                                             setIsDateAppended(false);
+                                                                            setCommentExpiryMode('1day');
+                                                                            setCommentExpiryDate('');
                                                                             setOpenMenuId(null);
                                                                         }}
                                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-50 rounded-[5px] flex items-center gap-2 cursor-pointer"
@@ -1348,6 +1365,29 @@ const Activated = () => {
                             ></textarea>
                         </div>
 
+                        <label className="block text-xs font-semibold text-gray-400">
+                            {t('commentExpiry')}
+                            <select
+                                value={commentExpiryMode}
+                                onChange={(event) => setCommentExpiryMode(event.target.value)}
+                                className="mt-1.5 w-full rounded-[5px] border border-gray-700 bg-gray-900 p-2 text-xs text-gray-100 outline-none focus:border-cyan-500"
+                            >
+                                <option value="1day">{t('commentExpiresInOneDay')}</option>
+                                <option value="date">{t('commentExpiresOnDate')}</option>
+                                <option value="never">{t('commentDoesNotExpire')}</option>
+                            </select>
+                            {commentExpiryMode === 'date' && (
+                                <input
+                                    type="date"
+                                    value={commentExpiryDate}
+                                    min={getCambodiaDateInputValue()}
+                                    onChange={(event) => setCommentExpiryDate(event.target.value)}
+                                    className="mt-2 w-full rounded-[5px] border border-gray-700 bg-gray-900 p-2 text-xs text-gray-100 outline-none focus:border-cyan-500"
+                                    required
+                                />
+                            )}
+                        </label>
+
                         <div className="flex items-center justify-end gap-3 pt-2">
                             <button
                                 type="button"
@@ -1371,7 +1411,7 @@ const Activated = () => {
                                     key="btn-save-comment"
                                     type="button"
                                     onClick={handleSaveComment}
-                                    disabled={commentSaving}
+                                    disabled={commentSaving || (commentExpiryMode === 'date' && !commentExpiryDate)}
                                     className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-[5px] text-xs font-bold shadow-lg shadow-cyan-600/30 flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
                                 >
                                     {commentSaving ? <MdOutlineSync className="animate-spin text-sm" /> : null}

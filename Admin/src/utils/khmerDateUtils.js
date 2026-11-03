@@ -28,7 +28,27 @@ export const isTodayInCambodia = (dateValue) => {
     return dateStr === todayStr;
 };
 
+export const getCambodiaDateInputValue = (targetDate = new Date()) => {
+    const date = targetDate instanceof Date ? targetDate : new Date(targetDate);
+    if (Number.isNaN(date.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Phnom_Penh',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).formatToParts(date);
+    const day = parts.find(part => part.type === 'day')?.value;
+    const month = parts.find(part => part.type === 'month')?.value;
+    const year = parts.find(part => part.type === 'year')?.value;
+    return year && month && day ? `${year}-${month}-${day}` : '';
+};
+
 export const hasActiveCommentToday = (contract) => {
     if (!contract || !contract.notes || !String(contract.notes).trim()) return false;
+    if (contract.commentExpiryMode === 'never') return true;
+    if (contract.commentExpiresAt) {
+        const expiryDate = new Date(contract.commentExpiresAt);
+        if (!Number.isNaN(expiryDate.getTime())) return expiryDate.getTime() > Date.now();
+    }
     return isTodayInCambodia(contract.commentDate || contract.updatedAt);
 };

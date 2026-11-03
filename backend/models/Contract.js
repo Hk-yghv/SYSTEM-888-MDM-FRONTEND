@@ -59,6 +59,8 @@ const contractSchema = new mongoose.Schema({
     lockWallpaperStatus: { type: String, enum: ['Unlocked', 'Locked'], default: 'Unlocked' },
     notes: { type: String, default: '' },
     commentDate: { type: Date, default: null },
+    commentExpiryMode: { type: String, enum: ['1day', 'date', 'never'], default: '1day' },
+    commentExpiresAt: { type: Date, default: null },
     commentHistory: [{
         comment: { type: String, default: '' },
         commentedAt: { type: Date, default: Date.now },

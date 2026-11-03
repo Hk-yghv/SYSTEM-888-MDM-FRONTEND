@@ -470,15 +470,20 @@ router.put('/:id/activated-description-history/:historyId', async (req, res) => 
 const rotateExpiredComments = async (contractsList) => {
     if (!Array.isArray(contractsList) || contractsList.length === 0) return;
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' });
+    const now = Date.now();
 
     for (const doc of contractsList) {
         if (!doc.notes || !String(doc.notes).trim()) continue;
+        if (doc.commentExpiryMode === 'never') continue;
 
         const commentDate = doc.commentDate || doc.updatedAt || doc.createdAt;
         const commentDateStr = commentDate ? new Date(commentDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Phnom_Penh' }) : '';
+        const hasExpiryDate = doc.commentExpiresAt && !Number.isNaN(new Date(doc.commentExpiresAt).getTime());
+        const isExpired = hasExpiryDate
+            ? new Date(doc.commentExpiresAt).getTime() <= now
+            : Boolean(commentDateStr && commentDateStr !== todayStr);
 
-        // If the comment was recorded before today in Asia/Phnom_Penh (UTC+7)
-        if (commentDateStr && commentDateStr !== todayStr) {
+        if (isExpired) {
             const prevNote = String(doc.notes);
             const prevDate = commentDate;
             const prevUser = doc.lastModifiedBy || 'Staff';
@@ -499,6 +504,8 @@ const rotateExpiredComments = async (contractsList) => {
             }
             doc.notes = '';
             doc.commentDate = null;
+            doc.commentExpiryMode = '1day';
+            doc.commentExpiresAt = null;
 
             if (isMongoConnected) {
                 try {
@@ -509,6 +516,8 @@ const rotateExpiredComments = async (contractsList) => {
                                 $set: {
                                     notes: '',
                                     commentDate: null,
+                                    commentExpiryMode: '1day',
+                                    commentExpiresAt: null,
                                     commentHistory: doc.commentHistory
                                 }
                             }
@@ -1448,6 +1457,39 @@ router.put('/:id', async (req, res) => {
         delete updateData.commentHistory;
         delete updateData.commentDate;
         delete updateData.customerId;
+        const hasCommentExpiryMode = Object.prototype.hasOwnProperty.call(updateData, 'commentExpiryMode');
+        const commentExpiryDate = updateData.commentExpiryDate;
+        delete updateData.commentExpiryDate;
+        delete updateData.commentExpiresAt;
+        if (hasCommentExpiryMode) {
+            const expiryMode = updateData.commentExpiryMode;
+            if (!['1day', 'date', 'never'].includes(expiryMode)) {
+                return res.status(400).json({ error: 'Comment expiry mode must be 1day, date, or never.' });
+            }
+            if (expiryMode === 'date') {
+                if (typeof commentExpiryDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(commentExpiryDate)) {
+                    return res.status(400).json({ error: 'A valid comment expiry date is required.' });
+                }
+                const [year, month, day] = commentExpiryDate.split('-').map(Number);
+                const dateAtMidnightUtc = new Date(Date.UTC(year, month - 1, day));
+                if (
+                    dateAtMidnightUtc.getUTCFullYear() !== year ||
+                    dateAtMidnightUtc.getUTCMonth() !== month - 1 ||
+                    dateAtMidnightUtc.getUTCDate() !== day
+                ) {
+                    return res.status(400).json({ error: 'A valid comment expiry date is required.' });
+                }
+                const expiryAt = new Date(Date.UTC(year, month - 1, day, 16, 59, 59, 999));
+                if (expiryAt.getTime() <= Date.now()) {
+                    return res.status(400).json({ error: 'Comment expiry date must be in the future.' });
+                }
+                updateData.commentExpiresAt = expiryAt;
+            } else {
+                updateData.commentExpiresAt = expiryMode === '1day'
+                    ? new Date(Date.now() + 24 * 60 * 60 * 1000)
+                    : null;
+            }
+        }
         if (Object.prototype.hasOwnProperty.call(updateData, 'redeemComment')) {
             if (typeof updateData.redeemComment !== 'string' || updateData.redeemComment.length > 3000) {
                 return res.status(400).json({ error: 'Redeem comment must be text with at most 3000 characters.' });
@@ -1485,6 +1527,10 @@ router.put('/:id', async (req, res) => {
                 }
                 updateData.commentHistory = commentHistory;
                 updateData.commentDate = new Date();
+                if (!hasCommentExpiryMode) {
+                    updateData.commentExpiryMode = '1day';
+                    updateData.commentExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                }
             }
             for (const key in updateData) {
                 if (key === 'editHistory' || key === 'lastModifiedBy' || key === 'modifiedByAdmin') continue;
@@ -1518,6 +1564,10 @@ router.put('/:id', async (req, res) => {
             }
         } else if (Object.prototype.hasOwnProperty.call(updateData, 'notes')) {
             updateData.commentDate = new Date();
+            if (!hasCommentExpiryMode) {
+                updateData.commentExpiryMode = '1day';
+                updateData.commentExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            }
         }
 
         let updatedDoc = null;

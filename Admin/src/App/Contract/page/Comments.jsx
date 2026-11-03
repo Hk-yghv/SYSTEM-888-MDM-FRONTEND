@@ -10,7 +10,7 @@ import Pagination from '../../../components/Pagination';
 import CopyCell from '../../../components/CopyCell';
 import { exportToExcel, exportToPDF } from '../../../utils/exportUtils';
 import DatabaseSearchInput from '../../../components/DatabaseSearchInput';
-import { getKhmerCurrentDateString, hasActiveCommentToday } from '../../../utils/khmerDateUtils';
+import { getCambodiaDateInputValue, getKhmerCurrentDateString, hasActiveCommentToday } from '../../../utils/khmerDateUtils';
 
 const Comments = () => {
     const { t } = useLanguage();
@@ -28,6 +28,8 @@ const Comments = () => {
     const [isAddingComment, setIsAddingComment] = useState(false);
     const [commentSaving, setCommentSaving] = useState(false);
     const [isDateAppended, setIsDateAppended] = useState(false);
+    const [commentExpiryMode, setCommentExpiryMode] = useState('1day');
+    const [commentExpiryDate, setCommentExpiryDate] = useState('');
     const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
     const [editingHistoryEntry, setEditingHistoryEntry] = useState(null);
     const [searchTerm, setSearchTerm] = useState(() => searchParams.get('search') || '');
@@ -73,6 +75,8 @@ const Comments = () => {
         setCommentInput('');
         setIsAddingComment(true);
         setIsDateAppended(false);
+        setCommentExpiryMode('1day');
+        setCommentExpiryDate('');
         setEditingHistoryEntry(null);
         setSelectedHistoryItem(null);
         setSearchParams(current => {
@@ -111,6 +115,13 @@ const Comments = () => {
         setIsAddingComment(isCreating);
         setEditingHistoryEntry(null);
         setIsDateAppended(!isCreating);
+        const expiryMode = isCreating
+            ? '1day'
+            : (['1day', 'date', 'never'].includes(contract.commentExpiryMode) ? contract.commentExpiryMode : '1day');
+        setCommentExpiryMode(expiryMode);
+        setCommentExpiryDate(expiryMode === 'date' && contract.commentExpiresAt
+            ? getCambodiaDateInputValue(contract.commentExpiresAt)
+            : '');
     };
 
     const handleSaveComment = async (event) => {
@@ -119,6 +130,9 @@ const Comments = () => {
         setCommentSaving(true);
         try {
             const isHistoryEdit = Boolean(editingHistoryEntry);
+            if (!isHistoryEdit && commentExpiryMode === 'date' && !commentExpiryDate) {
+                throw new Error(t('commentExpiryDateRequired'));
+            }
             const url = isHistoryEdit
                 ? `${API_BASE1}/contracts/${selectedCommentItem._id}/comment-history/${editingHistoryEntry._id}`
                 : `${API_BASE1}/contracts/${selectedCommentItem._id}`;
@@ -130,7 +144,9 @@ const Comments = () => {
                     : {
                         notes: commentInput,
                         lastModifiedBy: user?.username || 'Staff',
-                        appendComment: isAddingComment
+                        appendComment: isAddingComment,
+                        commentExpiryMode,
+                        commentExpiryDate: commentExpiryMode === 'date' ? commentExpiryDate : undefined
                     })
             });
             if (!res.ok) {
@@ -477,6 +493,30 @@ const Comments = () => {
                                 className="mt-2 w-full rounded-[5px] border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none focus:border-teal-500"
                             />
                         </label>
+                        {!editingHistoryEntry && (
+                            <label className="block text-xs font-semibold text-slate-300">
+                                {t('commentExpiry')}
+                                <select
+                                    value={commentExpiryMode}
+                                    onChange={(event) => setCommentExpiryMode(event.target.value)}
+                                    className="mt-2 w-full rounded-[5px] border border-slate-700 bg-slate-950 p-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                                >
+                                    <option value="1day">{t('commentExpiresInOneDay')}</option>
+                                    <option value="date">{t('commentExpiresOnDate')}</option>
+                                    <option value="never">{t('commentDoesNotExpire')}</option>
+                                </select>
+                                {commentExpiryMode === 'date' && (
+                                    <input
+                                        type="date"
+                                        value={commentExpiryDate}
+                                        min={getCambodiaDateInputValue()}
+                                        onChange={(event) => setCommentExpiryDate(event.target.value)}
+                                        className="mt-2 w-full rounded-[5px] border border-slate-700 bg-slate-950 p-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                                        required
+                                    />
+                                )}
+                            </label>
+                        )}
                         <footer className="flex justify-end gap-2">
                             <button
                                 type="button"
@@ -498,7 +538,7 @@ const Comments = () => {
                                     key="btn-save-comment"
                                     type="button"
                                     onClick={handleSaveComment}
-                                    disabled={commentSaving}
+                                    disabled={commentSaving || (!editingHistoryEntry && commentExpiryMode === 'date' && !commentExpiryDate)}
                                     className="inline-flex items-center gap-2 rounded-[5px] bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-teal-500 disabled:opacity-60 cursor-pointer shadow-md transition-all"
                                 >
                                     {commentSaving ? <MdOutlineSync className="animate-spin" /> : <MdEdit />}
