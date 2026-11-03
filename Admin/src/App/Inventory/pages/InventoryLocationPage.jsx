@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaBoxes, FaEdit, FaFilePdf, FaImage, FaPlus, FaPrint, FaSave, FaTimes, FaTrashAlt } from 'react-icons/fa';
+import { FaBoxes, FaEdit, FaFilePdf, FaImage, FaPlus, FaSave, FaTimes, FaTrashAlt } from 'react-icons/fa';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { storeImageFile } from '../../../utils/mediaUtils';
@@ -55,8 +55,6 @@ const InventoryLocationPage = ({ locationCode }) => {
     const previewPath = `${permissionPath}/preview`;
     const isPreviewPage = currentLocation.pathname === previewPath;
     const locationName = LOCATIONS[locationCode];
-    const printAreaRef = useRef(null);
-
     const [items, setItems] = useState([]);
     const [assetName, setAssetName] = useState('');
     const [quantity, setQuantity] = useState('');
@@ -282,47 +280,57 @@ const InventoryLocationPage = ({ locationCode }) => {
             const context = canvas.getContext('2d');
             if (!context) throw new Error(t('inventoryPdfFailed'));
 
-            const pageSize = isPortrait ? 9 : 5;
-            const pageCount = Math.max(1, Math.ceil(pdfItems.length / pageSize));
+            const firstPageSize = isPortrait ? 9 : 5;
+            const continuationPageSize = isPortrait ? 10 : 7;
+            const pageCount = pdfItems.length <= firstPageSize
+                ? 1
+                : 1 + Math.ceil((pdfItems.length - firstPageSize) / continuationPageSize);
             const mm = (value) => value * pixelsPerMm;
             const drawPage = (pageIndex) => {
                 context.fillStyle = '#ffffff';
                 context.fillRect(0, 0, canvas.width, canvas.height);
                 context.textBaseline = 'middle';
+                const isFirstPage = pageIndex === 0;
+                if (isFirstPage) {
+                    context.fillStyle = '#047857';
+                    context.font = `bold ${mm(7)}px InventoryKhmer, Arial, sans-serif`;
+                    context.fillText(locationName, mm(12), mm(18));
+
+                    context.fillStyle = '#64748b';
+                    context.font = `${mm(4)}px InventoryKhmer, Arial, sans-serif`;
+                    context.fillText(t('inventoryList'), mm(12), mm(29));
+
+                    const quantityTotal = pdfItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+                    context.fillStyle = '#ecfdf5';
+                    context.fillRect(mm(pageMargin), mm(37), mm(contentWidth), mm(12));
+                    context.fillStyle = '#065f46';
+                    context.font = `${mm(3.8)}px InventoryKhmer, Arial, sans-serif`;
+                    context.fillText(
+                        `${t('totalAssets')}: ${pdfItems.length.toLocaleString()}   |   ${t('totalQuantity')}: ${quantityTotal.toLocaleString()}`,
+                        mm(16),
+                        mm(43)
+                    );
+                }
+
+                const tableHeaderTop = isFirstPage ? 56 : 12;
                 context.fillStyle = '#047857';
-                context.font = `bold ${mm(7)}px InventoryKhmer, Arial, sans-serif`;
-                context.fillText(locationName, mm(12), mm(18));
-
-                context.fillStyle = '#64748b';
-                context.font = `${mm(4)}px InventoryKhmer, Arial, sans-serif`;
-                context.fillText(t('inventoryList'), mm(12), mm(29));
-
-                const quantityTotal = pdfItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-                context.fillStyle = '#ecfdf5';
-                context.fillRect(mm(pageMargin), mm(37), mm(contentWidth), mm(12));
-                context.fillStyle = '#065f46';
-                context.font = `${mm(3.8)}px InventoryKhmer, Arial, sans-serif`;
-                context.fillText(
-                    `${t('totalAssets')}: ${pdfItems.length.toLocaleString()}   |   ${t('totalQuantity')}: ${quantityTotal.toLocaleString()}`,
-                    mm(16),
-                    mm(43)
-                );
-
-                context.fillStyle = '#047857';
-                context.fillRect(mm(pageMargin), mm(56), mm(contentWidth), mm(11));
+                context.fillRect(mm(pageMargin), mm(tableHeaderTop), mm(contentWidth), mm(11));
                 context.fillStyle = '#ffffff';
                 context.font = `bold ${mm(3.5)}px InventoryKhmer, Arial, sans-serif`;
                 context.textAlign = 'left';
-                context.fillText(t('inventoryPhoto'), mm(pageMargin + 2), mm(61.5));
-                context.fillText(t('inventoryAssetName'), mm(tableLayout.nameX), mm(61.5));
+                context.fillText(t('inventoryPhoto'), mm(pageMargin + 2), mm(tableHeaderTop + 5.5));
+                context.fillText(t('inventoryAssetName'), mm(tableLayout.nameX), mm(tableHeaderTop + 5.5));
                 context.textAlign = 'center';
-                context.fillText(t('inventoryQuantity'), mm(tableLayout.quantityCenter), mm(61.5));
-                context.fillText(t('inventoryDate'), mm(tableLayout.dateCenter), mm(61.5));
+                context.fillText(t('inventoryQuantity'), mm(tableLayout.quantityCenter), mm(tableHeaderTop + 5.5));
+                context.fillText(t('inventoryDate'), mm(tableLayout.dateCenter), mm(tableHeaderTop + 5.5));
 
-                const firstItemIndex = pageIndex * pageSize;
+                const pageSize = isFirstPage ? firstPageSize : continuationPageSize;
+                const firstItemIndex = pageIndex === 0
+                    ? 0
+                    : firstPageSize + (pageIndex - 1) * continuationPageSize;
                 const pageItems = pdfItems.slice(firstItemIndex, firstItemIndex + pageSize);
                 pageItems.forEach((item, rowIndex) => {
-                    const rowTop = 67 + rowIndex * 24;
+                    const rowTop = tableHeaderTop + 11 + rowIndex * 24;
                     const rowBottom = rowTop + 24;
                     context.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
                     context.fillRect(mm(pageMargin), mm(rowTop), mm(contentWidth), mm(24));
@@ -366,10 +374,6 @@ const InventoryLocationPage = ({ locationCode }) => {
                     });
                 });
 
-                context.fillStyle = '#64748b';
-                context.font = `${mm(3)}px InventoryKhmer, Arial, sans-serif`;
-                context.textAlign = 'right';
-                context.fillText(`${pageIndex + 1} / ${pageCount}`, mm(pageWidth - pageMargin), mm(pageHeight - 8));
             };
 
             for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
@@ -382,17 +386,6 @@ const InventoryLocationPage = ({ locationCode }) => {
             setFeedback({ type: 'error', text: `${t('inventoryPdfFailed')} ${error.message || ''}`.trim() });
         } finally {
             setExporting(false);
-        }
-    };
-
-    const handlePrint = async () => {
-        if (!printAreaRef.current) return;
-        try {
-            const images = Array.from(printAreaRef.current.querySelectorAll('img'));
-            await Promise.all(images.map((image) => image.decode()));
-            window.print();
-        } catch (error) {
-            setFeedback({ type: 'error', text: `${t('inventoryPrintFailed')} ${error.message || ''}`.trim() });
         }
     };
 
@@ -493,7 +486,10 @@ const InventoryLocationPage = ({ locationCode }) => {
     if (!locationName) return null;
 
     return (
-        <main className="inventory-page-root inventory-page-enter h-full overflow-y-auto p-3 sm:p-5 lg:p-7">
+        <main
+            data-allow-scroll="true"
+            className={`inventory-page-root inventory-page-enter h-full overflow-y-auto p-3 sm:p-5 lg:p-7${exporting ? ' inventory-exporting' : ''}`}
+        >
             <div className="mx-auto max-w-7xl space-y-5">
                 <nav aria-label={t('inventoryPages')} className="inventory-no-print flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
                     <Link
@@ -612,7 +608,7 @@ const InventoryLocationPage = ({ locationCode }) => {
                 {!isPreviewPage && renderInventoryList('inventory-no-print')}
 
                 {isPreviewPage && (
-                <section ref={printAreaRef} className="inventory-print-area space-y-5 rounded-2xl">
+                <section className="inventory-print-area space-y-5 rounded-2xl">
                     <header className="inventory-heading overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-500 p-5 text-white shadow-lg sm:p-7">
                         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
                             <div>
@@ -642,15 +638,6 @@ const InventoryLocationPage = ({ locationCode }) => {
                                     >
                                         <FaFilePdf />
                                         {exporting ? t('loading') : t('exportPdf')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handlePrint}
-                                        disabled={loading}
-                                        className="flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20 disabled:opacity-60"
-                                    >
-                                        <FaPrint />
-                                        {t('inventoryPrint')}
                                     </button>
                                 </div>
                             )}
