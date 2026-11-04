@@ -148,7 +148,6 @@ git push -u origin main
 # If want see your remote
 
 git remote -v
-`
 
 
 # Update vesion
