@@ -418,7 +418,11 @@ const Dashboard = () => {
             const cDate = String(contract.inputDate || contract.date || contract.createdAt || '').split('T')[0];
             const isContractInTimeframe = isDateInRange(cDate, dateRange);
 
-            if (dateRange.isAll || isContractInTimeframe) {
+            const isDisbursed = contract.status === 'Activated'
+                || contract.status === 'Redeem'
+                || contract.status === 'ដំណើរការ'
+                || contract.status === 'បញ្ចាំ/ដោះដូរ';
+            if (isDisbursed && (dateRange.isAll || isContractInTimeframe)) {
                 const principal = Number(contract.amount || contract.loanAmount || contract.totalAmount || 0);
                 totalPrincipal += principal;
             }

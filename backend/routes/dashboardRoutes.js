@@ -49,9 +49,12 @@ router.get('/stats', async (req, res) => {
             paymentCount = allPayments.length;
             totalRevenue = allPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
-            // Financial metrics aggregated from Activated contracts
+            // Disbursed amount includes loans that were later moved to Redeem.
+            const disbursedList = allContracts.filter(c => c.status === 'Activated' || c.status === 'Redeem');
+            totalLoanAmount = disbursedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+
+            // Active borrower metrics remain limited to Activated contracts.
             const activatedList = allContracts.filter(c => c.status === 'Activated');
-            totalLoanAmount = activatedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
             totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
             totalBorrowers = activatedList.length;
 
@@ -83,9 +86,12 @@ router.get('/stats', async (req, res) => {
             totalRevenue = filteredPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
             paymentCount = filteredPayments.length;
 
-            // Aggregate ONLY Activated contracts for financial metrics
+            // Disbursed amount includes loans that were later moved to Redeem.
+            const disbursedList = contracts.filter(c => c.status === 'Activated' || c.status === 'Redeem');
+            totalLoanAmount = disbursedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
+
+            // Active borrower metrics remain limited to Activated contracts.
             const activatedList = contracts.filter(c => c.status === 'Activated');
-            totalLoanAmount = activatedList.reduce((sum, c) => sum + (Number(c.amount) || 0), 0);
             totalCustomerReceived = activatedList.reduce((sum, c) => sum + (Number(c.monthlyPayment) || 0), 0);
             totalBorrowers = activatedList.length;
 
